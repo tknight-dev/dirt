@@ -1,0 +1,40 @@
+{
+  "author": "tknight-dev",
+  "description": "A multithreaded rendering engine with physics",
+  "license": "MIT",
+  "name": "dirt",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "rimraf dist && npm run tsc && npm run favicon-dev && concurrently --kill-others \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
+    "favicon": "copyfiles favicon.ico dist",
+    "favicon-dev": "copyfiles favicon.ico dist",
+    "html": "copyfiles -u 1 src/dirt.html dist",
+    "html-dev": "nodemon --quiet --watch src/dirt.html -x \"copyfiles -u 1 src/dirt.html dist\"",
+    "html-minify": "html-minifier-terser --collapse-whitespace --remove-comments dist/dirt.html --output dist/dirt.html",
+    "lint": "prettier src/. --write",
+    "prod": "rimraf dist && npm run lint && npm run sass && npm run tsc && npm run html && npm run html-minify && npm run webpack && npm run favicon && rimraf dist/working",
+    "sass": "sass src/dirt.scss:dist/dirt.css --no-source-map --style compressed",
+    "sass-dev": "sass src/dirt.scss:dist/dirt.css --quiet --watch",
+    "serve": "live-server dist --entry-file=dirt.html --port 8080",
+    "serve-dev": "live-server dist --entry-file=dirt.html --port 8080 --quiet --watch=.",
+    "tsc": "tsc --project tsconfig.json",
+    "tsc-dev": "tsc --preserveWatchOutput --project tsconfig.dev.json --watch",
+    "webpack": "webpack --config webpack.config.js --mode production --output-path ./dist",
+    "webpack-dev": "webpack --config webpack.config.js --devtool source-map --mode development --output-path ./dist --watch"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "copyfiles": "^2.0.0",
+    "file-loader": "^6.0.0",
+    "html-minifier-terser": "^7.0.0",
+    "live-server": "^1.0.0",
+    "nodemon": "^3.0.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^6.0.0",
+    "sass": "^1.0.0",
+    "terser": "^5.0.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0"
+  }
+}

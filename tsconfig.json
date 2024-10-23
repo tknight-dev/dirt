@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "esModuleInterop": true,
+        "module": "es2022",
+        "moduleResolution": "node",
+        "outDir": "./dist/working",
+        "removeComments": true,
+        "sourceMap": false,
+        "strict": true,
+        "strictPropertyInitialization": false,
+        "target": "es2022",
+    },
+    "exclude": ["src/**/*.test.ts"],
+    "include": ["src/**/*"]
+}
