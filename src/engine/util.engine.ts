@@ -3,6 +3,15 @@
  */
 
 export class UtilEngine {
+	private static initialized: boolean;
+
+	public static async initialize(): Promise<void> {
+		if (UtilEngine.initialized) {
+			return;
+		}
+		UtilEngine.initialized = true;
+	}
+
 	public static delayInMs(ms: number): Promise<void> {
 		return new Promise((resolve: any) => {
 			setTimeout(() => {

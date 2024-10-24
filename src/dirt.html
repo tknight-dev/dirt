@@ -22,7 +22,6 @@
 					</div>
 					<div class="content" id="menu-content">
 						<span class="hyperlink menu"></span>
-						<span class="hyperlink menu-item">Reset</span>
 						<span class="hyperlink menu-item">Info</span>
 					</div>
 				</div>
@@ -31,8 +30,18 @@
 				<div class="wrapper" id="fullscreen">
 					<div class="viewer" id="viewer">
 						<div class="channel">3</div>
-						<div class="feed">
-							<canvas class="wrapper"></canvas>
+						<div class="feed" id="feed">
+							<canvas class="feeder" id="canvas"></canvas>
+							<canvas class="feeder" id="canvas-background"></canvas>
+							<canvas class="feeder" id="canvas-foreground"></canvas>
+							<canvas class="feeder" id="canvas-overlay"></canvas>
+							<div class="feeder" id="company-overlay">
+								<div class="content">
+									<div class="logo"></div>
+									<div class="logo-dirt" id="logo-dirt"></div>
+									<div class="text">Click Here or Press Any Key to Continue</div>
+								</div>
+							</div>
 						</div>
 					</div>
 					<div class="viewer-controls" id="viewer-controls">

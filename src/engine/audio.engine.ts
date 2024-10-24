@@ -277,7 +277,10 @@ export class AudioEngine {
 		await AudioEngine.cache[audioAsset.id].audio.play();
 	}
 
-	public static async play(audioAsset: AudioAsset): Promise<void> {
+	/**
+	 * @param volumePercentage is between 0% and 100%
+	 */
+	public static async play(audioAsset: AudioAsset, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > play: not initialized');
 			return;
@@ -288,16 +291,12 @@ export class AudioEngine {
 			console.error('AudioEngine > play: only applies to music');
 			return;
 		}
-		AudioEngine.cache[audioAsset.id].audio.currentTime = 0;
-		await AudioEngine.cache[audioAsset.id].audio.play();
-	}
+		let audio: HTMLAudioElement = AudioEngine.cache[audioAsset.id].audio;
 
-	/**
-	 * Spawns audio clones to allow for multiple instances of the same effect
-	 *
-	 * @param pan is between -1 and 1
-	 * @param volumePercentage is between 0% and 100%
-	 */
+		audio.currentTime = 0;
+		audio.volume = Math.round(UtilEngine.scale(volumePercentage, 100, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
+		await audio.play();
+	}
 
 	private static claimBufferIndex(): number {
 		let index: number = AudioEngine.buffersIndex;
@@ -305,6 +304,12 @@ export class AudioEngine {
 		return index;
 	}
 
+	/**
+	 * Spawns audio clones to allow for multiple instances of the same effect
+	 *
+	 * @param pan is -1 left, 0 center, 1 right
+	 * @param volumePercentage is between 0% and 100%
+	 */
 	public static async trigger(audioAsset: AudioAsset, pan: number, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > trigger: not initialized');

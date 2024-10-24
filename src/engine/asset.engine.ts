@@ -1,12 +1,17 @@
-const JSZip = require('JSZip');
+import * as JSZip from 'JSZip';
 
 /**
  * Load all files from asset file and store in ram as base64ObjectURLs
  *
- * Supports: mp3
+ * Supports: mp3, webp
  *
  * @author tknight-dev
  */
+
+interface Asset {
+	name: string;
+	type: string;
+}
 
 export class AssetEngine {
 	private static assets: { [key: string]: string } = {}; // { filename: base64ObjectURLs }
@@ -16,26 +21,38 @@ export class AssetEngine {
 		if (AssetEngine.initialized) {
 			return;
 		}
+		AssetEngine.initialized = true;
 	}
 
 	public static async load(): Promise<number> {
-		let buffer: ArrayBuffer,
-			buffers: ArrayBuffer[] = [],
-			contents: any,
-			file: any,
-			files: any[] = [],
+		let accept: boolean,
+			asset: Asset,
+			assets: Asset[] = [],
+			buffer: ArrayBuffer,
+			buffers: Promise<ArrayBuffer>[] = [],
 			timestamp: number = new Date().getTime(),
-			zip: ReturnType<typeof JSZip> = new JSZip();
+			zip: JSZip;
 
 		// Load zip into unzipper
-		contents = await zip.loadAsync(await (await fetch('./assets.zip')).blob());
-		Object.keys(contents.files).forEach(function (filename: string) {
-			if (filename.includes('.mp3')) {
-				buffers.push(zip.file(filename).async('arraybuffer'));
-				files.push({
+		zip = <JSZip>await JSZip.loadAsync(await (await fetch('./assets')).blob());
+		Object.keys(zip.files).forEach(function (filename: string) {
+			accept = false;
+			if (filename.endsWith('.mp3')) {
+				accept = true;
+				assets.push({
 					name: filename,
 					type: 'audio/mp3',
 				});
+			} else if (filename.endsWith('.webp')) {
+				accept = true;
+				assets.push({
+					name: filename,
+					type: 'image/webp',
+				});
+			}
+
+			if (accept) {
+				buffers.push((<JSZip.JSZipObject>zip.file(filename)).async('arraybuffer'));
 			}
 		});
 
@@ -43,11 +60,11 @@ export class AssetEngine {
 		await Promise.all(buffers);
 
 		// Process the files
-		for (let i = 0; i < files.length; i++) {
+		for (let i = 0; i < assets.length; i++) {
+			asset = assets[i];
 			buffer = await buffers[i];
-			file = files[i];
 
-			AssetEngine.assets[file.name] = 'data:' + file.type + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer)));
+			AssetEngine.assets[asset.name] = 'data:' + asset.type + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer)));
 		}
 
 		return new Date().getTime() - timestamp;
