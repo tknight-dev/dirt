@@ -11,10 +11,11 @@ export enum AudioType {
 }
 
 export class AudioAsset extends Enum implements IEnum<AudioAsset> {
-	public static readonly BANG1: AudioAsset = new AudioAsset('BANG1', 'a', 'aW', false, '/bang.mp3', AudioType.EFFECT, 0);
-	public static readonly MUS1: AudioAsset = new AudioAsset('MUS1', 'a', 'aW', false, '/music.mp3', AudioType.MUSIC, 0);
+	public static readonly BANG1: AudioAsset = new AudioAsset('BANG1', 'a', 'aW', false, 'audio/effect/bang.mp3', AudioType.EFFECT, 0);
+	public static readonly BONK1: AudioAsset = new AudioAsset('BONK1', 'a', 'aW', false, 'audio/effect/bonk.mp3', AudioType.EFFECT, 0);
+	public static readonly MUS1: AudioAsset = new AudioAsset('MUS1', 'a', 'aW', false, 'audio/music/music.mp3', AudioType.MUSIC, 0);
 
-	public static readonly values: AudioAsset[] = [AudioAsset.BANG1, AudioAsset.MUS1];
+	public static readonly values: AudioAsset[] = [AudioAsset.BANG1, AudioAsset.BONK1, AudioAsset.MUS1];
 
 	constructor(
 		id: string,

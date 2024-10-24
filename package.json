@@ -5,14 +5,16 @@
   "name": "dirt",
   "version": "0.1.0",
   "scripts": {
-    "dev": "rimraf dist && npm run tsc && npm run favicon-dev && concurrently --kill-others \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
+    "archive": "node archive.js",
+    "archive-dev": "nodemon --quiet --watch assets/**/* -e mp3 -x \"node archive.js\"",
+    "dev": "rimraf dist && npm run tsc && npm run archive && npm run favicon-dev && concurrently --kill-others \"npm run archive-dev\" \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n ARCH,HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
     "favicon": "copyfiles favicon.ico dist",
     "favicon-dev": "copyfiles favicon.ico dist",
     "html": "copyfiles -u 1 src/dirt.html dist",
     "html-dev": "nodemon --quiet --watch src/dirt.html -x \"copyfiles -u 1 src/dirt.html dist\"",
     "html-minify": "html-minifier-terser --collapse-whitespace --remove-comments dist/dirt.html --output dist/dirt.html",
     "lint": "prettier src/. --write",
-    "prod": "rimraf dist && npm run lint && npm run sass && npm run tsc && npm run html && npm run html-minify && npm run webpack && npm run favicon && rimraf dist/working",
+    "prod": "rimraf dist && npm run lint && npm run sass && npm run tsc && npm run archive && npm run html && npm run html-minify && npm run webpack && npm run favicon && rimraf dist/working",
     "sass": "sass src/dirt.scss:dist/dirt.css --no-source-map --style compressed",
     "sass-dev": "sass src/dirt.scss:dist/dirt.css --quiet --watch",
     "serve": "live-server dist --entry-file=dirt.html --port 8080",
@@ -22,7 +24,13 @@
     "webpack": "webpack --config webpack.config.js --mode production --output-path ./dist",
     "webpack-dev": "webpack --config webpack.config.js --devtool source-map --mode development --output-path ./dist --watch"
   },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "node-stream-zip": "^1.0.0"
+  },
   "devDependencies": {
+    "archiver": "^7.0.0",
+    "buffer": "^6.0.3",
     "concurrently": "^9.0.0",
     "copyfiles": "^2.0.0",
     "file-loader": "^6.0.0",

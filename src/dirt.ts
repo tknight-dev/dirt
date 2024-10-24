@@ -7,7 +7,7 @@
  */
 
 import { AudioAsset } from './engine/assets/audio.asset';
-import { AudioEngine, GameEngine, FullscreenEngine, KeyAction, KeyboardEngine, UtilEngine, VisibilityEngine } from './engine/game.engine';
+import { AssetEngine, AudioEngine, GameEngine, FullscreenEngine, VisibilityEngine } from './engine/game.engine';
 var globalPackageJSONVersion = require('../../package.json').version;
 
 // App
@@ -42,6 +42,18 @@ class Dirt {
 
 	private static async hooks(): Promise<void> {
 		// Hook: Audio
+		let permitted: (permitted: boolean) => void = (permitted: boolean) => {
+			if (permitted) {
+				Dirt.elementClickAudio.style.visibility = 'visible';
+				Dirt.elementClickAudioVolume.disabled = false;
+			} else {
+				Dirt.elementClickAudio.style.visibility = 'hidden';
+				Dirt.elementClickAudioVolume.disabled = true;
+			}
+		};
+		AudioEngine.setPermittedCallback(permitted);
+		permitted(AudioEngine.isPermitted());
+
 		Dirt.elementClickAudio.onclick = (event: any) => {
 			if (AudioEngine.isMuted()) {
 				AudioEngine.setMuted(false);
@@ -96,8 +108,13 @@ class Dirt {
 	}
 
 	private static async loaders(): Promise<void> {
-		console.log('AudioEngine.load()', await AudioEngine.load());
-		Dirt.play();
+		console.log('AssetEngine.load()', await AssetEngine.load(), 'ms'); // First
+		console.log('AudioEngine.load()', await AudioEngine.load(), 'ms');
+
+		// AudioEngine.play(AudioAsset.MUS1);
+		// Dirt.play();
+
+		AudioEngine.trigger(AudioAsset.BONK1, 0, 100);
 	}
 
 	private static async play(): Promise<void> {

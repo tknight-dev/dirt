@@ -7,5 +7,7 @@ module.exports = {
         filename: 'dirt.js',
         publicPath: ''
     },
+    plugins: [],
+    resolve: {},
     stats: 'errors-only'
 };

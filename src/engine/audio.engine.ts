@@ -1,4 +1,5 @@
 import { AudioAsset, AudioType } from './assets/audio.asset';
+import { AssetEngine } from './asset.engine';
 import { UtilEngine } from './util.engine';
 
 /**
@@ -156,13 +157,10 @@ export class AudioEngine {
 
 		AudioEngine.setEffectBufferCount(3); // 3 is default
 
-		// Sample mp3 to test audio permissions with
+		// Periodically check for audio permissions
 		AudioEngine.testSample = new Audio();
-		AudioEngine.testSample.setAttribute('preload', 'auto'); // cache audio in ram
-		AudioEngine.testSample.setAttribute(
-			'src',
-			'data:audio/mp3;base64,//MUxAAB4AWIoAgAATgAH4CA8PD1TEFN//MUxAMAAAGUAAAAAEUzLjEwMFVVVVVV//MUxA4AAANIAAAAAFVVVVVVVVVVVVVV',
-		);
+		AudioEngine.testSample.setAttribute('preload', 'auto');
+		AudioEngine.testSample.setAttribute('src', 'data:audio/mp3;base64,//MUxAAB4AWIoAgAATgAH4CA8PD1TEFN//MUxAMAAAGUAAAAAEUzLjEwMFVVVVVV');
 		AudioEngine.testSample.volume = 0.01;
 		await AudioEngine.permittedCheckLoop();
 	}
@@ -246,8 +244,8 @@ export class AudioEngine {
 				audio.setAttribute('loop', 'true');
 			}
 
-			audio.setAttribute('preload', 'auto'); // load the binary into ram
-			audio.setAttribute('src', audioAsset.src);
+			audio.setAttribute('preload', 'auto');
+			audio.setAttribute('src', AssetEngine.getAsset(audioAsset.src));
 		});
 	}
 
@@ -371,7 +369,7 @@ export class AudioEngine {
 			panner = AudioEngine.context.createStereoPanner();
 			source = AudioEngine.context.createMediaElementSource(audio);
 
-			// Attach stack
+			// Attach stack (audio -> buffer[source -> panner -> output])
 			panner.connect(AudioEngine.context.destination);
 			source.connect(panner);
 

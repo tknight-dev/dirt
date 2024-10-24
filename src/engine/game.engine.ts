@@ -2,6 +2,8 @@
  * @author tknight-dev
  */
 
+export { AssetEngine } from './asset.engine';
+import { AssetEngine } from './asset.engine';
 export { AudioEngine } from './audio.engine';
 import { AudioEngine } from './audio.engine';
 export { FullscreenEngine } from './fullscreen.engine';
