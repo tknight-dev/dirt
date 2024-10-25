@@ -10,10 +10,10 @@
   		<meta name="description" content="tknight0000's public github dirt game">
   		<meta name="robots" content="none">
 		<meta name="viewport" id="viewport-app" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-		<title>Dirt</title>
+		<title>Dirt Engine</title>
 	</head>
 
-	<body>
+	<body id="body">
 		<div class="dirt wrapper">
 			<div class="header-menu">
 				<div class="wrapper">
@@ -58,6 +58,11 @@
 				</div>
 			</div>
 		</div>
+		<a id="download" style="display:none;"></a>
+		<div id="file-collector" ondragover="event.preventDefault()">
+			<div class="collector">File Collector</div>
+		</div>
+		<div id="status"></div>
 		<a class="version" href="https://github.com/tknight0000/dirt" id="version">vx.y.z</a>
 		<script src="./dirt.js" type="module"></script>
 	</body>

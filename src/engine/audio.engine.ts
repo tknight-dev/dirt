@@ -73,7 +73,8 @@ export class AudioEngine {
 	/**
 	 * Fade any volume to any other volume for any duration greater than 100ms
 	 *
-	 * @param volumePercentage between 0% and 100%
+	 * @param durationInMs min 0 (precision 0)
+	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
 	public static fade(audioAsset: AudioAsset, durationInMs: number, volumePercentage: number): void {
 		let audioAssetId = audioAsset.id,
@@ -82,8 +83,8 @@ export class AudioEngine {
 			volumeTargetMax: number = audioCache.type === AudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
 
 		// Calc the target volume
-		volumePercentage = Math.max(0, Math.min(100, volumePercentage));
-		volumeTarget = Math.round(UtilEngine.scale(volumePercentage, 100, 0, volumeTargetMax, 0) * 1000) / 1000;
+		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
+		volumeTarget = Math.round(UtilEngine.scale(volumePercentage, 1, 0, volumeTargetMax, 0) * 1000) / 1000;
 
 		// The difference between the current and target value is too small to fade
 		if (Math.abs(audioCache.audio.volume - volumeTarget) < 0.01) {
@@ -92,12 +93,12 @@ export class AudioEngine {
 		}
 
 		if (AudioEngine.faders[audioAssetId]) {
-			AudioEngine.faders[audioAssetId].durationInMs = Math.max(durationInMs, 100);
+			AudioEngine.faders[audioAssetId].durationInMs = Math.max(100, Math.round(durationInMs));
 			AudioEngine.faders[audioAssetId].volumeTarget = volumeTarget;
 			AudioEngine.faders[audioAssetId].updated = true;
 		} else {
 			AudioEngine.faders[audioAssetId] = {
-				durationInMs: Math.max(durationInMs, 100),
+				durationInMs: Math.max(100, Math.round(durationInMs)),
 				fader: AudioEngine.fader,
 				volumeTarget: volumeTarget,
 				updated: true,
@@ -126,7 +127,7 @@ export class AudioEngine {
 				fade.updated = false;
 				volumeTarget = fade.volumeTarget;
 				step = (volumeTarget - audioCacheElement.volume) / (fade.durationInMs / intervalInMs);
-				timestamp = new Date().getTime();
+				timestamp = Date.now();
 			}
 			volume = audioCacheElement.volume + step;
 
@@ -199,7 +200,7 @@ export class AudioEngine {
 			return -1;
 		}
 		let loaderWrappers: any[] = [],
-			timestampInMs: number = new Date().getTime();
+			timestampInMs: number = Date.now();
 
 		for (let i in AudioAsset.values) {
 			loaderWrappers.push(AudioEngine.loader(AudioAsset.values[i]));
@@ -210,7 +211,7 @@ export class AudioEngine {
 		AudioEngine.applyVolume(AudioEngine.volumeEffect, AudioType.EFFECT);
 		AudioEngine.applyVolume(AudioEngine.volumeMusic, AudioType.MUSIC);
 
-		return new Date().getTime() - timestampInMs;
+		return Date.now() - timestampInMs;
 	}
 
 	private static async loader(audioAsset: AudioAsset): Promise<void> {
@@ -278,7 +279,7 @@ export class AudioEngine {
 	}
 
 	/**
-	 * @param volumePercentage is between 0% and 100%
+	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
 	public static async play(audioAsset: AudioAsset, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
@@ -293,8 +294,10 @@ export class AudioEngine {
 		}
 		let audio: HTMLAudioElement = AudioEngine.cache[audioAsset.id].audio;
 
+		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
+
 		audio.currentTime = 0;
-		audio.volume = Math.round(UtilEngine.scale(volumePercentage, 100, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
+		audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
 		await audio.play();
 	}
 
@@ -307,8 +310,8 @@ export class AudioEngine {
 	/**
 	 * Spawns audio clones to allow for multiple instances of the same effect
 	 *
-	 * @param pan is -1 left, 0 center, 1 right
-	 * @param volumePercentage is between 0% and 100%
+	 * @param pan is -1 left, 0 center, 1 right (precision 3)
+	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
 	public static async trigger(audioAsset: AudioAsset, pan: number, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
@@ -324,15 +327,17 @@ export class AudioEngine {
 		let index: number = AudioEngine.claimBufferIndex(),
 			buffer: HTMLAudioElement = AudioEngine.buffers[index];
 
+		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
+
 		// Load buffer source
 		buffer.pause();
 		buffer.src = AudioEngine.cache[audioAsset.id].audio.src;
 		buffer.currentTime = 0;
 		buffer.muted = AudioEngine.muted;
-		buffer.volume = Math.round(UtilEngine.scale(volumePercentage, 100, 0, AudioEngine.volumeEffectEff, 0) * 1000) / 1000;
+		buffer.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeEffectEff, 0) * 1000) / 1000;
 
 		// Pan it
-		AudioEngine.buffersPanner[index].pan.setValueAtTime(Math.max(-1, Math.min(1, pan)), 0);
+		AudioEngine.buffersPanner[index].pan.setValueAtTime(Math.round(Math.max(-1, Math.min(1, pan)) * 1000) / 1000, 0);
 
 		// Play
 		await buffer.play();
@@ -445,7 +450,7 @@ export class AudioEngine {
 	}
 
 	/**
-	 * @param volumePercentage is between 0% and 100%
+	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
 	public static setVolumeAsset(audioAsset: AudioAsset, volumePercentage: number): void {
 		if (!AudioEngine.initialized) {
@@ -455,7 +460,9 @@ export class AudioEngine {
 		let audioCache: AudioCache = AudioEngine.cache[audioAsset.id],
 			volumeTargetMax: number = audioCache.type === AudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
 
-		audioCache.audio.volume = Math.round(UtilEngine.scale(volumePercentage, 100, 0, volumeTargetMax, 0) * 1000) / 1000;
+		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
+
+		audioCache.audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, volumeTargetMax, 0) * 1000) / 1000;
 	}
 
 	/**

@@ -5,9 +5,10 @@
   "name": "dirt",
   "version": "0.1.0",
   "scripts": {
-    "archive": "node archive.js",
-    "archive-dev": "nodemon --quiet --watch assets/**/* -e mp3 -x \"node archive.js\"",
-    "dev": "rimraf dist && npm run tsc && npm run archive && npm run favicon-dev && concurrently --kill-others \"npm run archive-dev\" \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n ARCH,HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
+    "archive": "node archive.js ui && node archive.js video",
+    "archive-ui-dev": "nodemon --quiet --watch assets/ui/**/* -e mp3 -x \"node archive.js ui\"",
+    "archive-video-dev": "nodemon --quiet --watch assets/video/**/* -e mp3 -x \"node archive.js video\"",
+    "dev": "rimraf dist && npm run tsc && npm run archive && npm run favicon-dev && concurrently --kill-others \"npm run archive-ui-dev\" \"npm run archive-video-dev\" \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n ARCH,HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
     "favicon": "copyfiles favicon.ico dist",
     "favicon-dev": "copyfiles favicon.ico dist",
     "html": "copyfiles -u 1 src/dirt.html dist",

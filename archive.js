@@ -1,9 +1,14 @@
 const fs = require('fs');
 const archiver = require('archiver');
+let output;
 
-const output = fs.createWriteStream(__dirname + '/dist/assets');
+if(String(process.argv[2]).trim().toLowerCase() === 'ui') {
+	output = fs.createWriteStream(__dirname + '/dist/assetsU');
+}else {
+	output = fs.createWriteStream(__dirname + '/dist/assetsV');
+}
 const archive = archiver('zip', {
-	zlib: { level: 9 } // Sets the compression level.
+	zlib: { level: 9 } // Sets the compression level. (9 is best)
 });
 
 // listen for all archive data to be written
@@ -41,7 +46,11 @@ archive.on('error', function(err) {
 archive.pipe(output);
 
 // append files from a sub-directory, putting its contents at the root of archive
-archive.directory('./assets', false);
+if(String(process.argv[2]).trim().toLowerCase() === 'ui') {
+	archive.directory('./assets/ui', false);
+}else {
+	archive.directory('./assets/video', false);
+}
 
 // finalize the archive (ie we are done appending files but streams have to finish yet)
 // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand

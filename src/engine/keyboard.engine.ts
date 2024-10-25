@@ -4,6 +4,19 @@
 
 export interface KeyAction {
 	down: boolean;
+	key: KeyCommon;
+}
+
+export enum KeyCommon {
+	CROUCH = 87, // 17-lctrl
+	DOWN = 83, // 83-s
+	INTERACT = 69, // 69-e
+	JUMP = 32, // 32-space
+	LEFT = 65, // 65-a
+	MEELE = 81, // 81-q
+	RIGHT = 68, // 68-d
+	RUN = 16, // 16-shift
+	UP = 87, // 87-w
 }
 
 export interface KeyRegistration {
@@ -22,24 +35,25 @@ export class KeyboardEngine {
 		}
 		KeyboardEngine.initialized = true;
 
-		document.addEventListener('keydown', (event) => {
+		document.addEventListener('keydown', (event: KeyboardEvent) => {
 			KeyboardEngine.state[event.keyCode] = true;
 		});
-		document.addEventListener('keyup', (event) => {
+		document.addEventListener('keyup', (event: KeyboardEvent) => {
 			KeyboardEngine.state[event.keyCode] = false;
 		});
 
 		KeyboardEngine.processor();
 	}
 
-	public static register(keyCode: number, callback: (keyAction: KeyAction) => void): void {
-		if (KeyboardEngine.state[keyCode] === undefined) {
-			KeyboardEngine.state[keyCode] = false;
+	public static register(keyCommon: KeyCommon, callback: (keyAction: KeyAction) => void): void {
+		if (KeyboardEngine.state[keyCommon] === undefined) {
+			KeyboardEngine.state[keyCommon] = false;
 		}
-		KeyboardEngine.registered[keyCode] = {
+		KeyboardEngine.registered[keyCommon] = {
 			callback: callback,
 			keyAction: {
-				down: KeyboardEngine.state[keyCode],
+				down: KeyboardEngine.state[keyCommon],
+				key: keyCommon,
 			},
 		};
 	}
@@ -67,7 +81,7 @@ export class KeyboardEngine {
 
 				if (keyAction.down !== keyState) {
 					keyAction.down = keyState;
-					setTimeout(() => keyRegistration.callback(keyAction));
+					keyRegistration.callback(keyAction);
 				}
 			}
 		}

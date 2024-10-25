@@ -1,3 +1,4 @@
+import { AssetCollection } from '../models/asset.model';
 import { Enum } from '../models/enum.model';
 import { IEnum } from '../models/enum.interface';
 
@@ -10,12 +11,13 @@ export enum ImageType {
 }
 
 export class ImageAsset extends Enum implements IEnum<ImageAsset> {
-	public static readonly DIRT: ImageAsset = new ImageAsset('DIRT', 'tknight-dev', null, false, 'image/logo/dirt.webp', ImageType.LOGO);
+	public static readonly DIRT: ImageAsset = new ImageAsset('DIRT', AssetCollection.UI, 'tknight-dev', null, false, 'images/logo/dirt.webp', ImageType.LOGO);
 
 	public static readonly values: ImageAsset[] = [ImageAsset.DIRT];
 
 	constructor(
 		id: string,
+		public readonly assetCollection: AssetCollection,
 		public readonly author: string,
 		public readonly authorWebsite: string | null,
 		public readonly publicDomain: boolean,

@@ -1,4 +1,5 @@
 import * as JSZip from 'JSZip';
+import { AssetCollection } from './models/asset.model';
 
 /**
  * Load all files from asset file and store in ram as base64ObjectURLs
@@ -10,34 +11,53 @@ import * as JSZip from 'JSZip';
 
 interface Asset {
 	name: string;
-	type: string;
+	type: string | null;
 }
 
 export class AssetEngine {
 	private static assets: { [key: string]: string } = {}; // { filename: base64ObjectURLs }
+	private static collection: AssetCollection;
 	private static initialized: boolean;
 
-	public static async initialize(): Promise<void> {
+	public static async initialize(collection: AssetCollection): Promise<void> {
 		if (AssetEngine.initialized) {
 			return;
 		}
 		AssetEngine.initialized = true;
+		AssetEngine.collection = collection;
 	}
 
 	public static async load(): Promise<number> {
 		let accept: boolean,
 			asset: Asset,
+			assetURL: string,
 			assets: Asset[] = [],
 			buffer: ArrayBuffer,
 			buffers: Promise<ArrayBuffer>[] = [],
-			timestamp: number = new Date().getTime(),
+			timestamp: number = Date.now(),
 			zip: JSZip;
 
+		switch (AssetEngine.collection) {
+			case AssetCollection.UI:
+				assetURL = './assetsU';
+				break;
+			case AssetCollection.VIDEO:
+				assetURL = './assetsV';
+				break;
+		}
+
 		// Load zip into unzipper
-		zip = <JSZip>await JSZip.loadAsync(await (await fetch('./assets')).blob());
+		zip = <JSZip>await JSZip.loadAsync(await (await fetch(assetURL)).blob());
 		Object.keys(zip.files).forEach(function (filename: string) {
+			// console.log('filename', filename, AssetCollection[AssetEngine.collection]);
 			accept = false;
-			if (filename.endsWith('.mp3')) {
+			if (filename.endsWith('.map')) {
+				accept = true;
+				assets.push({
+					name: filename,
+					type: null,
+				});
+			} else if (filename.endsWith('.mp3')) {
 				accept = true;
 				assets.push({
 					name: filename,
@@ -64,10 +84,14 @@ export class AssetEngine {
 			asset = assets[i];
 			buffer = await buffers[i];
 
-			AssetEngine.assets[asset.name] = 'data:' + asset.type + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer)));
+			if (asset.type) {
+				AssetEngine.assets[asset.name] = 'data:' + asset.type + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer)));
+			} else {
+				AssetEngine.assets[asset.name] = String.fromCharCode(...new Uint8Array(buffer));
+			}
 		}
 
-		return new Date().getTime() - timestamp;
+		return Date.now() - timestamp;
 	}
 
 	public static getAsset(filename: string): string {
