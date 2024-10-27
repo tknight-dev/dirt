@@ -2,6 +2,7 @@ import { AssetCollection } from './engine/models/asset.model';
 import { AssetEngine } from './engine/asset.engine';
 import { AudioAsset } from './engine/assets/audio.asset';
 import { AudioEngine } from './engine/audio.engine';
+import { AudioModulation } from './engine/models/audio-modulation.model';
 import { FullscreenEngine } from './engine/fullscreen.engine';
 import { ImageAsset } from './engine/assets/image.asset';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engine/keyboard.engine';
@@ -77,7 +78,19 @@ class Dirt {
 					Dirt.elementViewer.style.backgroundColor = 'transparent';
 					Dirt.elementCompanyOverlay.className = 'feeder start clickable';
 					Dirt.elementFeed.className = 'feed start complete';
-					AudioEngine.trigger(AudioAsset.BONK1, 0.1234567, 0.5);
+
+					AudioEngine.trigger(AudioAsset.BONK1, AudioModulation.NONE, 0, 0.5);
+					// setTimeout(() => {
+					// 	AudioEngine.trigger(AudioAsset.BONK1, AudioModulation.REVERB_ROOM, 0, 0.5);
+					// 	setTimeout(() => {
+					// 		AudioEngine.trigger(AudioAsset.BONK1, AudioModulation.REVERB_HALL, 0, 0.5);
+
+					// 		setTimeout(() => {
+					// 			AudioEngine.trigger(AudioAsset.BONK1, AudioModulation.REVERB_CAVE, 0, 0.5);
+					// 		}, 1000);
+					// 	}, 1000);
+					// }, 1000);
+
 					resolve();
 				}, 500);
 			}, 1000);
@@ -103,7 +116,7 @@ class Dirt {
 			Dirt.elementCanvasBackground,
 			Dirt.elementCanvasForeground,
 			Dirt.elementCanvasOverlay,
-			true,
+			true, // start in edit mode
 			{
 				fps: VideoCmdSettingsFPS._60,
 				fpsVisible: true,
@@ -261,13 +274,6 @@ class Dirt {
 			// Clean up
 			Dirt.elementDownload.setAttribute('href', '');
 			Dirt.elementDownload.setAttribute('download', '');
-		});
-
-		// Hook: Visibility
-		VisibilityEngine.setCallback((visible: boolean) => {
-			if (!visible) {
-				VideoEngine.workerGamePause({ reason: VideoCmdGamePauseReason.VISIBILITY });
-			}
 		});
 	}
 

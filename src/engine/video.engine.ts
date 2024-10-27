@@ -4,6 +4,7 @@
 
 import { AudioAsset } from './assets/audio.asset';
 import { AudioEngine } from './audio.engine';
+import { AudioModulation } from './models/audio-modulation.model';
 import { KeyAction, KeyCommon } from './keyboard.engine';
 import { MouseAction } from './mouse.engine';
 import { ResizeEngine } from './resize.engine';
@@ -13,6 +14,7 @@ import {
 	VideoCmdGameModeEdit,
 	VideoCmdGameModePlay,
 	VideoCmdGamePause,
+	VideoCmdGamePauseReason,
 	VideoCmdGameStart,
 	VideoCmdGameUnpause,
 	VideoCmdInit,
@@ -30,6 +32,7 @@ import {
 	VideoWorkerCmdMapSave,
 	VideoWorkerPayload,
 } from './models/video-worker-cmds.model';
+import { VisibilityEngine } from './visibility.engine';
 
 export class VideoEngine {
 	private static callbackMapLoadStatus: (status: boolean) => void;
@@ -69,6 +72,15 @@ export class VideoEngine {
 		// Config
 		VideoEngine.feed = feed;
 		ResizeEngine.setCallback(VideoEngine.resized);
+		VisibilityEngine.setCallback((visible: boolean) => {
+			if (!visible) {
+				VideoEngine.workerGamePause({ reason: VideoCmdGamePauseReason.VISIBILITY });
+			} else {
+				setTimeout(() => {
+					VideoEngine.resized();
+				});
+			}
+		});
 
 		// Spawn Video thread
 		if (window.Worker) {
@@ -130,6 +142,7 @@ export class VideoEngine {
 	 */
 	private static workerListen(): void {
 		let audioAsset: AudioAsset | null,
+			audioModulation: AudioModulation | null,
 			videoWorkerCmdAudioEffect: VideoWorkerCmdAudioEffect,
 			videoWorkerCmdAudioMusicFade: VideoWorkerCmdAudioMusicFade,
 			videoWorkerCmdAudioMusicPlay: VideoWorkerCmdAudioMusicPlay,
@@ -151,10 +164,11 @@ export class VideoEngine {
 					case VideoWorkerCmd.AUDIO_EFFECT:
 						videoWorkerCmdAudioEffect = <VideoWorkerCmdAudioEffect>videoWorkerPayload.data;
 						audioAsset = AudioAsset.find(videoWorkerCmdAudioEffect.id);
-						if (audioAsset) {
-							AudioEngine.trigger(audioAsset, videoWorkerCmdAudioEffect.pan, videoWorkerCmdAudioEffect.volumePercentage);
+						audioModulation = AudioModulation.find(videoWorkerCmdAudioEffect.modulationId);
+						if (audioAsset && audioModulation) {
+							AudioEngine.trigger(audioAsset, audioModulation, videoWorkerCmdAudioEffect.pan, videoWorkerCmdAudioEffect.volumePercentage);
 						} else {
-							console.error('GameEngine > video: effect asset id invalid');
+							console.error('GameEngine > video: effect asset-id or modulation-id invalid');
 						}
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_FADE:

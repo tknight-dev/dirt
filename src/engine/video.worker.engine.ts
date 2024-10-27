@@ -180,12 +180,13 @@ class Video {
 	 * @param pan between -1 left and 1 right (precision 3)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static outputAudioEffect(assetId: string, pan: number, volumePercentage: number): void {
+	public static outputAudioEffect(assetId: string, modulationId: string, pan: number, volumePercentage: number): void {
 		Video.post([
 			{
 				cmd: VideoWorkerCmd.AUDIO_EFFECT,
 				data: {
 					id: assetId,
+					modulationId: modulationId,
 					pan: Math.round(Math.max(-1, Math.min(1, pan)) * 1000) / 1000,
 					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
 				},
@@ -210,6 +211,7 @@ class Video {
 				cmd: VideoWorkerCmd.AUDIO_EFFECT,
 				data: {
 					id: effect.id,
+					modulationId: effect.modulationId,
 					pan: Math.round(Math.max(-1, Math.min(1, effect.pan)) * 1000) / 1000,
 					volumePercentage: Math.round(Math.max(0, Math.min(1, effect.volumePercentage)) * 1000) / 1000,
 				},

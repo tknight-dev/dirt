@@ -90,6 +90,7 @@ export enum VideoWorkerCmd {
 
 export interface VideoWorkerCmdAudioEffect {
 	id: string; // AudioAsset->Id
+	modulationId: string; // EffectModulation->Id
 	pan: number; // -1 left, 0 center, 1 right (precision 3)
 	volumePercentage: number; // 0-1 (precision 3)
 }

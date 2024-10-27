@@ -58,7 +58,9 @@ export class CameraEngine {
 		camera.viewPortPh = ctxDimensionHeight - 2 * renderOverflowP;
 		camera.viewPortPw = ctxDimensionWidth - 2 * renderOverflowP;
 		camera.viewPortPx = renderOverflowP;
+		camera.viewPortPx2 = renderOverflowP + camera.viewPortPw;
 		camera.viewPortPy = renderOverflowP;
+		camera.viewPortPy2 = renderOverflowP + camera.viewPortPh;
 		camera.windowPh = ctxDimensionHeight;
 		camera.windowPw = ctxDimensionWidth;
 		camera.windowPx = 0;

@@ -16,20 +16,21 @@ export class MapEngine {
 		if (!MapEngine.initialized) {
 			console.error('MapEngine > default: not initialized');
 		}
-		let grid: Grid = {
+		let gridWidth: number = 50,
+			grid: Grid = {
 				blocks: {}, // key is hash
 				gHeight: 0, // calculated
-				gWidth: 50,
+				gWidth: gridWidth,
 				id: 'initial', // protectedId
-				startGxCamera: 0,
-				startGyCamera: 0,
-				startGxPlayer: 0,
-				startGyPlayer: 0,
+				startGxCamera: Math.round(gridWidth / 2),
+				startGyCamera: Math.round((gridWidth * 9) / 32),
+				startGxPlayer: Math.round(gridWidth / 2),
+				startGyPlayer: Math.round((gridWidth * 9) / 32),
 				zoomDefault: 1,
 			},
 			map: Map = {
 				camera: <any>{
-					viewPortGw: 25,
+					viewPortGw: Math.round(gridWidth / 2),
 					zoomDefault: 1,
 				},
 				grids: {}, // key is gridID

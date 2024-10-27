@@ -222,6 +222,7 @@ export class KernelEngine {
 		// Load into engines
 
 		// Load into extended engines
+		GridDrawEngine.setModeEdit(modeEdit);
 	}
 
 	public static updateSettings(settings: VideoCmdSettings): void {

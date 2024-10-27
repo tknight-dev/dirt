@@ -1,5 +1,6 @@
 import { AudioAsset, AudioType } from './assets/audio.asset';
 import { AssetEngine } from './asset.engine';
+import { AudioModulation } from './models/audio-modulation.model';
 import { UtilEngine } from './util.engine';
 
 /**
@@ -26,10 +27,13 @@ interface AudioFade {
 export class AudioEngine {
 	private static cache: { [key: string]: AudioCache } = {}; // key is audioAssetId
 	private static context: AudioContext = new AudioContext();
-	private static buffers: HTMLAudioElement[] = [];
-	private static buffersPanner: StereoPannerNode[] = [];
-	private static buffersSource: MediaElementAudioSourceNode[] = [];
-	private static buffersIndex: number = 0;
+	private static effectBuffers: HTMLAudioElement[] = [];
+	private static effectBuffersConvolver: ConvolverNode[] = [];
+	private static effectBuffersConvolverBuffer: { [key: string]: AudioBuffer } = {}; // key is AudioModulation.id
+	private static effectBuffersGain: GainNode[] = [];
+	private static effectBuffersPanner: StereoPannerNode[] = [];
+	private static effectBuffersSource: MediaElementAudioSourceNode[] = [];
+	private static effectBuffersIndex: number = 0;
 	private static faders: { [key: string]: AudioFade } = {}; // key is audioAssetId
 	private static initialized: boolean;
 	private static muted: boolean = false;
@@ -43,7 +47,7 @@ export class AudioEngine {
 	private static volumeMusicEff: number = 1;
 
 	private static applyMute(muted: boolean): void {
-		let buffers: HTMLAudioElement[] = AudioEngine.buffers,
+		let buffers: HTMLAudioElement[] = AudioEngine.effectBuffers,
 			cache: { [key: string]: AudioCache } = AudioEngine.cache,
 			cacheInstance: AudioCache;
 
@@ -303,18 +307,19 @@ export class AudioEngine {
 	}
 
 	private static claimBufferIndex(): number {
-		let index: number = AudioEngine.buffersIndex;
-		AudioEngine.buffersIndex = (AudioEngine.buffersIndex + 1) % AudioEngine.buffers.length;
+		let index: number = AudioEngine.effectBuffersIndex;
+		AudioEngine.effectBuffersIndex = (AudioEngine.effectBuffersIndex + 1) % AudioEngine.effectBuffers.length;
 		return index;
 	}
 
 	/**
 	 * Spawns audio clones to allow for multiple instances of the same effect
 	 *
+	 * @param modulationGain is between 0 and 10 (precision 3)
 	 * @param pan is -1 left, 0 center, 1 right (precision 3)
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static async trigger(audioAsset: AudioAsset, pan: number, volumePercentage: number): Promise<void> {
+	public static async trigger(audioAsset: AudioAsset, modulation: AudioModulation, pan: number, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > trigger: not initialized');
 			return;
@@ -326,7 +331,7 @@ export class AudioEngine {
 			return;
 		}
 		let index: number = AudioEngine.claimBufferIndex(),
-			buffer: HTMLAudioElement = AudioEngine.buffers[index];
+			buffer: HTMLAudioElement = AudioEngine.effectBuffers[index];
 
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
@@ -337,8 +342,12 @@ export class AudioEngine {
 		buffer.muted = AudioEngine.muted;
 		buffer.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeEffectEff, 0) * 1000) / 1000;
 
+		// AudioModulation buffer
+		AudioEngine.effectBuffersConvolver[index].buffer = AudioEngine.effectBuffersConvolverBuffer[modulation.id];
+		AudioEngine.effectBuffersGain[index].gain.value = modulation.gain;
+
 		// Pan it
-		AudioEngine.buffersPanner[index].pan.setValueAtTime(Math.round(Math.max(-1, Math.min(1, pan)) * 1000) / 1000, 0);
+		AudioEngine.effectBuffersPanner[index].pan.setValueAtTime(Math.max(-1, Math.min(1, Math.round(pan * 1000) / 1000)), 0);
 
 		// Play
 		await buffer.play();
@@ -362,39 +371,79 @@ export class AudioEngine {
 	 * Default is 3
 	 */
 	public static setEffectBufferCount(count: number): void {
-		if (count < AudioEngine.buffers.length) {
+		if (count < AudioEngine.effectBuffers.length) {
 			console.error('AudioEngine > setEffectBufferCount: cannot remove buffers');
 			return;
-		} else if (count === AudioEngine.buffers.length) {
+		} else if (count === AudioEngine.effectBuffers.length) {
 			return;
 		}
-		let add: number = count - AudioEngine.buffers.length,
+		let add: number = count - AudioEngine.effectBuffers.length,
 			audio: HTMLAudioElement,
+			convolver: ConvolverNode,
+			gain: GainNode,
+			modulation: AudioModulation,
 			panner: StereoPannerNode,
 			source: MediaElementAudioSourceNode;
+
+		// Convolver Buffers by Effect AudioModulation
+		for (let i in AudioModulation.values) {
+			modulation = AudioModulation.values[i];
+
+			if (modulation.id === AudioModulation.NONE.id) {
+				AudioEngine.effectBuffersConvolverBuffer[modulation.id] = AudioEngine.context.createBuffer(1, 1, AudioEngine.context.sampleRate);
+				AudioEngine.effectBuffersConvolverBuffer[modulation.id].getChannelData(0)[0] = 0;
+			} else {
+				AudioEngine.effectBuffersConvolverBuffer[modulation.id] = AudioEngine.setEffectBufferCountConvolverBuffer(
+					modulation.duration,
+					modulation.decay,
+				);
+			}
+		}
 
 		// Build audio buffers
 		for (let i = 0; i < add; i++) {
 			// Create buffer stack
 			audio = <HTMLAudioElement>document.createElement('AUDIO');
+			convolver = AudioEngine.context.createConvolver();
+			gain = AudioEngine.context.createGain();
 			panner = AudioEngine.context.createStereoPanner();
 			source = AudioEngine.context.createMediaElementSource(audio);
 
-			// Attach stack (audio -> buffer[source -> panner -> output])
+			// Attach stack (audio -> buffer[source -> panner -> output && (convolver -> gain -> output)])
+			convolver.connect(gain);
+			gain.connect(AudioEngine.context.destination);
+			panner.connect(convolver);
 			panner.connect(AudioEngine.context.destination);
 			source.connect(panner);
 
 			// Cache em
-			AudioEngine.buffersPanner.push(panner);
-			AudioEngine.buffersSource.push(source);
+			AudioEngine.effectBuffersConvolver.push(convolver);
+			AudioEngine.effectBuffersGain.push(gain);
+			AudioEngine.effectBuffersPanner.push(panner);
+			AudioEngine.effectBuffersSource.push(source);
 
 			// Cache it Last: counts are calc'd from this array
-			AudioEngine.buffers.push(audio);
+			AudioEngine.effectBuffers.push(audio);
 		}
 	}
 
+	private static setEffectBufferCountConvolverBuffer(seconds: number, decay: number): AudioBuffer {
+		let rate = AudioEngine.context.sampleRate,
+			length = rate * seconds,
+			impulse = AudioEngine.context.createBuffer(2, length, rate),
+			impulseLeft = impulse.getChannelData(0),
+			impulseRight = impulse.getChannelData(1);
+
+		for (let i = 0; i < length; i++) {
+			impulseLeft[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+			impulseRight[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+		}
+
+		return impulse;
+	}
+
 	public static getEffectBufferCount(): number {
-		return AudioEngine.buffers.length;
+		return AudioEngine.effectBuffers.length;
 	}
 
 	public static setMuted(muted: boolean): void {

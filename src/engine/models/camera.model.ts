@@ -19,7 +19,9 @@ export interface Camera extends GridObject {
 	viewPortPh: number; // Precision 0
 	viewPortPw: number; // Precision 0
 	viewPortPx: number; // Precision 0
+	viewPortPx2: number; // Precision 0 (2nd is right most value)
 	viewPortPy: number; // Precision 0
+	viewPortPy2: number; // Precision 0 (2nd is bottom most value)
 	windowPh: number; // Precision 0
 	windowPw: number; // Precision 0
 	windowPx: number; // Precision 0
