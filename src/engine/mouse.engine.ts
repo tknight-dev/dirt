@@ -7,12 +7,13 @@ import { UtilEngine } from './util.engine';
 export interface MouseAction {
 	cmd: MouseCmd;
 	down: boolean | undefined;
-	position: MousePosition | undefined;
+	position: MousePosition;
 }
 
 export enum MouseCmd {
 	LEFT,
 	LEFT_CLICK,
+	MOVE,
 	WHEEL,
 }
 
@@ -27,6 +28,8 @@ export class MouseEngine {
 	private static callback: (action: MouseAction) => void;
 	private static canvas: HTMLCanvasElement;
 	private static initialized: boolean;
+	private static timeout: ReturnType<typeof setTimeout>;
+	private static timestamp: number = performance.now();
 
 	private static calc(event: MouseEvent): MousePosition {
 		let domRect: DOMRect = MouseEngine.canvas.getBoundingClientRect(),
@@ -66,6 +69,29 @@ export class MouseEngine {
 					down: true,
 					position: MouseEngine.calc(event),
 				});
+			}
+		});
+		document.addEventListener('mousemove', (event: MouseEvent) => {
+			if (MouseEngine.callback) {
+				let timestamp = performance.now();
+
+				if (timestamp - MouseEngine.timestamp > 20) {
+					MouseEngine.callback({
+						cmd: MouseCmd.MOVE,
+						down: undefined,
+						position: MouseEngine.calc(event),
+					});
+					MouseEngine.timestamp = timestamp;
+				} else {
+					clearTimeout(MouseEngine.timeout);
+					MouseEngine.timeout = setTimeout(() => {
+						MouseEngine.callback({
+							cmd: MouseCmd.MOVE,
+							down: undefined,
+							position: MouseEngine.calc(event),
+						});
+					}, 40);
+				}
 			}
 		});
 		document.addEventListener('mouseup', (event: MouseEvent) => {

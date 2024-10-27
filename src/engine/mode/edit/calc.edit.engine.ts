@@ -5,7 +5,11 @@ import { MapActive } from '../../models/map.model';
  */
 
 export class CalcEditEngine {
-	public static mapActive: MapActive;
+	private static mapActive: MapActive;
 
 	public static start(timestampNow: number, timestampThen: number): void {}
+
+	public static setMapActive(mapActive: MapActive) {
+		CalcEditEngine.mapActive = mapActive;
+	}
 }

@@ -5,23 +5,27 @@ import { UtilEngine } from '../util.engine';
  */
 
 export class FPSDrawEngine {
-	public static ctxOverlay: OffscreenCanvasRenderingContext2D;
+	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	public static fps: number = 0;
 	public static fpsTarget: number;
-	public static frameCount: number = 0;
-	public static i: number;
-	public static initialized: boolean;
-	public static sampleSize: number;
+	private static frameCount: number = 0;
+	private static initialized: boolean;
 
 	/**
 	 * @timingResolutionInS between 1 and 30
 	 */
-	public static async initialize(): Promise<void> {
+	public static async initialize(
+		ctx: OffscreenCanvasRenderingContext2D,
+		ctxBackground: OffscreenCanvasRenderingContext2D,
+		ctxForeground: OffscreenCanvasRenderingContext2D,
+		ctxOverlay: OffscreenCanvasRenderingContext2D,
+	): Promise<void> {
 		if (FPSDrawEngine.initialized) {
 			console.error('FPSDrawEngine > initialize: already initialized');
 			return;
 		}
 		FPSDrawEngine.initialized = true;
+		FPSDrawEngine.ctxOverlay = ctxOverlay;
 		setTimeout(() => {
 			FPSDrawEngine.interval();
 		});

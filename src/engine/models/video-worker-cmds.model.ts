@@ -102,6 +102,7 @@ export interface VideoWorkerCmdAudioMusicFade {
 
 export interface VideoWorkerCmdAudioMusicPlay {
 	id: string; // AudioAsset->Id
+	timeInS: number; // 0-duration (precision 3)
 	volumePercentage: number; // 0-1 (precision 3)
 }
 

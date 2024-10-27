@@ -1,6 +1,7 @@
+import { Camera } from '../../models/camera.model';
 import { CameraDrawEngine } from '../../draw/camera.draw.engine';
-import { GridDrawEngine } from '../../draw/grid.draw.engine';
 import { FPSDrawEngine } from '../../draw/fps.draw.engine';
+import { GridDrawEngine } from '../../draw/grid.draw.engine';
 import { MapActive } from '../../models/map.model';
 import { MapDrawEngine } from '../../draw/map.draw.engine';
 
@@ -11,13 +12,12 @@ import { MapDrawEngine } from '../../draw/map.draw.engine';
 export class DrawEditEngine {
 	public static ctx: OffscreenCanvasRenderingContext2D;
 	public static ctxBackground: OffscreenCanvasRenderingContext2D;
-	public static ctxDimensionHeight: number;
-	public static ctxDimensionWidth: number;
 	public static ctxForeground: OffscreenCanvasRenderingContext2D;
 	public static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	public static fpsVisible: boolean;
-	public static mapActive: MapActive;
+	private static mapActive: MapActive;
+	private static mapActiveCamera: Camera;
 	public static mapVisible: boolean;
 
 	public static async initialize(
@@ -48,7 +48,7 @@ export class DrawEditEngine {
 		/*
 		 * Overlay
 		 */
-		DrawEditEngine.ctxOverlay.clearRect(0, 0, DrawEditEngine.ctxDimensionWidth, DrawEditEngine.ctxDimensionHeight);
+		DrawEditEngine.ctxOverlay.clearRect(0, 0, DrawEditEngine.mapActiveCamera.windowPw, DrawEditEngine.mapActiveCamera.windowPh);
 
 		// Draw First
 		GridDrawEngine.start();
@@ -63,5 +63,10 @@ export class DrawEditEngine {
 		if (DrawEditEngine.fpsVisible) {
 			FPSDrawEngine.start();
 		}
+	}
+
+	public static setMapActive(mapActive: MapActive) {
+		DrawEditEngine.mapActive = mapActive;
+		DrawEditEngine.mapActiveCamera = mapActive.camera;
 	}
 }

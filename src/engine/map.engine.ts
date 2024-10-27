@@ -19,7 +19,7 @@ export class MapEngine {
 		let grid: Grid = {
 				blocks: {}, // key is hash
 				gHeight: 0, // calculated
-				gWidth: 100,
+				gWidth: 50,
 				id: 'initial', // protectedId
 				startGxCamera: 0,
 				startGyCamera: 0,
@@ -29,7 +29,7 @@ export class MapEngine {
 			},
 			map: Map = {
 				camera: <any>{
-					viewPortGw: 50,
+					viewPortGw: 25,
 					zoomDefault: 1,
 				},
 				grids: {}, // key is gridID

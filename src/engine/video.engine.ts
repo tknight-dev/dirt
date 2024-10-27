@@ -170,7 +170,7 @@ export class VideoEngine {
 						videoWorkerCmdAudioMusicPlay = <VideoWorkerCmdAudioMusicPlay>videoWorkerPayload.data;
 						audioAsset = AudioAsset.find(videoWorkerCmdAudioMusicPlay.id);
 						if (audioAsset) {
-							AudioEngine.play(audioAsset, videoWorkerCmdAudioMusicPlay.volumePercentage);
+							AudioEngine.play(audioAsset, videoWorkerCmdAudioMusicPlay.timeInS, videoWorkerCmdAudioMusicPlay.volumePercentage);
 						} else {
 							console.error('GameEngine > video: music asset play id invalid');
 						}

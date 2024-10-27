@@ -13,54 +13,77 @@ export class GridDrawEngine {
 	private static cacheHashCheckG: number;
 	private static cacheHashCheckP: number;
 	private static cacheZoom: number;
-	public static ctxDimensionHeight: number;
-	public static ctxDimensionWidth: number;
-	public static ctxOverlay: OffscreenCanvasRenderingContext2D;
-	public static mapActive: MapActive;
+	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
+	private static initialized: boolean;
+	private static mapActive: MapActive;
+	private static mapActiveCamera: Camera;
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
-	public static start(): void {
-		let start: number = performance.now();
+	public static async initialize(
+		ctx: OffscreenCanvasRenderingContext2D,
+		ctxBackground: OffscreenCanvasRenderingContext2D,
+		ctxForeground: OffscreenCanvasRenderingContext2D,
+		ctxOverlay: OffscreenCanvasRenderingContext2D,
+	): Promise<void> {
+		if (GridDrawEngine.initialized) {
+			console.error('GridDrawEngine > initialize: already initialized');
+			return;
+		}
+		GridDrawEngine.initialized = true;
+		GridDrawEngine.ctxOverlay = ctxOverlay;
+	}
 
-		GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(GridDrawEngine.mapActive.camera.gx, GridDrawEngine.mapActive.camera.gy);
-		GridDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(GridDrawEngine.ctxDimensionWidth, GridDrawEngine.ctxDimensionHeight);
+	public static start(): void {
+		//let start: number = performance.now();
+		GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(GridDrawEngine.mapActiveCamera.gx, GridDrawEngine.mapActiveCamera.gy);
+		GridDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(GridDrawEngine.mapActiveCamera.windowPw, GridDrawEngine.mapActiveCamera.windowPh);
 		if (
 			GridDrawEngine.cacheHashCheckG !== GridDrawEngine.cacheHashG ||
 			GridDrawEngine.cacheHashCheckP !== GridDrawEngine.cacheHashP ||
-			GridDrawEngine.cacheZoom !== GridDrawEngine.mapActive.camera.zoom
+			GridDrawEngine.cacheZoom !== GridDrawEngine.mapActiveCamera.zoom
 		) {
 			// Draw from scratch
-			let mapActive: MapActive = GridDrawEngine.mapActive,
-				cacheCanvas: OffscreenCanvas = new OffscreenCanvas(GridDrawEngine.ctxDimensionWidth, GridDrawEngine.ctxDimensionHeight),
-				camera: Camera = mapActive.camera,
-				ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d'),
+			let cacheCanvas: OffscreenCanvas,
+				camera: Camera = GridDrawEngine.mapActiveCamera,
+				ctx: OffscreenCanvasRenderingContext2D,
 				gEff: number,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
-				viewPortGyEff: number = ((camera.viewPortGy * gInPh) % gInPh) - gInPh,
-				viewPortGxEff: number = (camera.viewPortGx * gInPw) % gInPw;
+				viewPortGx: number = camera.viewPortGx,
+				viewPortGy: number = camera.viewPortGy,
+				viewPortGxEff: number = (viewPortGx * gInPw) % gInPw,
+				viewPortGyEff: number = ((viewPortGy * gInPh) % gInPh) - gInPh,
+				viewPortGhEff: number = camera.viewPortGhEff,
+				viewPortGwEff: number = camera.viewPortGwEff + 1,
+				windowPh: number = camera.windowPh,
+				windowPw: number = camera.windowPw;
 
+			// Canvas
+			cacheCanvas = new OffscreenCanvas(windowPw, windowPh);
+			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
+
+			// Perimeter
 			ctx.beginPath();
-			ctx.lineWidth = 1;
-			ctx.strokeStyle = 'white';
 			ctx.fillStyle = 'cyan';
 			ctx.font = 'bold 10px Arial';
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = 'rgba(255,255,255,.25)';
 
 			// Horizontal
-			for (let g = 0; g < camera.viewPortGh; g++) {
+			for (let g = 0; g < viewPortGhEff; g++) {
 				gEff = g * gInPh - viewPortGyEff;
 				ctx.moveTo(0, gEff);
-				ctx.lineTo(GridDrawEngine.ctxDimensionWidth, gEff);
-				ctx.fillText(String(g + Math.floor(camera.viewPortGy)).padStart(3, ' '), 5 * gInPw, gEff);
+				ctx.lineTo(windowPw, gEff);
+				ctx.fillText(String(g + Math.floor(viewPortGy)).padStart(3, ' '), 5 * gInPw, gEff);
 			}
 
 			// Vertical
-			for (let g = 0; g < camera.viewPortGw; g++) {
+			for (let g = 0; g < viewPortGwEff; g++) {
 				gEff = g * gInPw - viewPortGxEff;
 				ctx.moveTo(gEff, 0);
-				ctx.lineTo(gEff, GridDrawEngine.ctxDimensionHeight);
-				ctx.fillText(String(g + Math.floor(camera.viewPortGx)).padStart(3, ' '), gEff, 5 * gInPh);
+				ctx.lineTo(gEff, windowPh);
+				ctx.fillText(String(g + Math.floor(viewPortGx)).padStart(3, ' '), gEff, 5 * gInPh);
 			}
 			ctx.stroke();
 
@@ -76,5 +99,10 @@ export class GridDrawEngine {
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;
 		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
+	}
+
+	public static setMapActive(mapActive: MapActive) {
+		GridDrawEngine.mapActive = mapActive;
+		GridDrawEngine.mapActiveCamera = mapActive.camera;
 	}
 }

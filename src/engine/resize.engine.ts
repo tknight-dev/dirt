@@ -19,20 +19,18 @@ export class ResizeEngine {
 		ResizeEngine.initialized = true;
 
 		addEventListener('resize', (event: any) => {
-			let timestamp = performance.now();
+			if (ResizeEngine.callback) {
+				let timestamp = performance.now();
 
-			if (timestamp - ResizeEngine.timestamp > 20) {
-				if (ResizeEngine.callback) {
+				if (timestamp - ResizeEngine.timestamp > 20) {
 					ResizeEngine.callback();
-				}
-				ResizeEngine.timestamp = timestamp;
-			} else {
-				clearTimeout(ResizeEngine.timeout);
-				ResizeEngine.timeout = setTimeout(() => {
-					if (ResizeEngine.callback) {
+					ResizeEngine.timestamp = timestamp;
+				} else {
+					clearTimeout(ResizeEngine.timeout);
+					ResizeEngine.timeout = setTimeout(() => {
 						ResizeEngine.callback();
-					}
-				}, 40);
+					}, 40);
+				}
 			}
 		});
 	}

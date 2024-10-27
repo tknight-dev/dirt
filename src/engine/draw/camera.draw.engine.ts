@@ -8,30 +8,43 @@ import { UtilEngine } from '../util.engine';
  */
 
 export class CameraDrawEngine {
-	public static ctxDimensionHeight: number;
-	public static ctxDimensionWidth: number;
-	public static ctxOverlay: OffscreenCanvasRenderingContext2D;
-	public static mapActive: MapActive;
+	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
+	private static initialized: boolean;
+	private static mapActive: MapActive;
+	private static mapActiveCamera: Camera;
 	// private static count: number = 0;
 	// private static sum: number = 0;
-	private static tmp: boolean = false;
+
+	public static async initialize(
+		ctx: OffscreenCanvasRenderingContext2D,
+		ctxBackground: OffscreenCanvasRenderingContext2D,
+		ctxForeground: OffscreenCanvasRenderingContext2D,
+		ctxOverlay: OffscreenCanvasRenderingContext2D,
+	): Promise<void> {
+		if (CameraDrawEngine.initialized) {
+			console.error('CameraDrawEngine > initialize: already initialized');
+			return;
+		}
+		CameraDrawEngine.initialized = true;
+		CameraDrawEngine.ctxOverlay = ctxOverlay;
+	}
 
 	public static start(): void {
 		let start: number = performance.now();
 
-		// bottom right of map doesn't work
+		// TODO, optimize
 
 		let px: number;
 		let py: number;
-		if (CameraDrawEngine.mapActive.camera.viewPortGx === 0) {
-			px = CameraDrawEngine.mapActive.camera.gx * CameraDrawEngine.mapActive.camera.gInPw;
+		if (CameraDrawEngine.mapActiveCamera.viewPortGx === 0) {
+			px = CameraDrawEngine.mapActiveCamera.gx * CameraDrawEngine.mapActiveCamera.gInPw;
 		} else {
-			px = CameraDrawEngine.mapActive.camera.viewPortPx + CameraDrawEngine.mapActive.camera.viewPortPw / 2;
+			px = CameraDrawEngine.mapActiveCamera.viewPortPx + CameraDrawEngine.mapActiveCamera.viewPortPw / 2;
 		}
-		if (CameraDrawEngine.mapActive.camera.viewPortGy === 0) {
-			py = CameraDrawEngine.mapActive.camera.gy * CameraDrawEngine.mapActive.camera.gInPh;
+		if (CameraDrawEngine.mapActiveCamera.viewPortGy === 0) {
+			py = CameraDrawEngine.mapActiveCamera.gy * CameraDrawEngine.mapActiveCamera.gInPh;
 		} else {
-			py = CameraDrawEngine.mapActive.camera.viewPortPy + CameraDrawEngine.mapActive.camera.viewPortPh / 2;
+			py = CameraDrawEngine.mapActiveCamera.viewPortPy + CameraDrawEngine.mapActiveCamera.viewPortPh / 2;
 		}
 
 		CameraDrawEngine.ctxOverlay.beginPath();
@@ -41,5 +54,10 @@ export class CameraDrawEngine {
 		CameraDrawEngine.ctxOverlay.arc(px, py, 15, 0, 2 * Math.PI);
 		CameraDrawEngine.ctxOverlay.fill();
 		CameraDrawEngine.ctxOverlay.stroke();
+	}
+
+	public static setMapActive(mapActive: MapActive) {
+		CameraDrawEngine.mapActive = mapActive;
+		CameraDrawEngine.mapActiveCamera = mapActive.camera;
 	}
 }

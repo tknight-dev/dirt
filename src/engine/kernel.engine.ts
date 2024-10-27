@@ -47,10 +47,10 @@ export class KernelEngine {
 		await DrawPlayEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
 
 		// Extended
-		CameraDrawEngine.ctxOverlay = ctxOverlay;
-		FPSDrawEngine.ctxOverlay = ctxOverlay;
-		GridDrawEngine.ctxOverlay = ctxOverlay;
-		MapDrawEngine.ctxOverlay = ctxOverlay;
+		await CameraDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
+		await FPSDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
+		await GridDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
+		await MapDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
 	}
 
 	private static tmpH: any;
@@ -64,30 +64,30 @@ export class KernelEngine {
 
 			if (action.down && action.key === KeyCommon.DOWN) {
 				clearInterval(KernelEngine.tmpV);
-				CameraEngine.moveDown(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+				CameraEngine.moveIncremental(0, 1);
 				KernelEngine.tmpV = setInterval(() => {
-					CameraEngine.moveDown(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+					CameraEngine.moveIncremental(0, 1);
 				}, 75);
 			}
 			if (action.down && action.key === KeyCommon.LEFT) {
 				clearInterval(KernelEngine.tmpH);
-				CameraEngine.moveLeft(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+				CameraEngine.moveIncremental(-1, 0);
 				KernelEngine.tmpH = setInterval(() => {
-					CameraEngine.moveLeft(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+					CameraEngine.moveIncremental(-1, 0);
 				}, 75);
 			}
 			if (action.down && action.key === KeyCommon.RIGHT) {
 				clearInterval(KernelEngine.tmpH);
-				CameraEngine.moveRight(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+				CameraEngine.moveIncremental(1, 0);
 				KernelEngine.tmpH = setInterval(() => {
-					CameraEngine.moveRight(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+					CameraEngine.moveIncremental(1, 0);
 				}, 75);
 			}
 			if (action.down && action.key === KeyCommon.UP) {
 				clearInterval(KernelEngine.tmpV);
-				CameraEngine.moveUp(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+				CameraEngine.moveIncremental(0, -1);
 				KernelEngine.tmpV = setInterval(() => {
-					CameraEngine.moveUp(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+					CameraEngine.moveIncremental(0, -1);
 				}, 75);
 			}
 		}
@@ -95,11 +95,16 @@ export class KernelEngine {
 
 	public static inputMouse(action: MouseAction): void {
 		if (KernelEngine.status) {
+			if (action.cmd == MouseCmd.LEFT_CLICK) {
+				if (MapDrawEngine.isPixelInMap(action.position.x, action.position.y)) {
+					MapDrawEngine.moveToPx(action.position.x, action.position.y);
+				}
+			}
 			if (action.cmd == MouseCmd.WHEEL) {
 				if (action.down) {
-					CameraEngine.zoomOut(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+					CameraEngine.zoom(false);
 				} else {
-					CameraEngine.zoomIn(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+					CameraEngine.zoom(true);
 				}
 			}
 		}
@@ -156,24 +161,28 @@ export class KernelEngine {
 		KernelEngine.status = true;
 		KernelEngine.mapActive = mapActive;
 
-		if (KernelEngine.ctxDimensionHeight && KernelEngine.ctxDimensionWidth) {
-			CameraEngine.updateDimensions(KernelEngine.mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
-		}
-
 		// Load into engines
-		CalcEditEngine.mapActive = mapActive;
-		CalcPlayEngine.mapActive = mapActive;
+		CalcEditEngine.setMapActive(mapActive);
+		CalcPlayEngine.setMapActive(mapActive);
 
-		DrawPlayEngine.mapActive = mapActive;
-		DrawPlayEngine.mapActive = mapActive;
+		CameraEngine.setMapActive(mapActive);
+
+		DrawEditEngine.setMapActive(mapActive);
+		DrawPlayEngine.setMapActive(mapActive);
 
 		// Load into extended engines
-		CameraDrawEngine.mapActive = mapActive;
-		GridDrawEngine.mapActive = mapActive;
-		MapDrawEngine.mapActive = mapActive;
+		CameraDrawEngine.setMapActive(mapActive);
+		GridDrawEngine.setMapActive(mapActive);
+		MapDrawEngine.setMapActive(mapActive);
 
 		// Reset camera
-		CameraEngine.reset(mapActive, KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+		if (KernelEngine.ctxDimensionHeight && KernelEngine.ctxDimensionWidth) {
+			CameraEngine.updateDimensions(KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+		} else {
+			console.error('KernelEngine > start: no dimensions set');
+			return;
+		}
+		CameraEngine.reset();
 
 		requestAnimationFrame(KernelEngine.loop);
 	}
@@ -197,23 +206,10 @@ export class KernelEngine {
 		// Update Camera
 		KernelEngine.ctxDimensionHeight = height;
 		KernelEngine.ctxDimensionWidth = width;
+
 		if (KernelEngine.mapActive) {
-			CameraEngine.updateDimensions(KernelEngine.mapActive, height, width);
+			CameraEngine.updateDimensions(height, width);
 		}
-
-		// Load into engines
-		DrawEditEngine.ctxDimensionHeight = height;
-		DrawEditEngine.ctxDimensionWidth = width;
-		DrawPlayEngine.ctxDimensionHeight = height;
-		DrawPlayEngine.ctxDimensionWidth = width;
-
-		// Load into extended engines
-		CameraDrawEngine.ctxDimensionHeight = height;
-		CameraDrawEngine.ctxDimensionWidth = width;
-		GridDrawEngine.ctxDimensionHeight = height;
-		GridDrawEngine.ctxDimensionWidth = width;
-		MapDrawEngine.ctxDimensionHeight = height;
-		MapDrawEngine.ctxDimensionWidth = width;
 	}
 
 	public static setModeEdit(modeEdit: boolean): void {
@@ -226,7 +222,6 @@ export class KernelEngine {
 		// Load into engines
 
 		// Load into extended engines
-		MapDrawEngine.modeEdit = modeEdit;
 	}
 
 	public static updateSettings(settings: VideoCmdSettings): void {

@@ -279,9 +279,10 @@ export class AudioEngine {
 	}
 
 	/**
+	 * @param timeInS is between 0 and the duration of the music
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static async play(audioAsset: AudioAsset, volumePercentage: number): Promise<void> {
+	public static async play(audioAsset: AudioAsset, timeInS: number, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > play: not initialized');
 			return;
@@ -296,7 +297,7 @@ export class AudioEngine {
 
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
-		audio.currentTime = 0;
+		audio.currentTime = Math.min(audio.duration, Math.round(timeInS));
 		audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
 		await audio.play();
 	}

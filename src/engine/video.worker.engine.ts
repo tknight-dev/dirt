@@ -1,11 +1,9 @@
 import { AssetCollection } from './models/asset.model';
 import { AssetEngine } from './asset.engine';
 import { CameraEngine } from './camera.engine';
-import { FPSDrawEngine } from './draw/fps.draw.engine';
 import { KernelEngine } from './kernel.engine';
 import { KeyAction } from './keyboard.engine';
 import { Map } from './models/map.model';
-import { MapAsset } from './assets/map.asset';
 import { MapEngine } from './map.engine';
 import { MouseAction } from './mouse.engine';
 import { UtilEngine } from './util.engine';
@@ -103,7 +101,6 @@ class Video {
 		await MapEngine.initialize();
 
 		// Config
-		await FPSDrawEngine.initialize();
 		Video.inputResize(data);
 		Video.inputSettings(data);
 
@@ -242,12 +239,13 @@ class Video {
 	/**
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static outputAudioMusicPlay(assetId: string, volumePercentage: number): void {
+	public static outputAudioMusicPlay(assetId: string, timeInS: number, volumePercentage: number): void {
 		Video.post([
 			{
 				cmd: VideoWorkerCmd.AUDIO_MUSIC_PLAY,
 				data: {
 					id: assetId,
+					timeInS: Math.round(timeInS),
 					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
 				},
 			},

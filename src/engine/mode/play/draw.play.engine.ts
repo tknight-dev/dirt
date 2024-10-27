@@ -1,3 +1,4 @@
+import { Camera } from '../../models/camera.model';
 import { FPSDrawEngine } from '../../draw/fps.draw.engine';
 import { MapActive } from '../../models/map.model';
 
@@ -8,13 +9,13 @@ import { MapActive } from '../../models/map.model';
 export class DrawPlayEngine {
 	public static ctx: OffscreenCanvasRenderingContext2D;
 	public static ctxBackground: OffscreenCanvasRenderingContext2D;
-	public static ctxDimensionHeight: number;
-	public static ctxDimensionWidth: number;
 	public static ctxForeground: OffscreenCanvasRenderingContext2D;
 	public static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	public static fpsVisible: boolean;
-	public static mapActive: MapActive;
+	private static mapActive: MapActive;
+	private static mapActiveCamera: Camera;
+	public static mapVisible: boolean;
 
 	public static async initialize(
 		ctx: OffscreenCanvasRenderingContext2D,
@@ -45,5 +46,10 @@ export class DrawPlayEngine {
 		if (DrawPlayEngine.fpsVisible) {
 			FPSDrawEngine.start();
 		}
+	}
+
+	public static setMapActive(mapActive: MapActive) {
+		DrawPlayEngine.mapActive = mapActive;
+		DrawPlayEngine.mapActiveCamera = mapActive.camera;
 	}
 }
