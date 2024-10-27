@@ -4,10 +4,14 @@ import { MouseAction } from '../mouse.engine';
 /**
  * Defines input and output date types for the communication bus between the UI thread and the Video thread
  *
+ * ? Spawn a background thread that renders the entire background all the time. THis thread snapshots an area of this render to display here.
+ *
  * @author tknight-dev
  */
 
 export enum VideoCmd {
+	GAME_MODE_EDIT,
+	GAME_MODE_PLAY,
 	GAME_PAUSE,
 	GAME_START,
 	GAME_UNPAUSE,
@@ -24,6 +28,7 @@ export interface VideoCmdInit extends VideoCmdResize, VideoCmdSettings {
 	canvasOffscreenBackground: OffscreenCanvas;
 	canvasOffscreenForeground: OffscreenCanvas;
 	canvasOffscreenOverlay: OffscreenCanvas;
+	modeEdit: boolean;
 }
 
 export interface VideoCmdMapLoad {
@@ -35,6 +40,10 @@ export interface VideoCmdResize {
 	height: number;
 	width: number;
 }
+
+export interface VideoCmdGameModeEdit {}
+
+export interface VideoCmdGameModePlay {}
 
 export interface VideoCmdGamePause {
 	reason: VideoCmdGamePauseReason;
@@ -53,6 +62,7 @@ export interface VideoCmdGameStart {}
 export interface VideoCmdSettings {
 	fps: VideoCmdSettingsFPS;
 	fpsVisible: boolean;
+	mapVisible: boolean;
 }
 
 export enum VideoCmdSettingsFPS {

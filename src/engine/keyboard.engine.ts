@@ -46,6 +46,10 @@ export class KeyboardEngine {
 	}
 
 	public static register(keyCommon: KeyCommon, callback: (keyAction: KeyAction) => void): void {
+		if (!KeyboardEngine.initialized) {
+			console.error('KeyboardEngine > register: not initialized');
+			return;
+		}
 		if (KeyboardEngine.state[keyCommon] === undefined) {
 			KeyboardEngine.state[keyCommon] = false;
 		}
@@ -59,6 +63,10 @@ export class KeyboardEngine {
 	}
 
 	public static unregister(keyCode: number): void {
+		if (!KeyboardEngine.initialized) {
+			console.error('KeyboardEngine > unregister: not initialized');
+			return;
+		}
 		delete KeyboardEngine.registered[keyCode];
 	}
 

@@ -1,12 +1,12 @@
+import { UtilEngine } from '../util.engine';
+
 /**
  * @author tknight-dev
  */
 
 export class FPSDrawEngine {
 	public static ctxOverlay: OffscreenCanvasRenderingContext2D;
-	public static drawAvailable: boolean = true;
 	public static fps: number = 0;
-	public static fpsVisible: boolean;
 	public static fpsTarget: number;
 	public static frameCount: number = 0;
 	public static i: number;
@@ -28,27 +28,23 @@ export class FPSDrawEngine {
 	}
 
 	public static start(): void {
+		// Count
 		FPSDrawEngine.frameCount++;
 
-		if (FPSDrawEngine.fpsVisible && FPSDrawEngine.drawAvailable) {
-			// FPSDrawEngine.ctxOverlay.beginPath();
-			// FPSDrawEngine.ctxOverlay.fillStyle = "blue";
-			// FPSDrawEngine.ctxOverlay.rect(11, 13, 64, 29);
-			// FPSDrawEngine.ctxOverlay.fill();
-			// FPSDrawEngine.ctxOverlay.closePath();
-			FPSDrawEngine.ctxOverlay.clearRect(11, 13, 64, 29);
-
-			FPSDrawEngine.ctxOverlay.font = '40px Arial';
-			if (FPSDrawEngine.fps < FPSDrawEngine.fpsTarget - 20) {
-				FPSDrawEngine.ctxOverlay.fillStyle = 'red';
-			} else if (FPSDrawEngine.fps < FPSDrawEngine.fpsTarget - 10) {
-				FPSDrawEngine.ctxOverlay.fillStyle = 'yellow';
-			} else {
-				FPSDrawEngine.ctxOverlay.fillStyle = 'green';
-			}
-			FPSDrawEngine.ctxOverlay.fillText(FPSDrawEngine.fps.toString().padStart(2, '00'), 10, 42);
-			FPSDrawEngine.drawAvailable = false;
+		// Draw
+		FPSDrawEngine.ctxOverlay.font = 'bold 40px Arial';
+		if (FPSDrawEngine.fps < FPSDrawEngine.fpsTarget - 20) {
+			FPSDrawEngine.ctxOverlay.fillStyle = 'red';
+		} else if (FPSDrawEngine.fps < FPSDrawEngine.fpsTarget - 10) {
+			FPSDrawEngine.ctxOverlay.fillStyle = 'yellow';
+		} else {
+			FPSDrawEngine.ctxOverlay.fillStyle = 'green';
 		}
+		FPSDrawEngine.ctxOverlay.fillText(
+			FPSDrawEngine.fps.toString().padStart(2, '00'),
+			Math.round(UtilEngine.renderOverflowP + 20),
+			Math.round(UtilEngine.renderOverflowP + 50),
+		);
 	}
 
 	/**
@@ -61,7 +57,6 @@ export class FPSDrawEngine {
 			frameCount = FPSDrawEngine.frameCount;
 			FPSDrawEngine.frameCount = 0;
 			FPSDrawEngine.fps = frameCount;
-			FPSDrawEngine.drawAvailable = true;
 		}, 1000);
 	}
 }

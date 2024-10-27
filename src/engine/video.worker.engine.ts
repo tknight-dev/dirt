@@ -1,10 +1,12 @@
 import { AssetCollection } from './models/asset.model';
 import { AssetEngine } from './asset.engine';
+import { CameraEngine } from './camera.engine';
 import { FPSDrawEngine } from './draw/fps.draw.engine';
 import { KernelEngine } from './kernel.engine';
-import { KeyAction, KeyboardEngine } from './keyboard.engine';
+import { KeyAction } from './keyboard.engine';
 import { Map } from './models/map.model';
 import { MapAsset } from './assets/map.asset';
+import { MapEngine } from './map.engine';
 import { MouseAction } from './mouse.engine';
 import { UtilEngine } from './util.engine';
 import {
@@ -44,13 +46,13 @@ self.onmessage = (event: MessageEvent) => {
 			Video.initialize(self, <VideoCmdInit>videoPayload.data);
 			break;
 		case VideoCmd.KEY:
-			Video.inputKey(<KeyAction>videoPayload.data);
+			KernelEngine.inputKey(<KeyAction>videoPayload.data);
 			break;
 		case VideoCmd.MAP_LOAD:
 			Video.inputMapLoad(<VideoCmdMapLoad>videoPayload.data);
 			break;
 		case VideoCmd.MOUSE:
-			Video.inputMouse(<MouseAction>videoPayload.data);
+			KernelEngine.inputMouse(<MouseAction>videoPayload.data);
 			break;
 		case VideoCmd.RESIZE:
 			Video.inputGamePause({ reason: VideoCmdGamePauseReason.RESIZE });
@@ -71,10 +73,7 @@ class Video {
 	private static canvasOffscreenForegroundContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenOverlay: OffscreenCanvas; // Z-4
 	private static canvasOffscreenOverlayContext: OffscreenCanvasRenderingContext2D;
-	private static devicePixelRatio: number;
 	private static gameStarted: boolean;
-	private static height: number;
-	private static width: number;
 	private static self: Window & typeof globalThis;
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoCmdInit): Promise<void> {
@@ -94,23 +93,24 @@ class Video {
 		// Engines
 		await AssetEngine.initialize(AssetCollection.VIDEO);
 		await AssetEngine.load();
+		await CameraEngine.initialize();
 		await KernelEngine.initialize(
 			Video.canvasOffscreenContext,
 			Video.canvasOffscreenBackgroundContext,
 			Video.canvasOffscreenForegroundContext,
 			Video.canvasOffscreenOverlayContext,
 		);
+		await MapEngine.initialize();
 
 		// Config
 		await FPSDrawEngine.initialize();
 		Video.inputResize(data);
 		Video.inputSettings(data);
 
-		// Get first map ... TODO, call map loader engine which will pass it to physics and draw
-		let map: Map = UtilEngine.mapDecode(AssetEngine.getAsset(MapAsset.LEVEL01.src));
-
 		// Last
-		KernelEngine.start();
+		KernelEngine.setModeEdit(data.modeEdit);
+		//KernelEngine.start(MapEngine.load(MapAsset.LEVEL01)); // When level1 has something to start from
+		KernelEngine.start(MapEngine.default());
 	}
 
 	public static inputGamePause(pause: VideoCmdGamePause): void {
@@ -133,10 +133,6 @@ class Video {
 		console.log('VideoWorker > gameUnpause', unpause);
 	}
 
-	public static inputKey(action: KeyAction): void {
-		console.log('VideoWorker > key', action);
-	}
-
 	public static inputMapLoad(videoCmdMapLoad: VideoCmdMapLoad): void {
 		let map: Map,
 			status: boolean = true;
@@ -157,10 +153,6 @@ class Video {
 		]);
 	}
 
-	public static inputMouse(action: MouseAction): void {
-		console.log('VideoWorker > mouse', action);
-	}
-
 	/**
 	 * Supports high dpi screens
 	 */
@@ -169,9 +161,7 @@ class Video {
 			height: number = Math.ceil(resize.height * devicePixelRatio),
 			width: number = Math.ceil(resize.width * devicePixelRatio);
 
-		Video.devicePixelRatio = devicePixelRatio;
-		Video.height = height;
-		Video.width = width;
+		KernelEngine.setDimension(height, width);
 
 		Video.canvasOffscreen.height = height;
 		Video.canvasOffscreen.width = width;

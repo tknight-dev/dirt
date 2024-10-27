@@ -49,7 +49,8 @@ export class MouseEngine {
 		MouseEngine.canvas = canvas;
 
 		document.addEventListener('click', (event) => {
-			if (MouseEngine.callback) {
+			if (MouseEngine.callback && event.button === 0) {
+				// 0 is left click
 				MouseEngine.callback({
 					cmd: MouseCmd.LEFT_CLICK,
 					down: undefined,
@@ -58,7 +59,8 @@ export class MouseEngine {
 			}
 		});
 		document.addEventListener('mousedown', (event: MouseEvent) => {
-			if (MouseEngine.callback) {
+			if (MouseEngine.callback && event.button === 0) {
+				// 0 is left click
 				MouseEngine.callback({
 					cmd: MouseCmd.LEFT,
 					down: true,
@@ -67,7 +69,8 @@ export class MouseEngine {
 			}
 		});
 		document.addEventListener('mouseup', (event: MouseEvent) => {
-			if (MouseEngine.callback) {
+			if (MouseEngine.callback && event.button === 0) {
+				// 0 is left click
 				MouseEngine.callback({
 					cmd: MouseCmd.LEFT,
 					down: false,

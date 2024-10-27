@@ -6,6 +6,7 @@ import { FullscreenEngine } from './engine/fullscreen.engine';
 import { ImageAsset } from './engine/assets/image.asset';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engine/keyboard.engine';
 import { MouseAction, MouseEngine } from './engine/mouse.engine';
+import { ResizeEngine } from './engine/resize.engine';
 import { VideoCmdGamePauseReason, VideoCmdSettingsFPS } from './engine/models/video-worker-cmds.model';
 import { VideoEngine } from './engine/video.engine';
 import { VisibilityEngine } from './engine/visibility.engine';
@@ -86,6 +87,7 @@ class Dirt {
 		await FullscreenEngine.initialize();
 		await KeyboardEngine.initialize();
 		await MouseEngine.initialize(Dirt.elementCanvas);
+		await ResizeEngine.initialize();
 		await VisibilityEngine.initialize();
 
 		// Hook while the feed starts
@@ -95,10 +97,19 @@ class Dirt {
 		// Last (feed & game ready)
 		await ready;
 		Dirt.ready = true;
-		await VideoEngine.go(Dirt.elementFeed, Dirt.elementCanvas, Dirt.elementCanvasBackground, Dirt.elementCanvasForeground, Dirt.elementCanvasOverlay, {
-			fps: VideoCmdSettingsFPS._60,
-			fpsVisible: true,
-		});
+		await VideoEngine.go(
+			Dirt.elementFeed,
+			Dirt.elementCanvas,
+			Dirt.elementCanvasBackground,
+			Dirt.elementCanvasForeground,
+			Dirt.elementCanvasOverlay,
+			true,
+			{
+				fps: VideoCmdSettingsFPS._60,
+				fpsVisible: true,
+				mapVisible: true,
+			},
+		);
 		Dirt.dragable = true;
 
 		// TODO: delete me as I just skip the into

@@ -7,8 +7,11 @@ import { AudioEngine } from './audio.engine';
 import { KeyAction, KeyCommon } from './keyboard.engine';
 import { MouseAction } from './mouse.engine';
 import { ResizeEngine } from './resize.engine';
+import { UtilEngine } from './util.engine';
 import {
 	VideoCmd,
+	VideoCmdGameModeEdit,
+	VideoCmdGameModePlay,
 	VideoCmdGamePause,
 	VideoCmdGameStart,
 	VideoCmdGameUnpause,
@@ -46,6 +49,7 @@ export class VideoEngine {
 		canvasBackground: HTMLCanvasElement,
 		canvasForeground: HTMLCanvasElement,
 		canvasOverlay: HTMLCanvasElement,
+		modeEdit: boolean,
 		videoCmdSettings: VideoCmdSettings,
 	): Promise<void> {
 		if (VideoEngine.started) {
@@ -64,7 +68,6 @@ export class VideoEngine {
 
 		// Config
 		VideoEngine.feed = feed;
-		await ResizeEngine.initialize(videoCmdSettings.fps);
 		ResizeEngine.setCallback(VideoEngine.resized);
 
 		// Spawn Video thread
@@ -84,7 +87,7 @@ export class VideoEngine {
 					canvasOffscreenBackground: canvasOffscreenBackground,
 					canvasOffscreenForeground: canvasOffscreenForeground,
 					canvasOffscreenOverlay: canvasOffscreenOverlay,
-					devicePixelRatio: videoCmdResize.devicePixelRatio,
+					modeEdit: modeEdit,
 				},
 				videoCmdResize,
 				videoCmdSettings,
@@ -108,8 +111,8 @@ export class VideoEngine {
 
 		data = {
 			devicePixelRatio: window.devicePixelRatio,
-			height: height,
-			width: width,
+			height: Math.round(height + UtilEngine.renderOverflowP * 2),
+			width: Math.round(width + UtilEngine.renderOverflowP * 2),
 		};
 
 		if (disablePost !== true) {
@@ -243,6 +246,20 @@ export class VideoEngine {
 		});
 	}
 
+	public static workerGameModeEdit(edit: VideoCmdGameModeEdit): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_MODE_EDIT,
+			data: edit,
+		});
+	}
+
+	public static workerGameModePlay(play: VideoCmdGameModePlay): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_MODE_PLAY,
+			data: play,
+		});
+	}
+
 	public static workerGamePause(pause: VideoCmdGamePause): void {
 		VideoEngine.worker.postMessage({
 			cmd: VideoCmd.GAME_PAUSE,
@@ -265,7 +282,6 @@ export class VideoEngine {
 	}
 
 	public static workerSettings(settings: VideoCmdSettings): void {
-		ResizeEngine.setFPS(settings.fps);
 		VideoEngine.worker.postMessage({
 			cmd: VideoCmd.SETTINGS,
 			data: settings,

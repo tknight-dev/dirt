@@ -28,6 +28,9 @@ export class AssetEngine {
 	}
 
 	public static async load(): Promise<number> {
+		if (!AssetEngine.initialized) {
+			console.error('AssetEngine > load: not initialized');
+		}
 		let accept: boolean,
 			asset: Asset,
 			assetURL: string,
@@ -95,6 +98,9 @@ export class AssetEngine {
 	}
 
 	public static getAsset(filename: string): string {
+		if (!AssetEngine.initialized) {
+			console.error('AssetEngine > getAsset: not initialized');
+		}
 		return AssetEngine.assets[filename];
 	}
 }

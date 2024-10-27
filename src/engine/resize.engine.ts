@@ -12,17 +12,16 @@ export class ResizeEngine {
 	private static timeout: ReturnType<typeof setTimeout>;
 	private static timestamp: number = performance.now();
 
-	public static async initialize(fps: number): Promise<void> {
+	public static async initialize(): Promise<void> {
 		if (ResizeEngine.initialized) {
 			return;
 		}
 		ResizeEngine.initialized = true;
-		ResizeEngine.setFPS(fps);
 
 		addEventListener('resize', (event: any) => {
 			let timestamp = performance.now();
 
-			if (timestamp - ResizeEngine.timestamp > ResizeEngine.interval) {
+			if (timestamp - ResizeEngine.timestamp > 20) {
 				if (ResizeEngine.callback) {
 					ResizeEngine.callback();
 				}
@@ -33,17 +32,12 @@ export class ResizeEngine {
 					if (ResizeEngine.callback) {
 						ResizeEngine.callback();
 					}
-				}, ResizeEngine.intervalLong);
+				}, 40);
 			}
 		});
 	}
 
 	public static setCallback(callback: () => void): void {
 		ResizeEngine.callback = callback;
-	}
-
-	public static setFPS(fps: number): void {
-		ResizeEngine.interval = Math.round(10000 / fps) / 10;
-		ResizeEngine.intervalLong = ResizeEngine.interval * 4;
 	}
 }
