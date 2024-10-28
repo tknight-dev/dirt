@@ -15,7 +15,11 @@ export class CameraDrawEngine {
 	private static cachePositionHashP: number;
 	private static cachePositionHashCheckG: number;
 	private static cachePositionHashCheckP: number;
+	private static ctxBackground: OffscreenCanvasRenderingContext2D;
+	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
+	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
@@ -23,10 +27,11 @@ export class CameraDrawEngine {
 	// private static sum: number = 0;
 
 	public static async initialize(
-		ctx: OffscreenCanvasRenderingContext2D,
 		ctxBackground: OffscreenCanvasRenderingContext2D,
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
+		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (CameraDrawEngine.initialized) {
 			console.error('CameraDrawEngine > initialize: already initialized');
@@ -64,28 +69,28 @@ export class CameraDrawEngine {
 		) {
 			// Calc from scratch
 			let camera: Camera = CameraDrawEngine.mapActiveCamera,
-				viewPortGx: number = camera.viewPortGx,
-				viewPortGy: number = camera.viewPortGy;
+				viewportGx: number = camera.viewportGx,
+				viewportGy: number = camera.viewportGy;
 
-			if (viewPortGx === 0) {
+			if (viewportGx === 0) {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.gx * camera.gInPw);
-			} else if (viewPortGx + camera.viewPortGw === CameraDrawEngine.mapActive.gridActive.gWidth) {
+			} else if (viewportGx + camera.viewportGw === CameraDrawEngine.mapActive.gridActive.gWidth) {
 				CameraDrawEngine.cachePositionPx = Math.round(
-					camera.viewPortPx + camera.viewPortPw / 2 + (camera.gx - (viewPortGx + camera.viewPortGw / 2)) * camera.gInPw,
+					camera.viewportPx + camera.viewportPw / 2 + (camera.gx - (viewportGx + camera.viewportGw / 2)) * camera.gInPw,
 				);
 			} else {
-				CameraDrawEngine.cachePositionPx = Math.round(camera.viewPortPx + camera.viewPortPw / 2);
+				CameraDrawEngine.cachePositionPx = Math.round(camera.viewportPx + camera.viewportPw / 2);
 			}
 			CameraDrawEngine.cachePositionPx -= 12; // Offset to circle center
 
-			if (viewPortGy === 0) {
+			if (viewportGy === 0) {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.gy * camera.gInPh);
-			} else if (viewPortGy + camera.viewPortGh === CameraDrawEngine.mapActive.gridActive.gHeight) {
+			} else if (viewportGy + camera.viewportGh === CameraDrawEngine.mapActive.gridActive.gHeight) {
 				CameraDrawEngine.cachePositionPy = Math.round(
-					camera.viewPortPy + camera.viewPortPh / 2 + (camera.gy - (viewPortGy + camera.viewPortGh / 2)) * camera.gInPh,
+					camera.viewportPy + camera.viewportPh / 2 + (camera.gy - (viewportGy + camera.viewportGh / 2)) * camera.gInPh,
 				);
 			} else {
-				CameraDrawEngine.cachePositionPy = Math.round(camera.viewPortPy + camera.viewPortPh / 2);
+				CameraDrawEngine.cachePositionPy = Math.round(camera.viewportPy + camera.viewportPh / 2);
 			}
 			CameraDrawEngine.cachePositionPy -= 12; // Offset to circle center
 

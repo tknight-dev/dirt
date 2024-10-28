@@ -1,5 +1,5 @@
-import { AudioAsset, AudioType } from '../assets/audio.asset';
-import { AssetEngine } from './asset.engine';
+import { Asset, AssetEngine } from './asset.engine';
+import { AssetAudio, AssetAudioType, AssetCollection } from '../models/asset.model';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { UtilEngine } from './util.engine';
 
@@ -12,19 +12,20 @@ import { UtilEngine } from './util.engine';
 interface AudioCache {
 	audio: HTMLAudioElement;
 	id: string;
-	type: AudioType;
+	type: AssetAudioType;
 	volume: number;
 	volumeOffset: number;
 }
 
 interface AudioFade {
 	durationInMs: number;
-	fader: (fade: AudioFade, id: string, type: AudioType) => Promise<void>;
+	fader: (fade: AudioFade, id: string, type: AssetAudioType) => Promise<void>;
 	volumeTarget: number;
 	updated: boolean;
 }
 
 export class AudioEngine {
+	private static assetCollection: AssetCollection;
 	private static cache: { [key: string]: AudioCache } = {}; // key is audioAssetId
 	private static context: AudioContext = new AudioContext();
 	private static effectBuffers: HTMLAudioElement[] = [];
@@ -36,6 +37,7 @@ export class AudioEngine {
 	private static effectBuffersIndex: number = 0;
 	private static faders: { [key: string]: AudioFade } = {}; // key is audioAssetId
 	private static initialized: boolean;
+	private static loaded: boolean = false;
 	private static muted: boolean = false;
 	private static permitted: boolean;
 	private static permittedCallback: (permitted: boolean) => void;
@@ -60,7 +62,7 @@ export class AudioEngine {
 		}
 	}
 
-	private static applyVolume(volume: number, type: AudioType): void {
+	private static applyVolume(volume: number, type: AssetAudioType): void {
 		let cache: { [key: string]: AudioCache } = AudioEngine.cache,
 			cacheInstance: AudioCache;
 
@@ -80,11 +82,15 @@ export class AudioEngine {
 	 * @param durationInMs min 0 (precision 0)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static fade(audioAsset: AudioAsset, durationInMs: number, volumePercentage: number): void {
-		let audioAssetId = audioAsset.id,
-			audioCache: AudioCache = AudioEngine.cache[audioAssetId],
+	public static fade(audioAssetId: string, durationInMs: number, volumePercentage: number): void {
+		let audioCache: AudioCache = AudioEngine.cache[audioAssetId],
 			volumeTarget: number,
-			volumeTargetMax: number = audioCache.type === AudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
+			volumeTargetMax: number = AudioEngine.volumeMusicEff;
+
+		if (!audioCache || audioCache.type !== AssetAudioType.MUSIC) {
+			console.error('AudioEngine > fade: invalid audioAssetId');
+			return;
+		}
 
 		// Calc the target volume
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
@@ -114,9 +120,9 @@ export class AudioEngine {
 	/**
 	 * Supports live duration and fade changes
 	 */
-	private static async fader(fade: AudioFade, id: string, type: AudioType): Promise<void> {
+	private static async fader(fade: AudioFade, id: string, type: AssetAudioType): Promise<void> {
 		let audioCacheElement: HTMLAudioElement = AudioEngine.cache[id].audio,
-			intervalInMs: number = 100,
+			intervalInMs: number = 50,
 			step: number = 0.1,
 			timestamp: number = 0,
 			volume: number,
@@ -154,11 +160,18 @@ export class AudioEngine {
 		delete AudioEngine.faders[id];
 	}
 
-	public static async initialize(): Promise<void> {
+	/**
+	 * Shared assets are always loaded
+	 */
+	public static async initialize(assetCollection: AssetCollection): Promise<void> {
 		if (AudioEngine.initialized) {
+			return;
+		} else if (assetCollection === AssetCollection.SHARED) {
+			console.error('AudioEngine > initialize: cannot use the SHARED collection');
 			return;
 		}
 		AudioEngine.initialized = true;
+		AudioEngine.assetCollection = assetCollection;
 
 		AudioEngine.setEffectBufferCount(3); // 3 is default
 
@@ -198,40 +211,49 @@ export class AudioEngine {
 	/**
 	 * @return is duration in ms
 	 */
-	public static async load(): Promise<number> {
+	public static async load(assetAudio: AssetAudio[]): Promise<number> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > load: not initialized');
 			return -1;
+		} else if (AudioEngine.loaded) {
+			console.error('AudioEngine > load: already loaded');
+			return -1;
 		}
-		let loaderWrappers: any[] = [],
+		let assetAudioInstance: AssetAudio,
+			loaderWrappers: any[] = [],
 			timestampInMs: number = Date.now();
+		AudioEngine.loaded = true;
 
-		for (let i in AudioAsset.values) {
-			loaderWrappers.push(AudioEngine.loader(AudioAsset.values[i]));
+		for (let i in assetAudio) {
+			assetAudioInstance = assetAudio[i];
+			if (assetAudioInstance.collection === AudioEngine.assetCollection || assetAudioInstance.collection === AssetCollection.SHARED) {
+				loaderWrappers.push(AudioEngine.loader(assetAudioInstance));
+			}
 		}
 
 		// Load all files in parallel
 		await Promise.all(loaderWrappers);
-		AudioEngine.applyVolume(AudioEngine.volumeEffect, AudioType.EFFECT);
-		AudioEngine.applyVolume(AudioEngine.volumeMusic, AudioType.MUSIC);
+		AudioEngine.applyVolume(AudioEngine.volumeEffect, AssetAudioType.EFFECT);
+		AudioEngine.applyVolume(AudioEngine.volumeMusic, AssetAudioType.MUSIC);
 
 		return Date.now() - timestampInMs;
 	}
 
-	private static async loader(audioAsset: AudioAsset): Promise<void> {
-		let audio: HTMLAudioElement = new Audio(),
+	private static async loader(assetAudio: AssetAudio): Promise<void> {
+		let asset: Asset | undefined,
+			audio: HTMLAudioElement = new Audio(),
 			audioEvent: string = 'canplaythrough',
 			audioListener: () => void = () => {
 				// Loaded, remove listener
 				audio.removeEventListener(audioEvent, audioListener, false);
 
 				// Cache it
-				AudioEngine.cache[audioAsset.id] = {
+				AudioEngine.cache[assetAudio.id] = {
 					audio: audio,
-					id: audioAsset.id,
-					type: audioAsset.type,
+					id: assetAudio.id,
+					type: assetAudio.type,
 					volume: AudioEngine.volume,
-					volumeOffset: audioAsset.volumeOffset,
+					volumeOffset: Math.round(assetAudio.volumeOffset * 1000) / 1000,
 				};
 
 				// Audio loaded, resolve promise
@@ -245,59 +267,74 @@ export class AudioEngine {
 			// Attach loading event listener
 			audio.addEventListener(audioEvent, audioListener, false);
 
-			if (audioAsset.type === AudioType.MUSIC) {
+			if (assetAudio.type === AssetAudioType.MUSIC) {
 				audio.setAttribute('loop', 'true');
 			}
-
 			audio.setAttribute('preload', 'auto');
-			audio.setAttribute('src', AssetEngine.getAsset(audioAsset.src).data);
+
+			asset = AssetEngine.getAssetAndRemoveFromCache(assetAudio.src);
+			if (asset) {
+				audio.setAttribute('src', asset.data);
+			} else {
+				console.error("AudioEngine > loader: assetAudio '" + assetAudio.id + "' failed to load");
+				resolve();
+			}
 		});
 	}
 
-	public static async pause(audioAsset: AudioAsset): Promise<void> {
+	public static async pause(assetAudioId: string): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > pause: not initialized');
 			return;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > pause: not permitted');
 			return;
-		} else if (audioAsset.type !== AudioType.MUSIC) {
+		} else if (!AudioEngine.cache[assetAudioId]) {
+			console.error('AudioEngine > pause: assetAudioId invalid');
+			return;
+		} else if (AudioEngine.cache[assetAudioId].type !== AssetAudioType.MUSIC) {
 			console.error('AudioEngine > pause: only applies to music');
 			return;
 		}
-		await AudioEngine.cache[audioAsset.id].audio.pause();
+		AudioEngine.cache[assetAudioId].audio.pause();
 	}
 
-	public static async unpause(audioAsset: AudioAsset): Promise<void> {
+	public static async unpause(assetAudioId: string): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > unpause: not initialized');
 			return;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > unpause: not permitted');
 			return;
-		} else if (audioAsset.type !== AudioType.MUSIC) {
+		} else if (!AudioEngine.cache[assetAudioId]) {
+			console.error('AudioEngine > unpause: assetAudioId invalid');
+			return;
+		} else if (AudioEngine.cache[assetAudioId].type !== AssetAudioType.MUSIC) {
 			console.error('AudioEngine > unpause: only applies to music');
 			return;
 		}
-		await AudioEngine.cache[audioAsset.id].audio.play();
+		await AudioEngine.cache[assetAudioId].audio.play();
 	}
 
 	/**
 	 * @param timeInS is between 0 and the duration of the music
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static async play(audioAsset: AudioAsset, timeInS: number, volumePercentage: number): Promise<void> {
+	public static async play(assetAudioId: string, timeInS: number, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > play: not initialized');
 			return;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > play: not permitted');
 			return;
-		} else if (audioAsset.type !== AudioType.MUSIC) {
+		} else if (!AudioEngine.cache[assetAudioId]) {
+			console.error('AudioEngine > play: assetAudioId invalid');
+			return;
+		} else if (AudioEngine.cache[assetAudioId].type !== AssetAudioType.MUSIC) {
 			console.error('AudioEngine > play: only applies to music');
 			return;
 		}
-		let audio: HTMLAudioElement = AudioEngine.cache[audioAsset.id].audio;
+		let audio: HTMLAudioElement = AudioEngine.cache[assetAudioId].audio;
 
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
@@ -319,15 +356,18 @@ export class AudioEngine {
 	 * @param pan is -1 left, 0 center, 1 right (precision 3)
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static async trigger(audioAsset: AudioAsset, modulation: AudioModulation, pan: number, volumePercentage: number): Promise<void> {
+	public static async trigger(assetAudioId: string, modulation: AudioModulation, pan: number, volumePercentage: number): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > trigger: not initialized');
 			return;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > trigger: not permitted');
 			return;
-		} else if (audioAsset.type !== AudioType.EFFECT) {
-			console.error('AudioEngine > trigger: can only trigger effects');
+		} else if (!AudioEngine.cache[assetAudioId]) {
+			console.error('AudioEngine > trigger: assetAudioId invalid');
+			return;
+		} else if (AudioEngine.cache[assetAudioId].type !== AssetAudioType.EFFECT) {
+			console.error('AudioEngine > trigger: only applies to effects');
 			return;
 		}
 		let index: number = AudioEngine.claimBufferIndex(),
@@ -337,7 +377,7 @@ export class AudioEngine {
 
 		// Load buffer source
 		buffer.pause();
-		buffer.src = AudioEngine.cache[audioAsset.id].audio.src;
+		buffer.src = AudioEngine.cache[assetAudioId].audio.src;
 		buffer.currentTime = 0;
 		buffer.muted = AudioEngine.muted;
 		buffer.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeEffectEff, 0) * 1000) / 1000;
@@ -487,8 +527,8 @@ export class AudioEngine {
 
 		// Update audio cache
 		AudioEngine.volumesScale();
-		AudioEngine.applyVolume(AudioEngine.volumeEffectEff, AudioType.EFFECT);
-		AudioEngine.applyVolume(AudioEngine.volumeMusicEff, AudioType.MUSIC);
+		AudioEngine.applyVolume(AudioEngine.volumeEffectEff, AssetAudioType.EFFECT);
+		AudioEngine.applyVolume(AudioEngine.volumeMusicEff, AssetAudioType.MUSIC);
 	}
 
 	public static getVolume(): number {
@@ -502,13 +542,16 @@ export class AudioEngine {
 	/**
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static setVolumeAsset(audioAsset: AudioAsset, volumePercentage: number): void {
+	public static setVolumeAsset(assetAudioId: string, volumePercentage: number): void {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > setAssetVolume: not initialized');
 			return;
+		} else if (!AudioEngine.cache[assetAudioId]) {
+			console.error('AudioEngine > setAssetVolume: assetAudioId invalid');
+			return;
 		}
-		let audioCache: AudioCache = AudioEngine.cache[audioAsset.id],
-			volumeTargetMax: number = audioCache.type === AudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
+		let audioCache: AudioCache = AudioEngine.cache[assetAudioId],
+			volumeTargetMax: number = audioCache.type === AssetAudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
 
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
@@ -531,7 +574,7 @@ export class AudioEngine {
 
 		// Update audio cache
 		AudioEngine.volumesScale();
-		AudioEngine.applyVolume(AudioEngine.volumeEffectEff, AudioType.EFFECT);
+		AudioEngine.applyVolume(AudioEngine.volumeEffectEff, AssetAudioType.EFFECT);
 	}
 
 	public static getVolumeEffect(): number {
@@ -558,7 +601,7 @@ export class AudioEngine {
 
 		// Update audio cache
 		AudioEngine.volumesScale();
-		AudioEngine.applyVolume(AudioEngine.volumeMusicEff, AudioType.MUSIC);
+		AudioEngine.applyVolume(AudioEngine.volumeMusicEff, AssetAudioType.MUSIC);
 	}
 
 	public static getVolumeMusic(): number {

@@ -2,9 +2,7 @@ import * as JSZip from 'JSZip';
 import { AssetCollection, AssetDeclarations } from '../models/asset.model';
 
 /**
- * Load all files from asset file and store in ram as base64ObjectURLs
- *
- * Supports: mp3, webp
+ * Loads shared assets first if another asset pack has the same file the other asset pack's file is ignored
  *
  * @author tknight-dev
  */
@@ -22,14 +20,22 @@ export interface Asset {
 
 export class AssetEngine {
 	private static assetDeclarations: AssetDeclarations;
+	private static assetFilenameS: string = 'dirt-engine-assets-s';
 	private static assetFilenameU: string = 'dirt-engine-assets-u';
 	private static assetFilenameV: string = 'dirt-engine-assets-v';
 	private static assets: { [key: string]: Asset } = {};
 	private static collection: AssetCollection;
 	private static initialized: boolean;
+	private static loaded: boolean;
 
+	/**
+	 * Will always process the shared assets
+	 */
 	public static async initialize(assetDeclarations: AssetDeclarations, collection: AssetCollection): Promise<void> {
 		if (AssetEngine.initialized) {
+			return;
+		} else if (collection === AssetCollection.SHARED) {
+			console.error('AssetEngine > initialize: cannot use the SHARED collection');
 			return;
 		}
 		AssetEngine.initialized = true;
@@ -40,11 +46,15 @@ export class AssetEngine {
 	public static async load(): Promise<number> {
 		if (!AssetEngine.initialized) {
 			console.error('AssetEngine > load: not initialized');
+		} else if (AssetEngine.loaded) {
+			console.error('AssetEngine > load: already loaded');
 		}
+		AssetEngine.loaded = true;
 		let accept: boolean,
 			asset: AssetTmp,
 			assetDir: string = AssetEngine.assetDeclarations.dir || './',
 			assets: AssetTmp[] = [],
+			assetsCustomS: string[] | undefined = AssetEngine.assetDeclarations.customS,
 			assetsCustomU: string[] | undefined = AssetEngine.assetDeclarations.customU,
 			assetsCustomV: string[] | undefined = AssetEngine.assetDeclarations.customV,
 			buffer: ArrayBuffer,
@@ -52,11 +62,20 @@ export class AssetEngine {
 			dataURLType: string | null,
 			filename: string,
 			filenameOriginal: string,
+			filenameOriginalShared: string,
 			filenamesCustom: string[] = [],
 			timestamp: number = Date.now(),
 			zip: JSZip;
 
-		// Sort asset packs
+		// Load in shared
+		filenameOriginalShared = assetDir + AssetEngine.assetFilenameS;
+		if (assetsCustomS && Array.isArray(assetsCustomS)) {
+			for (let i in assetsCustomS) {
+				filenamesCustom.push(assetDir + assetsCustomS[i]);
+			}
+		}
+
+		// Load in context specific asset pack
 		switch (AssetEngine.collection) {
 			case AssetCollection.UI:
 				filenameOriginal = assetDir + AssetEngine.assetFilenameU;
@@ -76,6 +95,8 @@ export class AssetEngine {
 					}
 				}
 				break;
+			default:
+				return -1;
 		}
 
 		// Set loader function
@@ -112,7 +133,7 @@ export class AssetEngine {
 			}
 		};
 
-		// Iterate through custom first
+		// Load in custom assets starting with Shared
 		for (let i in filenamesCustom) {
 			filename = filenamesCustom[i];
 
@@ -122,7 +143,11 @@ export class AssetEngine {
 			});
 		}
 
-		// Load in original to backfill missing and required assets
+		// Load in original assets starting with Shared
+		zip = <JSZip>await JSZip.loadAsync(await (await fetch(filenameOriginalShared)).blob());
+		Object.keys(zip.files).forEach(function (filename: string) {
+			loader(filename, true);
+		});
 		zip = <JSZip>await JSZip.loadAsync(await (await fetch(filenameOriginal)).blob());
 		Object.keys(zip.files).forEach(function (filename: string) {
 			loader(filename, true);
@@ -162,6 +187,14 @@ export class AssetEngine {
 			filenames: string[] = [],
 			zip: JSZip;
 
+		// Shared
+		filenames.push(dir + AssetEngine.assetFilenameS);
+		if (assetDeclarations.customS && Array.isArray(assetDeclarations.customS)) {
+			for (let i in assetDeclarations.customS) {
+				filenames.push(dir + assetDeclarations.customS[i]);
+			}
+		}
+
 		// UI
 		filenames.push(dir + AssetEngine.assetFilenameU);
 		if (assetDeclarations.customU && Array.isArray(assetDeclarations.customU)) {
@@ -193,10 +226,23 @@ export class AssetEngine {
 		return true;
 	}
 
-	public static getAsset(filename: string): Asset {
+	public static getAsset(filename: string): Asset | undefined {
 		if (!AssetEngine.initialized) {
 			console.error('AssetEngine > getAsset: not initialized');
+		} else if (!AssetEngine.loaded) {
+			console.error('AssetEngine > getAsset: not loaded');
 		}
 		return AssetEngine.assets[filename];
+	}
+
+	public static getAssetAndRemoveFromCache(filename: string): Asset | undefined {
+		if (!AssetEngine.initialized) {
+			console.error('AssetEngine > getAssetAndRemoveFromCache: not initialized');
+		} else if (!AssetEngine.loaded) {
+			console.error('AssetEngine > getAssetAndRemoveFromCache: not loaded');
+		}
+		let asset: Asset = AssetEngine.assets[filename];
+		delete AssetEngine.assets[filename];
+		return asset;
 	}
 }

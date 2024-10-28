@@ -3,13 +3,11 @@
  */
 
 import { AssetDeclarations } from '../models/asset.model';
-import { AudioAsset } from '../assets/audio.asset';
 import { AudioEngine } from './audio.engine';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { KeyAction, KeyCommon } from './keyboard.engine';
 import { MouseAction } from './mouse.engine';
 import { ResizeEngine } from './resize.engine';
-import { UtilEngine } from './util.engine';
 import {
 	VideoCmd,
 	VideoCmdGameModeEdit,
@@ -39,21 +37,22 @@ export class VideoEngine {
 	private static callbackMapLoadStatus: (status: boolean) => void;
 	private static callbackMapSave: (data: string, name: string) => void;
 	private static complete: boolean;
-	private static feed: HTMLElement;
 	private static fps: number = 60;
 	private static started: boolean;
+	private static streams: HTMLElement;
 	private static worker: Worker;
 
 	/**
-	 * Start the video feed in another thread
+	 * Start the video streams in another thread
 	 */
 	public static async go(
 		assetDeclarations: AssetDeclarations,
-		feed: HTMLElement,
-		canvas: HTMLCanvasElement,
+		streams: HTMLElement,
 		canvasBackground: HTMLCanvasElement,
 		canvasForeground: HTMLCanvasElement,
 		canvasOverlay: HTMLCanvasElement,
+		canvasPrimary: HTMLCanvasElement,
+		canvasUnderlay: HTMLCanvasElement,
 		modeEdit: boolean,
 		videoCmdSettings: VideoCmdSettings,
 	): Promise<void> {
@@ -63,8 +62,9 @@ export class VideoEngine {
 		}
 		VideoEngine.started = true;
 
-		let canvasOffscreen: OffscreenCanvas = canvas.transferControlToOffscreen(),
+		let canvasOffscreenUnderlay: OffscreenCanvas = canvasUnderlay.transferControlToOffscreen(),
 			canvasOffscreenBackground: OffscreenCanvas = canvasBackground.transferControlToOffscreen(),
+			canvasOffscreenPrimary: OffscreenCanvas = canvasPrimary.transferControlToOffscreen(),
 			canvasOffscreenForeground: OffscreenCanvas = canvasForeground.transferControlToOffscreen(),
 			canvasOffscreenOverlay: OffscreenCanvas = canvasOverlay.transferControlToOffscreen(),
 			videoCmdInit: VideoCmdInit,
@@ -72,7 +72,7 @@ export class VideoEngine {
 			videoPayload: VideoPayload;
 
 		// Config
-		VideoEngine.feed = feed;
+		VideoEngine.streams = streams;
 		ResizeEngine.setCallback(VideoEngine.resized);
 		VisibilityEngine.setCallback((visible: boolean) => {
 			if (!visible) {
@@ -98,10 +98,11 @@ export class VideoEngine {
 			videoCmdInit = Object.assign(
 				{
 					assetDeclarations: assetDeclarations,
-					canvasOffscreen: canvasOffscreen,
 					canvasOffscreenBackground: canvasOffscreenBackground,
 					canvasOffscreenForeground: canvasOffscreenForeground,
 					canvasOffscreenOverlay: canvasOffscreenOverlay,
+					canvasOffscreenPrimary: canvasOffscreenPrimary,
+					canvasOffscreenUnderlay: canvasOffscreenUnderlay,
 					modeEdit: modeEdit,
 				},
 				videoCmdResize,
@@ -111,7 +112,13 @@ export class VideoEngine {
 				cmd: VideoCmd.INIT,
 				data: videoCmdInit,
 			};
-			VideoEngine.worker.postMessage(videoPayload, [canvasOffscreen, canvasOffscreenBackground, canvasOffscreenForeground, canvasOffscreenOverlay]);
+			VideoEngine.worker.postMessage(videoPayload, [
+				canvasOffscreenBackground,
+				canvasOffscreenForeground,
+				canvasOffscreenOverlay,
+				canvasOffscreenPrimary,
+				canvasOffscreenUnderlay,
+			]);
 			VideoEngine.complete = true;
 		} else {
 			alert('Web Workers are not supported by your browser');
@@ -120,14 +127,14 @@ export class VideoEngine {
 
 	private static resized(disablePost?: boolean): VideoCmdResize {
 		let data: VideoCmdResize,
-			domRect: DOMRect = VideoEngine.feed.getBoundingClientRect(),
+			domRect: DOMRect = VideoEngine.streams.getBoundingClientRect(),
 			height: number = domRect.height,
 			width: number = domRect.width;
 
 		data = {
 			devicePixelRatio: window.devicePixelRatio,
-			height: Math.round(height + UtilEngine.renderOverflowP * 2),
-			width: Math.round(width + UtilEngine.renderOverflowP * 2),
+			height: Math.round(height),
+			width: Math.round(width),
 		};
 
 		if (disablePost !== true) {
@@ -144,8 +151,7 @@ export class VideoEngine {
 	 * Commands from worker (typically audio effect triggers)
 	 */
 	private static workerListen(): void {
-		let audioAsset: AudioAsset | null,
-			audioModulation: AudioModulation | null,
+		let audioModulation: AudioModulation | null,
 			videoWorkerCmdAudioEffect: VideoWorkerCmdAudioEffect,
 			videoWorkerCmdAudioMusicFade: VideoWorkerCmdAudioMusicFade,
 			videoWorkerCmdAudioMusicPlay: VideoWorkerCmdAudioMusicPlay,
@@ -166,58 +172,41 @@ export class VideoEngine {
 				switch (videoWorkerPayload.cmd) {
 					case VideoWorkerCmd.AUDIO_EFFECT:
 						videoWorkerCmdAudioEffect = <VideoWorkerCmdAudioEffect>videoWorkerPayload.data;
-						audioAsset = AudioAsset.find(videoWorkerCmdAudioEffect.id);
 						audioModulation = AudioModulation.find(videoWorkerCmdAudioEffect.modulationId);
-						if (audioAsset && audioModulation) {
-							AudioEngine.trigger(audioAsset, audioModulation, videoWorkerCmdAudioEffect.pan, videoWorkerCmdAudioEffect.volumePercentage);
+						if (audioModulation) {
+							AudioEngine.trigger(
+								videoWorkerCmdAudioEffect.id,
+								audioModulation,
+								videoWorkerCmdAudioEffect.pan,
+								videoWorkerCmdAudioEffect.volumePercentage,
+							);
 						} else {
 							console.error('GameEngine > video: effect asset-id or modulation-id invalid');
 						}
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_FADE:
 						videoWorkerCmdAudioMusicFade = <VideoWorkerCmdAudioMusicFade>videoWorkerPayload.data;
-						audioAsset = AudioAsset.find(videoWorkerCmdAudioMusicFade.id);
-						if (audioAsset) {
-							AudioEngine.fade(audioAsset, videoWorkerCmdAudioMusicFade.durationInMs, videoWorkerCmdAudioMusicPlay.volumePercentage);
-						} else {
-							console.error('GameEngine > video: music asset fade id invalid');
-						}
+						AudioEngine.fade(
+							videoWorkerCmdAudioMusicFade.id,
+							videoWorkerCmdAudioMusicFade.durationInMs,
+							videoWorkerCmdAudioMusicPlay.volumePercentage,
+						);
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_PLAY:
 						videoWorkerCmdAudioMusicPlay = <VideoWorkerCmdAudioMusicPlay>videoWorkerPayload.data;
-						audioAsset = AudioAsset.find(videoWorkerCmdAudioMusicPlay.id);
-						if (audioAsset) {
-							AudioEngine.play(audioAsset, videoWorkerCmdAudioMusicPlay.timeInS, videoWorkerCmdAudioMusicPlay.volumePercentage);
-						} else {
-							console.error('GameEngine > video: music asset play id invalid');
-						}
+						AudioEngine.play(videoWorkerCmdAudioMusicPlay.id, videoWorkerCmdAudioMusicPlay.timeInS, videoWorkerCmdAudioMusicPlay.volumePercentage);
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_PAUSE:
 						videoWorkerCmdAudioMusicPause = <VideoWorkerCmdAudioMusicPause>videoWorkerPayload.data;
-						audioAsset = AudioAsset.find(videoWorkerCmdAudioMusicPause.id);
-						if (audioAsset) {
-							AudioEngine.pause(audioAsset);
-						} else {
-							console.error('GameEngine > video: music asset pause id invalid');
-						}
+						AudioEngine.pause(videoWorkerCmdAudioMusicPause.id);
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_UNPAUSE:
 						videoWorkerCmdAudioMusicUnpause = <VideoWorkerCmdAudioMusicUnpause>videoWorkerPayload.data;
-						audioAsset = AudioAsset.find(videoWorkerCmdAudioMusicUnpause.id);
-						if (audioAsset) {
-							AudioEngine.unpause(audioAsset);
-						} else {
-							console.error('GameEngine > video: music asset unpause id invalid');
-						}
+						AudioEngine.unpause(videoWorkerCmdAudioMusicUnpause.id);
 						break;
 					case VideoWorkerCmd.AUDIO_VOLUME:
 						videoWorkerCmdAudioVolume = <VideoWorkerCmdAudioVolume>videoWorkerPayload.data;
-						audioAsset = AudioAsset.find(videoWorkerCmdAudioVolume.id);
-						if (audioAsset) {
-							AudioEngine.setVolumeAsset(audioAsset, videoWorkerCmdAudioVolume.volumePercentage);
-						} else {
-							console.error('GameEngine > video: asset volume id invalid');
-						}
+						AudioEngine.setVolumeAsset(videoWorkerCmdAudioVolume.id, videoWorkerCmdAudioVolume.volumePercentage);
 						break;
 					case VideoWorkerCmd.MAP_LOAD_STATUS:
 						videoWorkerCmdMapLoadStatus = <VideoWorkerCmdMapLoadStatus>videoWorkerPayload.data;

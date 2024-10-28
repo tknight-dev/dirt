@@ -10,18 +10,18 @@ import { GridObject } from './grid.model';
 export interface Camera extends GridObject {
 	gInPh: number; // Precision 3
 	gInPw: number; // Precision 3
-	viewPortGh: number; // Precision 3
-	viewPortGhEff: number; // Precision 3
-	viewPortGw: number; // Precision 0
-	viewPortGwEff: number; // Precision 3
-	viewPortGx: number; // Precision 3
-	viewPortGy: number; // Precision 3
-	viewPortPh: number; // Precision 0
-	viewPortPw: number; // Precision 0
-	viewPortPx: number; // Precision 0
-	viewPortPx2: number; // Precision 0 (2nd is right most value)
-	viewPortPy: number; // Precision 0
-	viewPortPy2: number; // Precision 0 (2nd is bottom most value)
+	viewportGh: number; // Precision 3
+	viewportGhEff: number; // Precision 3
+	viewportGw: number; // Precision 0
+	viewportGwEff: number; // Precision 3
+	viewportGx: number; // Precision 3
+	viewportGy: number; // Precision 3
+	viewportPh: number; // Precision 0
+	viewportPw: number; // Precision 0
+	viewportPx: number; // Precision 0
+	viewportPx2: number; // Precision 0 (2nd is right most value)
+	viewportPy: number; // Precision 0
+	viewportPy2: number; // Precision 0 (2nd is bottom most value)
 	windowPh: number; // Precision 0
 	windowPw: number; // Precision 0
 	windowPx: number; // Precision 0

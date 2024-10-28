@@ -15,10 +15,11 @@ export class FPSDrawEngine {
 	 * @timingResolutionInS between 1 and 30
 	 */
 	public static async initialize(
-		ctx: OffscreenCanvasRenderingContext2D,
 		ctxBackground: OffscreenCanvasRenderingContext2D,
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
+		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (FPSDrawEngine.initialized) {
 			console.error('FPSDrawEngine > initialize: already initialized');

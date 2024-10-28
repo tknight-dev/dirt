@@ -18,15 +18,15 @@ export class GridDrawEngine {
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
-	private static modeEdit: boolean;
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
 	public static async initialize(
-		ctx: OffscreenCanvasRenderingContext2D,
 		ctxBackground: OffscreenCanvasRenderingContext2D,
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
+		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (GridDrawEngine.initialized) {
 			console.error('GridDrawEngine > initialize: already initialized');
@@ -43,7 +43,6 @@ export class GridDrawEngine {
 		if (
 			GridDrawEngine.cacheHashCheckG !== GridDrawEngine.cacheHashG ||
 			GridDrawEngine.cacheHashCheckP !== GridDrawEngine.cacheHashP ||
-			GridDrawEngine.cacheModeEdit !== GridDrawEngine.modeEdit ||
 			GridDrawEngine.cacheZoom !== GridDrawEngine.mapActiveCamera.zoom
 		) {
 			// Draw from scratch
@@ -53,12 +52,12 @@ export class GridDrawEngine {
 				gEff: number,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
-				viewPortGx: number = camera.viewPortGx,
-				viewPortGy: number = camera.viewPortGy,
-				viewPortGxEff: number = (viewPortGx * gInPw) % gInPw,
-				viewPortGyEff: number = ((viewPortGy * gInPh) % gInPh) - gInPh,
-				viewPortGhEff: number = camera.viewPortGhEff,
-				viewPortGwEff: number = camera.viewPortGwEff + 1,
+				viewportGx: number = camera.viewportGx,
+				viewportGy: number = camera.viewportGy,
+				viewportGxEff: number = (viewportGx * gInPw) % gInPw,
+				viewportGyEff: number = ((viewportGy * gInPh) % gInPh) - gInPh,
+				viewportGhEff: number = camera.viewportGhEff,
+				viewportGwEff: number = camera.viewportGwEff + 1,
 				windowPh: number = camera.windowPh,
 				windowPw: number = camera.windowPw;
 
@@ -68,42 +67,24 @@ export class GridDrawEngine {
 
 			// Perimeter
 			ctx.beginPath();
-			//ctx.fillStyle = 'cyan';
-			//ctx.font = 'bold 10px Arial';
+			ctx.fillStyle = 'cyan';
+			ctx.font = 'bold 10px Arial';
 			ctx.lineWidth = 1;
 			ctx.strokeStyle = 'rgba(255,255,255,.25)';
-			if (GridDrawEngine.modeEdit) {
-				// Horizontal
-				for (let g = 0; g < viewPortGhEff; g++) {
-					gEff = g * gInPh - viewPortGyEff;
-					ctx.moveTo(camera.viewPortPx, gEff);
-					ctx.lineTo(camera.viewPortPx2, gEff);
-					//ctx.fillText(String(g + Math.floor(viewPortGy)).padStart(3, ' '), 5 * gInPw, gEff);
-				}
+			// Horizontal
+			for (let g = 0; g < viewportGhEff; g++) {
+				gEff = g * gInPh - viewportGyEff;
+				ctx.moveTo(0, gEff);
+				ctx.lineTo(windowPw, gEff);
+				ctx.fillText(String(g + Math.floor(viewportGy)).padStart(3, ' '), 5 * gInPw, gEff);
+			}
 
-				// Vertical
-				for (let g = 0; g < viewPortGwEff; g++) {
-					gEff = g * gInPw - viewPortGxEff;
-					ctx.moveTo(gEff, camera.viewPortPy);
-					ctx.lineTo(gEff, camera.viewPortPy2);
-					//ctx.fillText(String(g + Math.floor(viewPortGx)).padStart(3, ' '), gEff, 5 * gInPh);
-				}
-			} else {
-				// Horizontal
-				for (let g = 0; g < viewPortGhEff; g++) {
-					gEff = g * gInPh - viewPortGyEff;
-					ctx.moveTo(0, gEff);
-					ctx.lineTo(windowPw, gEff);
-					//ctx.fillText(String(g + Math.floor(viewPortGy)).padStart(3, ' '), 5 * gInPw, gEff);
-				}
-
-				// Vertical
-				for (let g = 0; g < viewPortGwEff; g++) {
-					gEff = g * gInPw - viewPortGxEff;
-					ctx.moveTo(gEff, 0);
-					ctx.lineTo(gEff, windowPh);
-					//ctx.fillText(String(g + Math.floor(viewPortGx)).padStart(3, ' '), gEff, 5 * gInPh);
-				}
+			// Vertical
+			for (let g = 0; g < viewportGwEff; g++) {
+				gEff = g * gInPw - viewportGxEff;
+				ctx.moveTo(gEff, 0);
+				ctx.lineTo(gEff, windowPh);
+				ctx.fillText(String(g + Math.floor(viewportGx)).padStart(3, ' '), gEff, 5 * gInPh);
 			}
 			ctx.stroke();
 
@@ -111,7 +92,6 @@ export class GridDrawEngine {
 			GridDrawEngine.cache = cacheCanvas.transferToImageBitmap();
 			GridDrawEngine.cacheHashG = GridDrawEngine.cacheHashCheckG;
 			GridDrawEngine.cacheHashP = GridDrawEngine.cacheHashCheckP;
-			GridDrawEngine.cacheModeEdit = GridDrawEngine.modeEdit;
 			GridDrawEngine.cacheZoom = camera.zoom;
 		}
 
@@ -125,9 +105,5 @@ export class GridDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		GridDrawEngine.mapActive = mapActive;
 		GridDrawEngine.mapActiveCamera = mapActive.camera;
-	}
-
-	public static setModeEdit(edit: boolean): void {
-		GridDrawEngine.modeEdit = edit;
 	}
 }

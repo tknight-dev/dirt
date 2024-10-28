@@ -12,6 +12,7 @@ import { MouseAction } from '../engines/mouse.engine';
 
 export enum VideoCmd {
 	GAME_MODE_EDIT,
+	GAME_MODE_EDIT_Z,
 	GAME_MODE_PLAY,
 	GAME_PAUSE,
 	GAME_START,
@@ -26,10 +27,11 @@ export enum VideoCmd {
 
 export interface VideoCmdInit extends VideoCmdResize, VideoCmdSettings {
 	assetDeclarations: AssetDeclarations;
-	canvasOffscreen: OffscreenCanvas;
 	canvasOffscreenBackground: OffscreenCanvas;
 	canvasOffscreenForeground: OffscreenCanvas;
 	canvasOffscreenOverlay: OffscreenCanvas;
+	canvasOffscreenPrimary: OffscreenCanvas;
+	canvasOffscreenUnderlay: OffscreenCanvas;
 	modeEdit: boolean;
 }
 
@@ -44,6 +46,16 @@ export interface VideoCmdResize {
 }
 
 export interface VideoCmdGameModeEdit {}
+
+export interface VideoCmdGameModeEditZ {
+	layer: VideoCmdGameModeEditZLayer;
+}
+
+export enum VideoCmdGameModeEditZLayer {
+	BACKGROUND,
+	FOREGROUND,
+	PRIMARY,
+}
 
 export interface VideoCmdGameModePlay {}
 

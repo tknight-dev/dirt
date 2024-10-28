@@ -1,4 +1,4 @@
-import { MapActive } from '../../models/map.model';
+import { MapActive } from '../../../models/map.model';
 
 /**
  * @author tknight-dev

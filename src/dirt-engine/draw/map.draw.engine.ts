@@ -22,18 +22,21 @@ export class MapDrawEngine {
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	private static mapActiveGrid: Grid;
-	private static windowPhEff: number;
-	private static windowPhEffZero: number;
-	private static windowPwEff: number;
-	private static windowPwEffZero: number;
+	private static readonly backgroundOffset: number = 20;
+	private static readonly backgroundRatio: number = 0.175;
+	private static backgroundPh: number;
+	private static backgroundPw: number;
+	private static backgroundPx: number;
+	private static backgroundPy: number;
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
 	public static async initialize(
-		ctx: OffscreenCanvasRenderingContext2D,
 		ctxBackground: OffscreenCanvasRenderingContext2D,
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
+		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (MapDrawEngine.initialized) {
 			console.error('MapDrawEngine > initialize: already initialized');
@@ -44,8 +47,8 @@ export class MapDrawEngine {
 	}
 
 	public static moveToPx(px: number, py: number): void {
-		let xRel: number = Math.round(((px - MapDrawEngine.windowPwEffZero) / MapDrawEngine.windowPwEff) * 1000),
-			yRel: number = Math.round(((py - MapDrawEngine.windowPhEffZero) / MapDrawEngine.windowPhEff) * 1000);
+		let xRel: number = Math.round(((px - MapDrawEngine.backgroundPx + UtilEngine.renderOverflowP) / MapDrawEngine.backgroundPw) * 1000),
+			yRel: number = Math.round(((py - MapDrawEngine.backgroundPy + UtilEngine.renderOverflowP) / MapDrawEngine.backgroundPh) * 1000);
 
 		CameraEngine.moveG(Math.round(MapDrawEngine.mapActiveGrid.gWidth * xRel) / 1000, Math.round(MapDrawEngine.mapActiveGrid.gHeight * yRel) / 1000);
 	}
@@ -55,10 +58,10 @@ export class MapDrawEngine {
 
 		// calcs
 		let camera: Camera = MapDrawEngine.mapActiveCamera;
-		MapDrawEngine.windowPhEff = Math.round(camera.windowPh * 0.175);
-		MapDrawEngine.windowPhEffZero = camera.viewPortPy + 20;
-		MapDrawEngine.windowPwEff = Math.round(camera.windowPw * 0.175);
-		MapDrawEngine.windowPwEffZero = camera.windowPw - MapDrawEngine.windowPwEff - 20 - camera.viewPortPx;
+		MapDrawEngine.backgroundPh = Math.round(camera.viewportPh * MapDrawEngine.backgroundRatio);
+		MapDrawEngine.backgroundPw = Math.round(camera.viewportPw * MapDrawEngine.backgroundRatio);
+		MapDrawEngine.backgroundPx = camera.viewportPx2 - MapDrawEngine.backgroundPw - MapDrawEngine.backgroundOffset;
+		MapDrawEngine.backgroundPy = camera.viewportPy + MapDrawEngine.backgroundOffset;
 
 		/*
 		 * Background
@@ -68,20 +71,18 @@ export class MapDrawEngine {
 			// Draw from scratch
 			let cacheCanvas: OffscreenCanvas,
 				ctx: OffscreenCanvasRenderingContext2D,
-				windowPhEff: number = MapDrawEngine.windowPhEff,
-				windowPwEff: number = MapDrawEngine.windowPwEff;
+				backgroundPh: number = MapDrawEngine.backgroundPh,
+				backgroundPw: number = MapDrawEngine.backgroundPw;
 
 			// Canvas
-			cacheCanvas = new OffscreenCanvas(windowPwEff, windowPhEff);
+			cacheCanvas = new OffscreenCanvas(backgroundPw, backgroundPh);
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
-
-			// TODO, get bitmap from ctxBackground and paste it in here
 
 			// Background
 			ctx.beginPath();
 			ctx.fillStyle = 'rgba(0,0,0,.9)';
 			ctx.lineWidth = 1;
-			ctx.rect(0, 0, windowPwEff, windowPhEff);
+			ctx.rect(0, 0, backgroundPw, backgroundPh);
 			ctx.strokeStyle = 'white';
 			ctx.fill();
 			ctx.stroke();
@@ -91,12 +92,12 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheBackgroundHashP = MapDrawEngine.cacheHashCheckP;
 		}
 		// Draw from cache
-		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.windowPwEffZero, MapDrawEngine.windowPhEffZero);
+		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 
 		/*
 		 * Camera Lines
 		 */
-		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(MapDrawEngine.mapActiveCamera.viewPortGx, MapDrawEngine.mapActiveCamera.viewPortGy);
+		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(MapDrawEngine.mapActiveCamera.viewportGx, MapDrawEngine.mapActiveCamera.viewportGy);
 		if (
 			MapDrawEngine.cacheHashCheckG !== MapDrawEngine.cacheCameraLinesHashG ||
 			MapDrawEngine.cacheHashCheckP !== MapDrawEngine.cacheCameraLinesHashP ||
@@ -119,18 +120,18 @@ export class MapDrawEngine {
 				gxRelScaledEff: number,
 				gyRelScaled: number,
 				gyRelScaledEff: number,
-				windowPhEff: number = MapDrawEngine.windowPhEff,
-				windowPwEff: number = MapDrawEngine.windowPwEff;
+				backgroundPh: number = MapDrawEngine.backgroundPh,
+				backgroundPw: number = MapDrawEngine.backgroundPw;
 
 			// Canvas
-			cacheCanvas = new OffscreenCanvas(windowPwEff, windowPhEff);
+			cacheCanvas = new OffscreenCanvas(backgroundPw, backgroundPh);
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 
 			// Calc
-			ghRelScaled = windowPhEff * (camera.viewPortGhEff / gh);
-			gwRelScaled = windowPwEff * (camera.viewPortGwEff / gw);
-			gxRelScaled = windowPwEff * (camera.viewPortGx / gw);
-			gyRelScaled = windowPhEff * (camera.viewPortGy / gh);
+			ghRelScaled = backgroundPh * (camera.viewportGhEff / gh);
+			gwRelScaled = backgroundPw * (camera.viewportGwEff / gw);
+			gxRelScaled = backgroundPw * (camera.viewportGx / gw);
+			gyRelScaled = backgroundPh * (camera.viewportGy / gh);
 
 			// Calc eff
 			ghRelScaledEffB = gyRelScaled + Math.round(ghRelScaled * 0.3);
@@ -141,7 +142,7 @@ export class MapDrawEngine {
 			gyRelScaledEff = gyRelScaled + ghRelScaled;
 
 			/*
-			 * Viewport within Window
+			 * viewport within Window
 			 */
 			ctx.lineWidth = 1;
 			ctx.strokeStyle = 'white';
@@ -200,7 +201,7 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheCameraLinesHashP = MapDrawEngine.cacheHashCheckP;
 			MapDrawEngine.cacheZoom = camera.zoom;
 		}
-		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.windowPwEffZero, MapDrawEngine.windowPhEffZero);
+		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;
@@ -208,11 +209,13 @@ export class MapDrawEngine {
 	}
 
 	public static isPixelInMap(px: number, py: number): boolean {
+		px += UtilEngine.renderOverflowP;
+		py += UtilEngine.renderOverflowP;
 		if (
-			px >= MapDrawEngine.windowPwEffZero &&
-			py >= MapDrawEngine.windowPhEffZero &&
-			px <= MapDrawEngine.windowPwEffZero + MapDrawEngine.windowPwEff &&
-			py <= MapDrawEngine.windowPhEffZero + MapDrawEngine.windowPhEff
+			px >= MapDrawEngine.backgroundPx &&
+			py >= MapDrawEngine.backgroundPy &&
+			px <= MapDrawEngine.backgroundPx + MapDrawEngine.backgroundPw &&
+			py <= MapDrawEngine.backgroundPy + MapDrawEngine.backgroundPh
 		) {
 			return true;
 		} else {

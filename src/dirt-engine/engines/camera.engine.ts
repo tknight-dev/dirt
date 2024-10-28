@@ -55,12 +55,12 @@ export class CameraEngine {
 			camera: Camera = mapActive.camera,
 			renderOverflowP: number = UtilEngine.renderOverflowP;
 
-		camera.viewPortPh = ctxDimensionHeight - 2 * renderOverflowP;
-		camera.viewPortPw = ctxDimensionWidth - 2 * renderOverflowP;
-		camera.viewPortPx = renderOverflowP;
-		camera.viewPortPx2 = renderOverflowP + camera.viewPortPw;
-		camera.viewPortPy = renderOverflowP;
-		camera.viewPortPy2 = renderOverflowP + camera.viewPortPh;
+		camera.viewportPh = ctxDimensionHeight - 2 * renderOverflowP;
+		camera.viewportPw = ctxDimensionWidth - 2 * renderOverflowP;
+		camera.viewportPx = renderOverflowP;
+		camera.viewportPx2 = renderOverflowP + camera.viewportPw;
+		camera.viewportPy = renderOverflowP;
+		camera.viewportPy2 = renderOverflowP + camera.viewportPh;
 		camera.windowPh = ctxDimensionHeight;
 		camera.windowPw = ctxDimensionWidth;
 		camera.windowPx = 0;
@@ -77,11 +77,11 @@ export class CameraEngine {
 		camera.gx = Math.max(0, Math.min(grid.gWidth, camera.gx));
 		camera.gy = Math.max(0, Math.min(grid.gHeight, camera.gy));
 
-		camera.viewPortGx = Math.max(0, Math.min(grid.gWidth - camera.viewPortGwEff, Math.round((camera.gx - camera.viewPortGwEff / 2) * 1000) / 1000));
-		camera.viewPortGy = Math.max(0, Math.min(grid.gHeight - camera.viewPortGhEff, Math.round((camera.gy - camera.viewPortGhEff / 2) * 1000) / 1000));
+		camera.viewportGx = Math.max(0, Math.min(grid.gWidth - camera.viewportGwEff, Math.round((camera.gx - camera.viewportGwEff / 2) * 1000) / 1000));
+		camera.viewportGy = Math.max(0, Math.min(grid.gHeight - camera.viewportGhEff, Math.round((camera.gy - camera.viewportGhEff / 2) * 1000) / 1000));
 
 		// console.log('camera.gx', camera.gx);
-		// console.log('camera.viewPortGx', camera.viewPortGx);
+		// console.log('camera.viewportGx', camera.viewportGx);
 	}
 
 	/**
@@ -91,8 +91,8 @@ export class CameraEngine {
 		let mapActive = CameraEngine.mapActive,
 			camera: Camera = mapActive.camera,
 			grid: Grid = mapActive.gridActive,
-			viewPortGhEff: number,
-			viewPortGwEff: number,
+			viewportGhEff: number,
+			viewportGwEff: number,
 			zoom: number = camera.zoom;
 
 		// Zoom step
@@ -100,25 +100,25 @@ export class CameraEngine {
 			zoom = Math.round((zoom + (zoomIn ? -0.05 : 0.05)) * 1000) / 1000;
 		}
 
-		// ViewPort
-		viewPortGhEff = Math.round(camera.viewPortGh * zoom * 1000) / 1000;
-		viewPortGwEff = Math.round(camera.viewPortGw * zoom * 1000) / 1000;
+		// viewport
+		viewportGhEff = Math.round(camera.viewportGh * zoom * 1000) / 1000;
+		viewportGwEff = Math.round(camera.viewportGw * zoom * 1000) / 1000;
 
-		if (viewPortGhEff < 2 || viewPortGwEff < 2) {
+		if (viewportGhEff < 2 || viewportGwEff < 2) {
 			// Max zoom in (min 3 blocks)
 			return;
-		} else if (viewPortGhEff > grid.gHeight + 1 || viewPortGwEff > grid.gWidth + 1) {
+		} else if (viewportGhEff > grid.gHeight + 1 || viewportGwEff > grid.gWidth + 1) {
 			// Max zoom out
 			return;
 		}
 
-		camera.viewPortGhEff = viewPortGhEff;
-		camera.viewPortGwEff = viewPortGwEff;
+		camera.viewportGhEff = viewportGhEff;
+		camera.viewportGwEff = viewportGwEff;
 		camera.zoom = zoom;
 
 		// gInP
-		camera.gInPh = Math.round((camera.windowPh / viewPortGhEff) * 1000) / 1000;
-		camera.gInPw = Math.round((camera.windowPw / viewPortGwEff) * 1000) / 1000;
+		camera.gInPh = Math.round((camera.windowPh / viewportGhEff) * 1000) / 1000;
+		camera.gInPw = Math.round((camera.windowPw / viewportGwEff) * 1000) / 1000;
 
 		CameraEngine.updatePosition();
 	}

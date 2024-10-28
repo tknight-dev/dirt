@@ -1,9 +1,9 @@
-import { CalcEditEngine } from '../mode/edit/calc.edit.engine';
-import { CalcPlayEngine } from '../mode/play/calc.play.engine';
+import { CalcEditEngine } from './mode/edit/calc.edit.engine';
+import { CalcPlayEngine } from './mode/play/calc.play.engine';
 import { CameraDrawEngine } from '../draw/camera.draw.engine';
 import { CameraEngine } from './camera.engine';
-import { DrawEditEngine } from '../mode/edit/draw.edit.engine';
-import { DrawPlayEngine } from '../mode/play/draw.play.engine';
+import { DrawEditEngine } from './mode/edit/draw.edit.engine';
+import { DrawPlayEngine } from './mode/play/draw.play.engine';
 import { GridDrawEngine } from '../draw/grid.draw.engine';
 import { FPSDrawEngine } from '../draw/fps.draw.engine';
 import { KeyAction, KeyCommon } from './keyboard.engine';
@@ -32,10 +32,11 @@ export class KernelEngine {
 	private static timestampThen: number = performance.now();
 
 	public static async initialize(
-		ctx: OffscreenCanvasRenderingContext2D,
 		ctxBackground: OffscreenCanvasRenderingContext2D,
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
+		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (KernelEngine.initialized) {
 			console.error('KernelEngine > initialize: already initialized');
@@ -43,14 +44,14 @@ export class KernelEngine {
 		}
 		KernelEngine.initialized = true;
 
-		await DrawEditEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
-		await DrawPlayEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
+		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 
 		// Extended
-		await CameraDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
-		await FPSDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
-		await GridDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
-		await MapDrawEngine.initialize(ctx, ctxBackground, ctxForeground, ctxOverlay);
+		await CameraDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await FPSDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 	}
 
 	private static tmpH: any;
@@ -222,7 +223,6 @@ export class KernelEngine {
 		// Load into engines
 
 		// Load into extended engines
-		GridDrawEngine.setModeEdit(modeEdit);
 	}
 
 	public static updateSettings(settings: VideoCmdSettings): void {

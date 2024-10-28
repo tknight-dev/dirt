@@ -26,15 +26,17 @@ export interface MousePosition {
 
 export class MouseEngine {
 	private static callback: (action: MouseAction) => void;
-	private static feed: HTMLElement;
+	private static feedFitted: HTMLElement;
 	private static initialized: boolean;
 	private static timeout: ReturnType<typeof setTimeout>;
 	private static timestamp: number = performance.now();
 
 	private static calc(event: MouseEvent): MousePosition {
-		let domRect: DOMRect = MouseEngine.feed.getBoundingClientRect(),
+		let domRect: DOMRect = MouseEngine.feedFitted.getBoundingClientRect(),
 			xEff: number = Math.round(Math.max(domRect.x, Math.min(domRect.right, event.clientX)) - domRect.x),
 			yEff: number = Math.round(Math.max(domRect.y, Math.min(domRect.bottom, event.clientY)) - domRect.y);
+
+		//console.log('mouse', domRect.width, domRect.x, xEff, Math.round((xEff / domRect.width) * 1000) / 1000);
 
 		return {
 			x: xEff,
@@ -44,12 +46,12 @@ export class MouseEngine {
 		};
 	}
 
-	public static async initialize(feed: HTMLElement): Promise<void> {
+	public static async initialize(feedFitted: HTMLElement): Promise<void> {
 		if (MouseEngine.initialized) {
 			return;
 		}
 		MouseEngine.initialized = true;
-		MouseEngine.feed = feed;
+		MouseEngine.feedFitted = feedFitted;
 
 		document.addEventListener('click', (event) => {
 			if (MouseEngine.callback && event.button === 0) {

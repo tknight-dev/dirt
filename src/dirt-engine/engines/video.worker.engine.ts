@@ -63,40 +63,45 @@ self.onmessage = (event: MessageEvent) => {
 };
 
 class Video {
-	private static canvasOffscreen: OffscreenCanvas; // Z-1
-	private static canvasOffscreenContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenBackground: OffscreenCanvas; // Z-2
 	private static canvasOffscreenBackgroundContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenForeground: OffscreenCanvas; // Z-3
+	private static canvasOffscreenForeground: OffscreenCanvas; // Z-4
 	private static canvasOffscreenForegroundContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenOverlay: OffscreenCanvas; // Z-4
+	private static canvasOffscreenOverlay: OffscreenCanvas; // Z-5
 	private static canvasOffscreenOverlayContext: OffscreenCanvasRenderingContext2D;
+	private static canvasOffscreenPrimary: OffscreenCanvas; // Z-3
+	private static canvasOffscreenPrimaryContext: OffscreenCanvasRenderingContext2D;
+	private static canvasOffscreenUnderlay: OffscreenCanvas; // Z-1
+	private static canvasOffscreenUnderlayContext: OffscreenCanvasRenderingContext2D;
 	private static gameStarted: boolean;
 	private static self: Window & typeof globalThis;
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoCmdInit): Promise<void> {
 		// Assign
-		Video.canvasOffscreen = data.canvasOffscreen;
 		Video.canvasOffscreenBackground = data.canvasOffscreenBackground;
 		Video.canvasOffscreenForeground = data.canvasOffscreenForeground;
+		Video.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
 		Video.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
+		Video.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
 		Video.self = self;
 
 		// Get contexts
-		Video.canvasOffscreenContext = <any>Video.canvasOffscreen.getContext('2d', { alpha: false });
 		Video.canvasOffscreenBackgroundContext = <any>Video.canvasOffscreenBackground.getContext('2d');
 		Video.canvasOffscreenForegroundContext = <any>Video.canvasOffscreenForeground.getContext('2d');
 		Video.canvasOffscreenOverlayContext = <any>Video.canvasOffscreenOverlay.getContext('2d');
+		Video.canvasOffscreenPrimaryContext = <any>Video.canvasOffscreenPrimary.getContext('2d');
+		Video.canvasOffscreenUnderlayContext = <any>Video.canvasOffscreenUnderlay.getContext('2d');
 
 		// Engines
 		await AssetEngine.initialize(data.assetDeclarations, AssetCollection.VIDEO);
 		await AssetEngine.load();
 		await CameraEngine.initialize();
 		await KernelEngine.initialize(
-			Video.canvasOffscreenContext,
 			Video.canvasOffscreenBackgroundContext,
 			Video.canvasOffscreenForegroundContext,
 			Video.canvasOffscreenOverlayContext,
+			Video.canvasOffscreenPrimaryContext,
+			Video.canvasOffscreenUnderlayContext,
 		);
 		await MapEngine.initialize();
 
@@ -160,14 +165,16 @@ class Video {
 
 		KernelEngine.setDimension(height, width);
 
-		Video.canvasOffscreen.height = height;
-		Video.canvasOffscreen.width = width;
 		Video.canvasOffscreenBackground.height = height;
 		Video.canvasOffscreenBackground.width = width;
 		Video.canvasOffscreenForeground.height = height;
 		Video.canvasOffscreenForeground.width = width;
 		Video.canvasOffscreenOverlay.height = height;
 		Video.canvasOffscreenOverlay.width = width;
+		Video.canvasOffscreenPrimary.height = height;
+		Video.canvasOffscreenPrimary.width = width;
+		Video.canvasOffscreenUnderlay.height = height;
+		Video.canvasOffscreenUnderlay.width = width;
 	}
 
 	public static inputSettings(settings: VideoCmdSettings): void {

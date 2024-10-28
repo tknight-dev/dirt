@@ -12,6 +12,15 @@ let archive,
 	outputStream,
 	outputStreams = [];
 
+if (!cmd || cmd === 'shared') {
+	archives.push(
+		archiver('zip', {
+			zlib: { level: 9 }, // Sets the compression level. (9 is best)
+		}),
+	);
+	outputSources.push(__dirname + '/../assets/shared');
+	outputStreams.push(fs.createWriteStream(__dirname + '/../../../' + dir + '/dirt-engine-assets-s'));
+}
 if (!cmd || cmd === 'ui') {
 	archives.push(
 		archiver('zip', {

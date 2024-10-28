@@ -5,10 +5,14 @@
 /*
  * Global Imports
  */
+@import 'styles/cursors.scss';
 @import 'styles/icons.scss';
+@import 'styles/ui-edit.scss';
 
 $dirt-engine-feed-load: 0.5s;
 $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
+$dirt-engine-map-offset: 20px; // Sync with "MapDrawEngine > backgroundOffset"
+$dirt-engine-map-width: 17.5%; // Sync with "MapDrawEngine > backgroundRatio"
 
 .dirt-engine {
 	align-items: center;
@@ -21,12 +25,6 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 
 	&.fullscreen {
 		background-color: #0a0a0a;
-
-		.viewer-a {
-			.viewer-b {
-				//position: initial;
-			}
-		}
 	}
 
 	* {
@@ -68,6 +66,7 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 			.controls,
 			.feed,
 			.file,
+			.map-interaction,
 			.status {
 				position: absolute;
 			}
@@ -79,7 +78,7 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 				bottom: 0;
 				display: flex;
 				flex-direction: columns;
-				height: 50px;
+				height: $dirt-engine-controls-height;
 				justify-content: center;
 				left: 0;
 				opacity: 0.5;
@@ -140,39 +139,34 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 					top $dirt-engine-feed-load linear;
 				z-index: 2;
 
-				.feeder {
-					bottom: -$dirt-engine-feed-overflow-p;
-					left: -$dirt-engine-feed-overflow-p;
-					right: -$dirt-engine-feed-overflow-p;
-					position: absolute;
-					top: -$dirt-engine-feed-overflow-p;
+				.fitted {
+					height: 100%;
+					position: relative;
+					width: 100%;
+					z-index: 2;
 
-					&.canvas {
-						z-index: 1;
+					.outline {
+						border: 1px solid red;
+						pointer-events: none;
+						z-index: 9999;
 					}
 
-					&.background {
-						z-index: 2;
-					}
-
-					&.foreground {
-						z-index: 3;
-					}
-
-					&.overlay {
-						z-index: 4;
-					}
-
-					&.title-overlay {
-						background-color: black;
+					.outline,
+					.title,
+					.title {
 						bottom: 0;
 						left: 0;
-						opacity: 1;
+						position: absolute;
 						right: 0;
+						top: 0;
+					}
+
+					.title {
+						background-color: black;
+						opacity: 1;
 						transform: scale(0);
 						transition: opacity 0.5s linear;
-						top: 0;
-						z-index: 5;
+						z-index: 1;
 
 						.content {
 							align-items: center;
@@ -209,15 +203,55 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 							}
 						}
 					}
+
+					.dirt-engine-ui-edit {
+						display: none;
+						transition: opacity 0.125s linear;
+						z-index: 2;
+					}
 				}
 
-				.outline {
-					border: 1px solid red;
-					height: 100%;
-					pointer-events: none;
-					position: relative;
-					width: 100%;
-					z-index: 999;
+				.overflow {
+					bottom: -$dirt-engine-feed-overflow-p;
+					left: -$dirt-engine-feed-overflow-p;
+					right: -$dirt-engine-feed-overflow-p;
+					position: absolute;
+					top: -$dirt-engine-feed-overflow-p;
+					z-index: 1;
+
+					.streams {
+						height: 100%;
+						position: relative;
+						width: 100%;
+
+						.stream {
+							bottom: 0;
+							left: 0;
+							position: absolute;
+							right: 0;
+							top: 0;
+
+							&.canvas {
+								z-index: 1;
+							}
+
+							&.background {
+								z-index: 2;
+							}
+
+							&.foreground {
+								z-index: 3;
+							}
+
+							&.overlay {
+								z-index: 4;
+							}
+
+							.data {
+								position: relative;
+							}
+						}
+					}
 				}
 
 				&.start {
@@ -228,9 +262,11 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 					right: 0;
 					top: 0;
 
-					.title-overlay {
-						animation: scaler $dirt-engine-feed-load linear;
-						transform: scale(1);
+					.fitted {
+						.title {
+							animation: scaler $dirt-engine-feed-load linear;
+							transform: scale(1);
+						}
 					}
 				}
 
@@ -253,7 +289,7 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 				left: 0;
 				right: 0;
 				top: 0;
-				z-index: 4;
+				z-index: 5;
 
 				.collector {
 					align-items: center;
@@ -266,6 +302,15 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 					pointer-events: none;
 					width: 60%;
 				}
+			}
+
+			.map-interaction {
+				cursor: pointer;
+				height: $dirt-engine-map-width;
+				right: $dirt-engine-map-offset;
+				top: $dirt-engine-map-offset;
+				width: $dirt-engine-map-width;
+				z-index: 4;
 			}
 
 			.status {
@@ -282,15 +327,15 @@ $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 				z-index: 9999;
 
 				&.bad {
-					background-color: rgba(176, 42, 67, 0.5);
-					border: 2px solid rgb(176, 42, 67);
-					color: rgb(176, 42, 67);
+					background-color: rgba($dirt-engine-color-red, 0.5);
+					border: 2px solid $dirt-engine-color-red;
+					color: $dirt-engine-color-red;
 				}
 
 				&.good {
-					background-color: rgba(67, 176, 42, 0.5);
-					border: 2px solid rgb(67, 176, 42);
-					color: rgb(67, 176, 42);
+					background-color: rgba($dirt-engine-color-green, 0.5);
+					border: 2px solid $dirt-engine-color-green;
+					color: $dirt-engine-color-green;
 				}
 			}
 		}

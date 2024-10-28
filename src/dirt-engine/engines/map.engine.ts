@@ -1,8 +1,7 @@
-import { AssetEngine } from './asset.engine';
-import { Camera } from '../models/camera.model';
-import { Grid, GridBlock } from '../models/grid.model';
+import { Asset, AssetEngine } from './asset.engine';
+import { AssetMap } from '../models/asset.model';
+import { Grid } from '../models/grid.model';
 import { Map, MapActive } from '../models/map.model';
-import { MapAsset } from '../assets/map.asset';
 import { UtilEngine } from './util.engine';
 
 /**
@@ -30,7 +29,7 @@ export class MapEngine {
 			},
 			map: Map = {
 				camera: <any>{
-					viewPortGw: Math.round(gridWidth / 2),
+					viewportGw: Math.round(gridWidth / 2),
 					zoomDefault: 1,
 				},
 				grids: {}, // key is gridID
@@ -63,8 +62,8 @@ export class MapEngine {
 
 		// Camera
 		map.camera.zoom = grids[gridActiveId].zoomDefault;
-		map.camera.viewPortGw = Math.round(map.camera.viewPortGw);
-		map.camera.viewPortGh = Math.round((map.camera.viewPortGw * 9000) / 16) / 1000;
+		map.camera.viewportGw = Math.round(map.camera.viewportGw);
+		map.camera.viewportGh = Math.round((map.camera.viewportGw * 9000) / 16) / 1000;
 
 		// Grids
 		for (let i in grids) {
@@ -76,10 +75,17 @@ export class MapEngine {
 		return mapActive;
 	}
 
-	public static load(mapAsset: MapAsset): MapActive {
+	public static load(assetMap: AssetMap): MapActive | undefined {
 		if (!MapEngine.initialized) {
 			console.error('MapEngine > load: not initialized');
 		}
-		return MapEngine.loadFromFile(UtilEngine.mapDecode(AssetEngine.getAsset(mapAsset.src).data));
+		let asset: Asset | undefined = AssetEngine.getAsset(assetMap.src);
+
+		if (asset) {
+			return MapEngine.loadFromFile(UtilEngine.mapDecode(asset.data));
+		} else {
+			console.error("MapEngine > load: assetMap '" + assetMap.id + "' failed to load");
+			return undefined;
+		}
 	}
 }

@@ -9,9 +9,11 @@ var globalPackageJSONVersion = require('../../package.json').version;
 class Dirt {
 	public static initialize(): void {
 		let assetDeclarations: AssetDeclarations = {
+				customS: undefined,
 				customU: undefined,
 				customV: undefined,
 				dir: undefined,
+				manifest: undefined,
 			},
 			domGame: HTMLElement = <HTMLElement>document.getElementById('game');
 

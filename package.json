@@ -5,11 +5,12 @@
   "name": "dirt",
   "version": "0.1.0",
   "scripts": {
+    "dirt-engine-archiver-dev-shared": "nodemon --quiet --watch src/dirt-engine/assets/shared/**/* -e mp3 -x \"node src/dirt-engine/scripts/archiver.js dist shared\"",
     "dirt-engine-archiver-dev-ui": "nodemon --quiet --watch src/dirt-engine/assets/ui/**/* -e mp3 -x \"node src/dirt-engine/scripts/archiver.js dist ui\"",
     "dirt-engine-archiver-dev-video": "nodemon --quiet --watch src/dirt-engine/video/**/* -e mp3 -x \"node src/dirt-engine/scripts/archiver.js dist video\"",
     "dirt-engine-prod": "rimraf dist-dirt-engine && tsc --project tsconfig.dirt-engine.json && node src/dirt-engine/scripts/archiver.js dist-dirt-engine && npm run dirt-engine-sass",
     "dirt-engine-sass": "sass src/dirt-engine/dirt.engine.scss:dist-dirt-engine/dirt.engine.min.css --no-source-map --style compressed",
-    "dev": "rimraf dist && npm run tsc && node src/dirt-engine/scripts/archiver.js dist && npm run favicon-dev && concurrently --kill-others \"npm run dirt-engine-archiver-dev-ui\" \"npm run dirt-engine-archiver-dev-video\" \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n ARCU,ARCV,HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
+    "dev": "rimraf dist && npm run tsc && node src/dirt-engine/scripts/archiver.js dist && npm run favicon-dev && concurrently --kill-others \"npm run dirt-engine-archiver-dev-shared\" \"npm run dirt-engine-archiver-dev-ui\" \"npm run dirt-engine-archiver-dev-video\" \"npm run html-dev\" \"npm run sass-dev\" \"npm run serve-dev\" \"npm run tsc-dev\" \"npm run webpack-dev\" -n ARCS,ARCU,ARCV,HTML,SCSS,HTTP,TS,WEBP --pad-prefix",
     "favicon": "copyfiles favicon.ico dist",
     "favicon-dev": "copyfiles favicon.ico dist",
     "html": "copyfiles -u 1 src/dirt.html dist",
