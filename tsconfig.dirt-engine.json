@@ -4,7 +4,7 @@
         "esModuleInterop": true,
         "module": "es2022",
         "moduleResolution": "node",
-        "outDir": "./dist/working",
+        "outDir": "./dist-dirt-engine",
         "pretty": false,
         "removeComments": true,
         "sourceMap": false,
@@ -12,6 +12,6 @@
         "strictPropertyInitialization": false,
         "target": "es2022",
     },
-    "exclude": ["src/**/*.test.ts"],
-    "include": ["src/**/*"]
+    "exclude": ["src/dirt-engine/scripts/**/*", "src/dirt-engine/**/*.test.ts"],
+    "include": ["src/dirt-engine/**/*"]
 }

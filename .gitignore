@@ -1,4 +1,5 @@
 dist
+dist-dirt-engine
 node_modules
 
 *.sublime-project
