@@ -4,8 +4,8 @@ import { AssetCollection, AssetImage, AssetImageSrcResolution, AssetImageType } 
  * @author tknight-dev
  */
 
-let dirtEngineImageManifest: { [key: string]: AssetImage } = {
-	DIRT: {
+let dirtEngineDefaultImageManifest: AssetImage[] = [
+	{
 		id: 'DIRT',
 		collection: AssetCollection.SHARED,
 		meta: {
@@ -23,7 +23,7 @@ let dirtEngineImageManifest: { [key: string]: AssetImage } = {
 		],
 		type: AssetImageType.GRID_BLOCK,
 	},
-	DIRT_ENGINE: {
+	{
 		id: 'DIRT_ENGINE',
 		collection: AssetCollection.UI,
 		meta: {
@@ -41,7 +41,7 @@ let dirtEngineImageManifest: { [key: string]: AssetImage } = {
 		],
 		type: AssetImageType.LOGO,
 	},
-	TKNIGHT_DEV: {
+	{
 		id: 'TKNIGHT_DEV',
 		collection: AssetCollection.UI,
 		meta: {
@@ -59,6 +59,6 @@ let dirtEngineImageManifest: { [key: string]: AssetImage } = {
 		],
 		type: AssetImageType.LOGO,
 	},
-};
+];
 
-export { dirtEngineImageManifest };
+export { dirtEngineDefaultImageManifest };

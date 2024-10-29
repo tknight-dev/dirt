@@ -1,9 +1,7 @@
 // Imports
-import { AssetCollection, AssetDeclarations, AssetImage } from './models/asset.model';
-import { Asset, AssetEngine } from './engines/asset.engine';
+import { AssetCollection, AssetDeclarations, AssetManifest, AssetManifestMaster } from './models/asset.model';
+import { AssetCache, AssetEngine } from './engines/asset.engine';
 import { AudioEngine } from './engines/audio.engine';
-import { dirtEngineAudioManifest } from './assets/audio.asset';
-import { dirtEngineImageManifest } from './assets/image.asset';
 import { AudioModulation } from './models/audio-modulation.model';
 import { FullscreenEngine } from './engines/fullscreen.engine';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engines/keyboard.engine';
@@ -17,6 +15,7 @@ import { VisibilityEngine } from './engines/visibility.engine';
 export {
 	AssetAudio,
 	AssetAudioType,
+	AssetCollection,
 	AssetDeclarations,
 	AssetImage,
 	AssetImageSrc,
@@ -35,7 +34,7 @@ export { VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
  */
 
 export class DirtEngine {
-	private static assetDeclarations: AssetDeclarations;
+	private static assetManifestMaster: AssetManifestMaster;
 	private static dom: HTMLElement;
 	private static domElements: { [key: string]: HTMLElement } = {};
 	private static domElementsCanvas: { [key: string]: HTMLCanvasElement } = {};
@@ -52,14 +51,14 @@ export class DirtEngine {
 	private static uiEditZ: VideoCmdGameModeEditZLayer;
 	private static version: string = '0.1.0';
 
-	public static async initialize(assetDeclarations: AssetDeclarations, dom: HTMLElement, fps: VideoCmdSettingsFPS): Promise<void> {
+	public static async initialize(assetDeclarations: AssetDeclarations, dom: HTMLElement, fps: VideoCmdSettingsFPS, oldTVIntro: boolean): Promise<void> {
 		if (!(await AssetEngine.verify(assetDeclarations))) {
 			return;
 		} else if (DirtEngine.initialized) {
 			return;
 		}
 		DirtEngine.initialized = true;
-		DirtEngine.assetDeclarations = assetDeclarations;
+		DirtEngine.assetManifestMaster = AssetEngine.compileMasterManifest(assetDeclarations.manifest || <any>{});
 		DirtEngine.dom = dom;
 
 		console.log('DirtEngine: Initializing...');
@@ -67,15 +66,18 @@ export class DirtEngine {
 			timestamp: number = performance.now();
 
 		// Initialize DOM
-		await DirtEngine.initializeDOM();
+		await DirtEngine.initializeDOM(oldTVIntro);
 
-		// TODO: spinner for slow asset loading (bad internet connection)
+		// Spinner for slow asset loading (bad internet connection)
+		setTimeout(() => {
+			DirtEngine.domElements['spinner'].classList.add('start'); // fade in
+		}, 1000);
 
 		// Start basic systems and load assets into ram
 		await AssetEngine.initialize(assetDeclarations, AssetCollection.UI);
 		await AssetEngine.load();
 		await AudioEngine.initialize(AssetCollection.UI);
-		await AudioEngine.load(Object.values(dirtEngineAudioManifest));
+		await AudioEngine.load(Object.values(Object.values(DirtEngine.assetManifestMaster.audio)));
 
 		// Start feed
 		ready = DirtEngine.feedTitleOverlay();
@@ -141,35 +143,38 @@ export class DirtEngine {
 	}
 
 	private static async feedTitleOverlay(): Promise<void> {
-		let asset: Asset | undefined,
-			assetImageDirtEngine: AssetImage = dirtEngineImageManifest['DIRT_ENGINE'],
-			assetImageTknightdev: AssetImage = dirtEngineImageManifest['TKNIGHT_DEV'];
+		let asset: AssetCache | undefined;
 
 		return new Promise((resolve: any) => {
+			DirtEngine.domElements['spinner'].classList.remove('start');
 			setTimeout(() => {
-				// Expand the feed out
-				asset = AssetEngine.getAsset(dirtEngineImageManifest['TKNIGHT_DEV'].srcs[0].src);
-				if (asset) {
-					DirtEngine.domElements['feed-fitted-title-content-logo-company'].style.background = 'url("' + asset.data + '")';
-				} else {
-					console.error('DirtEngine > feedTitleOverlay: missing company logo');
-				}
-
-				asset = AssetEngine.getAsset(dirtEngineImageManifest['DIRT_ENGINE'].srcs[0].src);
-				if (asset) {
-					DirtEngine.domElements['feed-fitted-title-content-logo-engine'].style.background = 'url("' + asset.data + '")';
-				} else {
-					console.error('DirtEngine > feedTitleOverlay: missing engine logo');
-				}
-
-				DirtEngine.domElements['feed'].classList.add('start');
 				AudioEngine.trigger('TITLE_SCREEN_EFFECT', AudioModulation.NONE, 0, 0.5);
+
 				setTimeout(() => {
-					DirtEngine.domElements['feed'].classList.add('clickable');
-					AudioEngine.play('TITLE_SCREEN_MUSIC', 0, 0.15);
-					resolve();
+					// Expand the feed out
+					DirtEngine.domElements['spinner'].style.display = 'none';
+					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['TKNIGHT_DEV'].srcs[0].src);
+					if (asset) {
+						DirtEngine.domElements['feed-fitted-title-content-logo-company'].style.background = 'url("' + asset.data + '")';
+					} else {
+						console.error('DirtEngine > feedTitleOverlay: missing company logo');
+					}
+
+					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['DIRT_ENGINE'].srcs[0].src);
+					if (asset) {
+						DirtEngine.domElements['feed-fitted-title-content-logo-engine'].style.background = 'url("' + asset.data + '")';
+					} else {
+						console.error('DirtEngine > feedTitleOverlay: missing engine logo');
+					}
+
+					DirtEngine.domElements['feed'].classList.add('start');
+					setTimeout(() => {
+						DirtEngine.domElements['feed'].classList.add('clickable');
+						AudioEngine.play('TITLE_SCREEN_MUSIC', 0, 0.15);
+						resolve();
+					}, 500);
 				}, 500);
-			}, 1000);
+			}, 500);
 		});
 	}
 
@@ -193,7 +198,7 @@ export class DirtEngine {
 		}, 500);
 	}
 
-	private static async initializeDOM(): Promise<void> {
+	private static async initializeDOM(oldTVIntro: boolean): Promise<void> {
 		let dom: HTMLElement = DirtEngine.dom,
 			domChannel: HTMLElement,
 			domControls: HTMLElement,
@@ -221,7 +226,9 @@ export class DirtEngine {
 			domPrimary: HTMLElement,
 			domStatus: HTMLElement,
 			domViewerA: HTMLElement,
-			domViewerB: HTMLElement;
+			domViewerB: HTMLElement,
+			domViewerBSpinner: HTMLElement,
+			domViewerBSpinnerContent: HTMLElement;
 
 		/*
 		 * Primary
@@ -239,17 +246,40 @@ export class DirtEngine {
 
 		domViewerB = document.createElement('div');
 		domViewerB.className = 'viewer-b';
+
+		if (!oldTVIntro) {
+			domViewerB.classList.add('no-background');
+		}
+
 		domViewerA.appendChild(domViewerB);
 		DirtEngine.domElements['viewer-b'] = domViewerB;
 
 		/*
-		 * Channel
+		 * ViewerB: Channel
 		 */
 		domChannel = document.createElement('div');
 		domChannel.className = 'channel';
 		domChannel.innerText = '3';
+
+		if (!oldTVIntro) {
+			domChannel.style.display = 'none';
+		}
+
 		domViewerB.appendChild(domChannel);
 		DirtEngine.domElements['channel'] = domViewerB;
+
+		/*
+		 * ViewerB: Spinner
+		 */
+		domViewerBSpinner = document.createElement('div');
+		domViewerBSpinner.className = 'spinner';
+		domViewerB.appendChild(domViewerBSpinner);
+		DirtEngine.domElements['spinner'] = domViewerBSpinner;
+
+		domViewerBSpinnerContent = document.createElement('div');
+		domViewerBSpinnerContent.className = 'content';
+		domViewerBSpinner.appendChild(domViewerBSpinnerContent);
+		DirtEngine.domElements['spinner-content'] = domViewerBSpinnerContent;
 
 		/*
 		 * Controls

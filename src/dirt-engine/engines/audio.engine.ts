@@ -1,4 +1,4 @@
-import { Asset, AssetEngine } from './asset.engine';
+import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetAudio, AssetAudioType, AssetCollection } from '../models/asset.model';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { UtilEngine } from './util.engine';
@@ -226,6 +226,7 @@ export class AudioEngine {
 
 		for (let i in assetAudio) {
 			assetAudioInstance = assetAudio[i];
+
 			if (assetAudioInstance.collection === AudioEngine.assetCollection || assetAudioInstance.collection === AssetCollection.SHARED) {
 				loaderWrappers.push(AudioEngine.loader(assetAudioInstance));
 			}
@@ -240,7 +241,7 @@ export class AudioEngine {
 	}
 
 	private static async loader(assetAudio: AssetAudio): Promise<void> {
-		let asset: Asset | undefined,
+		let assetCache: AssetCache | undefined,
 			audio: HTMLAudioElement = new Audio(),
 			audioEvent: string = 'canplaythrough',
 			audioListener: () => void = () => {
@@ -272,11 +273,11 @@ export class AudioEngine {
 			}
 			audio.setAttribute('preload', 'auto');
 
-			asset = AssetEngine.getAssetAndRemoveFromCache(assetAudio.src);
-			if (asset) {
-				audio.setAttribute('src', asset.data);
+			assetCache = AssetEngine.getAssetAndRemoveFromCache(assetAudio.src);
+			if (assetCache) {
+				audio.setAttribute('src', assetCache.data);
 			} else {
-				console.error("AudioEngine > loader: assetAudio '" + assetAudio.id + "' failed to load");
+				console.error("AudioEngine > loader: assetAudio '" + assetAudio.id + "' failed to load", assetAudio.src);
 				resolve();
 			}
 		});

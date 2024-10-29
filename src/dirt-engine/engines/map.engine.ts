@@ -1,4 +1,4 @@
-import { Asset, AssetEngine } from './asset.engine';
+import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetMap } from '../models/asset.model';
 import { Grid } from '../models/grid.model';
 import { Map, MapActive } from '../models/map.model';
@@ -79,7 +79,7 @@ export class MapEngine {
 		if (!MapEngine.initialized) {
 			console.error('MapEngine > load: not initialized');
 		}
-		let asset: Asset | undefined = AssetEngine.getAsset(assetMap.src);
+		let asset: AssetCache | undefined = AssetEngine.getAsset(assetMap.src);
 
 		if (asset) {
 			return MapEngine.loadFromFile(UtilEngine.mapDecode(asset.data));

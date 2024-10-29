@@ -4,32 +4,8 @@ import { AssetAudio, AssetAudioType, AssetCollection } from '../models/asset.mod
  * @author tknight-dev
  */
 
-let dirtEngineAudioManifest: { [key: string]: AssetAudio } = {
-	BANG: {
-		id: 'BANG',
-		collection: AssetCollection.UI,
-		meta: undefined,
-		src: 'audio/effect/bang.mp3',
-		type: AssetAudioType.EFFECT,
-		volumeOffset: 0,
-	},
-	BONK: {
-		id: 'BONK',
-		collection: AssetCollection.UI,
-		meta: undefined,
-		src: 'audio/effect/bonk.mp3',
-		type: AssetAudioType.EFFECT,
-		volumeOffset: 0,
-	},
-	MUSIC: {
-		id: 'MUSIC',
-		collection: AssetCollection.UI,
-		meta: undefined,
-		src: 'audio/music/music.mp3',
-		type: AssetAudioType.MUSIC,
-		volumeOffset: 0,
-	},
-	TITLE_SCREEN_EFFECT: {
+let dirtEngineDefaultAudioManifest: AssetAudio[] = [
+	{
 		id: 'TITLE_SCREEN_EFFECT',
 		collection: AssetCollection.UI,
 		meta: {
@@ -43,7 +19,7 @@ let dirtEngineAudioManifest: { [key: string]: AssetAudio } = {
 		type: AssetAudioType.EFFECT,
 		volumeOffset: 0,
 	},
-	TITLE_SCREEN_MUSIC: {
+	{
 		id: 'TITLE_SCREEN_MUSIC',
 		collection: AssetCollection.UI,
 		meta: {
@@ -53,10 +29,10 @@ let dirtEngineAudioManifest: { [key: string]: AssetAudio } = {
 			publicDomain: true,
 			title: '115bpm_Let The Bass Kick Loop_808',
 		},
-		src: 'audio/effect/title-music.mp3',
+		src: 'audio/music/115bpm_Let The Bass Kick Loop_808.mp3',
 		type: AssetAudioType.MUSIC,
 		volumeOffset: 0,
 	},
-};
+];
 
-export { dirtEngineAudioManifest };
+export { dirtEngineDefaultAudioManifest };

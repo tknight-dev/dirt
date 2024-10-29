@@ -13,6 +13,7 @@ $dirt-engine-feed-load: 0.5s;
 $dirt-engine-feed-overflow-p: 20px; // Sync with "UtilEngine > renderOverflowP"
 $dirt-engine-map-offset: 20px; // Sync with "MapDrawEngine > backgroundOffset"
 $dirt-engine-map-width: 17.5%; // Sync with "MapDrawEngine > backgroundRatio"
+$dirt-engine-old-tv-background: #162fd8;
 
 .dirt-engine {
 	align-items: center;
@@ -47,10 +48,14 @@ $dirt-engine-map-width: 17.5%; // Sync with "MapDrawEngine > backgroundRatio"
 
 		.viewer-b {
 			aspect-ratio: 16/9;
-			background-color: #162fd8;
+			background-color: $dirt-engine-old-tv-background;
 			max-height: 100%;
 			position: relative;
 			width: 100%;
+
+			&.no-background {
+				background-color: black;
+			}
 
 			.channel {
 				font-family: 'Garamond';
@@ -67,6 +72,7 @@ $dirt-engine-map-width: 17.5%; // Sync with "MapDrawEngine > backgroundRatio"
 			.feed,
 			.file,
 			.map-interaction,
+			.spinner,
 			.status {
 				position: absolute;
 			}
@@ -311,6 +317,43 @@ $dirt-engine-map-width: 17.5%; // Sync with "MapDrawEngine > backgroundRatio"
 				top: $dirt-engine-map-offset;
 				width: $dirt-engine-map-width;
 				z-index: 4;
+			}
+
+			.spinner {
+				align-items: center;
+				bottom: 0;
+				display: flex;
+				justify-content: center;
+				left: 0;
+				opacity: 0;
+				pointer-events: none;
+				right: 0;
+				top: 0;
+				transition: opacity 0.5s linear;
+				z-index: 1;
+
+				.content {
+					animation: spin 1s linear infinite;
+					border: 8px solid #ffffff;
+					border-top: 8px solid $dirt-engine-old-tv-background;
+					border-radius: 50%;
+					height: 60px;
+					width: 60px;
+				}
+
+				&.start {
+					opacity: 0.75;
+					transition: opacity 5s linear;
+				}
+
+				@keyframes spin {
+					0% {
+						transform: rotate(0deg);
+					}
+					100% {
+						transform: rotate(360deg);
+					}
+				}
 			}
 
 			.status {

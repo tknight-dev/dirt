@@ -4,8 +4,8 @@ import { AssetCollection, AssetMap } from '../models/asset.model';
  * @author tknight-dev
  */
 
-let dirtEngineMapManifest: { [key: string]: AssetMap } = {
-	LEVEL01: {
+let dirtEngineDefaultMapManifest: AssetMap[] = [
+	{
 		id: 'LEVEL01',
 		collection: AssetCollection.VIDEO,
 		meta: {
@@ -18,6 +18,6 @@ let dirtEngineMapManifest: { [key: string]: AssetMap } = {
 		order: 0,
 		src: 'maps/level01.map',
 	},
-};
+];
 
-export { dirtEngineMapManifest };
+export { dirtEngineDefaultMapManifest };

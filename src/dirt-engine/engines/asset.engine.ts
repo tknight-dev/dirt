@@ -1,5 +1,8 @@
 import * as JSZip from 'JSZip';
-import { AssetCollection, AssetDeclarations } from '../models/asset.model';
+import { dirtEngineDefaultAudioManifest } from '../assets/audio.default.asset';
+import { dirtEngineDefaultImageManifest } from '../assets/image.default.asset';
+import { dirtEngineDefaultMapManifest } from '../assets/map.default.asset';
+import { Asset, AssetAudio, AssetCollection, AssetDeclarations, AssetImage, AssetMap, AssetManifest, AssetManifestMaster } from '../models/asset.model';
 
 /**
  * Loads shared assets first if another asset pack has the same file the other asset pack's file is ignored
@@ -13,7 +16,7 @@ interface AssetTmp {
 	dataURLType: string | null;
 }
 
-export interface Asset {
+export interface AssetCache {
 	data: string; // base64DataUrl
 	original: boolean;
 }
@@ -23,10 +26,75 @@ export class AssetEngine {
 	private static assetFilenameS: string = 'dirt-engine-assets-s';
 	private static assetFilenameU: string = 'dirt-engine-assets-u';
 	private static assetFilenameV: string = 'dirt-engine-assets-v';
-	private static assets: { [key: string]: Asset } = {};
+	private static assets: { [key: string]: AssetCache } = {};
 	private static collection: AssetCollection;
 	private static initialized: boolean;
 	private static loaded: boolean;
+
+	public static compileMasterManifest(assetManifestDeclared: AssetManifest): AssetManifestMaster {
+		let asset: Asset,
+			audio: { [key: string]: Asset } = {},
+			images: { [key: string]: Asset } = {},
+			maps: { [key: string]: Asset } = {};
+
+		// Process declared first
+		if (assetManifestDeclared.audio) {
+			for (let i in assetManifestDeclared.audio) {
+				asset = assetManifestDeclared.audio[i];
+				if (audio[asset.id] === undefined) {
+					audio[asset.id] = asset;
+				} else {
+					console.warn("AssetEngine > compileMasterManifest: declared audio asset id '" + asset.id + "' already exists");
+				}
+			}
+		}
+		if (assetManifestDeclared.images) {
+			for (let i in assetManifestDeclared.images) {
+				asset = assetManifestDeclared.images[i];
+				if (images[asset.id] === undefined) {
+					images[asset.id] = asset;
+				} else {
+					console.warn("AssetEngine > compileMasterManifest: declared image asset id '" + asset.id + "' already exists");
+				}
+			}
+		}
+		if (assetManifestDeclared.maps) {
+			for (let i in assetManifestDeclared.maps) {
+				asset = assetManifestDeclared.maps[i];
+				if (maps[asset.id] === undefined) {
+					maps[asset.id] = asset;
+				} else {
+					console.warn("AssetEngine > compileMasterManifest: declared map asset id '" + asset.id + "' already exists");
+				}
+			}
+		}
+
+		// Process defaults second
+		for (let i in dirtEngineDefaultAudioManifest) {
+			asset = dirtEngineDefaultAudioManifest[i];
+			if (audio[asset.id] === undefined) {
+				audio[asset.id] = asset;
+			}
+		}
+		for (let i in dirtEngineDefaultImageManifest) {
+			asset = dirtEngineDefaultImageManifest[i];
+			if (images[asset.id] === undefined) {
+				images[asset.id] = asset;
+			}
+		}
+		for (let i in dirtEngineDefaultMapManifest) {
+			asset = dirtEngineDefaultMapManifest[i];
+			if (maps[asset.id] === undefined) {
+				maps[asset.id] = asset;
+			}
+		}
+
+		return {
+			audio: <any>audio,
+			images: <any>images,
+			maps: <any>maps,
+		};
+	}
 
 	/**
 	 * Will always process the shared assets
@@ -53,12 +121,12 @@ export class AssetEngine {
 		let accept: boolean,
 			asset: AssetTmp,
 			assetDir: string = AssetEngine.assetDeclarations.dir || './',
-			assets: AssetTmp[] = [],
-			assetsCustomS: string[] | undefined = AssetEngine.assetDeclarations.customS,
-			assetsCustomU: string[] | undefined = AssetEngine.assetDeclarations.customU,
-			assetsCustomV: string[] | undefined = AssetEngine.assetDeclarations.customV,
+			assets: { [key: string]: AssetTmp } = {}, // key is fileName
+			assetsCustomS: string | undefined = AssetEngine.assetDeclarations.customS,
+			assetsCustomU: string | undefined = AssetEngine.assetDeclarations.customU,
+			assetsCustomV: string | undefined = AssetEngine.assetDeclarations.customV,
 			buffer: ArrayBuffer,
-			buffers: Promise<ArrayBuffer>[] = [],
+			buffers: { [key: string]: Promise<ArrayBuffer> } = {}, // key is fileName
 			dataURLType: string | null,
 			filename: string,
 			filenameOriginal: string,
@@ -69,10 +137,8 @@ export class AssetEngine {
 
 		// Load in shared
 		filenameOriginalShared = assetDir + AssetEngine.assetFilenameS;
-		if (assetsCustomS && Array.isArray(assetsCustomS)) {
-			for (let i in assetsCustomS) {
-				filenamesCustom.push(assetDir + assetsCustomS[i]);
-			}
+		if (assetsCustomS) {
+			filenamesCustom.push(assetDir + assetsCustomS);
 		}
 
 		// Load in context specific asset pack
@@ -80,19 +146,15 @@ export class AssetEngine {
 			case AssetCollection.UI:
 				filenameOriginal = assetDir + AssetEngine.assetFilenameU;
 
-				if (assetsCustomU && Array.isArray(assetsCustomU)) {
-					for (let i in assetsCustomU) {
-						filenamesCustom.push(assetDir + assetsCustomU[i]);
-					}
+				if (assetsCustomU) {
+					filenamesCustom.push(assetDir + assetsCustomU);
 				}
 				break;
 			case AssetCollection.VIDEO:
 				filenameOriginal = assetDir + AssetEngine.assetFilenameV;
 
 				if (assetsCustomV && Array.isArray(assetsCustomV)) {
-					for (let i in assetsCustomV) {
-						filenamesCustom.push(assetDir + assetsCustomV[i]);
-					}
+					filenamesCustom.push(assetDir + assetsCustomV);
 				}
 				break;
 			default:
@@ -101,7 +163,7 @@ export class AssetEngine {
 
 		// Set loader function
 		let loader = (filename: string, original: boolean) => {
-			if (AssetEngine.assets[filename] === undefined) {
+			if (assets[filename] === undefined) {
 				accept = true;
 
 				switch (filename.substring(filename.lastIndexOf('.') + 1, filename.length)) {
@@ -123,12 +185,12 @@ export class AssetEngine {
 				}
 
 				if (accept) {
-					assets.push({
+					assets[filename] = {
 						name: filename,
 						original: original,
 						dataURLType: dataURLType,
-					});
-					buffers.push((<JSZip.JSZipObject>zip.file(filename)).async('arraybuffer'));
+					};
+					buffers[filename] = (<JSZip.JSZipObject>zip.file(filename)).async('arraybuffer');
 				}
 			}
 		};
@@ -154,10 +216,10 @@ export class AssetEngine {
 		});
 
 		// Hold until all files loaded
-		await Promise.all(buffers);
+		await Promise.all(Object.values(buffers));
 
 		// Process the files
-		for (let i = 0; i < assets.length; i++) {
+		for (let i in assets) {
 			asset = assets[i];
 			buffer = await buffers[i];
 
@@ -226,7 +288,7 @@ export class AssetEngine {
 		return true;
 	}
 
-	public static getAsset(filename: string): Asset | undefined {
+	public static getAsset(filename: string): AssetCache | undefined {
 		if (!AssetEngine.initialized) {
 			console.error('AssetEngine > getAsset: not initialized');
 		} else if (!AssetEngine.loaded) {
@@ -235,13 +297,13 @@ export class AssetEngine {
 		return AssetEngine.assets[filename];
 	}
 
-	public static getAssetAndRemoveFromCache(filename: string): Asset | undefined {
+	public static getAssetAndRemoveFromCache(filename: string): AssetCache | undefined {
 		if (!AssetEngine.initialized) {
 			console.error('AssetEngine > getAssetAndRemoveFromCache: not initialized');
 		} else if (!AssetEngine.loaded) {
 			console.error('AssetEngine > getAssetAndRemoveFromCache: not loaded');
 		}
-		let asset: Asset = AssetEngine.assets[filename];
+		let asset: AssetCache = AssetEngine.assets[filename];
 		delete AssetEngine.assets[filename];
 		return asset;
 	}

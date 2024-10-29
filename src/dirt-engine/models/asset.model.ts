@@ -26,9 +26,9 @@ export enum AssetCollection {
 }
 
 export interface AssetDeclarations {
-	customS: string[] | undefined; // filename of your asset pack
-	customU: string[] | undefined; // filename of your asset pack
-	customV: string[] | undefined; // filename of your asset pack
+	customS: string | undefined; // filename of your asset pack
+	customU: string | undefined; // filename of your asset pack
+	customV: string | undefined; // filename of your asset pack
 	dir: string | undefined; // defaults to current directory
 	manifest: AssetManifest | undefined;
 }
@@ -64,6 +64,12 @@ export interface AssetManifest {
 	audio: AssetAudio[] | undefined;
 	images: AssetImage[] | undefined;
 	maps: AssetMap[] | undefined;
+}
+
+export interface AssetManifestMaster {
+	audio: { [key: string]: AssetAudio };
+	images: { [key: string]: AssetImage };
+	maps: { [key: string]: AssetMap };
 }
 
 export interface AssetMap extends Asset {
