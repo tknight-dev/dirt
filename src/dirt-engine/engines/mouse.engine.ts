@@ -7,6 +7,7 @@ import { UtilEngine } from './util.engine';
 export interface MouseAction {
 	cmd: MouseCmd;
 	down: boolean | undefined;
+	elementId: string | undefined;
 	position: MousePosition;
 }
 
@@ -55,12 +56,13 @@ export class MouseEngine {
 		MouseEngine.initialized = true;
 		MouseEngine.feedFitted = feedFitted;
 
-		document.addEventListener('click', (event) => {
+		document.addEventListener('click', (event: MouseEvent) => {
 			if (MouseEngine.callback && event.button === 0) {
 				// 0 is left click
 				MouseEngine.callback({
 					cmd: MouseCmd.LEFT_CLICK,
 					down: undefined,
+					elementId: (<HTMLElement>event.target).id,
 					position: MouseEngine.calc(event),
 				});
 			}
@@ -71,6 +73,7 @@ export class MouseEngine {
 				MouseEngine.callback({
 					cmd: MouseCmd.LEFT,
 					down: true,
+					elementId: (<HTMLElement>event.target).id,
 					position: MouseEngine.calc(event),
 				});
 			}
@@ -83,6 +86,7 @@ export class MouseEngine {
 					MouseEngine.callback({
 						cmd: MouseCmd.MOVE,
 						down: undefined,
+						elementId: (<HTMLElement>event.target).id,
 						position: MouseEngine.calc(event),
 					});
 					MouseEngine.timestamp = timestamp;
@@ -92,6 +96,7 @@ export class MouseEngine {
 						MouseEngine.callback({
 							cmd: MouseCmd.MOVE,
 							down: undefined,
+							elementId: (<HTMLElement>event.target).id,
 							position: MouseEngine.calc(event),
 						});
 					}, 40);
@@ -104,6 +109,7 @@ export class MouseEngine {
 				MouseEngine.callback({
 					cmd: MouseCmd.LEFT,
 					down: false,
+					elementId: (<HTMLElement>event.target).id,
 					position: MouseEngine.calc(event),
 				});
 			}
@@ -114,12 +120,14 @@ export class MouseEngine {
 					MouseEngine.callback({
 						cmd: MouseCmd.WHEEL,
 						down: true,
+						elementId: (<HTMLElement>event.target).id,
 						position: MouseEngine.calc(event),
 					});
 				} else {
 					MouseEngine.callback({
 						cmd: MouseCmd.WHEEL,
 						down: false,
+						elementId: (<HTMLElement>event.target).id,
 						position: MouseEngine.calc(event),
 					});
 				}

@@ -29,7 +29,8 @@ export interface AssetDeclarations {
 	customS: string | undefined; // filename of your asset pack
 	customU: string | undefined; // filename of your asset pack
 	customV: string | undefined; // filename of your asset pack
-	dir: string | undefined; // defaults to current directory
+	dirCustom: string | undefined; // defaults to current directory
+	dirDefault: string | undefined; // defaults to current directory
 	manifest: AssetManifest | undefined;
 }
 

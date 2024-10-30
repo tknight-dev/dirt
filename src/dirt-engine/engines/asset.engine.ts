@@ -139,7 +139,8 @@ export class AssetEngine {
 		AssetEngine.loaded = true;
 		let accept: boolean,
 			asset: AssetTmp,
-			assetDir: string = AssetEngine.assetDeclarations.dir || './',
+			assetDirCustom: string = AssetEngine.assetDeclarations.dirCustom || './',
+			assetDirDefault: string = AssetEngine.assetDeclarations.dirDefault || './',
 			assets: { [key: string]: AssetTmp } = {}, // key is fileName
 			assetsCustomS: string | undefined = AssetEngine.assetDeclarations.customS,
 			assetsCustomU: string | undefined = AssetEngine.assetDeclarations.customU,
@@ -155,25 +156,25 @@ export class AssetEngine {
 			zip: JSZip;
 
 		// Load in shared
-		filenameOriginalShared = assetDir + AssetEngine.assetFilenameS;
+		filenameOriginalShared = assetDirDefault + AssetEngine.assetFilenameS;
 		if (assetsCustomS) {
-			filenamesCustom.push(assetDir + assetsCustomS);
+			filenamesCustom.push(assetDirCustom + assetsCustomS);
 		}
 
 		// Load in context specific asset pack
 		switch (AssetEngine.collection) {
 			case AssetCollection.UI:
-				filenameOriginal = assetDir + AssetEngine.assetFilenameU;
+				filenameOriginal = assetDirDefault + AssetEngine.assetFilenameU;
 
 				if (assetsCustomU) {
-					filenamesCustom.push(assetDir + assetsCustomU);
+					filenamesCustom.push(assetDirCustom + assetsCustomU);
 				}
 				break;
 			case AssetCollection.VIDEO:
-				filenameOriginal = assetDir + AssetEngine.assetFilenameV;
+				filenameOriginal = assetDirDefault + AssetEngine.assetFilenameV;
 
 				if (assetsCustomV && Array.isArray(assetsCustomV)) {
-					filenamesCustom.push(assetDir + assetsCustomV);
+					filenamesCustom.push(assetDirCustom + assetsCustomV);
 				}
 				break;
 			default:
@@ -264,32 +265,33 @@ export class AssetEngine {
 			console.error('AssetEngine > verify: assetDeclarations is null or undefined');
 			return false;
 		}
-		let dir: string = assetDeclarations.dir || './',
+		let dirCustom: string = assetDeclarations.dirCustom || './',
+			dirDefault: string = assetDeclarations.dirDefault || './',
 			filename,
 			filenames: string[] = [],
 			zip: JSZip;
 
 		// Shared
-		filenames.push(dir + AssetEngine.assetFilenameS);
+		filenames.push(dirDefault + AssetEngine.assetFilenameS);
 		if (assetDeclarations.customS && Array.isArray(assetDeclarations.customS)) {
 			for (let i in assetDeclarations.customS) {
-				filenames.push(dir + assetDeclarations.customS[i]);
+				filenames.push(dirCustom + assetDeclarations.customS[i]);
 			}
 		}
 
 		// UI
-		filenames.push(dir + AssetEngine.assetFilenameU);
+		filenames.push(dirDefault + AssetEngine.assetFilenameU);
 		if (assetDeclarations.customU && Array.isArray(assetDeclarations.customU)) {
 			for (let i in assetDeclarations.customU) {
-				filenames.push(dir + assetDeclarations.customU[i]);
+				filenames.push(dirCustom + assetDeclarations.customU[i]);
 			}
 		}
 
 		// Video
-		filenames.push(dir + AssetEngine.assetFilenameV);
+		filenames.push(dirDefault + AssetEngine.assetFilenameV);
 		if (assetDeclarations.customV && Array.isArray(assetDeclarations.customV)) {
 			for (let i in assetDeclarations.customV) {
-				filenames.push(dir + assetDeclarations.customV[i]);
+				filenames.push(dirCustom + assetDeclarations.customV[i]);
 			}
 		}
 

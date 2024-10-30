@@ -40,7 +40,7 @@ export class MapEngine {
 				clockSpeedRelativeToEarth: 1,
 				grids: {}, // key is gridID
 				hourOfDay: 12,
-				name: 'new map',
+				name: 'new_map',
 			};
 
 		map.grids[grid.id] = grid;

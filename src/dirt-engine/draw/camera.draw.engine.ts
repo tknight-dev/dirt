@@ -15,6 +15,7 @@ export class CameraDrawEngine {
 	private static cachePositionHashP: number;
 	private static cachePositionHashCheckG: number;
 	private static cachePositionHashCheckP: number;
+	private static cacheZoom: number;
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
@@ -73,7 +74,8 @@ export class CameraDrawEngine {
 		);
 		if (
 			CameraDrawEngine.cachePositionHashG !== CameraDrawEngine.cachePositionHashCheckG ||
-			CameraDrawEngine.cachePositionHashP !== CameraDrawEngine.cachePositionHashCheckP
+			CameraDrawEngine.cachePositionHashP !== CameraDrawEngine.cachePositionHashCheckP ||
+			CameraDrawEngine.cacheZoom !== CameraDrawEngine.mapActiveCamera.zoom
 		) {
 			// Calc from scratch
 			let camera: Camera = CameraDrawEngine.mapActiveCamera,
@@ -108,6 +110,7 @@ export class CameraDrawEngine {
 
 			CameraDrawEngine.cachePositionHashG = CameraDrawEngine.cachePositionHashCheckG;
 			CameraDrawEngine.cachePositionHashP = CameraDrawEngine.cachePositionHashCheckP;
+			CameraDrawEngine.cacheZoom = CameraDrawEngine.mapActiveCamera.zoom;
 		}
 
 		CameraDrawEngine.ctxOverlay.drawImage(

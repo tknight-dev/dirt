@@ -6,6 +6,7 @@ import { AssetDeclarations } from '../models/asset.model';
 import { AudioEngine } from './audio.engine';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { KeyAction, KeyCommon } from './keyboard.engine';
+import { Map } from '../models/map.model';
 import { MouseAction } from './mouse.engine';
 import { ResizeEngine } from './resize.engine';
 import {
@@ -28,6 +29,7 @@ import {
 	VideoWorkerCmdAudioMusicPlay,
 	VideoWorkerCmdAudioMusicUnpause,
 	VideoWorkerCmdAudioVolume,
+	VideoWorkerCmdMapAsset,
 	VideoWorkerCmdMapLoadStatus,
 	VideoWorkerCmdMapSave,
 	VideoWorkerPayload,
@@ -36,6 +38,7 @@ import {
 import { VisibilityEngine } from './visibility.engine';
 
 export class VideoEngine {
+	private static callbackMapAsset: (map: Map | undefined) => void;
 	private static callbackMapLoadStatus: (status: boolean) => void;
 	private static callbackMapSave: (data: string, name: string) => void;
 	private static callbackStatusInitialized: (durationInMs: number) => void;
@@ -168,7 +171,7 @@ export class VideoEngine {
 			width: Math.round(width),
 		};
 
-		if (disablePost !== true) {
+		if (VideoEngine.complete && disablePost !== true) {
 			VideoEngine.worker.postMessage({
 				cmd: VideoCmd.RESIZE,
 				data: data,
@@ -189,6 +192,7 @@ export class VideoEngine {
 			videoWorkerCmdAudioMusicPause: VideoWorkerCmdAudioMusicPause,
 			videoWorkerCmdAudioMusicUnpause: VideoWorkerCmdAudioMusicUnpause,
 			videoWorkerCmdAudioVolume: VideoWorkerCmdAudioVolume,
+			videoWorkerCmdMapAsset: VideoWorkerCmdMapAsset,
 			videoWorkerCmdMapLoadStatus: VideoWorkerCmdMapLoadStatus,
 			videoWorkerCmdMapSave: VideoWorkerCmdMapSave,
 			videoWorkerPayload: VideoWorkerPayload,
@@ -247,6 +251,14 @@ export class VideoEngine {
 							videoWorkerCmdAudioVolume.volumePercentage,
 						);
 						break;
+					case VideoWorkerCmd.MAP_ASSET:
+						videoWorkerCmdMapAsset = <VideoWorkerCmdMapAsset>videoWorkerPayload.data;
+						if (VideoEngine.callbackMapAsset !== undefined) {
+							VideoEngine.callbackMapAsset(videoWorkerCmdMapAsset.map);
+						} else {
+							console.error('VideoEngine > workerListen: map asset callback not set');
+						}
+						break;
 					case VideoWorkerCmd.MAP_LOAD_STATUS:
 						videoWorkerCmdMapLoadStatus = <VideoWorkerCmdMapLoadStatus>videoWorkerPayload.data;
 						if (VideoEngine.callbackMapLoadStatus !== undefined) {
@@ -286,11 +298,23 @@ export class VideoEngine {
 		});
 	}
 
-	public static workerLoadMap(file: string): void {
+	public static workerMapLoad(file: string): void {
 		VideoEngine.worker.postMessage({
 			cmd: VideoCmd.MAP_LOAD,
 			data: {
 				data: file,
+			},
+		});
+	}
+
+	/**
+	 * @param id undefined indicates a new map
+	 */
+	public static workerMapLoadById(id: string | undefined): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.MAP_LOAD_BY_ID,
+			data: {
+				id: id,
 			},
 		});
 	}
@@ -342,6 +366,10 @@ export class VideoEngine {
 			cmd: VideoCmd.SETTINGS,
 			data: settings,
 		});
+	}
+
+	public static setCallbackMapAsset(callbackMapAsset: (map: Map | undefined) => void): void {
+		VideoEngine.callbackMapAsset = callbackMapAsset;
 	}
 
 	public static setCallbackMapLoadStatus(callbackMapLoadStatus: (status: boolean) => void): void {

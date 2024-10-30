@@ -25,7 +25,7 @@ export class FullscreenEngine {
 		});
 	}
 
-	public static close(): void {
+	public static async close(): Promise<void> {
 		if (!FullscreenEngine.initialized) {
 			console.error('FullscreenEngine > close: not initialized');
 			return;
@@ -34,12 +34,12 @@ export class FullscreenEngine {
 		}
 
 		try {
-			document.exitFullscreen();
+			await document.exitFullscreen();
 			FullscreenEngine.state = false;
 		} catch (error: any) {}
 	}
 
-	public static open(element: HTMLElement): boolean {
+	public static async open(element: HTMLElement): Promise<boolean> {
 		if (!FullscreenEngine.initialized) {
 			console.error('FullscreenEngine > open: not initialized');
 			return false;
@@ -48,7 +48,7 @@ export class FullscreenEngine {
 			return false;
 		}
 
-		element.requestFullscreen();
+		await element.requestFullscreen();
 		FullscreenEngine.state = true;
 
 		return true;

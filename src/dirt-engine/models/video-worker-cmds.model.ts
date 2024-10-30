@@ -1,5 +1,6 @@
 import { AssetDeclarations } from './asset.model';
 import { KeyAction } from '../engines/keyboard.engine';
+import { Map } from '../models/map.model';
 import { MouseAction } from '../engines/mouse.engine';
 
 /**
@@ -20,6 +21,7 @@ export enum VideoCmd {
 	INIT,
 	KEY,
 	MAP_LOAD,
+	MAP_LOAD_BY_ID,
 	MOUSE,
 	RESIZE,
 	SETTINGS,
@@ -38,16 +40,18 @@ export interface VideoCmdMapLoad {
 	data: string;
 }
 
+export interface VideoCmdMapLoadById {
+	id: string | undefined; // undefined for new map
+}
+
 export interface VideoCmdResize {
 	devicePixelRatio: number; // precision 1
 	height: number;
 	width: number;
 }
 
-export interface VideoCmdGameModeEdit {}
-
-export interface VideoCmdGameModeEditZ {
-	layer: VideoCmdGameModeEditZLayer;
+export interface VideoCmdGameModeEdit {
+	edit: boolean;
 }
 
 export enum VideoCmdGameModeEditZLayer {
@@ -94,12 +98,14 @@ export interface VideoPayload {
 	data:
 		| KeyAction
 		| MouseAction
+		| VideoCmdGameModeEdit
 		| VideoCmdGamePause
 		| VideoCmdGameSave
 		| VideoCmdGameStart
 		| VideoCmdGameUnpause
 		| VideoCmdInit
 		| VideoCmdMapLoad
+		| VideoCmdMapLoadById
 		| VideoCmdResize;
 }
 
@@ -110,6 +116,7 @@ export enum VideoWorkerCmd {
 	AUDIO_MUSIC_PAUSE,
 	AUDIO_MUSIC_UNPAUSE,
 	AUDIO_VOLUME,
+	MAP_ASSET,
 	MAP_LOAD_STATUS,
 	MAP_SAVE,
 	STATUS_INITIALIZED,
@@ -147,6 +154,10 @@ export interface VideoWorkerCmdAudioVolume {
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
+export interface VideoWorkerCmdMapAsset {
+	map: Map | undefined;
+}
+
 export interface VideoWorkerCmdMapLoadStatus {
 	status: boolean;
 }
@@ -165,6 +176,7 @@ export interface VideoWorkerPayload {
 		| VideoWorkerCmdAudioMusicPause
 		| VideoWorkerCmdAudioMusicUnpause
 		| VideoWorkerCmdAudioVolume
+		| VideoWorkerCmdMapAsset
 		| VideoWorkerCmdMapLoadStatus
 		| VideoWorkerCmdMapSave
 		| VideoWorkerStatusInitialized

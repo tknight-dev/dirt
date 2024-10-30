@@ -250,4 +250,8 @@ export class KernelEngine {
 	public static isModeEdit(): boolean {
 		return KernelEngine.modeEdit;
 	}
+
+	public static isRunning(): boolean {
+		return KernelEngine.status;
+	}
 }

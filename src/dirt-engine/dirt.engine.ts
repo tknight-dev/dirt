@@ -1,12 +1,13 @@
 // Imports
-import { AssetCollection, AssetDeclarations, AssetManifest, AssetManifestMaster } from './models/asset.model';
+import { AssetCollection, AssetDeclarations, AssetManifestMaster } from './models/asset.model';
 import { AssetCache, AssetEngine } from './engines/asset.engine';
 import { AudioEngine } from './engines/audio.engine';
 import { AudioModulation } from './models/audio-modulation.model';
-import { DomUIDirtEngine } from './ui/dom.ui';
+import { DomUI } from './ui/dom.ui';
 import { FullscreenEngine } from './engines/fullscreen.engine';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engines/keyboard.engine';
-import { MouseAction, MouseEngine } from './engines/mouse.engine';
+import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
+import { Orientation, OrientationEngine } from './engines/orientation.engine';
 import { ResizeEngine } from './engines/resize.engine';
 import { VideoCmdGamePauseReason, VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
 import { VideoEngine } from './engines/video.engine';
@@ -32,12 +33,12 @@ export { VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
  * @author tknight-dev
  */
 
-export class DirtEngine extends DomUIDirtEngine {
-	private static assetManifestMaster: AssetManifestMaster;
+export class DirtEngine extends DomUI {
 	private static dragable: boolean;
 	private static dragging: boolean;
 	private static draggingLoading: boolean;
 	private static gameModeEditStart: boolean = true;
+	private static gameStarted: boolean;
 	private static initialized: boolean;
 	private static ready: boolean;
 	private static readyOverlayComplete: boolean;
@@ -56,8 +57,8 @@ export class DirtEngine extends DomUIDirtEngine {
 			return;
 		}
 		DirtEngine.initialized = true;
-		DirtEngine.assetManifestMaster = AssetEngine.compileMasterManifest(assetDeclarations.manifest || <any>{});
-		DomUIDirtEngine.dom = dom;
+		DomUI.assetManifestMaster = AssetEngine.compileMasterManifest(assetDeclarations.manifest || <any>{});
+		DomUI.dom = dom;
 		DirtEngine.gameModeEditStart = gameModeEditStart;
 
 		console.log('DirtEngine: Initializing...');
@@ -65,7 +66,7 @@ export class DirtEngine extends DomUIDirtEngine {
 			timestamp: number = performance.now();
 
 		// Initialize DOM
-		await DirtEngine.initializeDOM(oldTVIntro);
+		await DirtEngine.initializeDomUI(oldTVIntro);
 
 		// Spinner for slow asset loading (bad internet connection)
 		setTimeout(() => {
@@ -85,6 +86,7 @@ export class DirtEngine extends DomUIDirtEngine {
 		await FullscreenEngine.initialize();
 		await KeyboardEngine.initialize();
 		await MouseEngine.initialize(DirtEngine.domElements['feed-fitted']);
+		await OrientationEngine.initialize();
 		await ResizeEngine.initialize();
 		await VisibilityEngine.initialize();
 
@@ -169,7 +171,7 @@ export class DirtEngine extends DomUIDirtEngine {
 		VideoEngine.workerGameStart({
 			modeEdit: DirtEngine.gameModeEditStart,
 		});
-		DirtEngine.gameModeEdit(DirtEngine.gameModeEditStart);
+		DirtEngine.setGameModeEdit(DirtEngine.gameModeEditStart);
 
 		// Audio
 		AudioEngine.fade('TITLE_SCREEN_MUSIC', 1000, 0);
@@ -183,6 +185,11 @@ export class DirtEngine extends DomUIDirtEngine {
 		setTimeout(() => {
 			DirtEngine.domElements['feed-fitted-title'].style.display = 'none';
 		}, 500);
+
+		// Done
+		setTimeout(() => {
+			DirtEngine.gameStarted = true;
+		});
 	}
 
 	private static async initializeHooks(): Promise<void> {
@@ -262,9 +269,10 @@ export class DirtEngine extends DomUIDirtEngine {
 
 				DirtEngine.domElements['dirt-engine'].classList.remove('fullscreen');
 				DirtEngine.domElements['fullscreen'].className = 'dirt-engine-icon fullscreen';
+				OrientationEngine.unlock();
 			}
 		});
-		DirtEngine.domElements['fullscreen'].onclick = (event: any) => {
+		DirtEngine.domElements['fullscreen'].onclick = async (event: any) => {
 			if (VideoEngine.isGoComplete()) {
 				VideoEngine.workerGamePause({
 					reason: VideoCmdGamePauseReason.FULLSCREEN,
@@ -272,13 +280,17 @@ export class DirtEngine extends DomUIDirtEngine {
 			}
 
 			if (FullscreenEngine.isOpen()) {
-				FullscreenEngine.close();
+				await FullscreenEngine.close();
 				DirtEngine.domElements['dirt-engine'].classList.remove('fullscreen');
 				DirtEngine.domElements['fullscreen'].className = 'dirt-engine-icon fullscreen';
+				OrientationEngine.unlock();
 			} else {
-				FullscreenEngine.open(DirtEngine.domElements['dirt-engine']);
+				await FullscreenEngine.open(DirtEngine.domElements['dirt-engine']);
 				DirtEngine.domElements['dirt-engine'].classList.add('fullscreen');
 				DirtEngine.domElements['fullscreen'].className = 'dirt-engine-icon fullscreen-exit';
+				setTimeout(() => {
+					OrientationEngine.lock(Orientation.LANDSCAPE);
+				});
 			}
 			event.preventDefault();
 			event.stopPropagation();
@@ -298,7 +310,7 @@ export class DirtEngine extends DomUIDirtEngine {
 
 			// Load file
 			reader.onload = (event: any) => {
-				VideoEngine.workerLoadMap(event.target.result);
+				VideoEngine.workerMapLoad(event.target.result);
 
 				// Reset UI
 				DirtEngine.dragging = false;
@@ -320,7 +332,7 @@ export class DirtEngine extends DomUIDirtEngine {
 			}
 		};
 
-		// Hook: Map - Load/Save
+		// Hook: Map - Save/load
 		VideoEngine.setCallbackMapLoadStatus((status: boolean) => {
 			DirtEngine.statusFlash(status);
 		});
@@ -336,11 +348,11 @@ export class DirtEngine extends DomUIDirtEngine {
 		});
 
 		// Hook: Save Button (edit: save map, !edit: save game)
-		DomUIDirtEngine.domElementsUIEdit['save-button'].onclick = () => {
-			DomUIDirtEngine.domElementsUIEdit['save'].classList.add('active');
+		DomUI.domElementsUIEdit['save'].onclick = () => {
+			DirtEngine.domElementsUIEdit['save'].classList.add('active');
 			VideoEngine.workerGameSave({});
 			setTimeout(() => {
-				DomUIDirtEngine.domElementsUIEdit['save'].classList.remove('active');
+				DirtEngine.domElementsUIEdit['save'].classList.remove('active');
 			}, 1000);
 		};
 	}
@@ -351,29 +363,35 @@ export class DirtEngine extends DomUIDirtEngine {
 			let keyValue: number = Number(key);
 			if (!isNaN(keyValue)) {
 				KeyboardEngine.register(keyValue, (keyAction: KeyAction) => {
-					VideoEngine.workerKey(keyAction);
+					if (DirtEngine.gameStarted) {
+						VideoEngine.workerKey(keyAction);
+					}
 				});
 			}
 		});
 
 		//Mouse
 		MouseEngine.setCallback((action: MouseAction) => {
-			VideoEngine.workerMouse(action);
+			if (DirtEngine.gameStarted) {
+				VideoEngine.workerMouse(action);
+
+				if (
+					DirtEngine.uiEditMode &&
+					action.cmd === MouseCmd.LEFT_CLICK &&
+					action.elementId === DomUI.domElements['feed-fitted'].id
+				) {
+					if (DomUI.uiEditMap) {
+						DomUI.uiEditChanged = true;
+
+						console.log('EditModeClick');
+						console.log('  >> applicationType', DomUI.uiEditApplicationType);
+						console.log('  >> brushSize', DirtEngine.uiEditBrushSize);
+						console.log('  >> palette', DirtEngine.uiEditPalette);
+						console.log('  >> position', action.position);
+					}
+				}
+			}
 		});
-	}
-
-	private static statusFlash(status: boolean): void {
-		DirtEngine.domElements['status'].className = 'status ' + (status ? 'good' : 'bad');
-		DirtEngine.domElements['status'].innerText = status ? 'Success' : 'Failed';
-		DirtEngine.domElements['status'].style.opacity = '1';
-		DirtEngine.domElements['status'].style.display = 'flex';
-
-		setTimeout(() => {
-			DirtEngine.domElements['status'].style.opacity = '0';
-			setTimeout(() => {
-				DirtEngine.domElements['status'].style.display = 'none';
-			}, 1000);
-		}, 1000);
 	}
 
 	public static getVersion(): string {

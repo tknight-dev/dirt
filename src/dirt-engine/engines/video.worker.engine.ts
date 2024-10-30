@@ -1,9 +1,9 @@
-import { AssetCollection } from '../models/asset.model';
+import { AssetCollection, AssetManifestMaster, AssetMap } from '../models/asset.model';
 import { AssetEngine } from './asset.engine';
 import { CameraEngine } from './camera.engine';
 import { KernelEngine } from './kernel.engine';
 import { KeyAction } from './keyboard.engine';
-import { Map } from '../models/map.model';
+import { Map, MapActive } from '../models/map.model';
 import { MapEngine } from './map.engine';
 import { MouseAction } from './mouse.engine';
 import { UtilEngine } from './util.engine';
@@ -11,7 +11,9 @@ import {
 	VideoCmd,
 	VideoCmdInit,
 	VideoCmdMapLoad,
+	VideoCmdMapLoadById,
 	VideoCmdResize,
+	VideoCmdGameModeEdit,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
 	VideoCmdGameSave,
@@ -32,6 +34,9 @@ self.onmessage = (event: MessageEvent) => {
 	let videoPayload: VideoPayload = event.data;
 
 	switch (videoPayload.cmd) {
+		case VideoCmd.GAME_MODE_EDIT:
+			Video.inputGameModeEdit(<VideoCmdGameModeEdit>videoPayload.data);
+			break;
 		case VideoCmd.GAME_PAUSE:
 			Video.inputGamePause(<VideoCmdGamePause>videoPayload.data);
 			break;
@@ -53,6 +58,9 @@ self.onmessage = (event: MessageEvent) => {
 		case VideoCmd.MAP_LOAD:
 			Video.inputMapLoad(<VideoCmdMapLoad>videoPayload.data);
 			break;
+		case VideoCmd.MAP_LOAD_BY_ID:
+			Video.inputMapLoadById(<VideoCmdMapLoadById>videoPayload.data);
+			break;
 		case VideoCmd.MOUSE:
 			KernelEngine.inputMouse(<MouseAction>videoPayload.data);
 			break;
@@ -67,6 +75,7 @@ self.onmessage = (event: MessageEvent) => {
 };
 
 class Video {
+	private static assetManifestMaster: AssetManifestMaster;
 	private static canvasOffscreenBackground: OffscreenCanvas; // Z-2
 	private static canvasOffscreenBackgroundContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenForeground: OffscreenCanvas; // Z-4
@@ -90,6 +99,7 @@ class Video {
 		let timestamp: number = performance.now();
 
 		// Assign
+		Video.assetManifestMaster = AssetEngine.compileMasterManifest(data.assetDeclarations.manifest || <any>{});
 		Video.canvasOffscreenBackground = data.canvasOffscreenBackground;
 		Video.canvasOffscreenForeground = data.canvasOffscreenForeground;
 		Video.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
@@ -132,6 +142,10 @@ class Video {
 		]);
 	}
 
+	public static inputGameModeEdit(modeEdit: VideoCmdGameModeEdit): void {
+		console.log('VideoWorker > modeEdit', modeEdit);
+	}
+
 	public static inputGamePause(pause: VideoCmdGamePause): void {
 		//console.log('VideoWorker > gamePause', pause);
 	}
@@ -160,10 +174,6 @@ class Video {
 
 		// Last
 		KernelEngine.setModeEdit(start.modeEdit);
-
-		//KernelEngine.start(MapEngine.load(MapAsset.LEVEL01)); // Load map order 0
-
-		KernelEngine.start(MapEngine.default());
 	}
 
 	public static inputGameUnpause(unpause: VideoCmdGameUnpause): void {
@@ -173,6 +183,8 @@ class Video {
 	public static inputMapLoad(videoCmdMapLoad: VideoCmdMapLoad): void {
 		let map: Map,
 			status: boolean = true;
+
+		//let maps: { [key: string]: AssetMap } = Video.assetManifestMaster.maps
 
 		try {
 			map = UtilEngine.mapDecode(videoCmdMapLoad.data);
@@ -185,6 +197,38 @@ class Video {
 				cmd: VideoWorkerCmd.MAP_LOAD_STATUS,
 				data: {
 					status: status,
+				},
+			},
+		]);
+	}
+
+	public static inputMapLoadById(videoCmdMapLoadById: VideoCmdMapLoadById): void {
+		let map: MapActive | undefined, mapAsset: AssetMap;
+
+		try {
+			if (!videoCmdMapLoadById.id) {
+				map = MapEngine.default();
+			} else {
+				mapAsset = Video.assetManifestMaster.maps[videoCmdMapLoadById.id];
+				map = MapEngine.load(mapAsset);
+			}
+
+			// Restart the kernel with the new map
+			if (map) {
+				if (KernelEngine.isRunning()) {
+					KernelEngine.stop();
+				}
+				KernelEngine.start(map);
+			}
+		} catch (error: any) {
+			console.error('Video > inputMapLoadById', error);
+		}
+
+		Video.post([
+			{
+				cmd: VideoWorkerCmd.MAP_ASSET,
+				data: {
+					map: map,
 				},
 			},
 		]);

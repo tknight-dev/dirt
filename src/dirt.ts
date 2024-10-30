@@ -15,7 +15,8 @@ class Dirt {
 				customS: 'assets-s',
 				customU: 'assets-u',
 				customV: 'assets-v',
-				dir: undefined,
+				dirCustom: undefined,
+				dirDefault: undefined,
 				manifest: {
 					audio: audioManifest,
 					images: imageManifest,
