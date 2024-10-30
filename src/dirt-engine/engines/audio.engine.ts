@@ -30,7 +30,9 @@ export class AudioEngine {
 	private static context: AudioContext = new AudioContext();
 	private static effectBuffers: HTMLAudioElement[] = [];
 	private static effectBuffersConvolver: ConvolverNode[] = [];
-	private static effectBuffersConvolverBuffer: { [key: string]: AudioBuffer } = {}; // key is AudioModulation.id
+	private static effectBuffersConvolverBuffer: {
+		[key: string]: AudioBuffer;
+	} = {}; // key is AudioModulation.id
 	private static effectBuffersGain: GainNode[] = [];
 	private static effectBuffersPanner: StereoPannerNode[] = [];
 	private static effectBuffersSource: MediaElementAudioSourceNode[] = [];
@@ -113,7 +115,11 @@ export class AudioEngine {
 				volumeTarget: volumeTarget,
 				updated: true,
 			};
-			AudioEngine.faders[audioAssetId].fader(AudioEngine.faders[audioAssetId], audioAssetId, AudioEngine.cache[audioAssetId].type); //async
+			AudioEngine.faders[audioAssetId].fader(
+				AudioEngine.faders[audioAssetId],
+				audioAssetId,
+				AudioEngine.cache[audioAssetId].type,
+			); //async
 		}
 	}
 
@@ -178,7 +184,10 @@ export class AudioEngine {
 		// Periodically check for audio permissions
 		AudioEngine.testSample = new Audio();
 		AudioEngine.testSample.setAttribute('preload', 'auto');
-		AudioEngine.testSample.setAttribute('src', 'data:audio/mp3;base64,//MUxAAB4AWIoAgAATgAH4CA8PD1TEFN//MUxAMAAAGUAAAAAEUzLjEwMFVVVVVV');
+		AudioEngine.testSample.setAttribute(
+			'src',
+			'data:audio/mp3;base64,//MUxAAB4AWIoAgAATgAH4CA8PD1TEFN//MUxAMAAAGUAAAAAEUzLjEwMFVVVVVV',
+		);
 		AudioEngine.testSample.volume = 0.01;
 		await AudioEngine.permittedCheckLoop();
 	}
@@ -227,7 +236,10 @@ export class AudioEngine {
 		for (let i in assetAudio) {
 			assetAudioInstance = assetAudio[i];
 
-			if (assetAudioInstance.collection === AudioEngine.assetCollection || assetAudioInstance.collection === AssetCollection.SHARED) {
+			if (
+				assetAudioInstance.collection === AudioEngine.assetCollection ||
+				assetAudioInstance.collection === AssetCollection.SHARED
+			) {
 				loaderWrappers.push(AudioEngine.loader(assetAudioInstance));
 			}
 		}
@@ -277,7 +289,10 @@ export class AudioEngine {
 			if (assetCache) {
 				audio.setAttribute('src', assetCache.data);
 			} else {
-				console.error("AudioEngine > loader: assetAudio '" + assetAudio.id + "' failed to load", assetAudio.src);
+				console.error(
+					"AudioEngine > loader: assetAudio '" + assetAudio.id + "' failed to load",
+					assetAudio.src,
+				);
 				resolve();
 			}
 		});
@@ -340,7 +355,8 @@ export class AudioEngine {
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
 		audio.currentTime = Math.min(audio.duration, Math.round(timeInS));
-		audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
+		audio.volume =
+			Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
 		await audio.play();
 	}
 
@@ -357,7 +373,12 @@ export class AudioEngine {
 	 * @param pan is -1 left, 0 center, 1 right (precision 3)
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static async trigger(assetAudioId: string, modulation: AudioModulation, pan: number, volumePercentage: number): Promise<void> {
+	public static async trigger(
+		assetAudioId: string,
+		modulation: AudioModulation,
+		pan: number,
+		volumePercentage: number,
+	): Promise<void> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > trigger: not initialized');
 			return;
@@ -381,14 +402,18 @@ export class AudioEngine {
 		buffer.src = AudioEngine.cache[assetAudioId].audio.src;
 		buffer.currentTime = 0;
 		buffer.muted = AudioEngine.muted;
-		buffer.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeEffectEff, 0) * 1000) / 1000;
+		buffer.volume =
+			Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeEffectEff, 0) * 1000) / 1000;
 
 		// AudioModulation buffer
 		AudioEngine.effectBuffersConvolver[index].buffer = AudioEngine.effectBuffersConvolverBuffer[modulation.id];
 		AudioEngine.effectBuffersGain[index].gain.value = modulation.gain;
 
 		// Pan it
-		AudioEngine.effectBuffersPanner[index].pan.setValueAtTime(Math.max(-1, Math.min(1, Math.round(pan * 1000) / 1000)), 0);
+		AudioEngine.effectBuffersPanner[index].pan.setValueAtTime(
+			Math.max(-1, Math.min(1, Math.round(pan * 1000) / 1000)),
+			0,
+		);
 
 		// Play
 		await buffer.play();
@@ -431,13 +456,15 @@ export class AudioEngine {
 			modulation = AudioModulation.values[i];
 
 			if (modulation.id === AudioModulation.NONE.id) {
-				AudioEngine.effectBuffersConvolverBuffer[modulation.id] = AudioEngine.context.createBuffer(1, 1, AudioEngine.context.sampleRate);
+				AudioEngine.effectBuffersConvolverBuffer[modulation.id] = AudioEngine.context.createBuffer(
+					1,
+					1,
+					AudioEngine.context.sampleRate,
+				);
 				AudioEngine.effectBuffersConvolverBuffer[modulation.id].getChannelData(0)[0] = 0;
 			} else {
-				AudioEngine.effectBuffersConvolverBuffer[modulation.id] = AudioEngine.setEffectBufferCountConvolverBuffer(
-					modulation.duration,
-					modulation.decay,
-				);
+				AudioEngine.effectBuffersConvolverBuffer[modulation.id] =
+					AudioEngine.setEffectBufferCountConvolverBuffer(modulation.duration, modulation.decay);
 			}
 		}
 
@@ -552,11 +579,13 @@ export class AudioEngine {
 			return;
 		}
 		let audioCache: AudioCache = AudioEngine.cache[assetAudioId],
-			volumeTargetMax: number = audioCache.type === AssetAudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
+			volumeTargetMax: number =
+				audioCache.type === AssetAudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
 
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
-		audioCache.audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, volumeTargetMax, 0) * 1000) / 1000;
+		audioCache.audio.volume =
+			Math.round(UtilEngine.scale(volumePercentage, 1, 0, volumeTargetMax, 0) * 1000) / 1000;
 	}
 
 	/**

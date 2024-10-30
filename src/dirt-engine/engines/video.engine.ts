@@ -14,6 +14,7 @@ import {
 	VideoCmdGameModePlay,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
+	VideoCmdGameSave,
 	VideoCmdGameStart,
 	VideoCmdGameUnpause,
 	VideoCmdInit,
@@ -30,22 +31,30 @@ import {
 	VideoWorkerCmdMapLoadStatus,
 	VideoWorkerCmdMapSave,
 	VideoWorkerPayload,
+	VideoWorkerStatusInitialized,
 } from '../models/video-worker-cmds.model';
 import { VisibilityEngine } from './visibility.engine';
 
 export class VideoEngine {
 	private static callbackMapLoadStatus: (status: boolean) => void;
 	private static callbackMapSave: (data: string, name: string) => void;
+	private static callbackStatusInitialized: (durationInMs: number) => void;
+	private static canvasBackground: HTMLCanvasElement;
+	private static canvasForeground: HTMLCanvasElement;
+	private static canvasOverlay: HTMLCanvasElement;
+	private static canvasPrimary: HTMLCanvasElement;
+	private static canvasUnderlay: HTMLCanvasElement;
 	private static complete: boolean;
 	private static fps: number = 60;
-	private static started: boolean;
+	private static initialized: boolean;
+	private static mapInteration: HTMLElement;
 	private static streams: HTMLElement;
 	private static worker: Worker;
 
 	/**
 	 * Start the video streams in another thread
 	 */
-	public static async go(
+	public static async initialize(
 		assetDeclarations: AssetDeclarations,
 		streams: HTMLElement,
 		canvasBackground: HTMLCanvasElement,
@@ -53,14 +62,14 @@ export class VideoEngine {
 		canvasOverlay: HTMLCanvasElement,
 		canvasPrimary: HTMLCanvasElement,
 		canvasUnderlay: HTMLCanvasElement,
-		modeEdit: boolean,
+		mapInteration: HTMLElement,
 		videoCmdSettings: VideoCmdSettings,
 	): Promise<void> {
-		if (VideoEngine.started) {
-			console.error('VideoEngine > go: already started');
+		if (VideoEngine.initialized) {
+			console.error('VideoEngine > initialize: already initialized');
 			return;
 		}
-		VideoEngine.started = true;
+		VideoEngine.initialized = true;
 
 		let canvasOffscreenUnderlay: OffscreenCanvas = canvasUnderlay.transferControlToOffscreen(),
 			canvasOffscreenBackground: OffscreenCanvas = canvasBackground.transferControlToOffscreen(),
@@ -71,12 +80,22 @@ export class VideoEngine {
 			videoCmdResize: VideoCmdResize,
 			videoPayload: VideoPayload;
 
-		// Config
+		// Cache
+		VideoEngine.canvasBackground = canvasBackground;
+		VideoEngine.canvasForeground = canvasForeground;
+		VideoEngine.canvasOverlay = canvasOverlay;
+		VideoEngine.canvasPrimary = canvasPrimary;
+		VideoEngine.canvasUnderlay = canvasUnderlay;
+		VideoEngine.mapInteration = mapInteration;
 		VideoEngine.streams = streams;
+
+		// Config
 		ResizeEngine.setCallback(VideoEngine.resized);
 		VisibilityEngine.setCallback((visible: boolean) => {
 			if (!visible) {
-				VideoEngine.workerGamePause({ reason: VideoCmdGamePauseReason.VISIBILITY });
+				VideoEngine.workerGamePause({
+					reason: VideoCmdGamePauseReason.VISIBILITY,
+				});
 			} else {
 				setTimeout(() => {
 					VideoEngine.resized();
@@ -103,7 +122,6 @@ export class VideoEngine {
 					canvasOffscreenOverlay: canvasOffscreenOverlay,
 					canvasOffscreenPrimary: canvasOffscreenPrimary,
 					canvasOffscreenUnderlay: canvasOffscreenUnderlay,
-					modeEdit: modeEdit,
 				},
 				videoCmdResize,
 				videoCmdSettings,
@@ -127,12 +145,25 @@ export class VideoEngine {
 
 	private static resized(disablePost?: boolean): VideoCmdResize {
 		let data: VideoCmdResize,
+			devicePixelRatio: number = Math.round(window.devicePixelRatio * 1000) / 1000,
+			devicePixelRatioEff: number = Math.round((1 / window.devicePixelRatio) * 1000) / 1000,
 			domRect: DOMRect = VideoEngine.streams.getBoundingClientRect(),
 			height: number = domRect.height,
 			width: number = domRect.width;
 
+		// Transform the canvas to the intended size
+		VideoEngine.canvasBackground.style.transform = 'scale(' + devicePixelRatioEff + ')';
+		VideoEngine.canvasForeground.style.transform = 'scale(' + devicePixelRatioEff + ')';
+		VideoEngine.canvasOverlay.style.transform = 'scale(' + devicePixelRatioEff + ')';
+		VideoEngine.canvasPrimary.style.transform = 'scale(' + devicePixelRatioEff + ')';
+		VideoEngine.canvasUnderlay.style.transform = 'scale(' + devicePixelRatioEff + ')';
+
+		// Transform the map interaction to the correct starting place
+		VideoEngine.mapInteration.style.transform =
+			'translate(' + -20 * devicePixelRatioEff + 'px, ' + 20 * devicePixelRatioEff + 'px)';
+
 		data = {
-			devicePixelRatio: window.devicePixelRatio,
+			devicePixelRatio: devicePixelRatio,
 			height: Math.round(height),
 			width: Math.round(width),
 		};
@@ -161,7 +192,8 @@ export class VideoEngine {
 			videoWorkerCmdMapLoadStatus: VideoWorkerCmdMapLoadStatus,
 			videoWorkerCmdMapSave: VideoWorkerCmdMapSave,
 			videoWorkerPayload: VideoWorkerPayload,
-			videoWorkerPayloads: VideoWorkerPayload[];
+			videoWorkerPayloads: VideoWorkerPayload[],
+			videoWorkerStatusInitialized: VideoWorkerStatusInitialized;
 
 		VideoEngine.worker.onmessage = (event: MessageEvent) => {
 			videoWorkerPayloads = event.data.payloads;
@@ -194,7 +226,11 @@ export class VideoEngine {
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_PLAY:
 						videoWorkerCmdAudioMusicPlay = <VideoWorkerCmdAudioMusicPlay>videoWorkerPayload.data;
-						AudioEngine.play(videoWorkerCmdAudioMusicPlay.id, videoWorkerCmdAudioMusicPlay.timeInS, videoWorkerCmdAudioMusicPlay.volumePercentage);
+						AudioEngine.play(
+							videoWorkerCmdAudioMusicPlay.id,
+							videoWorkerCmdAudioMusicPlay.timeInS,
+							videoWorkerCmdAudioMusicPlay.volumePercentage,
+						);
 						break;
 					case VideoWorkerCmd.AUDIO_MUSIC_PAUSE:
 						videoWorkerCmdAudioMusicPause = <VideoWorkerCmdAudioMusicPause>videoWorkerPayload.data;
@@ -206,7 +242,10 @@ export class VideoEngine {
 						break;
 					case VideoWorkerCmd.AUDIO_VOLUME:
 						videoWorkerCmdAudioVolume = <VideoWorkerCmdAudioVolume>videoWorkerPayload.data;
-						AudioEngine.setVolumeAsset(videoWorkerCmdAudioVolume.id, videoWorkerCmdAudioVolume.volumePercentage);
+						AudioEngine.setVolumeAsset(
+							videoWorkerCmdAudioVolume.id,
+							videoWorkerCmdAudioVolume.volumePercentage,
+						);
 						break;
 					case VideoWorkerCmd.MAP_LOAD_STATUS:
 						videoWorkerCmdMapLoadStatus = <VideoWorkerCmdMapLoadStatus>videoWorkerPayload.data;
@@ -223,6 +262,10 @@ export class VideoEngine {
 						} else {
 							console.error('VideoEngine > workerListen: map save callback not set');
 						}
+						break;
+					case VideoWorkerCmd.STATUS_INITIALIZED:
+						videoWorkerStatusInitialized = <VideoWorkerStatusInitialized>videoWorkerPayload.data;
+						VideoEngine.callbackStatusInitialized(videoWorkerStatusInitialized.durationInMs);
 						break;
 				}
 			}
@@ -273,6 +316,13 @@ export class VideoEngine {
 		});
 	}
 
+	public static workerGameSave(save: VideoCmdGameSave): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_SAVE,
+			data: save,
+		});
+	}
+
 	public static workerGameStart(start: VideoCmdGameStart): void {
 		VideoEngine.worker.postMessage({
 			cmd: VideoCmd.GAME_START,
@@ -300,6 +350,10 @@ export class VideoEngine {
 
 	public static setCallbackMapSave(callbackMapSave: (data: string, name: string) => void): void {
 		VideoEngine.callbackMapSave = callbackMapSave;
+	}
+
+	public static setCallbackStatusInitialized(callbackStatusInitialized: (durationInMs: number) => void): void {
+		VideoEngine.callbackStatusInitialized = callbackStatusInitialized;
 	}
 
 	public static isGoComplete(): boolean {

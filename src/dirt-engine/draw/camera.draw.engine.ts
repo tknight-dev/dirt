@@ -47,7 +47,9 @@ export class CameraDrawEngine {
 		if (!CameraDrawEngine.cache) {
 			// Draw from scratch
 			let cacheCanvas: OffscreenCanvas = new OffscreenCanvas(24, 24),
-				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
+				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>(
+					cacheCanvas.getContext('2d')
+				);
 
 			ctx.beginPath();
 			ctx.lineWidth = 2;
@@ -61,8 +63,14 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cache = cacheCanvas.transferToImageBitmap();
 		}
 
-		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(CameraDrawEngine.mapActiveCamera.gx, CameraDrawEngine.mapActiveCamera.gy);
-		CameraDrawEngine.cachePositionHashCheckP = UtilEngine.pixelHashTo(CameraDrawEngine.mapActiveCamera.windowPw, CameraDrawEngine.mapActiveCamera.windowPh);
+		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(
+			CameraDrawEngine.mapActiveCamera.gx,
+			CameraDrawEngine.mapActiveCamera.gy,
+		);
+		CameraDrawEngine.cachePositionHashCheckP = UtilEngine.pixelHashTo(
+			CameraDrawEngine.mapActiveCamera.windowPw,
+			CameraDrawEngine.mapActiveCamera.windowPh,
+		);
 		if (
 			CameraDrawEngine.cachePositionHashG !== CameraDrawEngine.cachePositionHashCheckG ||
 			CameraDrawEngine.cachePositionHashP !== CameraDrawEngine.cachePositionHashCheckP
@@ -76,7 +84,9 @@ export class CameraDrawEngine {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.gx * camera.gInPw);
 			} else if (viewportGx + camera.viewportGw === CameraDrawEngine.mapActive.gridActive.gWidth) {
 				CameraDrawEngine.cachePositionPx = Math.round(
-					camera.viewportPx + camera.viewportPw / 2 + (camera.gx - (viewportGx + camera.viewportGw / 2)) * camera.gInPw,
+					camera.viewportPx +
+						camera.viewportPw / 2 +
+						(camera.gx - (viewportGx + camera.viewportGw / 2)) * camera.gInPw,
 				);
 			} else {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.viewportPx + camera.viewportPw / 2);
@@ -87,7 +97,9 @@ export class CameraDrawEngine {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.gy * camera.gInPh);
 			} else if (viewportGy + camera.viewportGh === CameraDrawEngine.mapActive.gridActive.gHeight) {
 				CameraDrawEngine.cachePositionPy = Math.round(
-					camera.viewportPy + camera.viewportPh / 2 + (camera.gy - (viewportGy + camera.viewportGh / 2)) * camera.gInPh,
+					camera.viewportPy +
+						camera.viewportPh / 2 +
+						(camera.gy - (viewportGy + camera.viewportGh / 2)) * camera.gInPh,
 				);
 			} else {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.viewportPy + camera.viewportPh / 2);
@@ -98,7 +110,11 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cachePositionHashP = CameraDrawEngine.cachePositionHashCheckP;
 		}
 
-		CameraDrawEngine.ctxOverlay.drawImage(CameraDrawEngine.cache, CameraDrawEngine.cachePositionPx, CameraDrawEngine.cachePositionPy);
+		CameraDrawEngine.ctxOverlay.drawImage(
+			CameraDrawEngine.cache,
+			CameraDrawEngine.cachePositionPx,
+			CameraDrawEngine.cachePositionPy,
+		);
 	}
 
 	public static setMapActive(mapActive: MapActive) {

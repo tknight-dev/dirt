@@ -38,8 +38,14 @@ export class GridDrawEngine {
 
 	public static start(): void {
 		//let start: number = performance.now();
-		GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(GridDrawEngine.mapActiveCamera.gx, GridDrawEngine.mapActiveCamera.gy);
-		GridDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(GridDrawEngine.mapActiveCamera.windowPw, GridDrawEngine.mapActiveCamera.windowPh);
+		GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
+			GridDrawEngine.mapActiveCamera.gx,
+			GridDrawEngine.mapActiveCamera.gy,
+		);
+		GridDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(
+			GridDrawEngine.mapActiveCamera.windowPw,
+			GridDrawEngine.mapActiveCamera.windowPh,
+		);
 		if (
 			GridDrawEngine.cacheHashCheckG !== GridDrawEngine.cacheHashG ||
 			GridDrawEngine.cacheHashCheckP !== GridDrawEngine.cacheHashP ||

@@ -47,8 +47,8 @@ export class FPSDrawEngine {
 		}
 		FPSDrawEngine.ctxOverlay.fillText(
 			FPSDrawEngine.fps.toString().padStart(2, '00'),
-			Math.round(UtilEngine.renderOverflowP + 20),
-			Math.round(UtilEngine.renderOverflowP + 50),
+			Math.round(UtilEngine.renderOverflowPEff + 20),
+			Math.round(UtilEngine.renderOverflowPEff + 50),
 		);
 	}
 

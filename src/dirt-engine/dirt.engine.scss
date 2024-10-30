@@ -232,6 +232,7 @@ $dirt-engine-old-tv-background: #162fd8;
 
 						.stream {
 							bottom: 0;
+							display: block;
 							left: 0;
 							position: absolute;
 							right: 0;
@@ -255,6 +256,7 @@ $dirt-engine-old-tv-background: #162fd8;
 
 							.data {
 								position: relative;
+								transform-origin: top left;
 							}
 						}
 					}
@@ -310,11 +312,14 @@ $dirt-engine-old-tv-background: #162fd8;
 				}
 			}
 
+			// Position maintained by the "VideoEngine > resized()" (DPI offsets with game feed)
 			.map-interaction {
 				cursor: pointer;
+				display: flex;
 				height: $dirt-engine-map-width;
-				right: $dirt-engine-map-offset;
-				top: $dirt-engine-map-offset;
+				right: 0;
+				top: 0;
+				transform-origin: top right;
 				width: $dirt-engine-map-width;
 				z-index: 4;
 			}

@@ -12,9 +12,9 @@ import { MouseAction } from '../engines/mouse.engine';
 
 export enum VideoCmd {
 	GAME_MODE_EDIT,
-	GAME_MODE_EDIT_Z,
 	GAME_MODE_PLAY,
 	GAME_PAUSE,
+	GAME_SAVE,
 	GAME_START,
 	GAME_UNPAUSE,
 	INIT,
@@ -32,7 +32,6 @@ export interface VideoCmdInit extends VideoCmdResize, VideoCmdSettings {
 	canvasOffscreenOverlay: OffscreenCanvas;
 	canvasOffscreenPrimary: OffscreenCanvas;
 	canvasOffscreenUnderlay: OffscreenCanvas;
-	modeEdit: boolean;
 }
 
 export interface VideoCmdMapLoad {
@@ -71,7 +70,11 @@ export enum VideoCmdGamePauseReason {
 
 export interface VideoCmdGameUnpause {}
 
-export interface VideoCmdGameStart {}
+export interface VideoCmdGameSave {}
+
+export interface VideoCmdGameStart {
+	modeEdit: boolean;
+}
 
 export interface VideoCmdSettings {
 	fps: VideoCmdSettingsFPS;
@@ -88,7 +91,16 @@ export enum VideoCmdSettingsFPS {
 
 export interface VideoPayload {
 	cmd: VideoCmd;
-	data: KeyAction | MouseAction | VideoCmdGamePause | VideoCmdGameStart | VideoCmdGameUnpause | VideoCmdInit | VideoCmdMapLoad | VideoCmdResize;
+	data:
+		| KeyAction
+		| MouseAction
+		| VideoCmdGamePause
+		| VideoCmdGameSave
+		| VideoCmdGameStart
+		| VideoCmdGameUnpause
+		| VideoCmdInit
+		| VideoCmdMapLoad
+		| VideoCmdResize;
 }
 
 export enum VideoWorkerCmd {
@@ -100,6 +112,7 @@ export enum VideoWorkerCmd {
 	AUDIO_VOLUME,
 	MAP_LOAD_STATUS,
 	MAP_SAVE,
+	STATUS_INITIALIZED,
 }
 
 export interface VideoWorkerCmdAudioEffect {
@@ -154,5 +167,10 @@ export interface VideoWorkerPayload {
 		| VideoWorkerCmdAudioVolume
 		| VideoWorkerCmdMapLoadStatus
 		| VideoWorkerCmdMapSave
+		| VideoWorkerStatusInitialized
 		| null;
+}
+
+export interface VideoWorkerStatusInitialized {
+	durationInMs: number;
 }

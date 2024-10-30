@@ -24,7 +24,7 @@ class Dirt {
 			},
 			domGame: HTMLElement = <HTMLElement>document.getElementById('game');
 
-		DirtEngine.initialize(assetDeclarations, domGame, VideoCmdSettingsFPS._60, true);
+		DirtEngine.initialize(assetDeclarations, domGame, true, VideoCmdSettingsFPS._60, true);
 	}
 }
 

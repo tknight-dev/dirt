@@ -51,7 +51,12 @@ export class DrawEditEngine {
 		/*
 		 * Overlay
 		 */
-		DrawEditEngine.ctxOverlay.clearRect(0, 0, DrawEditEngine.mapActiveCamera.windowPw, DrawEditEngine.mapActiveCamera.windowPh);
+		DrawEditEngine.ctxOverlay.clearRect(
+			0,
+			0,
+			DrawEditEngine.mapActiveCamera.windowPw,
+			DrawEditEngine.mapActiveCamera.windowPh,
+		);
 
 		// Draw First
 		GridDrawEngine.start();

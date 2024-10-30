@@ -9,6 +9,7 @@ import { Map } from '../models/map.model';
 export class UtilEngine {
 	private static initialized: boolean;
 	public static readonly renderOverflowP: number = 20; // Sync with "dirt.scss -> $dirt-engine-feed-overflow-p"
+	public static renderOverflowPEff: number = UtilEngine.renderOverflowP; // Changes with the DPI of the screen
 
 	public static async initialize(): Promise<void> {
 		if (UtilEngine.initialized) {
@@ -77,7 +78,14 @@ export class UtilEngine {
 		return ((x & 0xffffffff) << 32) | (y & 0xffffffff);
 	}
 
-	public static scale(input: number, inputMax: number, inputMin: number, outputMax: number, outputMin: number, round: boolean = false): number {
+	public static scale(
+		input: number,
+		inputMax: number,
+		inputMin: number,
+		outputMax: number,
+		outputMin: number,
+		round: boolean = false,
+	): number {
 		let value: number = ((input - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin;
 		return round ? Math.round(value) : value;
 	}

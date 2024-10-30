@@ -16,16 +16,10 @@ $dirt-engine-ui-edit-button-width: 40px;
 	flex-direction: columns;
 	justify-content: center;
 	position: absolute;
+	z-index: 1;
 
 	.button {
-		align-items: center;
-		background-color: rgba(255, 255, 255, 0.3);
-		border: 1px solid rgba(255, 255, 255, 0.25);
-		box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
-		cursor: pointer;
-		display: flex;
 		height: $dirt-engine-ui-edit-button-height;
-		justify-content: center;
 		padding-left: 0;
 		padding-top: 0;
 		position: relative;
@@ -39,10 +33,25 @@ $dirt-engine-ui-edit-button-width: 40px;
 		&:not(:first-child) {
 			border-left: none;
 		}
+	}
+
+	.button,
+	.button-style,
+	&.application,
+	&.pixelSize,
+	&.mode,
+	&.save {
+		align-items: center;
+		background-color: rgba(128, 128, 128, 0.5);
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+		cursor: pointer;
+		display: flex;
+		justify-content: center;
 
 		&.active {
 			background-color: rgba($dirt-engine-color-green, 0.4);
-			box-shadow: inset 2px 2px 0 2px rgba(0, 0, 0, 0.25);
+			box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
 			cursor: inherit;
 			padding-left: 2px;
 			padding-top: 2px;
@@ -51,19 +60,143 @@ $dirt-engine-ui-edit-button-width: 40px;
 				color: rgba(255, 255, 255, 0.5);
 				position: absolute;
 			}
+
+			.dirt-engine-icon {
+				background-color: white;
+				cursor: default;
+			}
+		}
+	}
+
+	.menu {
+		bottom: 40px;
+		box-shadow: 0 0 2px 3px rgba(0, 0, 0, 0.25);
+		display: none;
+		left: 0;
+		position: absolute;
+		transition: opacity 0.125s linear;
+
+		.button-style {
+			height: 40px;
+			padding-left: 20px;
+			pointer-events: all;
+			justify-content: left;
+			width: 100px;
+
+			&:first-child {
+				border-top-left-radius: 5px;
+				border-top-right-radius: 5px;
+			}
+
+			&:not(:first-child) {
+				border-top: none;
+			}
+
+			&:last-child {
+				border-bottom-left-radius: 5px;
+				border-bottom-right-radius: 5px;
+			}
+
+			&:not(:first-child) {
+				border-top: none;
+			}
+		}
+	}
+
+	&.application {
+		background-color: transparent;
+		border: none;
+		bottom: $dirt-engine-controls-height + 20px;
+		box-shadow: none;
+		height: 40px;
+		left: 0;
+		pointer-events: none;
+		right: 0;
+
+		.wrap {
+			align-items: center;
+			display: flex;
+			flex-direction: colums;
+			justify-content: center;
+			position: relative;
+
+			.button {
+				pointer-events: all;
+
+				&:first-child {
+					border-bottom-left-radius: 5px;
+					border-top-left-radius: 5px;
+				}
+
+				&:not(:first-child) {
+					border-left: none;
+				}
+
+				&:last-child {
+					border-bottom-right-radius: 5px;
+					border-top-right-radius: 5px;
+				}
+
+				&.history {
+					background-color: navy;
+				}
+
+				&.type {
+				}
+			}
+
+			.menu {
+				.button-style {
+				}
+			}
 		}
 	}
 
 	&.mode {
+		border-radius: 5px;
 		bottom: $dirt-engine-controls-height + 20px;
+		height: 40px;
 		left: 20px;
+		width: 40px;
+
+		.dirt-engine-icon {
+			min-height: 30px;
+			height: 30px;
+			min-width: 30px;
+			width: 30px;
+		}
+
+		.menu {
+			.button-style {
+			}
+		}
+	}
+
+	&.save {
+		border-radius: 5px;
+		bottom: $dirt-engine-controls-height + 20px;
+		height: 40px;
+		left: 80px;
+		width: 40px;
+
+		.dirt-engine-icon {
+			min-height: 30px;
+			height: 30px;
+			min-width: 30px;
+			width: 30px;
+		}
 	}
 
 	&.z {
-		left: calc(50% - $dirt-engine-ui-edit-button-width);
+		background-color: transparent;
+		left: 0;
+		pointer-events: none;
+		right: 0;
 		top: 20px;
 
 		.button {
+			pointer-events: all;
+
 			&.background {
 				&.active {
 					&::after {
@@ -89,6 +222,31 @@ $dirt-engine-ui-edit-button-width: 40px;
 						top: $dirt-engine-ui-edit-button-height + 5px;
 					}
 				}
+			}
+		}
+	}
+
+	&.pixelSize {
+		border-radius: 5px;
+		bottom: $dirt-engine-controls-height + 20px;
+		height: 40px;
+		right: 20px;
+		padding-left: 5px;
+
+		.input {
+			cursor: pointer;
+			height: 40px;
+
+			&.range {
+				width: 120px;
+			}
+
+			&.text {
+				border-bottom-right-radius: 5px;
+				border-top-right-radius: 5px;
+				margin-left: 5px;
+				text-align: center;
+				width: 60px;
 			}
 		}
 	}

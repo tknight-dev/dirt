@@ -14,5 +14,6 @@
 	-	Keyboard Service
 		-	Debounce keys
 	-	Video Service
-		-	Main thread for resize detection that sends data to spawned thread (WebWorker)
-		-	Spawn thread (WebWorker) for graphical processing
+		-	Maintains the communication bus between the primary UI thread and the Video thread
+		-	Spawns thread (WebWorker) for graphical processing (Video thread)
+		-	Supports high DPI screens

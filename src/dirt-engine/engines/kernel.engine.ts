@@ -126,7 +126,8 @@ export class KernelEngine {
 			KernelEngine.timestampNow = performance.now();
 			KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
 			if (KernelEngine.timestampDelta > KernelEngine.fpms) {
-				KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
+				KernelEngine.timestampThen =
+					KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
 
 				// Start
 				if (KernelEngine.modeEdit) {
@@ -240,5 +241,13 @@ export class KernelEngine {
 
 		// Extended
 		FPSDrawEngine.fpsTarget = settings.fps;
+	}
+
+	public static getMapActive(): MapActive {
+		return KernelEngine.mapActive;
+	}
+
+	public static isModeEdit(): boolean {
+		return KernelEngine.modeEdit;
 	}
 }

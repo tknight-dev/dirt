@@ -14,6 +14,7 @@ import {
 	VideoCmdResize,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
+	VideoCmdGameSave,
 	VideoCmdGameStart,
 	VideoCmdGameUnpause,
 	VideoCmdSettings,
@@ -33,6 +34,9 @@ self.onmessage = (event: MessageEvent) => {
 	switch (videoPayload.cmd) {
 		case VideoCmd.GAME_PAUSE:
 			Video.inputGamePause(<VideoCmdGamePause>videoPayload.data);
+			break;
+		case VideoCmd.GAME_SAVE:
+			Video.inputGameSave(<VideoCmdGameSave>videoPayload.data);
 			break;
 		case VideoCmd.GAME_START:
 			Video.inputGameStart(<VideoCmdGameStart>videoPayload.data);
@@ -74,9 +78,17 @@ class Video {
 	private static canvasOffscreenUnderlay: OffscreenCanvas; // Z-1
 	private static canvasOffscreenUnderlayContext: OffscreenCanvasRenderingContext2D;
 	private static gameStarted: boolean;
+	private static initialized: boolean;
 	private static self: Window & typeof globalThis;
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoCmdInit): Promise<void> {
+		if (Video.initialized) {
+			console.error('Video > initialize: already initialized');
+			return;
+		}
+		Video.initialized = true;
+		let timestamp: number = performance.now();
+
 		// Assign
 		Video.canvasOffscreenBackground = data.canvasOffscreenBackground;
 		Video.canvasOffscreenForeground = data.canvasOffscreenForeground;
@@ -109,26 +121,49 @@ class Video {
 		Video.inputResize(data);
 		Video.inputSettings(data);
 
-		// Last
-		KernelEngine.setModeEdit(data.modeEdit);
-		//KernelEngine.start(MapEngine.load(MapAsset.LEVEL01)); // When level1 has something to start from
-		KernelEngine.start(MapEngine.default());
+		// Done
+		Video.post([
+			{
+				cmd: VideoWorkerCmd.STATUS_INITIALIZED,
+				data: {
+					durationInMs: performance.now() - timestamp,
+				},
+			},
+		]);
 	}
 
 	public static inputGamePause(pause: VideoCmdGamePause): void {
 		//console.log('VideoWorker > gamePause', pause);
 	}
 
+	public static inputGameSave(save: VideoCmdGameSave): void {
+		if (KernelEngine.isModeEdit()) {
+			Video.outputMapSave(KernelEngine.getMapActive());
+		} else {
+			console.log('save current game state', save);
+		}
+	}
+
 	/**
 	 * Start the game (company intro complete)
 	 */
 	public static inputGameStart(start: VideoCmdGameStart): void {
-		if (Video.gameStarted) {
+		if (!Video.initialized) {
+			console.error('Video > gameStart: not initialized');
+			return;
+		} else if (Video.gameStarted) {
 			console.error('Video > gameStart: already started');
 			return;
 		}
 		Video.gameStarted = true;
 		console.log('VideoWorker > gameStart', start);
+
+		// Last
+		KernelEngine.setModeEdit(start.modeEdit);
+
+		//KernelEngine.start(MapEngine.load(MapAsset.LEVEL01)); // Load map order 0
+
+		KernelEngine.start(MapEngine.default());
 	}
 
 	public static inputGameUnpause(unpause: VideoCmdGameUnpause): void {
@@ -160,9 +195,10 @@ class Video {
 	 */
 	public static inputResize(resize: VideoCmdResize): void {
 		let devicePixelRatio: number = resize.devicePixelRatio,
-			height: number = Math.ceil(resize.height * devicePixelRatio),
-			width: number = Math.ceil(resize.width * devicePixelRatio);
+			height: number = Math.floor(resize.height * devicePixelRatio),
+			width: number = Math.floor(resize.width * devicePixelRatio);
 
+		UtilEngine.renderOverflowPEff = Math.round(UtilEngine.renderOverflowP * devicePixelRatio * 1000) / 1000;
 		KernelEngine.setDimension(height, width);
 
 		Video.canvasOffscreenBackground.height = height;
@@ -187,7 +223,12 @@ class Video {
 	 * @param pan between -1 left and 1 right (precision 3)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static outputAudioEffect(assetId: string, modulationId: string, pan: number, volumePercentage: number): void {
+	public static outputAudioEffect(
+		assetId: string,
+		modulationId: string,
+		pan: number,
+		volumePercentage: number,
+	): void {
 		Video.post([
 			{
 				cmd: VideoWorkerCmd.AUDIO_EFFECT,

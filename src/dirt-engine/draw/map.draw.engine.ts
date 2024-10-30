@@ -22,7 +22,6 @@ export class MapDrawEngine {
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	private static mapActiveGrid: Grid;
-	private static readonly backgroundOffset: number = 20;
 	private static readonly backgroundRatio: number = 0.175;
 	private static backgroundPh: number;
 	private static backgroundPw: number;
@@ -47,10 +46,17 @@ export class MapDrawEngine {
 	}
 
 	public static moveToPx(px: number, py: number): void {
-		let xRel: number = Math.round(((px - MapDrawEngine.backgroundPx + UtilEngine.renderOverflowP) / MapDrawEngine.backgroundPw) * 1000),
-			yRel: number = Math.round(((py - MapDrawEngine.backgroundPy + UtilEngine.renderOverflowP) / MapDrawEngine.backgroundPh) * 1000);
+		let xRel: number = Math.round(
+				((px - MapDrawEngine.backgroundPx + UtilEngine.renderOverflowPEff) / MapDrawEngine.backgroundPw) * 1000,
+			),
+			yRel: number = Math.round(
+				((py - MapDrawEngine.backgroundPy + UtilEngine.renderOverflowPEff) / MapDrawEngine.backgroundPh) * 1000,
+			);
 
-		CameraEngine.moveG(Math.round(MapDrawEngine.mapActiveGrid.gWidth * xRel) / 1000, Math.round(MapDrawEngine.mapActiveGrid.gHeight * yRel) / 1000);
+		CameraEngine.moveG(
+			Math.round(MapDrawEngine.mapActiveGrid.gWidth * xRel) / 1000,
+			Math.round(MapDrawEngine.mapActiveGrid.gHeight * yRel) / 1000,
+		);
 	}
 
 	public static start(): void {
@@ -60,13 +66,16 @@ export class MapDrawEngine {
 		let camera: Camera = MapDrawEngine.mapActiveCamera;
 		MapDrawEngine.backgroundPh = Math.round(camera.viewportPh * MapDrawEngine.backgroundRatio);
 		MapDrawEngine.backgroundPw = Math.round(camera.viewportPw * MapDrawEngine.backgroundRatio);
-		MapDrawEngine.backgroundPx = camera.viewportPx2 - MapDrawEngine.backgroundPw - MapDrawEngine.backgroundOffset;
-		MapDrawEngine.backgroundPy = camera.viewportPy + MapDrawEngine.backgroundOffset;
+		MapDrawEngine.backgroundPx = camera.viewportPx2 - MapDrawEngine.backgroundPw - UtilEngine.renderOverflowPEff;
+		MapDrawEngine.backgroundPy = camera.viewportPy + UtilEngine.renderOverflowPEff;
 
 		/*
 		 * Background
 		 */
-		MapDrawEngine.cacheHashCheckP = UtilEngine.pixelHashTo(MapDrawEngine.mapActiveCamera.windowPw, MapDrawEngine.mapActiveCamera.windowPh);
+		MapDrawEngine.cacheHashCheckP = UtilEngine.pixelHashTo(
+			MapDrawEngine.mapActiveCamera.windowPw,
+			MapDrawEngine.mapActiveCamera.windowPh,
+		);
 		if (MapDrawEngine.cacheHashCheckP !== MapDrawEngine.cacheBackgroundHashP) {
 			// Draw from scratch
 			let cacheCanvas: OffscreenCanvas,
@@ -92,12 +101,19 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheBackgroundHashP = MapDrawEngine.cacheHashCheckP;
 		}
 		// Draw from cache
-		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
+		MapDrawEngine.ctxOverlay.drawImage(
+			MapDrawEngine.cacheBackground,
+			MapDrawEngine.backgroundPx,
+			MapDrawEngine.backgroundPy,
+		);
 
 		/*
 		 * Camera Lines
 		 */
-		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(MapDrawEngine.mapActiveCamera.viewportGx, MapDrawEngine.mapActiveCamera.viewportGy);
+		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
+			MapDrawEngine.mapActiveCamera.viewportGx,
+			MapDrawEngine.mapActiveCamera.viewportGy,
+		);
 		if (
 			MapDrawEngine.cacheHashCheckG !== MapDrawEngine.cacheCameraLinesHashG ||
 			MapDrawEngine.cacheHashCheckP !== MapDrawEngine.cacheCameraLinesHashP ||
@@ -201,7 +217,11 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheCameraLinesHashP = MapDrawEngine.cacheHashCheckP;
 			MapDrawEngine.cacheZoom = camera.zoom;
 		}
-		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
+		MapDrawEngine.ctxOverlay.drawImage(
+			MapDrawEngine.cacheCameraLines,
+			MapDrawEngine.backgroundPx,
+			MapDrawEngine.backgroundPy,
+		);
 
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;
@@ -209,8 +229,8 @@ export class MapDrawEngine {
 	}
 
 	public static isPixelInMap(px: number, py: number): boolean {
-		px += UtilEngine.renderOverflowP;
-		py += UtilEngine.renderOverflowP;
+		px += UtilEngine.renderOverflowPEff;
+		py += UtilEngine.renderOverflowPEff;
 		if (
 			px >= MapDrawEngine.backgroundPx &&
 			py >= MapDrawEngine.backgroundPy &&

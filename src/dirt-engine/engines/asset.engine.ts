@@ -2,7 +2,16 @@ import * as JSZip from 'JSZip';
 import { dirtEngineDefaultAudioManifest } from '../assets/audio.default.asset';
 import { dirtEngineDefaultImageManifest } from '../assets/image.default.asset';
 import { dirtEngineDefaultMapManifest } from '../assets/map.default.asset';
-import { Asset, AssetAudio, AssetCollection, AssetDeclarations, AssetImage, AssetMap, AssetManifest, AssetManifestMaster } from '../models/asset.model';
+import {
+	Asset,
+	AssetAudio,
+	AssetCollection,
+	AssetDeclarations,
+	AssetImage,
+	AssetMap,
+	AssetManifest,
+	AssetManifestMaster,
+} from '../models/asset.model';
 
 /**
  * Loads shared assets first if another asset pack has the same file the other asset pack's file is ignored
@@ -44,7 +53,11 @@ export class AssetEngine {
 				if (audio[asset.id] === undefined) {
 					audio[asset.id] = asset;
 				} else {
-					console.warn("AssetEngine > compileMasterManifest: declared audio asset id '" + asset.id + "' already exists");
+					console.warn(
+						"AssetEngine > compileMasterManifest: declared audio asset id '" +
+							asset.id +
+							"' already exists",
+					);
 				}
 			}
 		}
@@ -54,7 +67,11 @@ export class AssetEngine {
 				if (images[asset.id] === undefined) {
 					images[asset.id] = asset;
 				} else {
-					console.warn("AssetEngine > compileMasterManifest: declared image asset id '" + asset.id + "' already exists");
+					console.warn(
+						"AssetEngine > compileMasterManifest: declared image asset id '" +
+							asset.id +
+							"' already exists",
+					);
 				}
 			}
 		}
@@ -64,7 +81,9 @@ export class AssetEngine {
 				if (maps[asset.id] === undefined) {
 					maps[asset.id] = asset;
 				} else {
-					console.warn("AssetEngine > compileMasterManifest: declared map asset id '" + asset.id + "' already exists");
+					console.warn(
+						"AssetEngine > compileMasterManifest: declared map asset id '" + asset.id + "' already exists",
+					);
 				}
 			}
 		}
@@ -225,7 +244,8 @@ export class AssetEngine {
 
 			if (asset.dataURLType) {
 				AssetEngine.assets[asset.name] = {
-					data: 'data:' + asset.dataURLType + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer))),
+					data:
+						'data:' + asset.dataURLType + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer))),
 					original: asset.original,
 				};
 			} else {
