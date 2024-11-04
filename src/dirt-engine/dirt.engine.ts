@@ -6,6 +6,7 @@ import { AudioModulation } from './models/audio-modulation.model';
 import { DomUI } from './ui/dom.ui';
 import { FullscreenEngine } from './engines/fullscreen.engine';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engines/keyboard.engine';
+import { MapEditEngine } from './engines/map-edit.engine';
 import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
 import { Orientation, OrientationEngine } from './engines/orientation.engine';
 import { ResizeEngine } from './engines/resize.engine';
@@ -85,6 +86,7 @@ export class DirtEngine extends DomUI {
 		// Extended initializations
 		await FullscreenEngine.initialize();
 		await KeyboardEngine.initialize();
+		await MapEditEngine.initialize(true);
 		await MouseEngine.initialize(DirtEngine.domElements['feed-fitted']);
 		await OrientationEngine.initialize();
 		await ResizeEngine.initialize();
@@ -236,27 +238,8 @@ export class DirtEngine extends DomUI {
 			}, 40);
 		};
 
-		// Hook: Title Overlay (temporary for loading)
-		DirtEngine.domElements['feed'].onclick = (event: any) => {
-			if (DirtEngine.ready) {
-				DirtEngine.domElements['feed'].classList.add('start');
-				DirtEngine.domElements['feed'].onclick = null;
-				if (!DirtEngine.readyOverlayComplete) {
-					DirtEngine.readyOverlayComplete = true;
-					DirtEngine.feedTitleOverlayRemove();
-				}
-			}
-		};
-		let companyOverlayKeyboardHook: (event: any) => void = (event: any) => {
-			if (DirtEngine.ready) {
-				document.removeEventListener('keydown', companyOverlayKeyboardHook);
-				if (!DirtEngine.readyOverlayComplete) {
-					DirtEngine.readyOverlayComplete = true;
-					DirtEngine.feedTitleOverlayRemove();
-				}
-			}
-		};
-		document.addEventListener('keydown', companyOverlayKeyboardHook);
+		// Hook: Edit Camera Update
+		VideoEngine.setCallbackEditCameraUpdate(DomUI.editCameraUpdate);
 
 		// Hook: Fullscreen
 		FullscreenEngine.setCallback((state: boolean) => {
@@ -355,6 +338,28 @@ export class DirtEngine extends DomUI {
 				DirtEngine.domElementsUIEdit['save'].classList.remove('active');
 			}, 1000);
 		};
+
+		// Hook: Title Overlay (temporary for loading)
+		DirtEngine.domElements['feed'].onclick = (event: any) => {
+			if (DirtEngine.ready) {
+				DirtEngine.domElements['feed'].classList.add('start');
+				DirtEngine.domElements['feed'].onclick = null;
+				if (!DirtEngine.readyOverlayComplete) {
+					DirtEngine.readyOverlayComplete = true;
+					DirtEngine.feedTitleOverlayRemove();
+				}
+			}
+		};
+		let companyOverlayKeyboardHook: (event: any) => void = (event: any) => {
+			if (DirtEngine.ready) {
+				document.removeEventListener('keydown', companyOverlayKeyboardHook);
+				if (!DirtEngine.readyOverlayComplete) {
+					DirtEngine.readyOverlayComplete = true;
+					DirtEngine.feedTitleOverlayRemove();
+				}
+			}
+		};
+		document.addEventListener('keydown', companyOverlayKeyboardHook);
 	}
 
 	private static async initializeHooksGame(): Promise<void> {
@@ -377,17 +382,17 @@ export class DirtEngine extends DomUI {
 
 				if (
 					DirtEngine.uiEditMode &&
-					action.cmd === MouseCmd.LEFT_CLICK &&
+					MapEditEngine.uiLoaded &&
 					action.elementId === DomUI.domElements['feed-fitted'].id
 				) {
-					if (DomUI.uiEditMap) {
-						DomUI.uiEditChanged = true;
-
-						console.log('EditModeClick');
-						console.log('  >> applicationType', DomUI.uiEditApplicationType);
-						console.log('  >> brushSize', DirtEngine.uiEditBrushSize);
-						console.log('  >> palette', DirtEngine.uiEditPalette);
-						console.log('  >> position', action.position);
+					if (action.cmd === MouseCmd.LEFT) {
+						if (action.down) {
+							DomUI.editMouseDown(action);
+						} else {
+							DomUI.editMouseUp(action);
+						}
+					} else if (action.cmd === MouseCmd.MOVE) {
+						DomUI.editMouseMove(action);
 					}
 				}
 			}

@@ -1,5 +1,5 @@
 import { Camera } from '../models/camera.model';
-import { Grid } from '../models/grid.model';
+import { GridConfig } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { UtilEngine } from './util.engine';
 
@@ -8,6 +8,7 @@ import { UtilEngine } from './util.engine';
  */
 
 export class CameraEngine {
+	private static callbackZoom: (camera: Camera) => void;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 
@@ -43,9 +44,9 @@ export class CameraEngine {
 		let mapActive = CameraEngine.mapActive,
 			camera: Camera = mapActive.camera;
 
-		camera.gx = mapActive.gridActive.startGxCamera;
-		camera.gy = mapActive.gridActive.startGyCamera;
-		camera.zoom = mapActive.gridActive.zoomDefault;
+		camera.gx = mapActive.gridConfigActive.startGxCamera;
+		camera.gy = mapActive.gridConfigActive.startGyCamera;
+		camera.zoom = mapActive.gridConfigActive.zoomDefault;
 
 		CameraEngine.zoom(null);
 	}
@@ -72,28 +73,31 @@ export class CameraEngine {
 	public static updatePosition(): void {
 		let mapActive = CameraEngine.mapActive,
 			camera: Camera = mapActive.camera,
-			grid: Grid = mapActive.gridActive;
+			gridConfig: GridConfig = mapActive.gridConfigActive;
 
-		camera.gx = Math.max(0, Math.min(grid.gWidth, camera.gx));
-		camera.gy = Math.max(0, Math.min(grid.gHeight, camera.gy));
+		camera.gx = Math.max(0, Math.min(gridConfig.gWidth, camera.gx));
+		camera.gy = Math.max(0, Math.min(gridConfig.gHeight, camera.gy));
 
 		camera.viewportGx = Math.max(
 			0,
 			Math.min(
-				grid.gWidth - camera.viewportGwEff,
+				gridConfig.gWidth - camera.viewportGwEff,
 				Math.round((camera.gx - camera.viewportGwEff / 2) * 1000) / 1000,
 			),
 		);
 		camera.viewportGy = Math.max(
 			0,
 			Math.min(
-				grid.gHeight - camera.viewportGhEff,
+				gridConfig.gHeight - camera.viewportGhEff,
 				Math.round((camera.gy - camera.viewportGhEff / 2) * 1000) / 1000,
 			),
 		);
 
 		// console.log('camera.gx', camera.gx);
 		// console.log('camera.viewportGx', camera.viewportGx);
+		setTimeout(() => {
+			CameraEngine.callbackZoom(camera);
+		});
 	}
 
 	/**
@@ -102,7 +106,7 @@ export class CameraEngine {
 	public static zoom(zoomIn: boolean | null): void {
 		let mapActive = CameraEngine.mapActive,
 			camera: Camera = mapActive.camera,
-			grid: Grid = mapActive.gridActive,
+			gridConfig: GridConfig = mapActive.gridConfigActive,
 			viewportGhEff: number,
 			viewportGwEff: number,
 			zoom: number = camera.zoom;
@@ -119,7 +123,7 @@ export class CameraEngine {
 		if (viewportGhEff < 2 || viewportGwEff < 2) {
 			// Max zoom in (min 3 blocks)
 			return;
-		} else if (viewportGhEff > grid.gHeight + 1 || viewportGwEff > grid.gWidth + 1) {
+		} else if (viewportGhEff > gridConfig.gHeight + 1 || viewportGwEff > gridConfig.gWidth + 1) {
 			// Max zoom out
 			return;
 		}
@@ -137,5 +141,9 @@ export class CameraEngine {
 
 	public static setMapActive(mapActive: MapActive) {
 		CameraEngine.mapActive = mapActive;
+	}
+
+	public static setCallbackZoom(callbackZoom: (camera: Camera) => void): void {
+		CameraEngine.callbackZoom = callbackZoom;
 	}
 }

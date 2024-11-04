@@ -354,7 +354,7 @@ export class AudioEngine {
 
 		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
 
-		audio.currentTime = Math.min(audio.duration, Math.round(timeInS));
+		audio.currentTime = Math.max(0, Math.min(audio.duration, Math.round(timeInS)));
 		audio.volume =
 			Math.round(UtilEngine.scale(volumePercentage, 1, 0, AudioEngine.volumeMusicEff, 0) * 1000) / 1000;
 		await audio.play();

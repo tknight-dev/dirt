@@ -1,6 +1,6 @@
 import { Camera } from '../models/camera.model';
 import { CameraEngine } from '../engines/camera.engine';
-import { Grid } from '../models/grid.model';
+import { GridConfig } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { UtilEngine } from '../engines/util.engine';
 
@@ -21,7 +21,7 @@ export class MapDrawEngine {
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
-	private static mapActiveGrid: Grid;
+	private static mapActiveGridConfig: GridConfig;
 	private static readonly backgroundRatio: number = 0.175;
 	private static backgroundPh: number;
 	private static backgroundPw: number;
@@ -54,8 +54,8 @@ export class MapDrawEngine {
 			);
 
 		CameraEngine.moveG(
-			Math.round(MapDrawEngine.mapActiveGrid.gWidth * xRel) / 1000,
-			Math.round(MapDrawEngine.mapActiveGrid.gHeight * yRel) / 1000,
+			Math.round(MapDrawEngine.mapActiveGridConfig.gWidth * xRel) / 1000,
+			Math.round(MapDrawEngine.mapActiveGridConfig.gHeight * yRel) / 1000,
 		);
 	}
 
@@ -123,9 +123,9 @@ export class MapDrawEngine {
 			let cacheCanvas: OffscreenCanvas,
 				ctx: OffscreenCanvasRenderingContext2D,
 				mapActive: MapActive = MapDrawEngine.mapActive,
-				grid: Grid = mapActive.gridActive,
-				gh: number = grid.gHeight,
-				gw: number = grid.gWidth,
+				gridConfig: GridConfig = MapDrawEngine.mapActiveGridConfig,
+				gh: number = gridConfig.gHeight,
+				gw: number = gridConfig.gWidth,
 				ghRelScaled: number,
 				ghRelScaledEffB: number,
 				ghRelScaledEffL: number,
@@ -246,6 +246,6 @@ export class MapDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		MapDrawEngine.mapActive = mapActive;
 		MapDrawEngine.mapActiveCamera = mapActive.camera;
-		MapDrawEngine.mapActiveGrid = mapActive.gridActive;
+		MapDrawEngine.mapActiveGridConfig = mapActive.gridConfigActive;
 	}
 }

@@ -84,7 +84,7 @@ export class CameraDrawEngine {
 
 			if (viewportGx === 0) {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.gx * camera.gInPw);
-			} else if (viewportGx + camera.viewportGw === CameraDrawEngine.mapActive.gridActive.gWidth) {
+			} else if (viewportGx + camera.viewportGw === CameraDrawEngine.mapActive.gridConfigActive.gWidth) {
 				CameraDrawEngine.cachePositionPx = Math.round(
 					camera.viewportPx +
 						camera.viewportPw / 2 +
@@ -97,7 +97,7 @@ export class CameraDrawEngine {
 
 			if (viewportGy === 0) {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.gy * camera.gInPh);
-			} else if (viewportGy + camera.viewportGh === CameraDrawEngine.mapActive.gridActive.gHeight) {
+			} else if (viewportGy + camera.viewportGh === CameraDrawEngine.mapActive.gridConfigActive.gHeight) {
 				CameraDrawEngine.cachePositionPy = Math.round(
 					camera.viewportPy +
 						camera.viewportPh / 2 +

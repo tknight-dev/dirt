@@ -7,7 +7,6 @@ import { AssetCollection, AssetImage, AssetImageSrcResolution, AssetImageType } 
 let dirtEngineDefaultImageManifest: AssetImage[] = [
 	{
 		id: 'DIRT',
-		collection: AssetCollection.SHARED,
 		meta: {
 			author: 'tknight-dev',
 			authorWebsite: 'https://tknight.dev',
@@ -17,15 +16,25 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		},
 		srcs: [
 			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution._16_16,
+				src: 'images/grid-objects/dirt_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution._32_32,
+				src: 'images/grid-objects/dirt_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
 				resolution: AssetImageSrcResolution._64_64,
-				src: 'images/grid-objects/dirt.webp',
+				src: 'images/grid-objects/dirt_64_64.webp',
 			},
 		],
 		type: AssetImageType.GRID_BLOCK,
 	},
 	{
 		id: 'DIRT_ENGINE',
-		collection: AssetCollection.UI,
 		meta: {
 			author: 'tknight-dev',
 			authorWebsite: 'https://tknight.dev',
@@ -35,6 +44,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		},
 		srcs: [
 			{
+				collection: AssetCollection.UI,
 				resolution: AssetImageSrcResolution.ONLY,
 				src: 'images/logo/dirt-engine.webp',
 			},
@@ -43,7 +53,6 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 	},
 	{
 		id: 'TKNIGHT_DEV',
-		collection: AssetCollection.UI,
 		meta: {
 			author: 'tknight-dev',
 			authorWebsite: 'https://tknight.dev',
@@ -53,6 +62,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		},
 		srcs: [
 			{
+				collection: AssetCollection.UI,
 				resolution: AssetImageSrcResolution.ONLY,
 				src: 'images/logo/tknight-dev.svg',
 			},

@@ -6,12 +6,13 @@ import { AssetDeclarations } from '../models/asset.model';
 import { AudioEngine } from './audio.engine';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { KeyAction, KeyCommon } from './keyboard.engine';
-import { Map } from '../models/map.model';
+import { Map, MapActive } from '../models/map.model';
 import { MouseAction } from './mouse.engine';
 import { ResizeEngine } from './resize.engine';
 import {
 	VideoCmd,
 	VideoCmdGameModeEdit,
+	VideoCmdGameModeEditApply,
 	VideoCmdGameModePlay,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
@@ -29,6 +30,7 @@ import {
 	VideoWorkerCmdAudioMusicPlay,
 	VideoWorkerCmdAudioMusicUnpause,
 	VideoWorkerCmdAudioVolume,
+	VideoWorkerCmdEditCameraUpdate,
 	VideoWorkerCmdMapAsset,
 	VideoWorkerCmdMapLoadStatus,
 	VideoWorkerCmdMapSave,
@@ -38,7 +40,9 @@ import {
 import { VisibilityEngine } from './visibility.engine';
 
 export class VideoEngine {
-	private static callbackMapAsset: (map: Map | undefined) => void;
+	private static callbackEditCameraUpdate: (update: VideoWorkerCmdEditCameraUpdate) => void;
+	private static callbackEditComplete: () => void;
+	private static callbackMapAsset: (mapActive: MapActive | undefined) => void;
 	private static callbackMapLoadStatus: (status: boolean) => void;
 	private static callbackMapSave: (data: string, name: string) => void;
 	private static callbackStatusInitialized: (durationInMs: number) => void;
@@ -192,6 +196,7 @@ export class VideoEngine {
 			videoWorkerCmdAudioMusicPause: VideoWorkerCmdAudioMusicPause,
 			videoWorkerCmdAudioMusicUnpause: VideoWorkerCmdAudioMusicUnpause,
 			videoWorkerCmdAudioVolume: VideoWorkerCmdAudioVolume,
+			videoWorkerCmdEditCameraUpdate: VideoWorkerCmdEditCameraUpdate,
 			videoWorkerCmdMapAsset: VideoWorkerCmdMapAsset,
 			videoWorkerCmdMapLoadStatus: VideoWorkerCmdMapLoadStatus,
 			videoWorkerCmdMapSave: VideoWorkerCmdMapSave,
@@ -251,10 +256,25 @@ export class VideoEngine {
 							videoWorkerCmdAudioVolume.volumePercentage,
 						);
 						break;
+					case VideoWorkerCmd.EDIT_CAMERA_UPDATE:
+						videoWorkerCmdEditCameraUpdate = <VideoWorkerCmdEditCameraUpdate>videoWorkerPayload.data;
+						if (VideoEngine.callbackEditCameraUpdate !== undefined) {
+							VideoEngine.callbackEditCameraUpdate(videoWorkerCmdEditCameraUpdate);
+						} else {
+							console.error('VideoEngine > workerListen: edit camera update callback not set');
+						}
+						break;
+					case VideoWorkerCmd.EDIT_COMPLETE:
+						if (VideoEngine.callbackEditComplete !== undefined) {
+							VideoEngine.callbackEditComplete();
+						} else {
+							console.error('VideoEngine > workerListen: edit complete callback not set');
+						}
+						break;
 					case VideoWorkerCmd.MAP_ASSET:
 						videoWorkerCmdMapAsset = <VideoWorkerCmdMapAsset>videoWorkerPayload.data;
 						if (VideoEngine.callbackMapAsset !== undefined) {
-							VideoEngine.callbackMapAsset(videoWorkerCmdMapAsset.map);
+							VideoEngine.callbackMapAsset(videoWorkerCmdMapAsset.mapActive);
 						} else {
 							console.error('VideoEngine > workerListen: map asset callback not set');
 						}
@@ -326,6 +346,27 @@ export class VideoEngine {
 		});
 	}
 
+	public static workerGameModeEditApply(apply: VideoCmdGameModeEditApply): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_MODE_EDIT_APPLY,
+			data: apply,
+		});
+	}
+
+	public static workerGameModeEditRedo(): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_MODE_EDIT_REDO,
+			data: null,
+		});
+	}
+
+	public static workerGameModeEditUndo(): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_MODE_EDIT_UNDO,
+			data: null,
+		});
+	}
+
 	public static workerGameModePlay(play: VideoCmdGameModePlay): void {
 		VideoEngine.worker.postMessage({
 			cmd: VideoCmd.GAME_MODE_PLAY,
@@ -368,7 +409,17 @@ export class VideoEngine {
 		});
 	}
 
-	public static setCallbackMapAsset(callbackMapAsset: (map: Map | undefined) => void): void {
+	public static setCallbackEditCameraUpdate(
+		callbackEditCameraUpdate: (update: VideoWorkerCmdEditCameraUpdate) => void,
+	): void {
+		VideoEngine.callbackEditCameraUpdate = callbackEditCameraUpdate;
+	}
+
+	public static setCallbackEditComplete(callbackEditComplete: () => void): void {
+		VideoEngine.callbackEditComplete = callbackEditComplete;
+	}
+
+	public static setCallbackMapAsset(callbackMapAsset: (mapActive: MapActive | undefined) => void): void {
 		VideoEngine.callbackMapAsset = callbackMapAsset;
 	}
 

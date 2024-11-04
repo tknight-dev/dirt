@@ -1,5 +1,5 @@
 import { Camera } from './camera.model';
-import { Grid } from './grid.model';
+import { Grid, GridConfig } from './grid.model';
 
 /**
  * @author tknight-dev
@@ -15,10 +15,14 @@ import { Grid } from './grid.model';
  * 		2880 is 30s
  * 		5760 is 15s [max]
  */
-export interface Map {
+export interface Map extends MapConfig {
 	camera: Camera;
-	clockSpeedRelativeToEarth: number; // default by MapEngine (Precision 3)
 	grids: { [key: string]: Grid }; // key is gridID
+}
+
+export interface MapConfig {
+	clockSpeedRelativeToEarth: number; // default by MapEngine (Precision 3)
+	gridConfigs: { [key: string]: GridConfig }; // key is gridID
 	name: string;
 	hourOfDay: number; // 24hour clock, defaulted by MapEngine (Precision 0)
 }
@@ -26,5 +30,6 @@ export interface Map {
 export interface MapActive extends Map {
 	gridActive: Grid;
 	gridActiveId: string;
+	gridConfigActive: GridConfig;
 	hourOfDayEff: number; // current time in game
 }

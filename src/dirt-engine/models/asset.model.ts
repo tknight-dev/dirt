@@ -4,7 +4,6 @@
 
 export interface Asset {
 	id: string;
-	collection: AssetCollection;
 	meta: AssetMeta | undefined;
 }
 
@@ -14,6 +13,7 @@ export enum AssetAudioType {
 }
 
 export interface AssetAudio extends Asset {
+	collection: AssetCollection;
 	src: string; // eg: 'ui/audio/music/music.mp3' from the shared assets archive
 	type: AssetAudioType;
 	volumeOffset: number; // range is 0-1 (Precision3)
@@ -40,6 +40,7 @@ export interface AssetImage extends Asset {
 }
 
 export interface AssetImageSrc {
+	collection: AssetCollection;
 	resolution: AssetImageSrcResolution;
 	src: string;
 }
@@ -74,6 +75,7 @@ export interface AssetManifestMaster {
 }
 
 export interface AssetMap extends Asset {
+	collection: AssetCollection;
 	src: string; // eg: 'video/maps/level01.map' from the shared assets archive
 	order: number; // start from 0 (Precision 0)
 }

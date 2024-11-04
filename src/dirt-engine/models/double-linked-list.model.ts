@@ -4,16 +4,27 @@
 
 export interface DoubleLinkedListNode<T> {
 	data: T;
-	next: DoubleLinkedListNode<T> | null;
-	previous: DoubleLinkedListNode<T> | null;
+	next: DoubleLinkedListNode<T> | undefined;
+	previous: DoubleLinkedListNode<T> | undefined;
 }
 
 export class DoubleLinkedList<T> {
-	private end: DoubleLinkedListNode<T> | null = null;
+	private end: DoubleLinkedListNode<T> | undefined = undefined;
 	private length: number = 0;
-	private start: DoubleLinkedListNode<T> | null = null;
+	private start: DoubleLinkedListNode<T> | undefined = undefined;
 
-	public getEnd(): DoubleLinkedListNode<T> | null {
+	/**
+	 * Remove all nodes
+	 */
+	public clear(): void {
+		let t = this;
+
+		t.end = undefined;
+		t.length = 0;
+		t.start = undefined;
+	}
+
+	public getEnd(): DoubleLinkedListNode<T> | undefined {
 		return this.end;
 	}
 
@@ -21,46 +32,54 @@ export class DoubleLinkedList<T> {
 		return this.length;
 	}
 
-	public getStart(): DoubleLinkedListNode<T> | null {
+	public getStart(): DoubleLinkedListNode<T> | undefined {
 		return this.start;
 	}
 
-	public popEnd(): void {
-		let t = this;
+	public popEnd(): T | undefined {
+		let t = this,
+			end: DoubleLinkedListNode<T> | undefined = t.end;
 
-		if (t.end) {
+		if (end) {
 			if (t.length === 1) {
-				t.end = null;
-				t.start = null;
+				t.end = undefined;
+				t.start = undefined;
 			} else {
-				t.end = t.end.previous;
+				t.end = end.previous;
 			}
 
 			t.length--;
+			return end.data;
 		}
+
+		return undefined;
 	}
 
-	public popStart(): void {
-		let t = this;
+	public popStart(): T | undefined {
+		let t = this,
+			start: DoubleLinkedListNode<T> | undefined = t.start;
 
-		if (t.start) {
+		if (start) {
 			if (t.length === 1) {
-				t.end = null;
-				t.start = null;
+				t.end = undefined;
+				t.start = undefined;
 			} else {
-				t.start = t.start.next;
+				t.start = start.next;
 			}
 
 			t.length--;
+			return start.data;
 		}
+
+		return undefined;
 	}
 
 	public pushEnd(data: T): void {
 		let t = this,
 			node: DoubleLinkedListNode<T> = {
 				data: data,
-				next: null,
-				previous: t.length ? t.end : null,
+				next: undefined,
+				previous: t.length ? t.end : undefined,
 			};
 
 		if (t.end) {
@@ -78,8 +97,8 @@ export class DoubleLinkedList<T> {
 		let t = this,
 			node: DoubleLinkedListNode<T> = {
 				data: data,
-				next: t.length ? t.start : null,
-				previous: null,
+				next: t.length ? t.start : undefined,
+				previous: undefined,
 			};
 
 		if (t.start) {
@@ -91,5 +110,17 @@ export class DoubleLinkedList<T> {
 		}
 
 		t.length++;
+	}
+
+	public toArray(): T[] {
+		let array: T[] = [],
+			node: DoubleLinkedListNode<T> | undefined = this.start;
+
+		while (node) {
+			array.push(node.data);
+			node = node.next;
+		}
+
+		return array;
 	}
 }

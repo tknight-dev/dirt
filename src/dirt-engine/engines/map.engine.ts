@@ -1,7 +1,7 @@
 import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetMap } from '../models/asset.model';
-import { Grid } from '../models/grid.model';
-import { Map, MapActive } from '../models/map.model';
+import { Grid, GridConfig } from '../models/grid.model';
+import { Map, MapActive, MapConfig } from '../models/map.model';
 import { UtilEngine } from './util.engine';
 
 /**
@@ -17,13 +17,22 @@ export class MapEngine {
 		}
 		let gridWidth: number = 50,
 			grid: Grid = {
-				audio: {}, // key is hash
-				blocks: {}, // key is hash
+				audioBlocks: {}, // key is hash
+				audioTagTriggersEffect: {}, // key is hash
+				audioTagTriggersMusic: {}, // key is hash
+				audioTagTriggersMusicFade: {}, // key is hash
+				audioTagTriggersMusicPause: {}, // key is hash
+				audioTagTriggersMusicUnpause: {}, // key is hash
+				imageBlocksBackground: {}, // key is hash
+				imageBlocksForeground: {}, // key is hash
+				imageBlocksPrimary: {}, // key is hash
+				lights: {}, // key is hash
+			},
+			gridConfig: GridConfig = {
 				gHeight: 0, // calculated
 				gHorizon: 0, // calculated
 				gWidth: gridWidth,
 				id: 'initial', // protectedId
-				lights: {}, // key is hash
 				lightIntensityGlobal: 1,
 				outside: true,
 				startGxCamera: Math.round(gridWidth / 2),
@@ -38,12 +47,14 @@ export class MapEngine {
 					zoomDefault: 1,
 				},
 				clockSpeedRelativeToEarth: 1,
+				gridConfigs: {}, // key is gridID
 				grids: {}, // key is gridID
 				hourOfDay: 12,
 				name: 'new_map',
 			};
 
-		map.grids[grid.id] = grid;
+		map.gridConfigs[gridConfig.id] = gridConfig;
+		map.grids[gridConfig.id] = grid;
 
 		return MapEngine.loadFromFile(map);
 	}
@@ -59,17 +70,18 @@ export class MapEngine {
 		if (!MapEngine.initialized) {
 			console.error('MapEngine > loadFromFile: not initialized');
 		}
-		let grid: Grid,
-			gridActiveId: string = 'initial',
-			grids: { [key: string]: Grid } = map.grids,
+		let gridActiveId: string = 'initial',
+			gridConfig: GridConfig,
+			gridConfigs: { [key: string]: GridConfig } = map.gridConfigs,
 			mapActive: MapActive = Object.assign(map, {
 				gridActive: map.grids[gridActiveId],
 				gridActiveId: gridActiveId,
+				gridConfigActive: map.gridConfigs[gridActiveId],
 				hourOfDayEff: map.hourOfDay,
 			});
 
 		// Camera
-		map.camera.zoom = grids[gridActiveId].zoomDefault;
+		map.camera.zoom = mapActive.gridConfigActive.zoomDefault;
 		map.camera.viewportGw = Math.round(map.camera.viewportGw);
 		map.camera.viewportGh = Math.round((map.camera.viewportGw * 9000) / 16) / 1000;
 
@@ -81,13 +93,13 @@ export class MapEngine {
 		map.hourOfDay = Math.round(map.hourOfDay);
 
 		// Grids
-		for (let i in grids) {
-			grid = grids[i];
-			grid.gWidth = Math.round(grid.gWidth);
-			grid.gHeight = Math.round((grid.gWidth * 9) / 16);
+		for (let i in gridConfigs) {
+			gridConfig = gridConfigs[i];
+			gridConfig.gWidth = Math.round(gridConfig.gWidth);
+			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 
-			grid.gHorizon = Math.round(grid.gHeight / 2);
-			grid.lightIntensityGlobal = Math.round(grid.lightIntensityGlobal * 1000) / 1000;
+			gridConfig.gHorizon = Math.round(gridConfig.gHeight / 2);
+			gridConfig.lightIntensityGlobal = Math.round(gridConfig.lightIntensityGlobal * 1000) / 1000;
 		}
 
 		return mapActive;

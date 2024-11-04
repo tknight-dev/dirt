@@ -1,4 +1,4 @@
-import { AssetAudio, AssetAudioType, AssetImage } from './asset.model';
+import { AudioModulation } from './audio-modulation.model';
 
 /**
  * Edges of the grid may fall outside of viewer as they may reside in buffer space
@@ -7,13 +7,23 @@ import { AssetAudio, AssetAudioType, AssetImage } from './asset.model';
  */
 
 export interface Grid {
-	audio: { [key: number]: GridAudio }; // key is hash
-	blocks: { [key: number]: GridBlock }; // key is hash
+	audioBlocks: { [key: number]: GridAudioBlock }; // key is hash, Precision 0
+	audioTagTriggersEffect: { [key: number]: GridAudioTriggerEffect }; // key is hash, Precision 3
+	audioTagTriggersMusic: { [key: number]: GridAudioTriggerMusic }; // key is hash, Precision 3
+	audioTagTriggersMusicFade: { [key: number]: GridAudioTriggerMusicFade }; // key is hash, Precision 3
+	audioTagTriggersMusicPause: { [key: number]: GridAudioTriggerMusicPause }; // key is hash, Precision 3
+	audioTagTriggersMusicUnpause: { [key: number]: GridAudioTriggerMusicUnpause }; // key is hash, Precision 3
+	imageBlocksBackground: { [key: number]: GridImageBlock }; // key is hash, Precision 0
+	imageBlocksForeground: { [key: number]: GridImageBlock }; // key is hash, Precision 0
+	imageBlocksPrimary: { [key: number]: GridImageBlock }; // key is hash, Precision 0
+	lights: { [key: number]: GridLight }; // key is hash, Precision 3
+}
+
+export interface GridConfig {
 	gHeight: number; // calculated, Precision 0
 	gHorizon: number; // Precision 0
 	gWidth: number; // Precision 0
 	id: string;
-	lights: { [key: number]: GridLight }; // key is hash
 	lightIntensityGlobal: number; // defaulted by MapEngine (Precision 3)
 	outside: boolean; // defaulted by MapEngine
 	startGxCamera: number; // Precision 3
@@ -28,33 +38,82 @@ export interface GridCoordinate {
 	gy: number; // Precision 3
 }
 
-export interface GridAudio extends GridObject {
-	asset: AssetAudio;
-	hash: number;
-	type: AssetAudioType;
+export interface GridAudioBlock extends GridObject {
+	modulationId: string;
 }
 
-export interface GridBlock extends GridObject {
-	asset: AssetImage;
-	hash: number;
-	type: GridBlockType;
+export interface GridAudioTriggerEffect extends GridObject {
+	assetId: string;
+	oneshot: boolean; // true and the trigger fires everytime it's tripped
+	trip: GridAudioTriggerTripType;
+	volumePercentage: number; // between 0 and 1 with a precision of 3
 }
 
-export enum GridBlockType {
-	DIRT,
+export interface GridAudioTriggerMusic extends GridObject {
+	assetId: string;
+	tagId: string;
+	trip: GridAudioTriggerTripType;
+	volumePercentage: number; // between 0 and 1 with a precision of 3
+}
+
+export interface GridAudioTriggerMusicFade extends GridObject {
+	fadeDurationInMs: number; // between 0 and 1 with a precision of 3
+	fadeTo: number; // between 0 and 1 with a precision of 3
+	tagId: string;
+	trip: GridAudioTriggerTripType;
+}
+
+export interface GridAudioTriggerMusicPause extends GridObject {
+	tagId: string;
+	trip: GridAudioTriggerTripType;
+}
+
+export interface GridAudioTriggerMusicUnpause extends GridObject {
+	tagId: string;
+	trip: GridAudioTriggerTripType;
+}
+
+export enum GridAudioTriggerTripType {
+	CONTACT, // Charactor touches the gBlock
+	HORIZONTAL, // Charactor passes top-to-bottom or vice versa
+	VERTICAL, // Charactor passes left-to-right or vice versa
+}
+
+export interface GridImageBlock extends GridObject {
+	assetId: string;
+	assetIdDamagedImage: string | undefined; // fallback is assetId
+	assetIdDamangedWalkedOnAudioEffect: string | undefined; // fallback is Undamanged
+	assetIdWalkedOnAudioEffect: string | undefined; // fallback is no audio
+	damageable: boolean;
+	destructible: boolean;
+	hash: number;
+	strengthToDamangeInN: number | undefined; // newtons of force required to destroy
+	strengthToDestroyInN: number | undefined; // newtons of force required to destroy
+	type: GridImageBlockType;
+	viscocity: number | undefined; // how thick the liquid is
+}
+
+export enum GridImageBlockType {
+	LIQUID,
+	SOLID,
 }
 
 export interface GridLight extends GridCoordinate {
+	color: number; // hexadecimal
 	decay: number;
 	destructible: boolean;
 	hash: number;
 	intensity: number;
+	nightOnly: boolean;
+	strengthToDamangeInN: number | undefined; // newtons of force required to destroy
 	type: GridLightType;
 }
 
 export enum GridLightType {
 	DOWN,
+	DOWN_UP,
 	LEFT,
+	LEFT_RIGHT,
 	OMNI,
 	RIGHT,
 	UP,
@@ -62,7 +121,8 @@ export enum GridLightType {
 
 export interface GridObject extends GridCoordinate {
 	grounded: boolean;
-	gSize: number; // refers to number of grid squares the object takes up
+	gSizeH: number; // refers to number of grid squares the object takes up
+	gSizeW: number; // refers to number of grid squares the object takes up
 	timeSinceLastUpdate: number;
 	velX: number; // kph
 	velY: number; // kph

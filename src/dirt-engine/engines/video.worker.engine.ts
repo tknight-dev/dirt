@@ -1,10 +1,12 @@
 import { AssetCollection, AssetManifestMaster, AssetMap } from '../models/asset.model';
 import { AssetEngine } from './asset.engine';
+import { Camera } from '../models/camera.model';
 import { CameraEngine } from './camera.engine';
 import { KernelEngine } from './kernel.engine';
 import { KeyAction } from './keyboard.engine';
 import { Map, MapActive } from '../models/map.model';
 import { MapEngine } from './map.engine';
+import { MapEditEngine } from './map-edit.engine';
 import { MouseAction } from './mouse.engine';
 import { UtilEngine } from './util.engine';
 import {
@@ -14,6 +16,7 @@ import {
 	VideoCmdMapLoadById,
 	VideoCmdResize,
 	VideoCmdGameModeEdit,
+	VideoCmdGameModeEditApply,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
 	VideoCmdGameSave,
@@ -36,6 +39,15 @@ self.onmessage = (event: MessageEvent) => {
 	switch (videoPayload.cmd) {
 		case VideoCmd.GAME_MODE_EDIT:
 			Video.inputGameModeEdit(<VideoCmdGameModeEdit>videoPayload.data);
+			break;
+		case VideoCmd.GAME_MODE_EDIT_APPLY:
+			Video.inputGameModeEditApply(<VideoCmdGameModeEditApply>videoPayload.data);
+			break;
+		case VideoCmd.GAME_MODE_EDIT_REDO:
+			Video.inputGameModeEditRedo();
+			break;
+		case VideoCmd.GAME_MODE_EDIT_UNDO:
+			Video.inputGameModeEditUndo();
 			break;
 		case VideoCmd.GAME_PAUSE:
 			Video.inputGamePause(<VideoCmdGamePause>videoPayload.data);
@@ -86,6 +98,7 @@ class Video {
 	private static canvasOffscreenPrimaryContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenUnderlay: OffscreenCanvas; // Z-1
 	private static canvasOffscreenUnderlayContext: OffscreenCanvasRenderingContext2D;
+	private static gameModeEdit: boolean;
 	private static gameStarted: boolean;
 	private static initialized: boolean;
 	private static self: Window & typeof globalThis;
@@ -126,8 +139,13 @@ class Video {
 			Video.canvasOffscreenUnderlayContext,
 		);
 		await MapEngine.initialize();
+		await MapEditEngine.initialize(false);
 
 		// Config
+		CameraEngine.setCallbackZoom((camera: Camera) => {
+			//MapEditEngine.cameraUpdate(camera);
+			Video.outputEditCameraUpdate(camera);
+		});
 		Video.inputResize(data);
 		Video.inputSettings(data);
 
@@ -144,6 +162,37 @@ class Video {
 
 	public static inputGameModeEdit(modeEdit: VideoCmdGameModeEdit): void {
 		console.log('VideoWorker > modeEdit', modeEdit);
+		Video.gameModeEdit = modeEdit.edit;
+	}
+
+	public static inputGameModeEditApply(apply: VideoCmdGameModeEditApply): void {
+		MapEditEngine.apply(apply);
+		Video.post([
+			{
+				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
+	public static inputGameModeEditRedo(): void {
+		MapEditEngine.historyRedo();
+		Video.post([
+			{
+				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
+	public static inputGameModeEditUndo(): void {
+		MapEditEngine.historyUndo();
+		Video.post([
+			{
+				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
 	}
 
 	public static inputGamePause(pause: VideoCmdGamePause): void {
@@ -170,6 +219,7 @@ class Video {
 			return;
 		}
 		Video.gameStarted = true;
+		Video.gameModeEdit = start.modeEdit;
 		console.log('VideoWorker > gameStart', start);
 
 		// Last
@@ -182,12 +232,20 @@ class Video {
 
 	public static inputMapLoad(videoCmdMapLoad: VideoCmdMapLoad): void {
 		let map: Map,
+			mapActive: MapActive,
 			status: boolean = true;
 
 		//let maps: { [key: string]: AssetMap } = Video.assetManifestMaster.maps
 
 		try {
 			map = UtilEngine.mapDecode(videoCmdMapLoad.data);
+
+			if (map) {
+				mapActive = MapEngine.loadFromFile(map);
+				MapEditEngine.load(mapActive);
+			} else {
+				status = false;
+			}
 		} catch (error: any) {
 			status = false;
 		}
@@ -203,22 +261,18 @@ class Video {
 	}
 
 	public static inputMapLoadById(videoCmdMapLoadById: VideoCmdMapLoadById): void {
-		let map: MapActive | undefined, mapAsset: AssetMap;
+		let mapActive: MapActive | undefined, mapAsset: AssetMap;
 
 		try {
 			if (!videoCmdMapLoadById.id) {
-				map = MapEngine.default();
+				mapActive = MapEngine.default();
 			} else {
 				mapAsset = Video.assetManifestMaster.maps[videoCmdMapLoadById.id];
-				map = MapEngine.load(mapAsset);
+				mapActive = MapEngine.load(mapAsset);
 			}
 
-			// Restart the kernel with the new map
-			if (map) {
-				if (KernelEngine.isRunning()) {
-					KernelEngine.stop();
-				}
-				KernelEngine.start(map);
+			if (mapActive) {
+				MapEditEngine.load(mapActive);
 			}
 		} catch (error: any) {
 			console.error('Video > inputMapLoadById', error);
@@ -228,7 +282,7 @@ class Video {
 			{
 				cmd: VideoWorkerCmd.MAP_ASSET,
 				data: {
-					map: map,
+					mapActive: mapActive,
 				},
 			},
 		]);
@@ -381,6 +435,23 @@ class Video {
 				},
 			},
 		]);
+	}
+
+	public static outputEditCameraUpdate(camera: Camera): void {
+		if (Video.gameModeEdit) {
+			Video.post([
+				{
+					cmd: VideoWorkerCmd.EDIT_CAMERA_UPDATE,
+					data: {
+						gInPh: camera.gInPh,
+						gInPw: camera.gInPw,
+						viewportGx: camera.viewportGx,
+						viewportGy: camera.viewportGy,
+						zoom: camera.zoom,
+					},
+				},
+			]);
+		}
 	}
 
 	public static outputMapSave(map: Map): void {
