@@ -1,5 +1,5 @@
 // Imports
-import { AssetCollection, AssetDeclarations, AssetManifestMaster } from './models/asset.model';
+import { AssetCollection, AssetDeclarations, AssetImageSrcResolution, AssetManifestMaster } from './models/asset.model';
 import { AssetCache, AssetEngine } from './engines/asset.engine';
 import { AudioEngine } from './engines/audio.engine';
 import { AudioModulation } from './models/audio-modulation.model';
@@ -119,6 +119,7 @@ export class DirtEngine extends DomUI {
 				fps: fps,
 				fpsVisible: true,
 				mapVisible: true,
+				resolution: AssetImageSrcResolution.HIGH,
 			},
 		);
 		await promise;

@@ -17,17 +17,17 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution._16_16,
+				resolution: AssetImageSrcResolution.LOW,
 				src: 'images/grid-objects/dirt_16_16.webp',
 			},
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution._32_32,
+				resolution: AssetImageSrcResolution.MEDIUM,
 				src: 'images/grid-objects/dirt_32_32.webp',
 			},
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution._64_64,
+				resolution: AssetImageSrcResolution.HIGH,
 				src: 'images/grid-objects/dirt_64_64.webp',
 			},
 		],
@@ -45,7 +45,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.UI,
-				resolution: AssetImageSrcResolution.ONLY,
+				resolution: AssetImageSrcResolution.HIGH,
 				src: 'images/logo/dirt-engine.webp',
 			},
 		],
@@ -63,7 +63,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.UI,
-				resolution: AssetImageSrcResolution.ONLY,
+				resolution: AssetImageSrcResolution.HIGH,
 				src: 'images/logo/tknight-dev.svg',
 			},
 		],

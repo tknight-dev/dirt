@@ -1,4 +1,4 @@
-import { AssetDeclarations, AssetAudioType } from './asset.model';
+import { AssetDeclarations, AssetImageSrcResolution } from './asset.model';
 import {
 	GridAudioBlock,
 	GridAudioTriggerEffect,
@@ -54,7 +54,7 @@ export interface VideoCmdMapLoad {
 }
 
 export interface VideoCmdMapLoadById {
-	id: string | undefined; // undefined for new map
+	id?: string; // undefined for new map
 }
 
 export interface VideoCmdResize {
@@ -141,6 +141,7 @@ export interface VideoCmdSettings {
 	fps: VideoCmdSettingsFPS;
 	fpsVisible: boolean;
 	mapVisible: boolean;
+	resolution: AssetImageSrcResolution;
 }
 
 export enum VideoCmdSettingsFPS {
@@ -218,13 +219,17 @@ export interface VideoWorkerCmdAudioVolume {
 export interface VideoWorkerCmdEditCameraUpdate {
 	gInPh: number; // Precision 3
 	gInPw: number; // Precision 3
+	viewportPh: number; // Precision 0
+	viewportPw: number; // Precision 0
+	viewportPx: number; // Precision 0
+	viewportPy: number; // Precision 0
 	viewportGx: number; // Precision 3
 	viewportGy: number; // Precision 3
 	zoom: number; // Precision 3
 }
 
 export interface VideoWorkerCmdMapAsset {
-	mapActive: MapActive | undefined;
+	mapActive?: MapActive;
 }
 
 export interface VideoWorkerCmdMapLoadStatus {

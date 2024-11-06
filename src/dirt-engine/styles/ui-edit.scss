@@ -158,10 +158,19 @@ $dirt-engine-ui-edit-button-width: 40px;
 		}
 
 		&.disabled {
-			background-color: rgba(64, 64, 64, 0.4);
+			background-color: rgba(80, 80, 80, 0.4);
 			border: 1px solid rgba(0, 0, 0, 0.25);
 			box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
 			cursor: inherit;
+
+			.dirt-engine-icon {
+				background-color: #666666;
+
+				&:hover {
+					background-color: #666666;
+					cursor: inherit;
+				}
+			}
 		}
 
 		&.green {

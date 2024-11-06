@@ -1,5 +1,5 @@
 import { Coordinate } from '../models/px.model';
-import { GridCoordinate } from '../models/grid.model';
+import { GridCoordinate, GridBlockTable, GridBlockTableComplex } from '../models/grid.model';
 import { Map } from '../models/map.model';
 
 /**
@@ -42,6 +42,51 @@ export class UtilEngine {
 	 */
 	public static gridHashTo(gx: number, gy: number): number {
 		return ((Math.round(gx * 1000) & 0xffff) << 16) | (Math.round(gy * 1000) & 0xffff);
+	}
+
+	/**
+	 * Grid hashes are 32bit with a max precision of 3
+	 */
+	public static gridBlockTableSliceHashes(
+		gridBlockTable: GridBlockTable<any>,
+		startGx: number,
+		startGy: number,
+		stopGx: number,
+		stopGy: number,
+	): GridBlockTableComplex[] {
+		let gx: number,
+			gxs: number[] = <number[]>gridBlockTable.gx,
+			gy: GridBlockTableComplex,
+			gys: GridBlockTableComplex[],
+			hashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>gridBlockTable.hashesGyByGx,
+			hashesSlice: GridBlockTableComplex[] = [],
+			j: string;
+
+		startGx--;
+		startGy--;
+		stopGx++;
+		stopGy++;
+		for (let i in gxs) {
+			gx = gxs[i];
+			if (gx > startGx && gx < stopGx) {
+				gys = hashesGyByGx[gx];
+
+				for (j in gys) {
+					gy = gys[j];
+
+					if (gy.value > startGy && gy.value < stopGy) {
+						hashesSlice.push({
+							gx: gx,
+							gy: gy.value,
+							hash: gy.hash,
+							value: 0,
+						});
+					}
+				}
+			}
+		}
+
+		return hashesSlice;
 	}
 
 	/**

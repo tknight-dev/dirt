@@ -3,6 +3,7 @@ import { AssetMap } from '../models/asset.model';
 import { Grid, GridConfig } from '../models/grid.model';
 import { Map, MapActive, MapConfig } from '../models/map.model';
 import { UtilEngine } from './util.engine';
+import { MapEditEngine } from './map-edit.engine';
 
 /**
  * @author tknight-dev
@@ -17,16 +18,16 @@ export class MapEngine {
 		}
 		let gridWidth: number = 50,
 			grid: Grid = {
-				audioBlocks: {}, // key is hash
-				audioTagTriggersEffect: {}, // key is hash
-				audioTagTriggersMusic: {}, // key is hash
-				audioTagTriggersMusicFade: {}, // key is hash
-				audioTagTriggersMusicPause: {}, // key is hash
-				audioTagTriggersMusicUnpause: {}, // key is hash
-				imageBlocksBackground: {}, // key is hash
-				imageBlocksForeground: {}, // key is hash
-				imageBlocksPrimary: {}, // key is hash
-				lights: {}, // key is hash
+				audioBlocks: <any>{},
+				audioTagTriggersEffect: <any>{},
+				audioTagTriggersMusic: <any>{},
+				audioTagTriggersMusicFade: <any>{},
+				audioTagTriggersMusicPause: <any>{},
+				audioTagTriggersMusicUnpause: <any>{},
+				imageBlocksBackground: <any>{},
+				imageBlocksForeground: <any>{},
+				imageBlocksPrimary: <any>{},
+				lights: <any>{},
 			},
 			gridConfig: GridConfig = {
 				gHeight: 0, // calculated
@@ -81,16 +82,16 @@ export class MapEngine {
 			});
 
 		// Camera
-		map.camera.zoom = mapActive.gridConfigActive.zoomDefault;
-		map.camera.viewportGw = Math.round(map.camera.viewportGw);
-		map.camera.viewportGh = Math.round((map.camera.viewportGw * 9000) / 16) / 1000;
+		mapActive.camera.zoom = mapActive.gridConfigActive.zoomDefault;
+		mapActive.camera.viewportGw = Math.round(mapActive.camera.viewportGw);
+		mapActive.camera.viewportGh = Math.round((mapActive.camera.viewportGw * 9000) / 16) / 1000;
 
 		// Clock
-		map.clockSpeedRelativeToEarth = Math.max(
+		mapActive.clockSpeedRelativeToEarth = Math.max(
 			1,
-			Math.min(5760, Math.round(map.clockSpeedRelativeToEarth * 1000) / 1000),
+			Math.min(5760, Math.round(mapActive.clockSpeedRelativeToEarth * 1000) / 1000),
 		);
-		map.hourOfDay = Math.round(map.hourOfDay);
+		mapActive.hourOfDay = Math.round(mapActive.hourOfDay);
 
 		// Grids
 		for (let i in gridConfigs) {
@@ -101,6 +102,9 @@ export class MapEngine {
 			gridConfig.gHorizon = Math.round(gridConfig.gHeight / 2);
 			gridConfig.lightIntensityGlobal = Math.round(gridConfig.lightIntensityGlobal * 1000) / 1000;
 		}
+
+		// Inflate lookup tables
+		MapEditEngine.gridBlockTableInflate(mapActive);
 
 		return mapActive;
 	}

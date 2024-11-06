@@ -9,12 +9,12 @@ import { UtilEngine } from '../engines/util.engine';
 
 export class CameraDrawEngine {
 	private static cache: ImageBitmap;
-	private static cachePositionPx: number;
-	private static cachePositionPy: number;
 	private static cachePositionHashG: number;
 	private static cachePositionHashP: number;
 	private static cachePositionHashCheckG: number;
 	private static cachePositionHashCheckP: number;
+	private static cachePositionPx: number;
+	private static cachePositionPy: number;
 	private static cacheZoom: number;
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
@@ -42,6 +42,17 @@ export class CameraDrawEngine {
 		CameraDrawEngine.ctxOverlay = ctxOverlay;
 	}
 
+	public static cacheReset(): void {
+		CameraDrawEngine.cachePositionPx = -1;
+		CameraDrawEngine.cachePositionPy = -1;
+		CameraDrawEngine.cachePositionHashG = -1;
+		CameraDrawEngine.cachePositionHashP = -1;
+		CameraDrawEngine.cacheZoom = -1;
+	}
+
+	/**
+	 * DOESN"T WORK ON RIGHT AND BOTTOM!!!! AFTER ZOOM APPLIED!!!
+	 */
 	public static start(): void {
 		//let start: number = performance.now();
 

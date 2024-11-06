@@ -45,6 +45,13 @@ export class MapDrawEngine {
 		MapDrawEngine.ctxOverlay = ctxOverlay;
 	}
 
+	public static cacheReset(): void {
+		MapDrawEngine.cacheBackgroundHashP = -1;
+		MapDrawEngine.cacheCameraLinesHashG = -1;
+		MapDrawEngine.cacheCameraLinesHashP = -1;
+		MapDrawEngine.cacheZoom = -1;
+	}
+
 	public static moveToPx(px: number, py: number): void {
 		let xRel: number = Math.round(
 				((px - MapDrawEngine.backgroundPx + UtilEngine.renderOverflowPEff) / MapDrawEngine.backgroundPw) * 1000,

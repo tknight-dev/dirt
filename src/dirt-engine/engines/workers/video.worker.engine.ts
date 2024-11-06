@@ -1,14 +1,14 @@
-import { AssetCollection, AssetManifestMaster, AssetMap } from '../models/asset.model';
-import { AssetEngine } from './asset.engine';
-import { Camera } from '../models/camera.model';
-import { CameraEngine } from './camera.engine';
-import { KernelEngine } from './kernel.engine';
-import { KeyAction } from './keyboard.engine';
-import { Map, MapActive } from '../models/map.model';
-import { MapEngine } from './map.engine';
-import { MapEditEngine } from './map-edit.engine';
-import { MouseAction } from './mouse.engine';
-import { UtilEngine } from './util.engine';
+import { AssetCollection, AssetImageSrcResolution, AssetManifestMaster, AssetMap } from '../../models/asset.model';
+import { AssetEngine } from '../asset.engine';
+import { Camera } from '../../models/camera.model';
+import { CameraEngine } from '../camera.engine';
+import { KernelEngine } from '../kernel.engine';
+import { KeyAction } from '../keyboard.engine';
+import { Map, MapActive } from '../../models/map.model';
+import { MapEngine } from '../map.engine';
+import { MapEditEngine } from '../map-edit.engine';
+import { MouseAction } from '../mouse.engine';
+import { UtilEngine } from '../util.engine';
 import {
 	VideoCmd,
 	VideoCmdInit,
@@ -27,7 +27,7 @@ import {
 	VideoWorkerCmd,
 	VideoWorkerCmdAudioEffect,
 	VideoWorkerPayload,
-} from '../models/video-worker-cmds.model';
+} from '../../models/video-worker-cmds.model';
 
 /**
  * @author tknight-dev
@@ -101,6 +101,7 @@ class Video {
 	private static gameModeEdit: boolean;
 	private static gameStarted: boolean;
 	private static initialized: boolean;
+	private static resolution: AssetImageSrcResolution;
 	private static self: Window & typeof globalThis;
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoCmdInit): Promise<void> {
@@ -118,6 +119,7 @@ class Video {
 		Video.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
 		Video.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
 		Video.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
+		Video.resolution = data.resolution;
 		Video.self = self;
 
 		// Get contexts
@@ -142,8 +144,7 @@ class Video {
 		await MapEditEngine.initialize(false);
 
 		// Config
-		CameraEngine.setCallbackZoom((camera: Camera) => {
-			//MapEditEngine.cameraUpdate(camera);
+		CameraEngine.setCallback((camera: Camera) => {
 			Video.outputEditCameraUpdate(camera);
 		});
 		Video.inputResize(data);
@@ -230,7 +231,7 @@ class Video {
 		console.log('VideoWorker > gameUnpause', unpause);
 	}
 
-	public static inputMapLoad(videoCmdMapLoad: VideoCmdMapLoad): void {
+	public static async inputMapLoad(videoCmdMapLoad: VideoCmdMapLoad): Promise<void> {
 		let map: Map,
 			mapActive: MapActive,
 			status: boolean = true;
@@ -242,7 +243,7 @@ class Video {
 
 			if (map) {
 				mapActive = MapEngine.loadFromFile(map);
-				MapEditEngine.load(mapActive);
+				await MapEditEngine.load(mapActive);
 			} else {
 				status = false;
 			}
@@ -260,7 +261,7 @@ class Video {
 		]);
 	}
 
-	public static inputMapLoadById(videoCmdMapLoadById: VideoCmdMapLoadById): void {
+	public static async inputMapLoadById(videoCmdMapLoadById: VideoCmdMapLoadById): Promise<void> {
 		let mapActive: MapActive | undefined, mapAsset: AssetMap;
 
 		try {
@@ -272,7 +273,7 @@ class Video {
 			}
 
 			if (mapActive) {
-				MapEditEngine.load(mapActive);
+				await MapEditEngine.load(mapActive);
 			}
 		} catch (error: any) {
 			console.error('Video > inputMapLoadById', error);
@@ -445,6 +446,10 @@ class Video {
 					data: {
 						gInPh: camera.gInPh,
 						gInPw: camera.gInPw,
+						viewportPh: camera.viewportPh,
+						viewportPw: camera.viewportPw,
+						viewportPx: camera.viewportPx,
+						viewportPy: camera.viewportPy,
 						viewportGx: camera.viewportGx,
 						viewportGy: camera.viewportGy,
 						zoom: camera.zoom,
@@ -459,7 +464,7 @@ class Video {
 			{
 				cmd: VideoWorkerCmd.MAP_SAVE,
 				data: {
-					data: UtilEngine.mapEncode(map),
+					data: UtilEngine.mapEncode(MapEditEngine.gridBlockTableDeflate(<MapActive>map)),
 					name: map.name,
 				},
 			},

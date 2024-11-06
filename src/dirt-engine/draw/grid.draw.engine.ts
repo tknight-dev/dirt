@@ -3,6 +3,8 @@ import { MapActive } from '../models/map.model';
 import { UtilEngine } from '../engines/util.engine';
 
 /**
+ * Known: grid number can flicker off by one due to rounding issue
+ *
  * @author tknight-dev
  */
 
@@ -36,6 +38,12 @@ export class GridDrawEngine {
 		GridDrawEngine.ctxOverlay = ctxOverlay;
 	}
 
+	public static cacheReset(): void {
+		GridDrawEngine.cacheHashG = -1;
+		GridDrawEngine.cacheHashP = -1;
+		GridDrawEngine.cacheZoom = -1;
+	}
+
 	public static start(): void {
 		//let start: number = performance.now();
 		GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
@@ -60,10 +68,10 @@ export class GridDrawEngine {
 				gInPw: number = camera.gInPw,
 				viewportGx: number = camera.viewportGx,
 				viewportGy: number = camera.viewportGy,
-				viewportGxEff: number = (viewportGx * gInPw) % gInPw,
-				viewportGyEff: number = ((viewportGy * gInPh) % gInPh) - gInPh,
 				viewportGhEff: number = camera.viewportGhEff,
 				viewportGwEff: number = camera.viewportGwEff + 1,
+				viewportPxEff: number = (viewportGx * gInPw) % gInPw,
+				viewportPyEff: number = ((viewportGy * gInPh) % gInPh) - gInPh,
 				windowPh: number = camera.windowPh,
 				windowPw: number = camera.windowPw;
 
@@ -79,18 +87,18 @@ export class GridDrawEngine {
 			ctx.strokeStyle = 'rgba(255,255,255,.25)';
 			// Horizontal
 			for (let g = 0; g < viewportGhEff; g++) {
-				gEff = g * gInPh - viewportGyEff;
+				gEff = g * gInPh - viewportPyEff;
 				ctx.moveTo(0, gEff);
 				ctx.lineTo(windowPw, gEff);
-				ctx.fillText(String(g + Math.floor(viewportGy)).padStart(3, ' '), 5 * gInPw, gEff);
+				ctx.fillText(String(Math.floor(g + viewportGy)).padStart(3, ' '), 5 * gInPw, gEff);
 			}
 
 			// Vertical
 			for (let g = 0; g < viewportGwEff; g++) {
-				gEff = g * gInPw - viewportGxEff;
+				gEff = g * gInPw - viewportPxEff;
 				ctx.moveTo(gEff, 0);
 				ctx.lineTo(gEff, windowPh);
-				ctx.fillText(String(g + Math.floor(viewportGx)).padStart(3, ' '), gEff, 5 * gInPh);
+				ctx.fillText(String(Math.floor(g + viewportGx - 0.001)).padStart(3, ' '), gEff, 5 * gInPh);
 			}
 			ctx.stroke();
 

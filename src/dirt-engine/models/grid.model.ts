@@ -7,16 +7,29 @@ import { AudioModulation } from './audio-modulation.model';
  */
 
 export interface Grid {
-	audioBlocks: { [key: number]: GridAudioBlock }; // key is hash, Precision 0
-	audioTagTriggersEffect: { [key: number]: GridAudioTriggerEffect }; // key is hash, Precision 3
-	audioTagTriggersMusic: { [key: number]: GridAudioTriggerMusic }; // key is hash, Precision 3
-	audioTagTriggersMusicFade: { [key: number]: GridAudioTriggerMusicFade }; // key is hash, Precision 3
-	audioTagTriggersMusicPause: { [key: number]: GridAudioTriggerMusicPause }; // key is hash, Precision 3
-	audioTagTriggersMusicUnpause: { [key: number]: GridAudioTriggerMusicUnpause }; // key is hash, Precision 3
-	imageBlocksBackground: { [key: number]: GridImageBlock }; // key is hash, Precision 0
-	imageBlocksForeground: { [key: number]: GridImageBlock }; // key is hash, Precision 0
-	imageBlocksPrimary: { [key: number]: GridImageBlock }; // key is hash, Precision 0
-	lights: { [key: number]: GridLight }; // key is hash, Precision 3
+	audioBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
+	audioTagTriggersEffect: GridBlockTable<GridAudioTriggerEffect>; // (gx,gy), Precision 3
+	audioTagTriggersMusic: GridBlockTable<GridAudioTriggerMusic>; // (gx,gy), Precision 3
+	audioTagTriggersMusicFade: GridBlockTable<GridAudioTriggerMusicFade>; // (gx,gy), Precision 3
+	audioTagTriggersMusicPause: GridBlockTable<GridAudioTriggerMusicPause>; // (gx,gy), Precision 3
+	audioTagTriggersMusicUnpause: GridBlockTable<GridAudioTriggerMusicUnpause>; // (gx,gy), Precision 3
+	imageBlocksBackground: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
+	imageBlocksForeground: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
+	imageBlocksPrimary: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
+	lights: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+}
+
+export interface GridBlockTable<T> {
+	gx?: number[]; // array is sorted
+	hashes: { [key: number]: T };
+	hashesGyByGx?: { [key: number]: GridBlockTableComplex[] }; // array is sorted
+}
+
+export interface GridBlockTableComplex {
+	gx?: number;
+	gy?: number;
+	hash: number;
+	value: number;
 }
 
 export interface GridConfig {
@@ -81,16 +94,16 @@ export enum GridAudioTriggerTripType {
 
 export interface GridImageBlock extends GridObject {
 	assetId: string;
-	assetIdDamagedImage: string | undefined; // fallback is assetId
-	assetIdDamangedWalkedOnAudioEffect: string | undefined; // fallback is Undamanged
-	assetIdWalkedOnAudioEffect: string | undefined; // fallback is no audio
-	damageable: boolean;
-	destructible: boolean;
+	assetIdDamagedImage?: string; // fallback is assetId
+	assetIdDamangedWalkedOnAudioEffect?: string; // fallback is Undamanged
+	assetIdWalkedOnAudioEffect?: string; // fallback is no audio
+	damageable?: boolean;
+	destructible?: boolean;
 	hash: number;
-	strengthToDamangeInN: number | undefined; // newtons of force required to destroy
-	strengthToDestroyInN: number | undefined; // newtons of force required to destroy
+	strengthToDamangeInN?: number; // newtons of force required to destroy
+	strengthToDestroyInN?: number; // newtons of force required to destroy
 	type: GridImageBlockType;
-	viscocity: number | undefined; // how thick the liquid is
+	viscocity?: number; // how thick the liquid is
 }
 
 export enum GridImageBlockType {
@@ -100,12 +113,11 @@ export enum GridImageBlockType {
 
 export interface GridLight extends GridCoordinate {
 	color: number; // hexadecimal
-	decay: number;
 	destructible: boolean;
+	gRadius: number;
 	hash: number;
-	intensity: number;
 	nightOnly: boolean;
-	strengthToDamangeInN: number | undefined; // newtons of force required to destroy
+	strengthToDestroyInN?: number; // newtons of force required to destroy
 	type: GridLightType;
 }
 
@@ -120,11 +132,14 @@ export enum GridLightType {
 }
 
 export interface GridObject extends GridCoordinate {
-	grounded: boolean;
 	gSizeH: number; // refers to number of grid squares the object takes up
 	gSizeW: number; // refers to number of grid squares the object takes up
+	weight: number; // kg
+}
+
+export interface GridObjectActive extends GridObject {
+	grounded: boolean;
 	timeSinceLastUpdate: number;
 	velX: number; // kph
 	velY: number; // kph
-	weight: number; // kg
 }

@@ -8,6 +8,7 @@ import {
 	AssetCollection,
 	AssetDeclarations,
 	AssetImage,
+	AssetImageSrc,
 	AssetMap,
 	AssetManifest,
 	AssetManifestMaster,
@@ -20,18 +21,21 @@ import {
  */
 
 interface AssetTmp {
-	name: string;
+	filename: string;
+	image: boolean;
 	original: boolean;
 	dataURLType: string | null;
 }
 
 export interface AssetCache {
 	data: string; // base64DataUrl
+	imageBitmap?: ImageBitmap;
 	original: boolean;
 }
 
 export class AssetEngine {
 	private static assetDeclarations: AssetDeclarations;
+	private static assetManifestMaster: AssetManifestMaster;
 	private static assetFilenameS: string = 'dirt-engine-assets-s';
 	private static assetFilenameU: string = 'dirt-engine-assets-u';
 	private static assetFilenameV: string = 'dirt-engine-assets-v';
@@ -41,7 +45,12 @@ export class AssetEngine {
 	private static loaded: boolean;
 
 	public static compileMasterManifest(assetManifestDeclared: AssetManifest): AssetManifestMaster {
+		if (AssetEngine.assetManifestMaster) {
+			return AssetEngine.assetManifestMaster;
+		}
+
 		let asset: Asset,
+			assetImage: AssetImage,
 			audio: { [key: string]: Asset } = {},
 			images: { [key: string]: Asset } = {},
 			maps: { [key: string]: Asset } = {};
@@ -63,13 +72,17 @@ export class AssetEngine {
 		}
 		if (assetManifestDeclared.images) {
 			for (let i in assetManifestDeclared.images) {
-				asset = assetManifestDeclared.images[i];
-				if (images[asset.id] === undefined) {
-					images[asset.id] = asset;
+				assetImage = assetManifestDeclared.images[i];
+				if (images[assetImage.id] === undefined) {
+					images[assetImage.id] = assetImage;
+
+					assetImage.srcs = assetImage.srcs.sort((a: AssetImageSrc, b: AssetImageSrc) => {
+						return a.resolution - b.resolution;
+					});
 				} else {
 					console.warn(
 						"AssetEngine > compileMasterManifest: declared image asset id '" +
-							asset.id +
+							assetImage.id +
 							"' already exists",
 					);
 				}
@@ -96,9 +109,13 @@ export class AssetEngine {
 			}
 		}
 		for (let i in dirtEngineDefaultImageManifest) {
-			asset = dirtEngineDefaultImageManifest[i];
-			if (images[asset.id] === undefined) {
-				images[asset.id] = asset;
+			assetImage = dirtEngineDefaultImageManifest[i];
+			if (images[assetImage.id] === undefined) {
+				images[assetImage.id] = assetImage;
+
+				assetImage.srcs = assetImage.srcs.sort((a: AssetImageSrc, b: AssetImageSrc) => {
+					return a.resolution - b.resolution;
+				});
 			}
 		}
 		for (let i in dirtEngineDefaultMapManifest) {
@@ -108,11 +125,12 @@ export class AssetEngine {
 			}
 		}
 
-		return {
+		AssetEngine.assetManifestMaster = {
 			audio: <any>audio,
 			images: <any>images,
 			maps: <any>maps,
 		};
+		return AssetEngine.assetManifestMaster;
 	}
 
 	/**
@@ -128,6 +146,8 @@ export class AssetEngine {
 		AssetEngine.initialized = true;
 		AssetEngine.assetDeclarations = assetDeclarations;
 		AssetEngine.collection = collection;
+
+		AssetEngine.compileMasterManifest(assetDeclarations.manifest || {});
 	}
 
 	public static async load(): Promise<number> {
@@ -139,19 +159,23 @@ export class AssetEngine {
 		AssetEngine.loaded = true;
 		let accept: boolean,
 			asset: AssetTmp,
+			assetCache: AssetCache,
 			assetDirCustom: string = AssetEngine.assetDeclarations.dirCustom || './',
 			assetDirDefault: string = AssetEngine.assetDeclarations.dirDefault || './',
+			assetImageSrc: AssetImageSrc,
 			assets: { [key: string]: AssetTmp } = {}, // key is fileName
 			assetsCustomS: string | undefined = AssetEngine.assetDeclarations.customS,
 			assetsCustomU: string | undefined = AssetEngine.assetDeclarations.customU,
 			assetsCustomV: string | undefined = AssetEngine.assetDeclarations.customV,
 			buffer: ArrayBuffer,
-			buffers: { [key: string]: Promise<ArrayBuffer> } = {}, // key is fileName
+			buffers: { [key: string]: Promise<ArrayBuffer> } = {}, // key is filename
+			collection: AssetCollection = AssetEngine.collection,
 			dataURLType: string | null,
 			filename: string,
 			filenameOriginal: string,
 			filenameOriginalShared: string,
 			filenamesCustom: string[] = [],
+			image: boolean,
 			timestamp: number = Date.now(),
 			zip: JSZip;
 
@@ -189,24 +213,36 @@ export class AssetEngine {
 				switch (filename.substring(filename.lastIndexOf('.') + 1, filename.length)) {
 					case 'map':
 						dataURLType = null;
+						image = false;
 						break;
 					case 'mp3':
 						dataURLType = 'audio/mp3';
+						image = false;
 						break;
 					case 'svg':
-						dataURLType = 'image/svg+xml';
+						if (collection === AssetCollection.VIDEO) {
+							console.error(
+								'AssetEngine > load: SVG image asset "' + filename + "' ignored in video collection",
+							);
+						} else {
+							dataURLType = 'image/svg+xml';
+							image = true;
+						}
 						break;
 					case 'webp':
 						dataURLType = 'image/webp';
+						image = true;
 						break;
 					default:
 						accept = false;
+						image = false;
 						break;
 				}
 
 				if (accept) {
 					assets[filename] = {
-						name: filename,
+						filename: filename,
+						image: image,
 						original: original,
 						dataURLType: dataURLType,
 					};
@@ -244,16 +280,24 @@ export class AssetEngine {
 			buffer = await buffers[i];
 
 			if (asset.dataURLType) {
-				AssetEngine.assets[asset.name] = {
+				AssetEngine.assets[asset.filename] = {
 					data:
 						'data:' + asset.dataURLType + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer))),
 					original: asset.original,
 				};
 			} else {
-				AssetEngine.assets[asset.name] = {
+				AssetEngine.assets[asset.filename] = {
 					data: String.fromCharCode(...new Uint8Array(buffer)),
 					original: asset.original,
 				};
+			}
+
+			// Detect image dimensions
+			if (asset.image && asset.dataURLType) {
+				if (!asset.dataURLType.includes('svg')) {
+					assetCache = AssetEngine.assets[asset.filename];
+					assetCache.imageBitmap = await createImageBitmap(await (await fetch(assetCache.data)).blob());
+				}
 			}
 		}
 
@@ -328,5 +372,9 @@ export class AssetEngine {
 		let asset: AssetCache = AssetEngine.assets[filename];
 		delete AssetEngine.assets[filename];
 		return asset;
+	}
+
+	public static getAssetManifestMaster(): AssetManifestMaster {
+		return AssetEngine.assetManifestMaster;
 	}
 }

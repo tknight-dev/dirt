@@ -65,9 +65,6 @@ export class DomUI {
 	private static uiEditCursorGInPh: number;
 	private static uiEditCursorGInPw: number;
 	private static uiEditCursorReady: boolean;
-	private static uiEditCursorViewportGx: number;
-	private static uiEditCursorViewportGy: number;
-	private static uiEditCursorZoom: number;
 	protected static uiEditMode: boolean;
 	private static uiEditMouseCmdCollection: DoubleLinkedList<number> = new DoubleLinkedList<number>();
 	private static uiEditMouseCmdCollectionHashesEffected: { [key: number]: null } = {};
@@ -825,6 +822,7 @@ export class DomUI {
 				strengthToDestroyInN: undefined,
 				type: GridImageBlockType.SOLID,
 				viscocity: undefined,
+				weight: undefined,
 			},
 			input: HTMLInputElement,
 			playing: boolean,
@@ -863,160 +861,172 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Asset - Damaged
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Asset Damaged';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = 'NONE';
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				true,
-				true,
-				valuesImage.map((v) => {
-					return {
-						name: v.id,
-						value: v.id,
-					};
-				}),
-				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
-					applicationProperties.assetIdDamagedImage = assetId;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Asset Damaged';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.className = 'button right-arrow';
+			td.innerText = 'NONE';
+			td.onclick = (event: any) => {
+				DomUI.detailsModalSelector(
+					false,
+					true,
+					true,
+					valuesImage.map((v) => {
+						return {
+							name: v.id,
+							value: v.id,
+						};
+					}),
+					(assetId: string) => {
+						event.target.innerText = assetId || 'None';
+						applicationProperties.assetIdDamagedImage = assetId;
+					},
+				);
+			};
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// Asset - Damaged Walked On
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Asset Damaged Walked On Audio Effect';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = 'NONE';
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				true,
-				true,
-				true,
-				valuesAudio.map((v) => {
-					return {
-						name: v.id,
-						type: v.type,
-						value: v.id,
-					};
-				}),
-				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
-					applicationProperties.assetIdDamangedWalkedOnAudioEffect = assetId;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Asset Damaged Walked On Audio Effect';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.className = 'button right-arrow';
+			td.innerText = 'NONE';
+			td.onclick = (event: any) => {
+				DomUI.detailsModalSelector(
+					true,
+					true,
+					true,
+					valuesAudio.map((v) => {
+						return {
+							name: v.id,
+							type: v.type,
+							value: v.id,
+						};
+					}),
+					(assetId: string) => {
+						event.target.innerText = assetId || 'None';
+						applicationProperties.assetIdDamangedWalkedOnAudioEffect = assetId;
+					},
+				);
+			};
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// Asset - Walked On
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Asset Walked On Audio Effect';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = 'NONE';
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				true,
-				true,
-				true,
-				valuesAudio.map((v) => {
-					return {
-						name: v.id,
-						type: v.type,
-						value: v.id,
-					};
-				}),
-				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
-					applicationProperties.assetIdWalkedOnAudioEffect = assetId;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Asset Walked On Audio Effect';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.className = 'button right-arrow';
+			td.innerText = 'NONE';
+			td.onclick = (event: any) => {
+				DomUI.detailsModalSelector(
+					true,
+					true,
+					true,
+					valuesAudio.map((v) => {
+						return {
+							name: v.id,
+							type: v.type,
+							value: v.id,
+						};
+					}),
+					(assetId: string) => {
+						event.target.innerText = assetId || 'None';
+						applicationProperties.assetIdWalkedOnAudioEffect = assetId;
+					},
+				);
+			};
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// Damageable
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Damageable';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.checked = applicationProperties.damageable;
-		input.oninput = (event: any) => {
-			applicationProperties.damageable = Boolean(event.target.checked);
-		};
-		input.type = 'checkbox';
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Damageable';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.checked = applicationProperties.damageable;
+			input.oninput = (event: any) => {
+				applicationProperties.damageable = Boolean(event.target.checked);
+			};
+			input.type = 'checkbox';
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
 
-		// Destructible
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Destructible';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.checked = applicationProperties.destructible;
-		input.oninput = (event: any) => {
-			applicationProperties.destructible = Boolean(event.target.checked);
-		};
-		input.type = 'checkbox';
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
+			// Destructible
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Destructible';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.checked = applicationProperties.destructible;
+			input.oninput = (event: any) => {
+				applicationProperties.destructible = Boolean(event.target.checked);
+			};
+			input.type = 'checkbox';
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// strengthToDamangeInN
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Strength to Damange In N';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '10000';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.strengthToDamangeInN = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = applicationProperties.strengthToDamangeInN;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Strength to Damange In N';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '10000';
+			input.min = '1';
+			input.oninput = (event: any) => {
+				applicationProperties.strengthToDamangeInN = Number(event.target.value);
+			};
+			input.step = '1';
+			input.type = 'range';
+			input.value = applicationProperties.strengthToDamangeInN;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// strengthToDestroyInN
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Strength to Destroy In N';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '10000';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.strengthToDestroyInN = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = applicationProperties.strengthToDestroyInN;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Strength to Destroy In N';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '10000';
+			input.min = '1';
+			input.oninput = (event: any) => {
+				applicationProperties.strengthToDestroyInN = Number(event.target.value);
+			};
+			input.step = '1';
+			input.type = 'range';
+			input.value = applicationProperties.strengthToDestroyInN;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// Type
 		tr = document.createElement('tr');
@@ -1047,23 +1057,46 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Viscocity
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Viscocity';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '1';
-		input.min = '.1';
-		input.oninput = (event: any) => {
-			applicationProperties.viscocity = Number(event.target.value);
-		};
-		input.step = '.1';
-		input.type = 'range';
-		input.value = applicationProperties.viscocity;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Viscocity';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '1';
+			input.min = '.1';
+			input.oninput = (event: any) => {
+				applicationProperties.viscocity = Number(event.target.value);
+			};
+			input.step = '.1';
+			input.type = 'range';
+			input.value = applicationProperties.viscocity;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// Weight In Kg
+		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Weight In Kg';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '100';
+			input.min = '1';
+			input.oninput = (event: any) => {
+				applicationProperties.weight = Number(event.target.value);
+			};
+			input.step = '1';
+			input.type = 'range';
+			input.value = applicationProperties.weight;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
@@ -1086,12 +1119,13 @@ export class DomUI {
 
 		t.textContent = '';
 		console.log('detailsModalLight');
+
 		// color: number; // hexadecimal
-		// decay: number;
 		// destructible: boolean;
-		// intensity: number;
+		// gRadius: number;
+		// hash: number;
 		// nightOnly: boolean;
-		// strengthToDamangeInN: number;
+		// strengthToDestroyInN: number | undefined; // newtons of force required to destroy
 		// type: GridLightType;
 
 		// Show the cancel/apply buttons
@@ -1168,9 +1202,6 @@ export class DomUI {
 			Math.round((videoWorkerCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
 		DomUI.uiEditCursorGInPw =
 			Math.round((videoWorkerCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
-		DomUI.uiEditCursorViewportGx = videoWorkerCmdEditCameraUpdate.viewportGx;
-		DomUI.uiEditCursorViewportGy = videoWorkerCmdEditCameraUpdate.viewportGy;
-		DomUI.uiEditCursorZoom = videoWorkerCmdEditCameraUpdate.zoom;
 		DomUI.editCursor();
 	}
 
@@ -1311,7 +1342,6 @@ export class DomUI {
 		VideoEngine.workerMapLoadById(assetMapId);
 	}
 
-	// TODO use mousedown to collect array of commands, send array of commands to thread every 40ms
 	public static editMouseDown(mouseAction: MouseAction): void {
 		if (!DomUI.uiEditCursorReady) {
 			return;
@@ -1375,10 +1405,13 @@ export class DomUI {
 						gHashes,
 						<any>DomUI.uiEditApplicationProperties,
 						DomUI.uiEditApplyType,
+						z,
 					); // Auto-applies to map
 
 					if (payload) {
 						VideoEngine.workerGameModeEditApply(payload);
+					} else {
+						console.error('DomIU > editMouseProcessor: payload failed to generate');
 					}
 				}
 
@@ -1386,9 +1419,10 @@ export class DomUI {
 					clearInterval(interval);
 					resolve();
 				}
-			}, 1000),
+			}, 40),
 			length: number,
-			payload: VideoCmdGameModeEditApply | undefined;
+			payload: VideoCmdGameModeEditApply | undefined,
+			z: VideoCmdGameModeEditApplyZ = DomUI.uiEditZ;
 		gridConfig = MapEditEngine.getGridConfigActive();
 	}
 
@@ -1528,6 +1562,18 @@ export class DomUI {
 			DomUI.uiEditMouseCmdCollectionHashesOrigin = <any>new Object();
 			DomUI.displaySpinner(false);
 			DomUI.uiEditMouseCmdCollectionActive = false;
+
+			if (MapEditEngine.getHistoryRedoLength()) {
+				DomUI.domElementsUIEdit['redo'].classList.remove('disabled');
+			} else {
+				DomUI.domElementsUIEdit['redo'].classList.add('disabled');
+			}
+
+			if (MapEditEngine.getHistoryUndoLength()) {
+				DomUI.domElementsUIEdit['undo'].classList.remove('disabled');
+			} else {
+				DomUI.domElementsUIEdit['undo'].classList.add('disabled');
+			}
 		});
 	}
 
@@ -1557,11 +1603,8 @@ export class DomUI {
 			if (mapActive) {
 				MapEditEngine.load(mapActive);
 
-				DomUI.uiEditCursorGInPh = mapActive.camera.gInPh;
-				DomUI.uiEditCursorGInPw = mapActive.camera.gInPh;
-				DomUI.uiEditCursorViewportGx = mapActive.camera.gInPh;
-				DomUI.uiEditCursorViewportGy = mapActive.camera.gInPh;
-				DomUI.uiEditCursorZoom = mapActive.camera.gInPh;
+				DomUI.uiEditCursorGInPh = Math.round((mapActive.camera.gInPh / window.devicePixelRatio) * 1000) / 1000;
+				DomUI.uiEditCursorGInPw = Math.round((mapActive.camera.gInPw / window.devicePixelRatio) * 1000) / 1000;
 				DomUI.editCursor();
 			} else {
 				DomUI.statusFlash(false);
@@ -2451,7 +2494,27 @@ export class DomUI {
 		 * Redo
 		 */
 		redo = document.createElement('div');
-		redo.className = 'dirt-engine-ui-edit redo';
+		redo.className = 'dirt-engine-ui-edit redo disabled';
+		redo.onclick = () => {
+			let length: number = MapEditEngine.getHistoryRedoLength();
+
+			if (length) {
+				DomUI.editRedo();
+				length--;
+
+				if (length) {
+					redo.classList.remove('disabled');
+				} else {
+					redo.classList.add('disabled');
+				}
+
+				if (MapEditEngine.getHistoryUndoLength()) {
+					undo.classList.remove('disabled');
+				} else {
+					undo.classList.add('disabled');
+				}
+			}
+		};
 		DomUI.domElements['feed-fitted-ui-redo'] = redo;
 		DomUI.domElementsUIEdit['redo'] = redo;
 		domFeedFitted.appendChild(redo);
@@ -2640,7 +2703,27 @@ export class DomUI {
 		 * Undo
 		 */
 		undo = document.createElement('div');
-		undo.className = 'dirt-engine-ui-edit undo';
+		undo.className = 'dirt-engine-ui-edit undo disabled';
+		undo.onclick = () => {
+			let length: number = MapEditEngine.getHistoryUndoLength();
+
+			if (length) {
+				DomUI.editUndo();
+				length--;
+
+				if (length) {
+					undo.classList.remove('disabled');
+				} else {
+					undo.classList.add('disabled');
+				}
+
+				if (MapEditEngine.getHistoryRedoLength()) {
+					redo.classList.remove('disabled');
+				} else {
+					redo.classList.add('disabled');
+				}
+			}
+		};
 		DomUI.domElements['feed-fitted-ui-undo'] = undo;
 		DomUI.domElementsUIEdit['undo'] = undo;
 		domFeedFitted.appendChild(undo);
@@ -2664,6 +2747,21 @@ export class DomUI {
 		zBackground.className = 'button background';
 		zBackground.innerText = 'B';
 		zBackground.onclick = () => {
+			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+				return;
+			}
+
+			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+				// Remove application cursor
+				DomUI.uiEditCursorReady = false;
+				feedFitted.classList.remove('dirt-engine-cursor-pencil');
+				feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+				feedFitted.classList.remove('dirt-engine-cursor-fill');
+				feedFitted.classList.remove('dirt-engine-cursor-eraser');
+				feedFitted.classList.remove('dirt-engine-cursor-stamp');
+				DomUI.editCursor();
+			}
+
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.BACKGROUND;
 			zBackground.classList.add('active');
 			zForeground.classList.remove('active');
@@ -2677,10 +2775,23 @@ export class DomUI {
 		zPrimary.className = 'button primary active';
 		zPrimary.innerText = 'P';
 		zPrimary.onclick = () => {
+			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+				return;
+			}
+
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
 			zBackground.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.add('active');
+
+			// Remove application cursor
+			DomUI.uiEditCursorReady = false;
+			feedFitted.classList.remove('dirt-engine-cursor-pencil');
+			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+			feedFitted.classList.remove('dirt-engine-cursor-fill');
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+			DomUI.editCursor();
 		};
 		DomUI.domElements['feed-fitted-ui-z-foreground'] = zPrimary;
 		DomUI.domElementsUIEdit['z-primary'] = zPrimary;
@@ -2690,6 +2801,21 @@ export class DomUI {
 		zForeground.className = 'button foreground';
 		zForeground.innerText = 'F';
 		zForeground.onclick = () => {
+			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+				return;
+			}
+
+			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+				// Remove application cursor
+				DomUI.uiEditCursorReady = false;
+				feedFitted.classList.remove('dirt-engine-cursor-pencil');
+				feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+				feedFitted.classList.remove('dirt-engine-cursor-fill');
+				feedFitted.classList.remove('dirt-engine-cursor-eraser');
+				feedFitted.classList.remove('dirt-engine-cursor-stamp');
+				DomUI.editCursor();
+			}
+
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.FOREGROUND;
 			zBackground.classList.remove('active');
 			zForeground.classList.add('active');

@@ -26,12 +26,12 @@ export enum AssetCollection {
 }
 
 export interface AssetDeclarations {
-	customS: string | undefined; // filename of your asset pack
-	customU: string | undefined; // filename of your asset pack
-	customV: string | undefined; // filename of your asset pack
-	dirCustom: string | undefined; // defaults to current directory
-	dirDefault: string | undefined; // defaults to current directory
-	manifest: AssetManifest | undefined;
+	customS?: string; // filename of your asset pack
+	customU?: string; // filename of your asset pack
+	customV?: string; // filename of your asset pack
+	dirCustom?: string; // defaults to current directory
+	dirDefault?: string; // defaults to current directory
+	manifest?: AssetManifest;
 }
 
 export interface AssetImage extends Asset {
@@ -46,15 +46,9 @@ export interface AssetImageSrc {
 }
 
 export enum AssetImageSrcResolution {
-	ONLY,
-	_16_16,
-	_32_32,
-	_64_64,
-	_128_128,
-	_256_256,
-	_512_512,
-	_1024_1024,
-	_2048_2048,
+	LOW,
+	MEDIUM,
+	HIGH,
 }
 
 export enum AssetImageType {
@@ -63,9 +57,9 @@ export enum AssetImageType {
 }
 
 export interface AssetManifest {
-	audio: AssetAudio[] | undefined;
-	images: AssetImage[] | undefined;
-	maps: AssetMap[] | undefined;
+	audio?: AssetAudio[];
+	images?: AssetImage[];
+	maps?: AssetMap[];
 }
 
 export interface AssetManifestMaster {
@@ -82,8 +76,8 @@ export interface AssetMap extends Asset {
 
 export interface AssetMeta {
 	author: string;
-	authorWebsite: string | undefined;
-	license: string | undefined;
+	authorWebsite?: string;
+	license?: string;
 	publicDomain: boolean;
-	title: string | undefined;
+	title?: string;
 }

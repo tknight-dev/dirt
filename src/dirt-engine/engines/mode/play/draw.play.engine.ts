@@ -1,4 +1,5 @@
 import { Camera } from '../../../models/camera.model';
+import { ImageBlockDrawEngine } from '../../../draw/image-block.draw.engine';
 import { FPSDrawEngine } from '../../../draw/fps.draw.engine';
 import { MapActive } from '../../../models/map.model';
 
@@ -44,6 +45,7 @@ export class DrawPlayEngine {
 			console.error('DrawPlayEngine > start: not initialized');
 			return;
 		}
+		ImageBlockDrawEngine.start();
 
 		// Last
 		if (DrawPlayEngine.fpsVisible) {

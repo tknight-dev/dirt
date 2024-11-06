@@ -2,6 +2,7 @@ import { Camera } from '../../../models/camera.model';
 import { CameraDrawEngine } from '../../../draw/camera.draw.engine';
 import { FPSDrawEngine } from '../../../draw/fps.draw.engine';
 import { GridDrawEngine } from '../../../draw/grid.draw.engine';
+import { ImageBlockDrawEngine } from '../../../draw/image-block.draw.engine';
 import { MapActive } from '../../../models/map.model';
 import { MapDrawEngine } from '../../../draw/map.draw.engine';
 
@@ -49,8 +50,32 @@ export class DrawEditEngine {
 		}
 
 		/*
-		 * Overlay
+		 * Clear canvas
 		 */
+		DrawEditEngine.ctxUnderlay.clearRect(
+			0,
+			0,
+			DrawEditEngine.mapActiveCamera.windowPw,
+			DrawEditEngine.mapActiveCamera.windowPh,
+		);
+		DrawEditEngine.ctxBackground.clearRect(
+			0,
+			0,
+			DrawEditEngine.mapActiveCamera.windowPw,
+			DrawEditEngine.mapActiveCamera.windowPh,
+		);
+		DrawEditEngine.ctxForeground.clearRect(
+			0,
+			0,
+			DrawEditEngine.mapActiveCamera.windowPw,
+			DrawEditEngine.mapActiveCamera.windowPh,
+		);
+		DrawEditEngine.ctxPrimary.clearRect(
+			0,
+			0,
+			DrawEditEngine.mapActiveCamera.windowPw,
+			DrawEditEngine.mapActiveCamera.windowPh,
+		);
 		DrawEditEngine.ctxOverlay.clearRect(
 			0,
 			0,
@@ -58,10 +83,9 @@ export class DrawEditEngine {
 			DrawEditEngine.mapActiveCamera.windowPh,
 		);
 
-		// Draw First
-		GridDrawEngine.start();
-
 		// Draw
+		ImageBlockDrawEngine.start();
+		GridDrawEngine.start();
 		CameraDrawEngine.start();
 
 		// Draw Last

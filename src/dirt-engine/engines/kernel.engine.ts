@@ -1,3 +1,4 @@
+import { AssetImageSrcResolution } from '../models/asset.model';
 import { CalcEditEngine } from './mode/edit/calc.edit.engine';
 import { CalcPlayEngine } from './mode/play/calc.play.engine';
 import { CameraDrawEngine } from '../draw/camera.draw.engine';
@@ -6,7 +7,10 @@ import { DrawEditEngine } from './mode/edit/draw.edit.engine';
 import { DrawPlayEngine } from './mode/play/draw.play.engine';
 import { GridDrawEngine } from '../draw/grid.draw.engine';
 import { FPSDrawEngine } from '../draw/fps.draw.engine';
+import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
+import { ImageBlockPrimaryDrawEngine } from '../draw/image-block-primary.draw.engine';
 import { KeyAction, KeyCommon } from './keyboard.engine';
+import { LightingEngine } from './lighting.engine';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MouseAction, MouseCmd } from './mouse.engine';
@@ -26,6 +30,7 @@ export class KernelEngine {
 	private static mapActive: MapActive;
 	private static modeEdit: boolean;
 	private static paused: boolean;
+	private static resolution: AssetImageSrcResolution;
 	private static status: boolean;
 	private static timestampDelta: number;
 	private static timestampNow: number;
@@ -51,6 +56,8 @@ export class KernelEngine {
 		await CameraDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await FPSDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await ImageBlockPrimaryDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 	}
 
@@ -152,15 +159,22 @@ export class KernelEngine {
 		}
 	}
 
-	public static start(mapActive: MapActive): void {
-		if (!KernelEngine.initialized) {
-			console.error('KernelEngine > start: not initialized');
-			return;
-		} else if (KernelEngine.status) {
-			console.error('KernelEngine > start: already started');
-			return;
-		}
-		KernelEngine.status = true;
+	/**
+	 * Use this to redraw everything and for ext threads to re-pull assets
+	 */
+	public static async cacheResets(deep?: boolean): Promise<void> {
+		// Primary
+		deep && LightingEngine.cacheReset();
+
+		// Extended
+		CameraDrawEngine.cacheReset();
+		GridDrawEngine.cacheReset();
+		ImageBlockDrawEngine.cacheReset();
+		ImageBlockPrimaryDrawEngine.cacheReset();
+		MapDrawEngine.cacheReset();
+	}
+
+	public static async historyUpdate(mapActive: MapActive): Promise<void> {
 		KernelEngine.mapActive = mapActive;
 
 		// Load into engines
@@ -172,10 +186,28 @@ export class KernelEngine {
 		DrawEditEngine.setMapActive(mapActive);
 		DrawPlayEngine.setMapActive(mapActive);
 
+		LightingEngine.setMapActive(mapActive);
+
 		// Load into extended engines
 		CameraDrawEngine.setMapActive(mapActive);
 		GridDrawEngine.setMapActive(mapActive);
+		ImageBlockDrawEngine.setMapActive(mapActive);
+		ImageBlockPrimaryDrawEngine.setMapActive(mapActive);
 		MapDrawEngine.setMapActive(mapActive);
+
+		KernelEngine.cacheResets(false);
+	}
+
+	public static async start(mapActive: MapActive): Promise<void> {
+		if (!KernelEngine.initialized) {
+			console.error('KernelEngine > start: not initialized');
+			return;
+		} else if (KernelEngine.status) {
+			console.error('KernelEngine > start: already started');
+			return;
+		}
+		KernelEngine.status = true;
+		KernelEngine.historyUpdate(mapActive);
 
 		// Reset camera
 		if (KernelEngine.ctxDimensionHeight && KernelEngine.ctxDimensionWidth) {
@@ -186,6 +218,8 @@ export class KernelEngine {
 		}
 		CameraEngine.reset();
 
+		// Last
+		await KernelEngine.cacheResets(true);
 		requestAnimationFrame(KernelEngine.loop);
 	}
 
@@ -241,6 +275,17 @@ export class KernelEngine {
 
 		// Extended
 		FPSDrawEngine.fpsTarget = settings.fps;
+
+		// Last
+		if (KernelEngine.resolution !== settings.resolution) {
+			KernelEngine.resolution = settings.resolution;
+			LightingEngine.setResolution(settings.resolution);
+
+			// Last
+			if (KernelEngine.mapActive) {
+				KernelEngine.cacheResets();
+			}
+		}
 	}
 
 	public static getMapActive(): MapActive {
