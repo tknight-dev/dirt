@@ -1,6 +1,7 @@
 import { Camera } from '../models/camera.model';
 import { GridConfig } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
+import { KernelEngine } from './kernel.engine';
 import { UtilEngine } from './util.engine';
 
 /**
@@ -34,8 +35,8 @@ export class CameraEngine {
 	public static moveIncremental(gx: number, gy: number): void {
 		let mapActive = CameraEngine.mapActive;
 
-		mapActive.camera.gx += gx * 0.1;
-		mapActive.camera.gy += gy * 0.1;
+		mapActive.camera.gx += gx * 0.75;
+		mapActive.camera.gy += gy * 0.75;
 
 		CameraEngine.updatePosition();
 	}
@@ -95,6 +96,9 @@ export class CameraEngine {
 
 		// console.log('camera.gx', camera.gx);
 		// console.log('camera.viewportGx', camera.viewportGx);
+		setTimeout(() => {
+			KernelEngine.updateZoom();
+		});
 		setTimeout(() => {
 			CameraEngine.callback(camera);
 		});

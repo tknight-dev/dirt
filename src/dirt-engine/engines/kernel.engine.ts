@@ -8,7 +8,6 @@ import { DrawPlayEngine } from './mode/play/draw.play.engine';
 import { GridDrawEngine } from '../draw/grid.draw.engine';
 import { FPSDrawEngine } from '../draw/fps.draw.engine';
 import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
-import { ImageBlockPrimaryDrawEngine } from '../draw/image-block-primary.draw.engine';
 import { KeyAction, KeyCommon } from './keyboard.engine';
 import { LightingEngine } from './lighting.engine';
 import { MapActive } from '../models/map.model';
@@ -57,7 +56,6 @@ export class KernelEngine {
 		await FPSDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
-		await ImageBlockPrimaryDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 	}
 
@@ -170,7 +168,6 @@ export class KernelEngine {
 		CameraDrawEngine.cacheReset();
 		GridDrawEngine.cacheReset();
 		ImageBlockDrawEngine.cacheReset();
-		ImageBlockPrimaryDrawEngine.cacheReset();
 		MapDrawEngine.cacheReset();
 	}
 
@@ -192,7 +189,6 @@ export class KernelEngine {
 		CameraDrawEngine.setMapActive(mapActive);
 		GridDrawEngine.setMapActive(mapActive);
 		ImageBlockDrawEngine.setMapActive(mapActive);
-		ImageBlockPrimaryDrawEngine.setMapActive(mapActive);
 		MapDrawEngine.setMapActive(mapActive);
 
 		KernelEngine.cacheResets(false);
@@ -260,6 +256,13 @@ export class KernelEngine {
 		// Load into extended engines
 	}
 
+	/*
+	 * Used by MapEditEngine on block placement
+	 */
+	public static updateMap(): void {
+		ImageBlockDrawEngine.cacheReset();
+	}
+
 	public static updateSettings(settings: VideoCmdSettings): void {
 		if (!KernelEngine.initialized) {
 			console.error('KernelEngine > updateSettings: not initialized');
@@ -286,6 +289,10 @@ export class KernelEngine {
 				KernelEngine.cacheResets();
 			}
 		}
+	}
+
+	public static updateZoom(): void {
+		LightingEngine.updateZoom();
 	}
 
 	public static getMapActive(): MapActive {

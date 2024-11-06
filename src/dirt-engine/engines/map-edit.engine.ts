@@ -27,6 +27,7 @@ import {
 	VideoWorkerCmdEditCameraUpdate,
 } from '../models/video-worker-cmds.model';
 import { UtilEngine } from './util.engine';
+import { LightingEngine } from './lighting.engine';
 
 /**
  * Mainted by UI and Video threads for map editing. Allows for full object restores, and minimizes bus communication.
@@ -140,6 +141,12 @@ export class MapEditEngine {
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
+
+		if (!MapEditEngine.modeUI) {
+			LightingEngine.cacheAdd(apply.assetId);
+			apply.assetIdDamagedImage && LightingEngine.cacheAdd(apply.assetIdDamagedImage);
+			KernelEngine.updateMap();
+		}
 	}
 
 	public static gridBlockTableDeflate(map: MapActive): MapActive {

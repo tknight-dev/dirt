@@ -1,6 +1,7 @@
 import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetImage, AssetImageSrcResolution } from '../models/asset.model';
 import { Grid, GridImageBlock } from '../models/grid.model';
+import { Camera } from '../models/camera.model';
 import { MapActive } from '../models/map.model';
 
 /**
@@ -8,7 +9,10 @@ import { MapActive } from '../models/map.model';
  */
 
 export class LightingEngine {
-	private static cacheEnvironment: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
+	private static cache: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
+	private static cacheZoomed: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
+	private static cacheZoomedValue: number;
+	private static readonly hoursInDay: number = 24;
 	private static mapActive: MapActive;
 	private static resolution: AssetImageSrcResolution;
 
@@ -57,9 +61,9 @@ export class LightingEngine {
 
 		for (let assetId in assetImages) {
 			image = assetImages[assetId];
-			images = new Array(24);
+			images = new Array(LightingEngine.hoursInDay);
 
-			for (i = 0; i < 24; i++) {
+			for (i = 0; i < LightingEngine.hoursInDay; i++) {
 				// Prepare Canvas
 				canvas.height = image.height;
 				canvas.width = image.width;
@@ -88,7 +92,7 @@ export class LightingEngine {
 				images[i] = canvas.transferToImageBitmap();
 			}
 
-			LightingEngine.cacheEnvironment[assetId] = images;
+			LightingEngine.cache[assetId] = images;
 		}
 	}
 
@@ -114,23 +118,62 @@ export class LightingEngine {
 	}
 
 	public static cacheAdd(assetImageId: string) {
-		// Build the cache(s)
-		let assets: { [key: string]: ImageBitmap } = LightingEngine.buildBinaries([assetImageId]); // object value is base64 data
-		LightingEngine.buildImages(assets);
+		if (!LightingEngine.cache[assetImageId]) {
+			// Build the cache(s)
+			let assets: { [key: string]: ImageBitmap } = LightingEngine.buildBinaries([assetImageId]); // object value is base64 data
+			LightingEngine.buildImages(assets);
+			LightingEngine.updateZoom(assetImageId);
+		}
 	}
 
 	public static cacheReset() {
 		// Clear the cache(s)
-		LightingEngine.cacheEnvironment = <any>new Object();
+		LightingEngine.cache = <any>new Object();
+		LightingEngine.cacheZoomed = <any>new Object();
 
 		// Build the cache(s)
 		let assetIds: string[] = LightingEngine.buildListOfRequiredAssets(),
 			assets: { [key: string]: ImageBitmap } = LightingEngine.buildBinaries(assetIds); // object value is base64 data
 		LightingEngine.buildImages(assets);
+		LightingEngine.updateZoom();
+	}
+
+	public static updateZoom(assetImageId?: string): void {
+		let camera: Camera = LightingEngine.mapActive.camera;
+
+		if (assetImageId || LightingEngine.cacheZoomedValue !== camera.zoom) {
+			let id: string,
+				assetImageIds: string[] = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache),
+				canvas: OffscreenCanvas = new OffscreenCanvas(camera.gInPw, camera.gInPh),
+				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
+				height: number = camera.gInPh,
+				images: ImageBitmap[],
+				imagesZoomed: ImageBitmap[],
+				width: number = camera.gInPw;
+
+			for (let i in assetImageIds) {
+				id = assetImageIds[i];
+				images = LightingEngine.cache[id];
+				imagesZoomed = LightingEngine.cacheZoomed[id];
+
+				if (!imagesZoomed) {
+					LightingEngine.cacheZoomed[id] = new Array(LightingEngine.hoursInDay);
+					imagesZoomed = LightingEngine.cacheZoomed[id];
+				}
+
+				for (let j = 0; j < LightingEngine.hoursInDay; j++) {
+					ctx.clearRect(0, 0, width, height);
+					ctx.drawImage(images[j], 0, 0, width, height);
+					imagesZoomed[j] = canvas.transferToImageBitmap();
+				}
+			}
+
+			LightingEngine.cacheZoomedValue = camera.zoom;
+		}
 	}
 
 	public static getAssetImage(assetImageId: string, hour: number): ImageBitmap {
-		return LightingEngine.cacheEnvironment[assetImageId][hour];
+		return LightingEngine.cacheZoomed[assetImageId][hour];
 	}
 
 	public static setMapActive(mapActive: MapActive) {

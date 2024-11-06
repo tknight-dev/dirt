@@ -49,6 +49,7 @@ export enum AssetImageSrcResolution {
 	LOW,
 	MEDIUM,
 	HIGH,
+	ULTRA,
 }
 
 export enum AssetImageType {

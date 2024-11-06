@@ -24,7 +24,7 @@ export interface MapConfig {
 	clockSpeedRelativeToEarth: number; // default by MapEngine (Precision 3)
 	gridConfigs: { [key: string]: GridConfig }; // key is gridID
 	name: string;
-	hourOfDay: number; // 24hour clock, defaulted by MapEngine (Precision 0)
+	hourOfDay: number; // 24hour clock [0-23], defaulted by MapEngine (Precision 0)
 }
 
 export interface MapActive extends Map {

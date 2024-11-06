@@ -94,8 +94,8 @@ export enum GridAudioTriggerTripType {
 
 export interface GridImageBlock extends GridObject {
 	assetId: string;
-	assetIdDamagedImage?: string; // fallback is assetId
-	assetIdDamangedWalkedOnAudioEffect?: string; // fallback is Undamanged
+	assetIdDamagedImage?: string; // replaces assetId on damage
+	assetIdDamangedWalkedOnAudioEffect?: string; // replaces assetIdWalkedOnAudioEffect on damage
 	assetIdWalkedOnAudioEffect?: string; // fallback is no audio
 	damageable?: boolean;
 	destructible?: boolean;

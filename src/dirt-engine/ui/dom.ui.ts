@@ -73,7 +73,7 @@ export class DomUI {
 	private static uiEditMouseCmdCollectionEngaged: boolean;
 	private static uiEditMouseCmdCollectionPromise: Promise<void>;
 	private static uiEditSpinnerStatus: boolean;
-	private static uiEditZ: VideoCmdGameModeEditApplyZ;
+	private static uiEditZ: VideoCmdGameModeEditApplyZ | undefined;
 
 	private static detailsModalSelector(
 		assetAudio: boolean,
@@ -1422,7 +1422,7 @@ export class DomUI {
 			}, 40),
 			length: number,
 			payload: VideoCmdGameModeEditApply | undefined,
-			z: VideoCmdGameModeEditApplyZ = DomUI.uiEditZ;
+			z: VideoCmdGameModeEditApplyZ = <VideoCmdGameModeEditApplyZ>DomUI.uiEditZ;
 		gridConfig = MapEditEngine.getGridConfigActive();
 	}
 
@@ -2024,6 +2024,7 @@ export class DomUI {
 			z: HTMLElement,
 			zBackground: HTMLElement,
 			zForeground: HTMLElement,
+			zGlobal: HTMLElement,
 			zPrimary: HTMLElement;
 
 		/*
@@ -2750,6 +2751,16 @@ export class DomUI {
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.BACKGROUND) {
 				return;
 			}
+			// Display Applications
+			application.style.display = 'flex';
+			applicationTypePixelSize.style.display = 'flex';
+			palette.style.display = 'flex';
+			view.style.display = 'flex';
+
+			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-background'].style.display = 'block';
+			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'none';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'none';
 
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
@@ -2764,6 +2775,7 @@ export class DomUI {
 
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.BACKGROUND;
 			zBackground.classList.add('active');
+			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.remove('active');
 		};
@@ -2778,11 +2790,16 @@ export class DomUI {
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
 				return;
 			}
+			// Display Applications
+			application.style.display = 'flex';
+			applicationTypePixelSize.style.display = 'flex';
+			palette.style.display = 'flex';
+			view.style.display = 'flex';
 
-			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
-			zBackground.classList.remove('active');
-			zForeground.classList.remove('active');
-			zPrimary.classList.add('active');
+			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-background'].style.display = 'none';
+			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'block';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'none';
 
 			// Remove application cursor
 			DomUI.uiEditCursorReady = false;
@@ -2792,6 +2809,12 @@ export class DomUI {
 			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-stamp');
 			DomUI.editCursor();
+
+			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
+			zBackground.classList.remove('active');
+			zGlobal.classList.remove('active');
+			zForeground.classList.remove('active');
+			zPrimary.classList.add('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-foreground'] = zPrimary;
 		DomUI.domElementsUIEdit['z-primary'] = zPrimary;
@@ -2804,6 +2827,16 @@ export class DomUI {
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.FOREGROUND) {
 				return;
 			}
+			// Display Applications
+			application.style.display = 'flex';
+			applicationTypePixelSize.style.display = 'flex';
+			palette.style.display = 'flex';
+			view.style.display = 'flex';
+
+			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-background'].style.display = 'none';
+			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'none';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'block';
 
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
@@ -2818,12 +2851,50 @@ export class DomUI {
 
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.FOREGROUND;
 			zBackground.classList.remove('active');
+			zGlobal.classList.remove('active');
 			zForeground.classList.add('active');
 			zPrimary.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-foreground'] = zForeground;
 		DomUI.domElementsUIEdit['z-foreground'] = zForeground;
 		z.appendChild(zForeground);
+
+		zGlobal = document.createElement('div');
+		zGlobal.className = 'button global';
+		zGlobal.innerText = 'G';
+		zGlobal.onclick = () => {
+			if (DomUI.uiEditZ === undefined) {
+				return;
+			}
+			// Hide Applications
+			application.style.display = 'none';
+			applicationTypePixelSize.style.display = 'none';
+			palette.style.display = 'none';
+			view.style.display = 'none';
+
+			// Display all canvases
+			DomUI.domElements['feed-overflow-streams-background'].style.display = 'block';
+			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'block';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'block';
+
+			// Remove application cursor
+			DomUI.uiEditCursorReady = false;
+			feedFitted.classList.remove('dirt-engine-cursor-pencil');
+			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+			feedFitted.classList.remove('dirt-engine-cursor-fill');
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+			DomUI.editCursor();
+
+			DomUI.uiEditZ = undefined;
+			zBackground.classList.remove('active');
+			zGlobal.classList.add('active');
+			zForeground.classList.remove('active');
+			zPrimary.classList.remove('active');
+		};
+		DomUI.domElements['feed-fitted-ui-z-global'] = zGlobal;
+		DomUI.domElementsUIEdit['z-global'] = zGlobal;
+		z.appendChild(zGlobal);
 
 		/*
 		 * Details: Context Menu

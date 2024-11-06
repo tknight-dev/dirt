@@ -48,40 +48,16 @@ export class DrawEditEngine {
 			console.error('DrawEditEngine > start: not initialized');
 			return;
 		}
+		let camera: Camera = DrawEditEngine.mapActiveCamera;
 
 		/*
 		 * Clear canvas
 		 */
-		DrawEditEngine.ctxUnderlay.clearRect(
-			0,
-			0,
-			DrawEditEngine.mapActiveCamera.windowPw,
-			DrawEditEngine.mapActiveCamera.windowPh,
-		);
-		DrawEditEngine.ctxBackground.clearRect(
-			0,
-			0,
-			DrawEditEngine.mapActiveCamera.windowPw,
-			DrawEditEngine.mapActiveCamera.windowPh,
-		);
-		DrawEditEngine.ctxForeground.clearRect(
-			0,
-			0,
-			DrawEditEngine.mapActiveCamera.windowPw,
-			DrawEditEngine.mapActiveCamera.windowPh,
-		);
-		DrawEditEngine.ctxPrimary.clearRect(
-			0,
-			0,
-			DrawEditEngine.mapActiveCamera.windowPw,
-			DrawEditEngine.mapActiveCamera.windowPh,
-		);
-		DrawEditEngine.ctxOverlay.clearRect(
-			0,
-			0,
-			DrawEditEngine.mapActiveCamera.windowPw,
-			DrawEditEngine.mapActiveCamera.windowPh,
-		);
+		DrawEditEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawEditEngine.ctxBackground.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawEditEngine.ctxForeground.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawEditEngine.ctxPrimary.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawEditEngine.ctxOverlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 		// Draw
 		ImageBlockDrawEngine.start();
