@@ -29,6 +29,8 @@ export class ImageBlockDrawEngine {
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static foregroundViewerEnable: boolean = true;
+	private static foregroundViewerPercentageOfViewport: number;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
@@ -103,15 +105,12 @@ export class ImageBlockDrawEngine {
 				switch (z) {
 					case VideoCmdGameModeEditApplyZ.BACKGROUND:
 						imageBlocks = grid.imageBlocksBackground;
-						ctx.globalAlpha = 1;
 						break;
 					case VideoCmdGameModeEditApplyZ.FOREGROUND:
 						imageBlocks = grid.imageBlocksForeground;
-						ctx.globalAlpha = 0.5;
 						break;
 					case VideoCmdGameModeEditApplyZ.PRIMARY:
 						imageBlocks = grid.imageBlocksPrimary;
-						ctx.globalAlpha = 1;
 						break;
 				}
 				imageBlockHashes = imageBlocks.hashes;
@@ -139,6 +138,27 @@ export class ImageBlockDrawEngine {
 						ImageBlockDrawEngine.cacheBackground = canvas.transferToImageBitmap();
 						break;
 					case VideoCmdGameModeEditApplyZ.FOREGROUND:
+						// "Cut Out" viewport from foreground layer to make the under layers visible to the person
+						if (ImageBlockDrawEngine.foregroundViewerEnable) {
+							let gradient: CanvasGradient,
+								radius: number =
+									((camera.viewportPh / 2) *
+										ImageBlockDrawEngine.foregroundViewerPercentageOfViewport) /
+									camera.zoom,
+								x: number = (camera.gx - startGx) * gInPw,
+								y: number = (camera.gy - startGy) * gInPh;
+
+							gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+							gradient.addColorStop(0, 'rgba(255,255,255,1)');
+							gradient.addColorStop(0.75, 'rgba(255,255,255,1)');
+							gradient.addColorStop(1, 'transparent');
+
+							ctx.globalCompositeOperation = 'destination-out';
+							ctx.fillStyle = gradient;
+							ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+							ctx.globalCompositeOperation = 'source-over'; // restore default setting
+						}
+
 						ImageBlockDrawEngine.cacheForeground = canvas.transferToImageBitmap();
 						break;
 					case VideoCmdGameModeEditApplyZ.PRIMARY:
@@ -166,5 +186,14 @@ export class ImageBlockDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		ImageBlockDrawEngine.mapActive = mapActive;
 		ImageBlockDrawEngine.mapActiveCamera = mapActive.camera;
+	}
+
+	public static setForegroundViewer(enable: boolean) {
+		ImageBlockDrawEngine.cacheZoom = -1;
+		ImageBlockDrawEngine.foregroundViewerEnable = enable;
+	}
+
+	public static setForegroundViewerSettings(foregroundViewerPercentageOfViewport: number) {
+		ImageBlockDrawEngine.foregroundViewerPercentageOfViewport = foregroundViewerPercentageOfViewport;
 	}
 }

@@ -17,6 +17,7 @@ import {
 	VideoCmdResize,
 	VideoCmdGameModeEdit,
 	VideoCmdGameModeEditApply,
+	VideoCmdGameModeEditDraw,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
 	VideoCmdGameSave,
@@ -42,6 +43,9 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case VideoCmd.GAME_MODE_EDIT_APPLY:
 			Video.inputGameModeEditApply(<VideoCmdGameModeEditApply>videoPayload.data);
+			break;
+		case VideoCmd.GAME_MODE_EDIT_DRAW:
+			Video.inputGameModeEditDraw(<VideoCmdGameModeEditDraw>videoPayload.data);
 			break;
 		case VideoCmd.GAME_MODE_EDIT_REDO:
 			Video.inputGameModeEditRedo();
@@ -176,6 +180,16 @@ class Video {
 		]);
 	}
 
+	public static inputGameModeEditDraw(apply: VideoCmdGameModeEditDraw): void {
+		KernelEngine.draw(apply);
+		Video.post([
+			{
+				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
 	public static inputGameModeEditRedo(): void {
 		MapEditEngine.historyRedo();
 		Video.post([
@@ -298,7 +312,7 @@ class Video {
 			width: number = Math.floor(resize.width * devicePixelRatio);
 
 		UtilEngine.renderOverflowPEff = Math.round(UtilEngine.renderOverflowP * devicePixelRatio * 1000) / 1000;
-		KernelEngine.setDimension(height, width);
+		KernelEngine.setDimension(height, width, resize.force);
 
 		Video.canvasOffscreenBackground.height = height;
 		Video.canvasOffscreenBackground.width = width;
@@ -314,6 +328,9 @@ class Video {
 
 	public static inputSettings(settings: VideoCmdSettings): void {
 		console.log('VideoWorker > settings', settings);
+
+		settings.foregroundViewerPercentageOfViewport =
+			Math.round(Math.max(0, Math.min(2, settings.foregroundViewerPercentageOfViewport)) * 1000) / 1000;
 
 		KernelEngine.updateSettings(settings);
 	}

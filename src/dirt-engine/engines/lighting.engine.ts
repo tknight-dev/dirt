@@ -135,21 +135,25 @@ export class LightingEngine {
 		let assetIds: string[] = LightingEngine.buildListOfRequiredAssets(),
 			assets: { [key: string]: ImageBitmap } = LightingEngine.buildBinaries(assetIds); // object value is base64 data
 		LightingEngine.buildImages(assets);
-		LightingEngine.updateZoom();
+		LightingEngine.updateZoom(undefined, true);
 	}
 
-	public static updateZoom(assetImageId?: string): void {
-		let camera: Camera = LightingEngine.mapActive.camera;
+	public static updateZoom(assetImageId?: string, force?: boolean): void {
+		let camera: Camera = LightingEngine.mapActive.camera,
+			zoom: number = camera.zoom;
 
-		if (assetImageId || LightingEngine.cacheZoomedValue !== camera.zoom) {
+		/**
+		 * gInPh/gInPw +1 to fix the off by one pixel issue
+		 */
+		if (assetImageId || LightingEngine.cacheZoomedValue !== zoom || force) {
 			let id: string,
 				assetImageIds: string[] = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache),
-				canvas: OffscreenCanvas = new OffscreenCanvas(camera.gInPw, camera.gInPh),
+				canvas: OffscreenCanvas = new OffscreenCanvas(camera.gInPw + 1, camera.gInPh + 1),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
-				height: number = camera.gInPh,
+				height: number = camera.gInPh + 1,
 				images: ImageBitmap[],
 				imagesZoomed: ImageBitmap[],
-				width: number = camera.gInPw;
+				width: number = camera.gInPw + 1;
 
 			for (let i in assetImageIds) {
 				id = assetImageIds[i];
@@ -168,7 +172,7 @@ export class LightingEngine {
 				}
 			}
 
-			LightingEngine.cacheZoomedValue = camera.zoom;
+			LightingEngine.cacheZoomedValue = zoom;
 		}
 	}
 

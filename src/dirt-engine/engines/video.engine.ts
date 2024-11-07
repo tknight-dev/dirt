@@ -13,6 +13,7 @@ import {
 	VideoCmd,
 	VideoCmdGameModeEdit,
 	VideoCmdGameModeEditApply,
+	VideoCmdGameModeEditDraw,
 	VideoCmdGameModePlay,
 	VideoCmdGamePause,
 	VideoCmdGamePauseReason,
@@ -105,7 +106,7 @@ export class VideoEngine {
 				});
 			} else {
 				setTimeout(() => {
-					VideoEngine.resized();
+					VideoEngine.resized(false, true);
 				});
 			}
 		});
@@ -150,7 +151,7 @@ export class VideoEngine {
 		}
 	}
 
-	private static resized(disablePost?: boolean): VideoCmdResize {
+	private static resized(disablePost?: boolean, force?: boolean): VideoCmdResize {
 		let data: VideoCmdResize,
 			devicePixelRatio: number = Math.round(window.devicePixelRatio * 1000) / 1000,
 			devicePixelRatioEff: number = Math.round((1 / window.devicePixelRatio) * 1000) / 1000,
@@ -171,6 +172,7 @@ export class VideoEngine {
 
 		data = {
 			devicePixelRatio: devicePixelRatio,
+			force: force,
 			height: Math.round(height),
 			width: Math.round(width),
 		};
@@ -349,6 +351,13 @@ export class VideoEngine {
 	public static workerGameModeEditApply(apply: VideoCmdGameModeEditApply): void {
 		VideoEngine.worker.postMessage({
 			cmd: VideoCmd.GAME_MODE_EDIT_APPLY,
+			data: apply,
+		});
+	}
+
+	public static workerGameModeEditDraw(apply: VideoCmdGameModeEditDraw): void {
+		VideoEngine.worker.postMessage({
+			cmd: VideoCmd.GAME_MODE_EDIT_DRAW,
 			data: apply,
 		});
 	}

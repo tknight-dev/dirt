@@ -14,7 +14,7 @@ import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { UtilEngine } from './util.engine';
-import { VideoCmdSettings, VideoCmdSettingsFPS } from '../models/video-worker-cmds.model';
+import { VideoCmdGameModeEditDraw, VideoCmdSettings, VideoCmdSettingsFPS } from '../models/video-worker-cmds.model';
 
 /**
  * @author tknight-dev
@@ -171,6 +171,14 @@ export class KernelEngine {
 		MapDrawEngine.cacheReset();
 	}
 
+	/**
+	 * Use this to toggle drawn elements in edit mode
+	 */
+	public static async draw(draw: VideoCmdGameModeEditDraw): Promise<void> {
+		GridDrawEngine.setEnable(draw.grid);
+		ImageBlockDrawEngine.setForegroundViewer(draw.foregroundViewer);
+	}
+
 	public static async historyUpdate(mapActive: MapActive): Promise<void> {
 		KernelEngine.mapActive = mapActive;
 
@@ -230,7 +238,7 @@ export class KernelEngine {
 		KernelEngine.status = false;
 	}
 
-	public static setDimension(height: number, width: number): void {
+	public static setDimension(height: number, width: number, force?: boolean): void {
 		if (!KernelEngine.initialized) {
 			console.error('KernelEngine > setDimensions: not initialized');
 			return;
@@ -241,6 +249,10 @@ export class KernelEngine {
 
 		if (KernelEngine.mapActive) {
 			CameraEngine.updateDimensions(height, width);
+
+			if (force) {
+				LightingEngine.updateZoom(undefined, force);
+			}
 		}
 	}
 
@@ -277,6 +289,7 @@ export class KernelEngine {
 		DrawPlayEngine.fpsVisible = settings.fpsVisible;
 
 		// Extended
+		ImageBlockDrawEngine.setForegroundViewerSettings(settings.foregroundViewerPercentageOfViewport);
 		FPSDrawEngine.fpsTarget = settings.fps;
 
 		// Last

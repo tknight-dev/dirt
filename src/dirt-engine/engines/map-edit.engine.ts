@@ -8,6 +8,7 @@ import {
 	GridCoordinate,
 	GridImageBlock,
 	GridImageBlockType,
+	GridObject,
 } from '../models/grid.model';
 import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
@@ -20,9 +21,11 @@ import {
 	VideoCmdGameModeEditApplyAudioTriggerMusicFade,
 	VideoCmdGameModeEditApplyAudioTriggerMusicPause,
 	VideoCmdGameModeEditApplyAudioTriggerMusicUnpause,
+	VideoCmdGameModeEditApplyErase,
 	VideoCmdGameModeEditApplyImageBlock,
 	VideoCmdGameModeEditApplyLight,
 	VideoCmdGameModeEditApplyType,
+	VideoCmdGameModeEditApplyView,
 	VideoCmdGameModeEditApplyZ,
 	VideoWorkerCmdEditCameraUpdate,
 } from '../models/video-worker-cmds.model';
@@ -40,7 +43,7 @@ export class MapEditEngine {
 	public static readonly gWidthMax: number = 0xffff - 1000;
 	private static initialized: boolean;
 	private static mapActiveUI: MapActive;
-	private static mapHistoryLength: number = 10;
+	private static mapHistoryLength: number = 50;
 	private static mapHistoryRedo: DoubleLinkedList<MapActive> = new DoubleLinkedList<MapActive>();
 	private static mapHistoryUndo: DoubleLinkedList<MapActive> = new DoubleLinkedList<MapActive>();
 	private static modeUI: boolean; // indicates thread context
@@ -68,6 +71,9 @@ export class MapEditEngine {
 				break;
 			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
 				MapEditEngine.applyAudioTriggerMusicUnpause(<VideoCmdGameModeEditApplyAudioTriggerMusicUnpause>apply);
+				break;
+			case VideoCmdGameModeEditApplyType.ERASE:
+				MapEditEngine.applyErase(<VideoCmdGameModeEditApplyErase>apply);
 				break;
 			case VideoCmdGameModeEditApplyType.IMAGE_BLOCK:
 				MapEditEngine.applyImageBlock(<VideoCmdGameModeEditApplyImageBlock>apply);
@@ -102,12 +108,48 @@ export class MapEditEngine {
 		console.warn('MapEditEngine > applyAudioTriggerMusicUnpause: not yet implemented');
 	}
 
+	private static applyErase(apply: VideoCmdGameModeEditApplyErase): void {
+		let gHashes: number[] = apply.gHashes,
+			grid: Grid,
+			imageBlocks: GridBlockTable<GridImageBlock>,
+			z: VideoCmdGameModeEditApplyZ = apply.z;
+
+		if (!MapEditEngine.modeUI) {
+			grid = KernelEngine.getMapActive().gridActive;
+		} else {
+			grid = MapEditEngine.mapActiveUI.gridActive;
+		}
+
+		// Select object
+		if (z === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+			imageBlocks = grid.imageBlocksBackground;
+		} else if (z === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+			imageBlocks = grid.imageBlocksForeground;
+		} else {
+			imageBlocks = grid.imageBlocksPrimary;
+		}
+
+		// Apply
+		for (let i = 0; i < gHashes.length; i++) {
+			if (imageBlocks.hashes) {
+				delete imageBlocks.hashes[gHashes[i]];
+			}
+		}
+
+		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
+
+		if (!MapEditEngine.modeUI) {
+			KernelEngine.updateMap();
+		}
+	}
+
 	private static applyImageBlock(apply: VideoCmdGameModeEditApplyImageBlock): void {
 		let gCoordinate: GridCoordinate,
 			gHash: number,
 			gHashes: number[] = apply.gHashes,
 			grid: Grid,
 			imageBlocks: GridBlockTable<GridImageBlock>,
+			properties: any = JSON.parse(JSON.stringify(apply)),
 			z: VideoCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
@@ -129,15 +171,19 @@ export class MapEditEngine {
 			imageBlocks.hashes = <any>new Object();
 		}
 
+		// Clean
+		delete (<any>properties).gHashes;
+		delete (<any>properties).z;
+
 		// Apply
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
 
 			gCoordinate = UtilEngine.gridHashFrom(gHash);
-			apply.hash = gHash;
-			apply.gx = gCoordinate.gx;
-			apply.gy = gCoordinate.gy;
-			imageBlocks.hashes[gHash] = apply;
+			properties.hash = gHash;
+			properties.gx = gCoordinate.gx;
+			properties.gy = gCoordinate.gy;
+			imageBlocks.hashes[gHash] = JSON.parse(JSON.stringify(properties));
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
@@ -352,6 +398,12 @@ export class MapEditEngine {
 			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
 				apply = MapEditEngine.uiApplyAudioTriggerMusicUnpause(gHashes, properties, z);
 				break;
+			case VideoCmdGameModeEditApplyType.ERASE:
+				apply = <VideoCmdGameModeEditApplyErase>{
+					gHashes: gHashes,
+					z: z,
+				};
+				break;
 			case VideoCmdGameModeEditApplyType.IMAGE_BLOCK:
 				apply = MapEditEngine.uiApplyImageBlock(gHashes, properties, z);
 				break;
@@ -500,6 +552,38 @@ export class MapEditEngine {
 
 	public static getGridConfigActive(): GridConfig {
 		return MapEditEngine.mapActiveUI.gridConfigActive;
+	}
+
+	public static getGridProperty(
+		gHash: number,
+		view: VideoCmdGameModeEditApplyView,
+		z: VideoCmdGameModeEditApplyZ,
+	): GridObject[] {
+		let mapActive: MapActive;
+
+		if (!MapEditEngine.modeUI) {
+			mapActive = KernelEngine.getMapActive();
+		} else {
+			mapActive = MapEditEngine.mapActiveUI;
+		}
+
+		switch (view) {
+			case VideoCmdGameModeEditApplyView.AUDIO:
+				break;
+			case VideoCmdGameModeEditApplyView.IMAGE:
+				if (z === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+					return [mapActive.gridActive.imageBlocksBackground.hashes[gHash]];
+				} else if (z === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+					return [mapActive.gridActive.imageBlocksForeground.hashes[gHash]];
+				} else {
+					return [mapActive.gridActive.imageBlocksPrimary.hashes[gHash]];
+				}
+				break;
+			case VideoCmdGameModeEditApplyView.LIGHT:
+				break;
+		}
+
+		return [];
 	}
 
 	public static getHistoryRedoLength(): number {

@@ -24,6 +24,7 @@ import { MouseAction } from '../engines/mouse.engine';
 export enum VideoCmd {
 	GAME_MODE_EDIT,
 	GAME_MODE_EDIT_APPLY,
+	GAME_MODE_EDIT_DRAW,
 	GAME_MODE_EDIT_REDO,
 	GAME_MODE_EDIT_UNDO,
 	GAME_MODE_PLAY,
@@ -59,6 +60,7 @@ export interface VideoCmdMapLoadById {
 
 export interface VideoCmdResize {
 	devicePixelRatio: number; // precision 1
+	force?: boolean;
 	height: number;
 	width: number;
 }
@@ -88,6 +90,10 @@ export interface VideoCmdGameModeEditApplyAudioTriggerMusicUnpause
 	extends GridAudioTriggerMusicUnpause,
 		VideoCmdGameModeEditApply {}
 
+export interface VideoCmdGameModeEditApplyErase extends VideoCmdGameModeEditApply {
+	z: VideoCmdGameModeEditApplyZ;
+}
+
 export interface VideoCmdGameModeEditApplyImageBlock extends GridImageBlock, VideoCmdGameModeEditApply {
 	z: VideoCmdGameModeEditApplyZ;
 }
@@ -101,6 +107,7 @@ export enum VideoCmdGameModeEditApplyType {
 	AUDIO_TRIGGER_MUSIC_FADE,
 	AUDIO_TRIGGER_MUSIC_PAUSE,
 	AUDIO_TRIGGER_MUSIC_UNPAUSE,
+	ERASE,
 	IMAGE_BLOCK,
 	LIGHT,
 }
@@ -111,10 +118,15 @@ export enum VideoCmdGameModeEditApplyZ {
 	PRIMARY,
 }
 
-export enum VideoCmdGameModeEditApplyPalette {
-	AUDIO, // primary only
-	BLOCK,
-	LIGHT, // foreground and primary only
+export enum VideoCmdGameModeEditApplyView {
+	AUDIO,
+	IMAGE,
+	LIGHT,
+}
+
+export interface VideoCmdGameModeEditDraw {
+	foregroundViewer: boolean;
+	grid: boolean;
 }
 
 export interface VideoCmdGameModePlay {}
@@ -138,6 +150,7 @@ export interface VideoCmdGameStart {
 }
 
 export interface VideoCmdSettings {
+	foregroundViewerPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
 	fps: VideoCmdSettingsFPS;
 	fpsVisible: boolean;
 	mapVisible: boolean;

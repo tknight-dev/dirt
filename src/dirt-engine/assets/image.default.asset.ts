@@ -6,6 +6,34 @@ import { AssetCollection, AssetImage, AssetImageSrcResolution, AssetImageType } 
 
 let dirtEngineDefaultImageManifest: AssetImage[] = [
 	{
+		id: 'BEDROCK',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution.LOW,
+				src: 'images/grid-objects/bedrock_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution.MEDIUM,
+				src: 'images/grid-objects/bedrock_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				resolution: AssetImageSrcResolution.HIGH,
+				src: 'images/grid-objects/bedrock_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
+	},
+	{
 		id: 'DIRT',
 		meta: {
 			author: 'tknight-dev',
@@ -50,6 +78,62 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 			},
 		],
 		type: AssetImageType.LOGO,
+	},
+	{
+		id: 'DIRT_GRASS',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution.LOW,
+				src: 'images/grid-objects/dirt_grass_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution.MEDIUM,
+				src: 'images/grid-objects/dirt_grass_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				resolution: AssetImageSrcResolution.HIGH,
+				src: 'images/grid-objects/dirt_grass_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
+	},
+	{
+		id: 'ROCK',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution.LOW,
+				src: 'images/grid-objects/rock_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				resolution: AssetImageSrcResolution.MEDIUM,
+				src: 'images/grid-objects/rock_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				resolution: AssetImageSrcResolution.HIGH,
+				src: 'images/grid-objects/rock_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
 	},
 	{
 		id: 'TKNIGHT_DEV',

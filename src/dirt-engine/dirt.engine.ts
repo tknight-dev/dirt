@@ -10,7 +10,7 @@ import { MapEditEngine } from './engines/map-edit.engine';
 import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
 import { Orientation, OrientationEngine } from './engines/orientation.engine';
 import { ResizeEngine } from './engines/resize.engine';
-import { VideoCmdGamePauseReason, VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
+import { VideoCmdGamePauseReason, VideoCmdSettings } from './models/video-worker-cmds.model';
 import { VideoEngine } from './engines/video.engine';
 import { VisibilityEngine } from './engines/visibility.engine';
 
@@ -28,7 +28,7 @@ export {
 	AssetManifest,
 	AssetMeta,
 } from './models/asset.model';
-export { VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
+export { VideoCmdSettings, VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
 
 /**
  * @author tknight-dev
@@ -49,8 +49,8 @@ export class DirtEngine extends DomUI {
 		assetDeclarations: AssetDeclarations,
 		dom: HTMLElement,
 		gameModeEditStart: boolean,
-		fps: VideoCmdSettingsFPS,
 		oldTVIntro: boolean,
+		settings: VideoCmdSettings,
 	): Promise<void> {
 		if (!(await AssetEngine.verify(assetDeclarations))) {
 			return;
@@ -115,19 +115,14 @@ export class DirtEngine extends DomUI {
 			DirtEngine.domElementsCanvas['feed-overflow-streams-primary-data'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-underlay-data'],
 			DirtEngine.domElements['map-interaction'],
-			{
-				fps: fps,
-				fpsVisible: true,
-				mapVisible: true,
-				resolution: AssetImageSrcResolution.HIGH,
-			},
+			settings,
 		);
 		await promise;
 		DirtEngine.dragable = true;
 		DirtEngine.ready = true;
 
 		// TODO: delete me as I just skip the into
-		DirtEngine.domElements['feed'].click();
+		//DirtEngine.domElements['feed'].click();
 	}
 
 	private static async feedTitleOverlay(): Promise<void> {

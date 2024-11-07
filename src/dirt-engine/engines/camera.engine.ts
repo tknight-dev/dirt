@@ -96,9 +96,7 @@ export class CameraEngine {
 
 		// console.log('camera.gx', camera.gx);
 		// console.log('camera.viewportGx', camera.viewportGx);
-		setTimeout(() => {
-			KernelEngine.updateZoom();
-		});
+		KernelEngine.updateZoom();
 		setTimeout(() => {
 			CameraEngine.callback(camera);
 		});

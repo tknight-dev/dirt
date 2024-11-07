@@ -20,7 +20,7 @@ export class VisibilityEngine {
 				VisibilityEngine.state = state;
 
 				if (VisibilityEngine.callback) {
-					setTimeout(() => VisibilityEngine.callback(state));
+					setTimeout(() => VisibilityEngine.callback(state), 60);
 				}
 			}
 		});

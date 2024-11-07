@@ -1,4 +1,11 @@
-import { AssetDeclarations, AssetManifest, DirtEngine, VideoCmdSettingsFPS } from './dirt-engine/dirt.engine';
+import {
+	AssetDeclarations,
+	AssetImageSrcResolution,
+	AssetManifest,
+	DirtEngine,
+	VideoCmdSettings,
+	VideoCmdSettingsFPS,
+} from './dirt-engine/dirt.engine';
 import { audioManifest } from './assets/audio.asset';
 import { imageManifest } from './assets/image.asset';
 import { mapManifest } from './assets/map.asset';
@@ -23,9 +30,16 @@ class Dirt {
 					maps: mapManifest,
 				},
 			},
-			domGame: HTMLElement = <HTMLElement>document.getElementById('game');
+			domGame: HTMLElement = <HTMLElement>document.getElementById('game'),
+			settings: VideoCmdSettings = {
+				foregroundViewerPercentageOfViewport: 1.5,
+				fps: VideoCmdSettingsFPS._60,
+				fpsVisible: true,
+				mapVisible: true,
+				resolution: AssetImageSrcResolution.ULTRA,
+			};
 
-		DirtEngine.initialize(assetDeclarations, domGame, true, VideoCmdSettingsFPS._60, true);
+		DirtEngine.initialize(assetDeclarations, domGame, true, true, settings);
 	}
 }
 

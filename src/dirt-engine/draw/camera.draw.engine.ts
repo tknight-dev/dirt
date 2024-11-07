@@ -55,6 +55,7 @@ export class CameraDrawEngine {
 	 */
 	public static start(): void {
 		//let start: number = performance.now();
+		let camera: Camera = CameraDrawEngine.mapActiveCamera;
 
 		if (!CameraDrawEngine.cache) {
 			// Draw from scratch
@@ -75,31 +76,26 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cache = cacheCanvas.transferToImageBitmap();
 		}
 
-		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(
-			CameraDrawEngine.mapActiveCamera.gx,
-			CameraDrawEngine.mapActiveCamera.gy,
-		);
-		CameraDrawEngine.cachePositionHashCheckP = UtilEngine.pixelHashTo(
-			CameraDrawEngine.mapActiveCamera.windowPw,
-			CameraDrawEngine.mapActiveCamera.windowPh,
-		);
+		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(camera.gx, camera.gy);
+		CameraDrawEngine.cachePositionHashCheckP = UtilEngine.pixelHashTo(camera.windowPw, camera.windowPh);
 		if (
 			CameraDrawEngine.cachePositionHashG !== CameraDrawEngine.cachePositionHashCheckG ||
 			CameraDrawEngine.cachePositionHashP !== CameraDrawEngine.cachePositionHashCheckP ||
-			CameraDrawEngine.cacheZoom !== CameraDrawEngine.mapActiveCamera.zoom
+			CameraDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Calc from scratch
-			let camera: Camera = CameraDrawEngine.mapActiveCamera,
-				viewportGx: number = camera.viewportGx,
+			let viewportGx: number = camera.viewportGx,
 				viewportGy: number = camera.viewportGy;
 
 			if (viewportGx === 0) {
+				// Left
 				CameraDrawEngine.cachePositionPx = Math.round(camera.gx * camera.gInPw);
-			} else if (viewportGx + camera.viewportGw === CameraDrawEngine.mapActive.gridConfigActive.gWidth) {
+			} else if (viewportGx + camera.viewportGwEff === CameraDrawEngine.mapActive.gridConfigActive.gWidth) {
+				// Right
 				CameraDrawEngine.cachePositionPx = Math.round(
 					camera.viewportPx +
 						camera.viewportPw / 2 +
-						(camera.gx - (viewportGx + camera.viewportGw / 2)) * camera.gInPw,
+						(camera.gx - (viewportGx + camera.viewportGwEff / 2)) * camera.gInPw,
 				);
 			} else {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.viewportPx + camera.viewportPw / 2);
@@ -108,11 +104,11 @@ export class CameraDrawEngine {
 
 			if (viewportGy === 0) {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.gy * camera.gInPh);
-			} else if (viewportGy + camera.viewportGh === CameraDrawEngine.mapActive.gridConfigActive.gHeight) {
+			} else if (viewportGy + camera.viewportGhEff === CameraDrawEngine.mapActive.gridConfigActive.gHeight) {
 				CameraDrawEngine.cachePositionPy = Math.round(
 					camera.viewportPy +
 						camera.viewportPh / 2 +
-						(camera.gy - (viewportGy + camera.viewportGh / 2)) * camera.gInPh,
+						(camera.gy - (viewportGy + camera.viewportGhEff / 2)) * camera.gInPh,
 				);
 			} else {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.viewportPy + camera.viewportPh / 2);
@@ -121,7 +117,7 @@ export class CameraDrawEngine {
 
 			CameraDrawEngine.cachePositionHashG = CameraDrawEngine.cachePositionHashCheckG;
 			CameraDrawEngine.cachePositionHashP = CameraDrawEngine.cachePositionHashCheckP;
-			CameraDrawEngine.cacheZoom = CameraDrawEngine.mapActiveCamera.zoom;
+			CameraDrawEngine.cacheZoom = camera.zoom;
 		}
 
 		CameraDrawEngine.ctxOverlay.drawImage(

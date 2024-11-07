@@ -19,6 +19,8 @@ import {
 	GridAudioTriggerTripType,
 	GridImageBlockType,
 	GridCoordinate,
+	GridObject,
+	GridObjectType,
 } from '../models/grid.model';
 import { Map, MapActive } from '../models/map.model';
 import { MapEditEngine } from '../engines/map-edit.engine';
@@ -27,7 +29,9 @@ import { UtilEngine } from '../engines/util.engine';
 import {
 	VideoCmdGameModeEditApply,
 	VideoCmdGameModeEditApplyType,
+	VideoCmdGameModeEditApplyView,
 	VideoCmdGameModeEditApplyZ,
+	VideoCmdGameModeEditDraw,
 	VideoWorkerCmdEditCameraUpdate,
 } from '../models/video-worker-cmds.model';
 import { VideoEngine } from '../engines/video.engine';
@@ -40,13 +44,6 @@ enum ApplicationType {
 	BRUSH,
 	FILL,
 	ERASER,
-	STAMP,
-}
-
-enum View {
-	AUDIO, // primary only
-	BLOCK,
-	LIGHT, // foreground and primary only
 }
 
 export class DomUI {
@@ -65,6 +62,7 @@ export class DomUI {
 	private static uiEditCursorGInPh: number;
 	private static uiEditCursorGInPw: number;
 	private static uiEditCursorReady: boolean;
+	private static uiEditDraw: VideoCmdGameModeEditDraw;
 	protected static uiEditMode: boolean;
 	private static uiEditMouseCmdCollection: DoubleLinkedList<number> = new DoubleLinkedList<number>();
 	private static uiEditMouseCmdCollectionHashesEffected: { [key: number]: null } = {};
@@ -73,6 +71,7 @@ export class DomUI {
 	private static uiEditMouseCmdCollectionEngaged: boolean;
 	private static uiEditMouseCmdCollectionPromise: Promise<void>;
 	private static uiEditSpinnerStatus: boolean;
+	private static uiEditView: VideoCmdGameModeEditApplyView;
 	private static uiEditZ: VideoCmdGameModeEditApplyZ | undefined;
 
 	private static detailsModalSelector(
@@ -82,10 +81,11 @@ export class DomUI {
 		selectors: any[],
 		callback: (value: any) => void,
 	): void {
-		let image: HTMLImageElement | undefined = undefined,
+		let div: HTMLElement,
+			image: HTMLImageElement,
+			imageWrapper: HTMLElement,
 			modal = DomUI.domElements['feed-fitted-ui-select-modal'],
-			modalContent = DomUI.domElements['feed-fitted-ui-select-modal-content'],
-			div: HTMLElement;
+			modalContent = DomUI.domElements['feed-fitted-ui-select-modal-content'];
 
 		modal.style.display = 'flex';
 		MouseEngine.setSuspendWheel(true);
@@ -98,7 +98,6 @@ export class DomUI {
 				callback(undefined);
 				modal.style.display = 'none';
 				modalContent.textContent = '';
-				MouseEngine.setSuspendWheel(false);
 			};
 			modalContent.appendChild(div);
 		}
@@ -111,7 +110,6 @@ export class DomUI {
 				callback(selector.value);
 				modal.style.display = 'none';
 				modalContent.textContent = '';
-				MouseEngine.setSuspendWheel(false);
 
 				if (assetAudio) {
 					if (selector.type === AssetAudioType.MUSIC) {
@@ -134,36 +132,27 @@ export class DomUI {
 				};
 			}
 			if (assetImage) {
-				div.onmouseover = () => {
-					if (!image) {
-						let imageSrc: AssetImageSrc | undefined = undefined;
+				let imageSrc: AssetImageSrc | undefined = undefined;
 
-						DomUI.assetManifestMaster.images[selector.value].srcs.forEach(
-							(assetImageSrc: AssetImageSrc) => {
-								// Grab the highest available resolution
-								if (assetImageSrc.collection === AssetCollection.SHARED) {
-									if (!imageSrc || imageSrc.resolution < assetImageSrc.resolution) {
-										imageSrc = assetImageSrc;
-									}
-								}
-							},
-						);
-
-						if (imageSrc) {
-							image = document.createElement('img');
-							image.className = 'after-image';
-							image.src = (<any>AssetEngine.getAsset((<any>imageSrc).src)).data;
-
-							div.appendChild(image);
+				DomUI.assetManifestMaster.images[selector.value].srcs.forEach((assetImageSrc: AssetImageSrc) => {
+					// Grab the highest available resolution
+					if (assetImageSrc.collection === AssetCollection.SHARED) {
+						if (!imageSrc || imageSrc.resolution < assetImageSrc.resolution) {
+							imageSrc = assetImageSrc;
 						}
 					}
-				};
-				div.onmouseout = () => {
-					if (image) {
-						div.removeChild(image);
-						image = undefined;
-					}
-				};
+				});
+
+				if (imageSrc) {
+					imageWrapper = document.createElement('div');
+					imageWrapper.className = 'after-image';
+
+					image = document.createElement('img');
+					image.src = (<any>AssetEngine.getAsset((<any>imageSrc).src)).data;
+
+					imageWrapper.appendChild(image);
+					div.appendChild(imageWrapper);
+				}
 			}
 			modalContent.appendChild(div);
 		});
@@ -172,6 +161,7 @@ export class DomUI {
 	private static detailsModalAudioBlock(): void {
 		let applicationProperties: any = {
 				modulationId: AudioModulation.NONE.id,
+				objectType: GridObjectType.AUDIO_BLOCK,
 			},
 			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
 			td: HTMLElement,
@@ -232,6 +222,7 @@ export class DomUI {
 			),
 			applicationProperties: any = {
 				assetId: valuesAudio[0].id,
+				objectType: GridObjectType.AUDIO_TRIGGER_EFFECT,
 				oneshot: true,
 				trip: GridAudioTriggerTripType.CONTACT,
 				volumePercentage: 1,
@@ -370,6 +361,7 @@ export class DomUI {
 			),
 			applicationProperties: any = {
 				assetId: valuesAudio[0].id,
+				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC,
 				oneshot: true,
 				tagId: UtilEngine.randomAlphaNumeric(5),
 				trip: GridAudioTriggerTripType.CONTACT,
@@ -531,6 +523,7 @@ export class DomUI {
 			applicationProperties: any = {
 				fadeDurationInMs: 1000,
 				fadeTo: 0.5,
+				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_FADE,
 				tagId: '', // TODO validation logic
 				trip: GridAudioTriggerTripType.CONTACT,
 			},
@@ -648,6 +641,7 @@ export class DomUI {
 				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
 			),
 			applicationProperties: any = {
+				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_PAUSE,
 				tagId: '', // TODO validation logic
 				trip: GridAudioTriggerTripType.CONTACT,
 			},
@@ -727,6 +721,7 @@ export class DomUI {
 				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
 			),
 			applicationProperties: any = {
+				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_UNPAUSE,
 				tagId: '', // TODO validation logic
 				trip: GridAudioTriggerTripType.CONTACT,
 			},
@@ -818,6 +813,7 @@ export class DomUI {
 				assetIdWalkedOnAudioEffect: undefined,
 				damageable: false,
 				destructible: false,
+				objectType: GridObjectType.IMAGE_BLOCK,
 				strengthToDamangeInN: undefined,
 				strengthToDestroyInN: undefined,
 				type: GridImageBlockType.SOLID,
@@ -1110,7 +1106,7 @@ export class DomUI {
 			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.IMAGE_BLOCK;
 
 			// Graphics
-			DomUI.detailsModalPostClickGraphics('mode-menu-block');
+			DomUI.detailsModalPostClickGraphics('mode-menu-image');
 		};
 	}
 
@@ -1119,6 +1115,8 @@ export class DomUI {
 
 		t.textContent = '';
 		console.log('detailsModalLight');
+
+		//objectType: GridObjectType.LIGHT,
 
 		// color: number; // hexadecimal
 		// destructible: boolean;
@@ -1150,6 +1148,10 @@ export class DomUI {
 		DomUI.domElementsUIEdit['palette'].classList.remove('active');
 		MouseEngine.setSuspendWheel(false);
 
+		// Show cursor config buttons
+		DomUI.domElementsUIEdit['application'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'flex';
+
 		// Draw cursor
 		DomUI.uiEditCursorReady = true;
 		switch (DomUI.uiEditApplicationType) {
@@ -1162,13 +1164,14 @@ export class DomUI {
 			case ApplicationType.FILL:
 				DomUI.domElementsUIEdit['application-type-menu-fill'].click();
 				break;
+			default:
 			case ApplicationType.PENCIL:
 				DomUI.domElementsUIEdit['application-type-menu-pencil'].click();
 				break;
-			case ApplicationType.STAMP:
-				DomUI.domElementsUIEdit['application-type-menu-stamp'].click();
-				break;
 		}
+
+		DomUI.domElementsUIEdit['copy'].classList.remove('active');
+		DomUI.domElementsUIEdit['inspect'].classList.remove('active');
 
 		// Hide view menu
 		setTimeout(() => {
@@ -1285,7 +1288,7 @@ export class DomUI {
 				for (i = divs.length - 2; i > -1; i--) {
 					cursor.appendChild(<HTMLElement>divs[i]);
 				}
-			} else if (applicationType === ApplicationType.ERASER || applicationType === ApplicationType.STAMP) {
+			} else if (applicationType === ApplicationType.ERASER || applicationType === ApplicationType.PENCIL) {
 				brushSizeEff = (brushSize - 1) * 2 + 1;
 
 				for (i = 0; i < brushSizeEff; i++) {
@@ -1315,11 +1318,6 @@ export class DomUI {
 
 					cursor.appendChild(divWrapper);
 				}
-			} else {
-				// Pencil
-				div.className = 'node all';
-				divWrapper.appendChild(div);
-				cursor.appendChild(divWrapper);
 			}
 
 			// Done
@@ -1344,6 +1342,27 @@ export class DomUI {
 
 	public static editMouseDown(mouseAction: MouseAction): void {
 		if (!DomUI.uiEditCursorReady) {
+			let classList: DOMTokenList = DomUI.domElements['feed-fitted'].classList;
+
+			if (classList.contains('dirt-engine-cursor-eye-dropper')) {
+				DomUI.editMouseDownSelectMenu(
+					true,
+					MapEditEngine.getGridProperty(
+						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
+						DomUI.uiEditView,
+						<VideoCmdGameModeEditApplyZ>DomUI.uiEditZ,
+					),
+				);
+			} else if (classList.contains('dirt-engine-cursor-magnifying-glass')) {
+				DomUI.editMouseDownSelectMenu(
+					false,
+					MapEditEngine.getGridProperty(
+						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
+						DomUI.uiEditView,
+						<VideoCmdGameModeEditApplyZ>DomUI.uiEditZ,
+					),
+				);
+			}
 			return;
 		} else if (DomUI.uiEditMouseCmdCollectionActive) {
 			console.error('DomUI > editMouseDown: already active');
@@ -1359,6 +1378,85 @@ export class DomUI {
 			DomUI.editMouseProcessor(resolve);
 		});
 		DomUI.uiEditMouseCmdCollectionEngaged = true;
+	}
+
+	/**
+	 * @param copy is inspect on false
+	 */
+	private static editMouseDownSelectMenu(copy: boolean, gridObjects: GridObject[]): void {
+		let td: HTMLElement,
+			tr: HTMLElement,
+			t: HTMLElement = DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-body-table'];
+
+		if (gridObjects.length === 1 && gridObjects[0] === undefined) {
+			return;
+		}
+		MouseEngine.setSuspendWheel(true);
+
+		if (copy) {
+			DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-header'].innerText = 'Copy';
+		} else {
+			DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-header'].innerText = 'Inspect';
+		}
+
+		t.textContent = '';
+
+		for (let i in gridObjects) {
+			let gridObject = JSON.parse(JSON.stringify(gridObjects[i]));
+
+			// console.log('gridObject', gridObject);
+
+			if (gridObject.objectType) {
+				gridObject.objectType = GridObjectType[gridObject.objectType];
+			}
+
+			tr = document.createElement('tr');
+
+			td = document.createElement('td');
+			if (copy) {
+				td.className = 'clickable';
+			}
+			td.innerText = JSON.stringify(gridObject, null, 2);
+			td.onclick = () => {
+				if (copy) {
+					DomUI.uiEditApplicationProperties = gridObject;
+					DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.IMAGE_BLOCK;
+
+					// Show cursor config buttons
+					DomUI.domElementsUIEdit['application'].style.display = 'flex';
+					DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'flex';
+
+					// Draw cursor
+					DomUI.uiEditCursorReady = true;
+					switch (DomUI.uiEditApplicationType) {
+						case ApplicationType.BRUSH:
+							DomUI.domElementsUIEdit['application-type-menu-brush'].click();
+							break;
+						case ApplicationType.ERASER:
+							DomUI.domElementsUIEdit['application-type-menu-eraser'].click();
+							break;
+						case ApplicationType.FILL:
+							DomUI.domElementsUIEdit['application-type-menu-fill'].click();
+							break;
+						default:
+						case ApplicationType.PENCIL:
+							DomUI.domElementsUIEdit['application-type-menu-pencil'].click();
+							break;
+					}
+
+					// Done
+					DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
+					DomUI.domElementsUIEdit['copy'].classList.remove('active');
+					MouseEngine.setSuspendWheel(false);
+				}
+			};
+			tr.appendChild(td);
+
+			// Last
+			t.appendChild(tr);
+		}
+
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'flex';
 	}
 
 	public static editMouseMove(mouseAction: MouseAction): void {
@@ -1404,7 +1502,9 @@ export class DomUI {
 					payload = MapEditEngine.uiApply(
 						gHashes,
 						<any>DomUI.uiEditApplicationProperties,
-						DomUI.uiEditApplyType,
+						DomUI.uiEditApplicationType === ApplicationType.ERASER
+							? VideoCmdGameModeEditApplyType.ERASE
+							: DomUI.uiEditApplyType,
 						z,
 					); // Auto-applies to map
 
@@ -1512,7 +1612,7 @@ export class DomUI {
 					}
 					scratch--;
 				}
-			} else if (applicationType === ApplicationType.ERASER || applicationType === ApplicationType.STAMP) {
+			} else if (applicationType === ApplicationType.ERASER || applicationType === ApplicationType.PENCIL) {
 				if (brushSize === 1) {
 					if (effected[hash] === undefined) {
 						effected[hash] = null;
@@ -1533,12 +1633,6 @@ export class DomUI {
 							}
 						}
 					}
-				}
-			} else {
-				// Pencil
-				if (effected[hash] === undefined) {
-					effected[hash] = null;
-					gHashes.push(hash);
 				}
 			}
 		}
@@ -1644,11 +1738,17 @@ export class DomUI {
 				}
 			}
 
-			DomUI.domElementsUIEdit['z-primary'].click();
-			DomUI.domElementsUIEdit['application-type-menu-pencil'].click(); // Default
-			DomUI.domElementsUIEdit['map'].click();
+			DomUI.uiEditDraw = {
+				foregroundViewer: true,
+				grid: true,
+			};
+
 			DomUI.domElements['feed-fitted'].addEventListener('mousemove', DomUI.editCursorMove);
-			DomUI.domElementsUIEdit['mode-menu-block'].click();
+			DomUI.domElementsUIEdit['map'].click();
+			DomUI.domElementsUIEdit['mode-menu-image'].click();
+
+			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
+			DomUI.domElementsUIEdit['z-global'].click();
 		} else {
 			DomUI.domElements['feed-fitted'].removeEventListener('mousemove', DomUI.editCursorMove);
 			for (let i in domUIEdit) {
@@ -1902,6 +2002,7 @@ export class DomUI {
 			}
 
 			domFeedOverflowStreamsStream.className = 'stream ' + streamName;
+			domFeedOverflowStreamsStream.style.zIndex = String(i);
 			domFeedOverflowStreams.appendChild(domFeedOverflowStreamsStream);
 			DomUI.domElements['feed-overflow-streams-' + streamName] = domFeedOverflowStreamsStream;
 
@@ -1967,14 +2068,20 @@ export class DomUI {
 			applicationWrap: HTMLElement,
 			assetMap: AssetMap,
 			blockMenu: HTMLElement,
+			copy: HTMLElement,
+			copyButton: HTMLElement,
 			detailsContextMenu: HTMLElement,
 			feedFitted: HTMLElement = DomUI.domElements['feed-fitted'],
+			foregroundViewer: HTMLElement,
+			foregroundViewerButton: HTMLElement,
 			grid: HTMLElement,
 			gridButton: HTMLElement,
 			gridModal: HTMLElement,
 			gridModalContent: HTMLElement,
 			gridModalContentBody: HTMLElement,
 			gridModalContentHeader: HTMLElement,
+			inspect: HTMLElement,
+			inspectButton: HTMLElement,
 			map: HTMLElement,
 			mapButton: HTMLElement,
 			mapModal: HTMLElement,
@@ -1982,6 +2089,13 @@ export class DomUI {
 			mapModalContentBody: HTMLElement,
 			mapModalContentBodySelection: HTMLElement,
 			mapModalContentHeader: HTMLElement,
+			mouseDownSelectModal: HTMLElement,
+			mouseDownSelectModalContent: HTMLElement,
+			mouseDownSelectModalContentBody: HTMLElement,
+			mouseDownSelectModalContentBodyButton: HTMLElement,
+			mouseDownSelectModalContentBodyButtons: HTMLElement,
+			mouseDownSelectModalContentBodyButtonsCancel: HTMLElement,
+			mouseDownSelectModalContentHeader: HTMLElement,
 			palette: HTMLElement,
 			paletteButton: HTMLElement,
 			paletteModal: HTMLElement,
@@ -2019,7 +2133,7 @@ export class DomUI {
 			viewButton: HTMLElement,
 			viewMenu: HTMLElement,
 			viewMenuAudio: HTMLElement,
-			viewMenuBlock: HTMLElement,
+			viewMenuImage: HTMLElement,
 			viewMenuLight: HTMLElement,
 			z: HTMLElement,
 			zBackground: HTMLElement,
@@ -2087,26 +2201,26 @@ export class DomUI {
 			applicationType.innerText = 'P';
 			applicationTypeMenuPencil.classList.add('active');
 			applicationTypeMenuBrush.classList.remove('active');
-			applicationTypeMenuFill.classList.remove('active');
+			//applicationTypeMenuFill.classList.remove('active');
 			applicationTypeMenuEraser.classList.remove('active');
-			applicationTypeMenuStamp.classList.remove('active');
+			//applicationTypeMenuStamp.classList.remove('active');
 
-			applicationTypePixelSizeInputRange.disabled = true;
+			applicationTypePixelSizeInputRange.disabled = false;
 			applicationTypePixelSizeInputRange.max = '1';
 			applicationTypePixelSizeInputRange.min = '1';
 			applicationTypePixelSizeInputRange.value = '1';
-			applicationTypePixelSizeInputText.disabled = true;
-			applicationTypePixelSizeInputText.max = '1';
+			applicationTypePixelSizeInputText.disabled = false;
+			applicationTypePixelSizeInputText.max = '100';
 			applicationTypePixelSizeInputText.min = '1';
 			applicationTypePixelSizeInputText.value = '1';
 			applicationTypePixelSize.style.display = 'flex';
 			DomUI.uiEditBrushSize = 1;
 
 			DomUI.uiEditApplicationType = ApplicationType.PENCIL;
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
-			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-stamp');
 
 			if (DomUI.uiEditCursorReady) {
@@ -2125,9 +2239,9 @@ export class DomUI {
 			applicationType.innerText = 'B';
 			applicationTypeMenuPencil.classList.remove('active');
 			applicationTypeMenuBrush.classList.add('active');
-			applicationTypeMenuFill.classList.remove('active');
+			//applicationTypeMenuFill.classList.remove('active');
 			applicationTypeMenuEraser.classList.remove('active');
-			applicationTypeMenuStamp.classList.remove('active');
+			//applicationTypeMenuStamp.classList.remove('active');
 
 			applicationTypePixelSizeInputRange.disabled = false;
 			applicationTypePixelSizeInputRange.max = '100';
@@ -2141,10 +2255,10 @@ export class DomUI {
 			DomUI.uiEditBrushSize = 1;
 
 			DomUI.uiEditApplicationType = ApplicationType.BRUSH;
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
-			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-stamp');
 
 			if (DomUI.uiEditCursorReady) {
@@ -2156,71 +2270,71 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-type-menu-brush'] = applicationTypeMenuBrush;
 		applicationTypeMenu.appendChild(applicationTypeMenuBrush);
 
-		applicationTypeMenuStamp = document.createElement('div');
-		applicationTypeMenuStamp.className = 'button-style stamp';
-		applicationTypeMenuStamp.innerText = 'Stamp';
-		applicationTypeMenuStamp.onclick = () => {
-			applicationType.innerText = 'S';
-			applicationTypeMenuPencil.classList.remove('active');
-			applicationTypeMenuBrush.classList.remove('active');
-			applicationTypeMenuFill.classList.remove('active');
-			applicationTypeMenuEraser.classList.remove('active');
-			applicationTypeMenuStamp.classList.add('active');
+		// applicationTypeMenuStamp = document.createElement('div');
+		// applicationTypeMenuStamp.className = 'button-style stamp';
+		// applicationTypeMenuStamp.innerText = 'Stamp';
+		// applicationTypeMenuStamp.onclick = () => {
+		// 	applicationType.innerText = 'S';
+		// 	applicationTypeMenuPencil.classList.remove('active');
+		// 	applicationTypeMenuBrush.classList.remove('active');
+		// 	//applicationTypeMenuFill.classList.remove('active');
+		// 	applicationTypeMenuEraser.classList.remove('active');
+		// 	applicationTypeMenuStamp.classList.add('active');
 
-			applicationTypePixelSizeInputRange.disabled = false;
-			applicationTypePixelSizeInputRange.max = '100';
-			applicationTypePixelSizeInputRange.min = '1';
-			applicationTypePixelSizeInputRange.value = '1';
-			applicationTypePixelSizeInputText.disabled = false;
-			applicationTypePixelSizeInputText.max = '100';
-			applicationTypePixelSizeInputText.min = '1';
-			applicationTypePixelSizeInputText.value = '1';
-			applicationTypePixelSize.style.display = 'flex';
-			DomUI.uiEditBrushSize = 1;
+		// 	applicationTypePixelSizeInputRange.disabled = false;
+		// 	applicationTypePixelSizeInputRange.max = '100';
+		// 	applicationTypePixelSizeInputRange.min = '1';
+		// 	applicationTypePixelSizeInputRange.value = '1';
+		// 	applicationTypePixelSizeInputText.disabled = false;
+		// 	applicationTypePixelSizeInputText.max = '100';
+		// 	applicationTypePixelSizeInputText.min = '1';
+		// 	applicationTypePixelSizeInputText.value = '2';
+		// 	applicationTypePixelSize.style.display = 'flex';
+		// 	DomUI.uiEditBrushSize = 1;
 
-			DomUI.uiEditApplicationType = ApplicationType.STAMP;
-			feedFitted.classList.remove('dirt-engine-cursor-pencil');
-			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
-			feedFitted.classList.remove('dirt-engine-cursor-fill');
-			feedFitted.classList.remove('dirt-engine-cursor-eraser');
-			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+		// 	DomUI.uiEditApplicationType = ApplicationType.STAMP;
+		// 	feedFitted.classList.remove('dirt-engine-cursor-eraser');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-pencil');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-fill');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-stamp');
 
-			if (DomUI.uiEditCursorReady) {
-				feedFitted.classList.add('dirt-engine-cursor-stamp');
-				DomUI.editCursor();
-			}
-		};
-		DomUI.domElements['feed-fitted-ui-application-type-menu-stamp'] = applicationTypeMenuStamp;
-		DomUI.domElementsUIEdit['application-type-menu-stamp'] = applicationTypeMenuStamp;
-		applicationTypeMenu.appendChild(applicationTypeMenuStamp);
+		// 	if (DomUI.uiEditCursorReady) {
+		// 		feedFitted.classList.add('dirt-engine-cursor-stamp');
+		// 		DomUI.editCursor();
+		// 	}
+		// };
+		// DomUI.domElements['feed-fitted-ui-application-type-menu-stamp'] = applicationTypeMenuStamp;
+		// DomUI.domElementsUIEdit['application-type-menu-stamp'] = applicationTypeMenuStamp;
+		// applicationTypeMenu.appendChild(applicationTypeMenuStamp);
 
-		applicationTypeMenuFill = document.createElement('div');
-		applicationTypeMenuFill.className = 'button-style fill';
-		applicationTypeMenuFill.innerText = 'Fill';
-		applicationTypeMenuFill.onclick = () => {
-			applicationType.innerText = 'F';
-			applicationTypeMenuPencil.classList.remove('active');
-			applicationTypeMenuBrush.classList.remove('active');
-			applicationTypeMenuFill.classList.add('active');
-			applicationTypeMenuEraser.classList.remove('active');
-			applicationTypeMenuStamp.classList.remove('active');
-			applicationTypePixelSize.style.display = 'none';
-			DomUI.uiEditApplicationType = ApplicationType.FILL;
-			DomUI.uiEditBrushSize = 0;
-			feedFitted.classList.remove('dirt-engine-cursor-pencil');
-			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
-			feedFitted.classList.remove('dirt-engine-cursor-fill');
-			feedFitted.classList.remove('dirt-engine-cursor-eraser');
-			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+		// applicationTypeMenuFill = document.createElement('div');
+		// applicationTypeMenuFill.className = 'button-style fill';
+		// applicationTypeMenuFill.innerText = 'Fill';
+		// applicationTypeMenuFill.onclick = () => {
+		// 	applicationType.innerText = 'F';
+		// 	applicationTypeMenuPencil.classList.remove('active');
+		// 	applicationTypeMenuBrush.classList.remove('active');
+		// 	applicationTypeMenuFill.classList.add('active');
+		// 	applicationTypeMenuEraser.classList.remove('active');
+		// 	applicationTypeMenuStamp.classList.remove('active');
+		// 	applicationTypePixelSize.style.display = 'none';
+		// 	DomUI.uiEditApplicationType = ApplicationType.FILL;
+		// 	DomUI.uiEditBrushSize = 0;
+		// 	feedFitted.classList.remove('dirt-engine-cursor-eraser');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-pencil');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-fill');
+		// 	feedFitted.classList.remove('dirt-engine-cursor-stamp');
 
-			if (DomUI.uiEditCursorReady) {
-				feedFitted.classList.add('dirt-engine-cursor-fill');
-				DomUI.editCursor();
-			}
-		};
-		DomUI.domElements['feed-fitted-ui-application-type-menu-fill'] = applicationTypeMenuFill;
-		DomUI.domElementsUIEdit['application-type-menu-fill'] = applicationTypeMenuFill;
-		applicationTypeMenu.appendChild(applicationTypeMenuFill);
+		// 	if (DomUI.uiEditCursorReady) {
+		// 		feedFitted.classList.add('dirt-engine-cursor-fill');
+		// 		DomUI.editCursor();
+		// 	}
+		// };
+		// DomUI.domElements['feed-fitted-ui-application-type-menu-fill'] = applicationTypeMenuFill;
+		// DomUI.domElementsUIEdit['application-type-menu-fill'] = applicationTypeMenuFill;
+		// applicationTypeMenu.appendChild(applicationTypeMenuFill);
 
 		applicationTypeMenuEraser = document.createElement('div');
 		applicationTypeMenuEraser.className = 'button-style eraser';
@@ -2229,9 +2343,9 @@ export class DomUI {
 			applicationType.innerText = 'E';
 			applicationTypeMenuPencil.classList.remove('active');
 			applicationTypeMenuBrush.classList.remove('active');
-			applicationTypeMenuFill.classList.remove('active');
+			//applicationTypeMenuFill.classList.remove('active');
 			applicationTypeMenuEraser.classList.add('active');
-			applicationTypeMenuStamp.classList.remove('active');
+			//applicationTypeMenuStamp.classList.remove('active');
 
 			applicationTypePixelSizeInputRange.disabled = false;
 			applicationTypePixelSizeInputRange.max = '100';
@@ -2245,10 +2359,10 @@ export class DomUI {
 			DomUI.uiEditBrushSize = 1;
 
 			DomUI.uiEditApplicationType = ApplicationType.ERASER;
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
-			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-stamp');
 
 			if (DomUI.uiEditCursorReady) {
@@ -2310,6 +2424,38 @@ export class DomUI {
 		applicationTypePixelSize.appendChild(applicationTypePixelSizeInputText);
 
 		/*
+		 * Copy
+		 */
+		copy = document.createElement('div');
+		copy.className = 'dirt-engine-ui-edit copy';
+		copy.onclick = (event: any) => {
+			application.style.display = 'none';
+			applicationTypePixelSize.style.display = 'none';
+			copy.classList.add('active');
+			inspect.classList.remove('active');
+
+			DomUI.uiEditCursorReady = false;
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-magnifying-glass');
+			feedFitted.classList.remove('dirt-engine-cursor-pencil');
+			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+			feedFitted.classList.remove('dirt-engine-cursor-fill');
+			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+			DomUI.editCursor();
+
+			feedFitted.classList.add('dirt-engine-cursor-eye-dropper');
+		};
+		DomUI.domElements['feed-fitted-ui-copy'] = copy;
+		DomUI.domElementsUIEdit['copy'] = copy;
+		domFeedFitted.appendChild(copy);
+
+		copyButton = document.createElement('div');
+		copyButton.className = 'dirt-engine-icon eye-dropper';
+		DomUI.domElements['feed-fitted-ui-copy-button'] = copyButton;
+		DomUI.domElementsUIEdit['copy-button'] = copyButton;
+		copy.appendChild(copyButton);
+
+		/*
 		 * Grid
 		 */
 		grid = document.createElement('div');
@@ -2328,6 +2474,38 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-grid-button'] = gridButton;
 		DomUI.domElementsUIEdit['grid-button'] = gridButton;
 		grid.appendChild(gridButton);
+
+		/*
+		 * Inspect
+		 */
+		inspect = document.createElement('div');
+		inspect.className = 'dirt-engine-ui-edit inspect';
+		inspect.onclick = (event: any) => {
+			application.style.display = 'none';
+			applicationTypePixelSize.style.display = 'none';
+			copy.classList.remove('active');
+			inspect.classList.add('active');
+
+			DomUI.uiEditCursorReady = false;
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-eye-dropper');
+			feedFitted.classList.remove('dirt-engine-cursor-pencil');
+			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+			feedFitted.classList.remove('dirt-engine-cursor-fill');
+			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+			DomUI.editCursor();
+
+			feedFitted.classList.add('dirt-engine-cursor-magnifying-glass');
+		};
+		DomUI.domElements['feed-fitted-ui-inspect'] = inspect;
+		DomUI.domElementsUIEdit['inspect'] = inspect;
+		domFeedFitted.appendChild(inspect);
+
+		inspectButton = document.createElement('div');
+		inspectButton.className = 'dirt-engine-icon magnifying-glass';
+		DomUI.domElements['feed-fitted-ui-inspect-button'] = inspectButton;
+		DomUI.domElementsUIEdit['inspect-button'] = inspectButton;
+		inspect.appendChild(inspectButton);
 
 		/*
 		 * Map
@@ -2371,109 +2549,115 @@ export class DomUI {
 			t = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'];
 			t.textContent = '';
 
-			// Table: Audio Block
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Audio Block';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalAudioBlock();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+			if (DomUI.uiEditView === VideoCmdGameModeEditApplyView.AUDIO) {
+				// Table: Audio Block
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Block';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioBlock();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
 
-			// Table: Audio Tag Effect Trigger
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Audio Tag Effect Trigger';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalAudioTagEffectTrigger();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+				// Table: Audio Tag Effect Trigger
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Tag Effect Trigger';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioTagEffectTrigger();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
 
-			// Table: Audio Tag Music Trigger
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Audio Tag Music Trigger';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalAudioTagMusicTrigger();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+				// Table: Audio Tag Music Trigger
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Tag Music Trigger';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioTagMusicTrigger();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
 
-			// Table: Audio Tag Music Fade Trigger
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Audio Tag Music Fade Trigger';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalAudioTagMusicFadeTrigger();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+				// Table: Audio Tag Music Fade Trigger
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Tag Music Fade Trigger';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioTagMusicFadeTrigger();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
 
-			// Table: Audio Tag Music Pause Trigger
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Audio Tag Music Pause Trigger';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalAudioTagMusicPauseTrigger();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+				// Table: Audio Tag Music Pause Trigger
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Tag Music Pause Trigger';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioTagMusicPauseTrigger();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
 
-			// Table: Audio Tag Music Unpause Trigger
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Audio Tag Music Unpause Trigger';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalAudioTagMusicUnpauseTrigger();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+				// Table: Audio Tag Music Unpause Trigger
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Tag Music Unpause Trigger';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioTagMusicUnpauseTrigger();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
+			}
 
-			// Table: Image Block
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Image Block';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalImageBlock();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+			if (DomUI.uiEditView === VideoCmdGameModeEditApplyView.IMAGE) {
+				// Table: Image Block
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Image Block';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalImageBlock();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
+			}
 
-			// Table: Light
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			paletteModalContentBodyButton = document.createElement('div');
-			paletteModalContentBodyButton.className = 'button';
-			paletteModalContentBodyButton.innerText = 'Light';
-			paletteModalContentBodyButton.onclick = () => {
-				DomUI.detailsModalLight();
-			};
-			td.appendChild(paletteModalContentBodyButton);
-			tr.appendChild(td);
-			t.appendChild(tr);
+			if (DomUI.uiEditView === VideoCmdGameModeEditApplyView.LIGHT) {
+				// Table: Light
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Light';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalLight();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
+			}
 
 			paletteModalContentHeader.innerText = 'Palette';
 			paletteModalContentBody.classList.remove('buttoned');
@@ -2585,10 +2769,10 @@ export class DomUI {
 
 						// Remove application cursor
 						if (!DomUI.uiEditCursorReady) {
+							feedFitted.classList.remove('dirt-engine-cursor-eraser');
 							feedFitted.classList.remove('dirt-engine-cursor-pencil');
 							feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 							feedFitted.classList.remove('dirt-engine-cursor-fill');
-							feedFitted.classList.remove('dirt-engine-cursor-eraser');
 							feedFitted.classList.remove('dirt-engine-cursor-stamp');
 							DomUI.editCursor();
 						}
@@ -2624,8 +2808,9 @@ export class DomUI {
 		viewMenuAudio.className = 'button-style audio';
 		viewMenuAudio.innerText = 'Audio';
 		viewMenuAudio.onclick = (event: any) => {
+			DomUI.uiEditView = VideoCmdGameModeEditApplyView.AUDIO;
 			viewMenuAudio.classList.add('active');
-			viewMenuBlock.classList.remove('active');
+			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.remove('active');
 
 			zBackground.classList.add('disabled');
@@ -2634,11 +2819,13 @@ export class DomUI {
 
 			view.classList.add('overlay-text');
 			view.classList.add('audio');
-			view.classList.remove('block');
+			view.classList.remove('image');
 			view.classList.remove('light');
 
-			DomUI.uiEditCursorReady = false;
 			// Undraw cursor
+			DomUI.uiEditCursorReady = false;
+			application.style.display = 'none';
+			applicationTypePixelSize.style.display = 'none';
 
 			if (DomUI.uiEditZ !== VideoCmdGameModeEditApplyZ.PRIMARY) {
 				zPrimary.click();
@@ -2648,12 +2835,13 @@ export class DomUI {
 		DomUI.domElementsUIEdit['mode-menu-audio'] = viewMenuAudio;
 		viewMenu.appendChild(viewMenuAudio);
 
-		viewMenuBlock = document.createElement('div');
-		viewMenuBlock.className = 'button-style block active';
-		viewMenuBlock.innerText = 'Block';
-		viewMenuBlock.onclick = () => {
+		viewMenuImage = document.createElement('div');
+		viewMenuImage.className = 'button-style image active';
+		viewMenuImage.innerText = 'Image';
+		viewMenuImage.onclick = () => {
+			DomUI.uiEditView = VideoCmdGameModeEditApplyView.IMAGE;
 			viewMenuAudio.classList.remove('active');
-			viewMenuBlock.classList.add('active');
+			viewMenuImage.classList.add('active');
 			viewMenuLight.classList.remove('active');
 
 			zBackground.classList.remove('disabled');
@@ -2662,22 +2850,25 @@ export class DomUI {
 
 			view.classList.add('overlay-text');
 			view.classList.remove('audio');
-			view.classList.add('block');
+			view.classList.add('image');
 			view.classList.remove('light');
 
-			DomUI.uiEditCursorReady = false;
 			// Undraw cursor
+			DomUI.uiEditCursorReady = false;
+			application.style.display = 'none';
+			applicationTypePixelSize.style.display = 'none';
 		};
-		DomUI.domElements['feed-fitted-ui-view-menu-block'] = viewMenuBlock;
-		DomUI.domElementsUIEdit['mode-menu-block'] = viewMenuBlock;
-		viewMenu.appendChild(viewMenuBlock);
+		DomUI.domElements['feed-fitted-ui-view-menu-image'] = viewMenuImage;
+		DomUI.domElementsUIEdit['mode-menu-image'] = viewMenuImage;
+		viewMenu.appendChild(viewMenuImage);
 
 		viewMenuLight = document.createElement('div');
 		viewMenuLight.className = 'button-style light';
 		viewMenuLight.innerText = 'Light';
 		viewMenuLight.onclick = () => {
+			DomUI.uiEditView = VideoCmdGameModeEditApplyView.LIGHT;
 			viewMenuAudio.classList.remove('active');
-			viewMenuBlock.classList.remove('active');
+			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.add('active');
 
 			zBackground.classList.add('disabled');
@@ -2686,11 +2877,13 @@ export class DomUI {
 
 			view.classList.add('overlay-text');
 			view.classList.remove('audio');
-			view.classList.remove('block');
+			view.classList.remove('image');
 			view.classList.add('light');
 
-			DomUI.uiEditCursorReady = false;
 			// Undraw cursor
+			DomUI.uiEditCursorReady = false;
+			application.style.display = 'none';
+			applicationTypePixelSize.style.display = 'none';
 
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.BACKGROUND) {
 				zPrimary.click();
@@ -2752,15 +2945,19 @@ export class DomUI {
 				return;
 			}
 			// Display Applications
-			application.style.display = 'flex';
-			applicationTypePixelSize.style.display = 'flex';
+			copy.style.display = 'flex';
+			inspect.style.display = 'flex';
 			palette.style.display = 'flex';
 			view.style.display = 'flex';
 
 			// Display specific canvas
-			DomUI.domElements['feed-overflow-streams-background'].style.display = 'block';
-			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'none';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'none';
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
+
+			// Hide application
+			DomUI.domElementsUIEdit['application'].style.display = 'none';
+			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
@@ -2772,6 +2969,11 @@ export class DomUI {
 				feedFitted.classList.remove('dirt-engine-cursor-stamp');
 				DomUI.editCursor();
 			}
+
+			// Draw Options
+			DomUI.uiEditDraw.foregroundViewer = false;
+			DomUI.uiEditDraw.grid = true;
+			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
 
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.BACKGROUND;
 			zBackground.classList.add('active');
@@ -2791,15 +2993,19 @@ export class DomUI {
 				return;
 			}
 			// Display Applications
-			application.style.display = 'flex';
-			applicationTypePixelSize.style.display = 'flex';
+			copy.style.display = 'flex';
+			inspect.style.display = 'flex';
 			palette.style.display = 'flex';
 			view.style.display = 'flex';
 
 			// Display specific canvas
-			DomUI.domElements['feed-overflow-streams-background'].style.display = 'none';
-			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'block';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'none';
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.75';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
+
+			// Hide application
+			DomUI.domElementsUIEdit['application'].style.display = 'none';
+			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
 			// Remove application cursor
 			DomUI.uiEditCursorReady = false;
@@ -2809,6 +3015,11 @@ export class DomUI {
 			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-stamp');
 			DomUI.editCursor();
+
+			// Draw Options
+			DomUI.uiEditDraw.foregroundViewer = false;
+			DomUI.uiEditDraw.grid = true;
+			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
 
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
 			zBackground.classList.remove('active');
@@ -2828,15 +3039,19 @@ export class DomUI {
 				return;
 			}
 			// Display Applications
-			application.style.display = 'flex';
-			applicationTypePixelSize.style.display = 'flex';
+			copy.style.display = 'flex';
+			inspect.style.display = 'flex';
 			palette.style.display = 'flex';
 			view.style.display = 'flex';
 
 			// Display specific canvas
-			DomUI.domElements['feed-overflow-streams-background'].style.display = 'none';
-			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'none';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'block';
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
+
+			// Hide application
+			DomUI.domElementsUIEdit['application'].style.display = 'none';
+			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
 			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
@@ -2848,6 +3063,11 @@ export class DomUI {
 				feedFitted.classList.remove('dirt-engine-cursor-stamp');
 				DomUI.editCursor();
 			}
+
+			// Draw Options
+			DomUI.uiEditDraw.foregroundViewer = false;
+			DomUI.uiEditDraw.grid = true;
+			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
 
 			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.FOREGROUND;
 			zBackground.classList.remove('active');
@@ -2869,24 +3089,35 @@ export class DomUI {
 			// Hide Applications
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
+			copy.style.display = 'none';
+			inspect.style.display = 'none';
 			palette.style.display = 'none';
 			view.style.display = 'none';
 
 			// Display all canvases
-			DomUI.domElements['feed-overflow-streams-background'].style.display = 'block';
-			DomUI.domElements['feed-overflow-streams-primary'].style.display = 'block';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.display = 'block';
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
 
 			// Remove application cursor
 			DomUI.uiEditCursorReady = false;
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-eye-dropper');
+			feedFitted.classList.remove('dirt-engine-cursor-magnifying-glass');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
-			feedFitted.classList.remove('dirt-engine-cursor-eraser');
 			feedFitted.classList.remove('dirt-engine-cursor-stamp');
 			DomUI.editCursor();
 
+			// Draw Options
+			DomUI.uiEditDraw.foregroundViewer = true;
+			DomUI.uiEditDraw.grid = false;
+			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
+
 			DomUI.uiEditZ = undefined;
+			copy.classList.remove('active');
+			inspect.classList.remove('active');
 			zBackground.classList.remove('active');
 			zGlobal.classList.add('active');
 			zForeground.classList.remove('active');
@@ -2991,6 +3222,63 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-map-modal-content-body-selection-new'] = mapModalContentBodySelection;
 		DomUI.domElementsUIEdit['application-map-modal-content-body-selection-new'] = mapModalContentBodySelection;
 		mapModalContentBody.appendChild(mapModalContentBodySelection);
+
+		/*
+		 * MouseDown Select Modal
+		 */
+		mouseDownSelectModal = document.createElement('div');
+		mouseDownSelectModal.className = 'dirt-engine-ui-edit mouse-down-select-modal modal';
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal'] = mouseDownSelectModal;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal'] = mouseDownSelectModal;
+		domFeedFitted.appendChild(mouseDownSelectModal);
+
+		mouseDownSelectModalContent = document.createElement('div');
+		mouseDownSelectModalContent.className = 'content';
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content'] = mouseDownSelectModalContent;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content'] = mouseDownSelectModalContent;
+		mouseDownSelectModal.appendChild(mouseDownSelectModalContent);
+
+		mouseDownSelectModalContentHeader = document.createElement('div');
+		mouseDownSelectModalContentHeader.className = 'header';
+		mouseDownSelectModalContentHeader.innerText = 'Copy or Inspect';
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-header'] = mouseDownSelectModalContentHeader;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-header'] =
+			mouseDownSelectModalContentHeader;
+		mouseDownSelectModalContent.appendChild(mouseDownSelectModalContentHeader);
+
+		mouseDownSelectModalContentBody = document.createElement('div');
+		mouseDownSelectModalContentBody.className = 'body buttoned';
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-body'] = mouseDownSelectModalContentBody;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-body'] = mouseDownSelectModalContentBody;
+		mouseDownSelectModalContent.appendChild(mouseDownSelectModalContentBody);
+
+		// Table
+		t = document.createElement('table');
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-body-table'] = t;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-body-table'] = t;
+		mouseDownSelectModalContentBody.appendChild(t);
+
+		// Cancel/Save
+		mouseDownSelectModalContentBodyButtons = document.createElement('div');
+		mouseDownSelectModalContentBodyButtons.className = 'buttons';
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons'] =
+			mouseDownSelectModalContentBodyButtons;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-buttons'] =
+			mouseDownSelectModalContentBodyButtons;
+		mouseDownSelectModalContent.appendChild(mouseDownSelectModalContentBodyButtons);
+
+		mouseDownSelectModalContentBodyButtonsCancel = document.createElement('div');
+		mouseDownSelectModalContentBodyButtonsCancel.className = 'button red';
+		mouseDownSelectModalContentBodyButtonsCancel.innerText = 'Close';
+		mouseDownSelectModalContentBodyButtonsCancel.onclick = () => {
+			DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
+			MouseEngine.setSuspendWheel(false);
+		};
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons-cancel'] =
+			mouseDownSelectModalContentBodyButtonsCancel;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-buttons-cancel'] =
+			mouseDownSelectModalContentBodyButtonsCancel;
+		mouseDownSelectModalContentBodyButtons.appendChild(mouseDownSelectModalContentBodyButtonsCancel);
 
 		/*
 		 * Pallete: Modal

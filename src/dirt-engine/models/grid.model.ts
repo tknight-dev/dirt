@@ -134,6 +134,7 @@ export enum GridLightType {
 export interface GridObject extends GridCoordinate {
 	gSizeH: number; // refers to number of grid squares the object takes up
 	gSizeW: number; // refers to number of grid squares the object takes up
+	objectType: GridObjectType;
 	weight: number; // kg
 }
 
@@ -142,4 +143,15 @@ export interface GridObjectActive extends GridObject {
 	timeSinceLastUpdate: number;
 	velX: number; // kph
 	velY: number; // kph
+}
+
+export enum GridObjectType {
+	AUDIO_BLOCK,
+	AUDIO_TRIGGER_EFFECT,
+	AUDIO_TRIGGER_MUSIC,
+	AUDIO_TRIGGER_MUSIC_FADE,
+	AUDIO_TRIGGER_MUSIC_PAUSE,
+	AUDIO_TRIGGER_MUSIC_UNPAUSE,
+	IMAGE_BLOCK,
+	LIGHT,
 }

@@ -121,7 +121,9 @@ $dirt-engine-ui-edit-button-width: 40px;
 	.button,
 	.button-style,
 	&.application,
+	&.copy,
 	&.grid,
+	&.inspect,
 	&.map,
 	&.palette,
 	&.pixelSize,
@@ -237,10 +239,10 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.application {
 		background-color: transparent;
 		border: none;
-		bottom: $dirt-engine-controls-height + 80px;
+		bottom: $dirt-engine-controls-height + 20px;
 		box-shadow: none;
 		height: 40px;
-		right: 80px;
+		right: 200px;
 
 		.button {
 			border-radius: 5px;
@@ -256,6 +258,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 		box-shadow: none;
 		display: block !important;
 		pointer-events: none;
+		z-index: 2 !important;
 
 		.group {
 			display: block;
@@ -288,6 +291,21 @@ $dirt-engine-ui-edit-button-width: 40px;
 		}
 	}
 
+	&.copy {
+		border-radius: 5px;
+		bottom: $dirt-engine-controls-height + 20px;
+		height: 40px;
+		right: 80px;
+		width: 40px;
+
+		.dirt-engine-icon {
+			min-height: 30px;
+			height: 30px;
+			min-width: 30px;
+			width: 30px;
+		}
+	}
+
 	&.grid {
 		border-radius: 5px;
 		bottom: $dirt-engine-controls-height + 20px;
@@ -309,6 +327,21 @@ $dirt-engine-ui-edit-button-width: 40px;
 			}
 			.header {
 			}
+		}
+	}
+
+	&.inspect {
+		border-radius: 5px;
+		bottom: $dirt-engine-controls-height + 20px;
+		height: 40px;
+		right: 20px;
+		width: 40px;
+
+		.dirt-engine-icon {
+			min-height: 30px;
+			height: 30px;
+			min-width: 30px;
+			width: 30px;
 		}
 	}
 
@@ -346,11 +379,46 @@ $dirt-engine-ui-edit-button-width: 40px;
 		}
 	}
 
+	&.mouse-down-select-modal {
+		.content {
+			.body {
+				overflow-y: auto;
+
+				table {
+					tr {
+						td {
+							background-color: rgba(128, 128, 128, 0.25);
+							text-align: left !important;
+
+							&.clickable {
+								cursor: pointer;
+							}
+						}
+
+						&:nth-child(odd) {
+							td {
+								background-color: rgba(64, 64, 64, 0.25);
+							}
+						}
+					}
+				}
+			}
+			.buttons {
+				.button {
+					height: 40px;
+					width: 100% !important;
+				}
+			}
+			.header {
+			}
+		}
+	}
+
 	&.palette {
 		border-radius: 5px;
-		bottom: $dirt-engine-controls-height + 80px;
+		bottom: $dirt-engine-controls-height + 20px;
 		height: 40px;
-		right: 20px;
+		right: 140px;
 		width: 40px;
 
 		.dirt-engine-icon {
@@ -382,16 +450,17 @@ $dirt-engine-ui-edit-button-width: 40px;
 
 	&.pixelSize {
 		border-radius: 5px;
-		bottom: $dirt-engine-controls-height + 20px;
+		bottom: $dirt-engine-controls-height + 80px;
 		height: 40px;
 		right: 20px;
 		padding-left: 5px;
+		z-index: 1 !important;
 
 		input {
 			cursor: pointer;
 
 			&.range {
-				width: 120px;
+				width: 144px; // +4 to offset borders
 			}
 
 			&.text {
@@ -463,11 +532,14 @@ $dirt-engine-ui-edit-button-width: 40px;
 				width: auto;
 
 				.after-image {
-					height: auto;
+					height: 100%;
 					pointer-events: none;
 					position: absolute;
 					right: 0;
-					width: 25%;
+
+					img {
+						object-fit: contain;
+					}
 				}
 			}
 		}
@@ -550,9 +622,9 @@ $dirt-engine-ui-edit-button-width: 40px;
 					left: 50px;
 				}
 			}
-			&.block {
+			&.image {
 				&::after {
-					content: 'Block';
+					content: 'Image';
 					left: 50px;
 				}
 			}
@@ -567,6 +639,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 
 	&.z {
 		background-color: transparent;
+		box-shadow: none;
 		left: 0;
 		pointer-events: none;
 		right: 0;
