@@ -3,8 +3,8 @@ import {
 	AssetImageSrcResolution,
 	AssetManifest,
 	DirtEngine,
-	VideoCmdSettings,
-	VideoCmdSettingsFPS,
+	VideoInputCmdSettings,
+	VideoInputCmdSettingsFPS,
 } from './dirt-engine/dirt.engine';
 import { audioManifest } from './assets/audio.asset';
 import { imageManifest } from './assets/image.asset';
@@ -31,9 +31,9 @@ class Dirt {
 				},
 			},
 			domGame: HTMLElement = <HTMLElement>document.getElementById('game'),
-			settings: VideoCmdSettings = {
+			settings: VideoInputCmdSettings = {
 				foregroundViewerPercentageOfViewport: 1.5,
-				fps: VideoCmdSettingsFPS._60,
+				fps: VideoInputCmdSettingsFPS._60,
 				fpsVisible: true,
 				mapVisible: true,
 				resolution: AssetImageSrcResolution.ULTRA,

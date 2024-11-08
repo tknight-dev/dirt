@@ -22,19 +22,19 @@ import {
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
-import { Map, MapActive } from '../models/map.model';
+import { Map, MapActive, MapConfig } from '../models/map.model';
 import { MapEditEngine } from '../engines/map-edit.engine';
 import { MouseAction, MouseEngine } from '../engines/mouse.engine';
 import { UtilEngine } from '../engines/util.engine';
 import {
-	VideoCmdGameModeEditApply,
-	VideoCmdGameModeEditApplyType,
-	VideoCmdGameModeEditApplyView,
-	VideoCmdGameModeEditApplyZ,
-	VideoCmdGameModeEditDraw,
-	VideoWorkerCmdEditCameraUpdate,
+	VideoInputCmdGameModeEditApply,
+	VideoInputCmdGameModeEditApplyType,
+	VideoInputCmdGameModeEditApplyView,
+	VideoInputCmdGameModeEditApplyZ,
+	VideoInputCmdGameModeEditDraw,
+	VideoOutputCmdEditCameraUpdate,
 } from '../models/video-worker-cmds.model';
-import { VideoEngine } from '../engines/video.engine';
+import { VideoBus } from '../engines/buses/video.bus';
 
 /**
  * @author tknight-dev
@@ -57,12 +57,12 @@ export class DomUI {
 	private static domUIinitialized: boolean;
 	private static uiEditApplicationProperties: {};
 	private static uiEditApplicationType: ApplicationType;
-	public static uiEditApplyType: VideoCmdGameModeEditApplyType;
+	public static uiEditApplyType: VideoInputCmdGameModeEditApplyType;
 	private static uiEditBrushSize: number;
 	private static uiEditCursorGInPh: number;
 	private static uiEditCursorGInPw: number;
 	private static uiEditCursorReady: boolean;
-	private static uiEditDraw: VideoCmdGameModeEditDraw;
+	private static uiEditDraw: VideoInputCmdGameModeEditDraw;
 	protected static uiEditMode: boolean;
 	private static uiEditMouseCmdCollection: DoubleLinkedList<number> = new DoubleLinkedList<number>();
 	private static uiEditMouseCmdCollectionHashesEffected: { [key: number]: null } = {};
@@ -71,8 +71,8 @@ export class DomUI {
 	private static uiEditMouseCmdCollectionEngaged: boolean;
 	private static uiEditMouseCmdCollectionPromise: Promise<void>;
 	private static uiEditSpinnerStatus: boolean;
-	private static uiEditView: VideoCmdGameModeEditApplyView;
-	private static uiEditZ: VideoCmdGameModeEditApplyZ | undefined;
+	private static uiEditView: VideoInputCmdGameModeEditApplyView;
+	private static uiEditZ: VideoInputCmdGameModeEditApplyZ | undefined;
 
 	private static detailsModalSelector(
 		assetAudio: boolean,
@@ -206,7 +206,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.AUDIO_BLOCK;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_BLOCK;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -345,7 +345,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -509,7 +509,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -629,7 +629,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -709,7 +709,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -789,7 +789,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -857,7 +857,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Asset - Damaged
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Damaged';
@@ -887,7 +887,7 @@ export class DomUI {
 		}
 
 		// Asset - Damaged Walked On
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Damaged Walked On Audio Effect';
@@ -918,7 +918,7 @@ export class DomUI {
 		}
 
 		// Asset - Walked On
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Walked On Audio Effect';
@@ -949,7 +949,7 @@ export class DomUI {
 		}
 
 		// Damageable
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Damageable';
@@ -983,7 +983,7 @@ export class DomUI {
 		}
 
 		// strengthToDamangeInN
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Damange In N';
@@ -1004,7 +1004,7 @@ export class DomUI {
 		}
 
 		// strengthToDestroyInN
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Destroy In N';
@@ -1053,7 +1053,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Viscocity
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Viscocity';
@@ -1074,7 +1074,7 @@ export class DomUI {
 		}
 
 		// Weight In Kg
-		if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Weight In Kg';
@@ -1103,7 +1103,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.IMAGE_BLOCK;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.IMAGE_BLOCK;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-image');
@@ -1135,7 +1135,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			//DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.LIGHT;
+			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.LIGHT;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-light');
@@ -1198,13 +1198,13 @@ export class DomUI {
 	/**
 	 * Updates the UI cache of the camera contained within the mapActive
 	 */
-	protected static editCameraUpdate(videoWorkerCmdEditCameraUpdate: VideoWorkerCmdEditCameraUpdate) {
-		MapEditEngine.uiCameraUpdate(videoWorkerCmdEditCameraUpdate);
+	protected static editCameraUpdate(VideoOutputCmdEditCameraUpdate: VideoOutputCmdEditCameraUpdate) {
+		MapEditEngine.uiCameraUpdate(VideoOutputCmdEditCameraUpdate);
 
 		DomUI.uiEditCursorGInPh =
-			Math.round((videoWorkerCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
+			Math.round((VideoOutputCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
 		DomUI.uiEditCursorGInPw =
-			Math.round((videoWorkerCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
+			Math.round((VideoOutputCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
 		DomUI.editCursor();
 	}
 
@@ -1337,7 +1337,7 @@ export class DomUI {
 
 	private static editMapSelect(assetMapId: string | undefined): void {
 		DomUI.displaySpinner(true);
-		VideoEngine.workerMapLoadById(assetMapId);
+		VideoBus.outputMapLoadById(assetMapId);
 	}
 
 	public static editMouseDown(mouseAction: MouseAction): void {
@@ -1350,7 +1350,7 @@ export class DomUI {
 					MapEditEngine.getGridProperty(
 						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
 						DomUI.uiEditView,
-						<VideoCmdGameModeEditApplyZ>DomUI.uiEditZ,
+						<VideoInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
 					),
 				);
 			} else if (classList.contains('dirt-engine-cursor-magnifying-glass')) {
@@ -1359,7 +1359,7 @@ export class DomUI {
 					MapEditEngine.getGridProperty(
 						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
 						DomUI.uiEditView,
-						<VideoCmdGameModeEditApplyZ>DomUI.uiEditZ,
+						<VideoInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
 					),
 				);
 			}
@@ -1420,7 +1420,7 @@ export class DomUI {
 			td.onclick = () => {
 				if (copy) {
 					DomUI.uiEditApplicationProperties = gridObject;
-					DomUI.uiEditApplyType = VideoCmdGameModeEditApplyType.IMAGE_BLOCK;
+					DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.IMAGE_BLOCK;
 
 					// Show cursor config buttons
 					DomUI.domElementsUIEdit['application'].style.display = 'flex';
@@ -1474,7 +1474,7 @@ export class DomUI {
 
 	// Submit commands based on interval
 	private static editMouseProcessor(resolve: any): void {
-		let applyType: VideoCmdGameModeEditApplyType,
+		let applyType: VideoInputCmdGameModeEditApplyType,
 			arrayPush: any = Array.prototype.push,
 			collection: DoubleLinkedList<number> = DomUI.uiEditMouseCmdCollection,
 			coordinate: GridCoordinate,
@@ -1503,13 +1503,13 @@ export class DomUI {
 						gHashes,
 						<any>DomUI.uiEditApplicationProperties,
 						DomUI.uiEditApplicationType === ApplicationType.ERASER
-							? VideoCmdGameModeEditApplyType.ERASE
+							? VideoInputCmdGameModeEditApplyType.ERASE
 							: DomUI.uiEditApplyType,
 						z,
 					); // Auto-applies to map
 
 					if (payload) {
-						VideoEngine.workerGameModeEditApply(payload);
+						VideoBus.outputGameModeEditApply(payload);
 					} else {
 						console.error('DomIU > editMouseProcessor: payload failed to generate');
 					}
@@ -1521,8 +1521,8 @@ export class DomUI {
 				}
 			}, 40),
 			length: number,
-			payload: VideoCmdGameModeEditApply | undefined,
-			z: VideoCmdGameModeEditApplyZ = <VideoCmdGameModeEditApplyZ>DomUI.uiEditZ;
+			payload: VideoInputCmdGameModeEditApply | undefined,
+			z: VideoInputCmdGameModeEditApplyZ = <VideoInputCmdGameModeEditApplyZ>DomUI.uiEditZ;
 		gridConfig = MapEditEngine.getGridConfigActive();
 	}
 
@@ -1674,13 +1674,13 @@ export class DomUI {
 	private static editRedo(): void {
 		DomUI.displaySpinner(true);
 		MapEditEngine.historyRedo();
-		VideoEngine.workerGameModeEditRedo();
+		VideoBus.outputGameModeEditRedo();
 	}
 
 	private static editUndo(): void {
 		DomUI.displaySpinner(true);
 		MapEditEngine.historyUndo();
-		VideoEngine.workerGameModeEditUndo();
+		VideoBus.outputGameModeEditUndo();
 	}
 
 	protected static async initializeDomUI(oldTVIntro: boolean): Promise<void> {
@@ -1693,7 +1693,7 @@ export class DomUI {
 			(a: AssetMap, b: AssetMap) => a.order - b.order,
 		);
 
-		VideoEngine.setCallbackMapAsset((mapActive: MapActive | undefined) => {
+		VideoBus.setCallbackMapAsset((mapActive: MapActive | undefined) => {
 			if (mapActive) {
 				MapEditEngine.load(mapActive);
 
@@ -1708,8 +1708,12 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application-map-modal'].style.display = 'none';
 			DomUI.displaySpinner(false);
 		});
-		VideoEngine.setCallbackEditComplete(() => {
+		VideoBus.setCallbackEditComplete(() => {
 			DomUI.displaySpinner(false);
+		});
+		VideoBus.setCallbackMapHourOfDayEff((hourOfDayEff: number) => {
+			DomUI.updateHourOfDayEff(hourOfDayEff);
+			MapEditEngine.updateUIHourOfDayEff(hourOfDayEff);
 		});
 
 		await DomUI.initDom(maps, oldTVIntro);
@@ -1747,7 +1751,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['map'].click();
 			DomUI.domElementsUIEdit['mode-menu-image'].click();
 
-			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
+			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.PRIMARY;
 			DomUI.domElementsUIEdit['z-global'].click();
 		} else {
 			DomUI.domElements['feed-fitted'].removeEventListener('mousemove', DomUI.editCursorMove);
@@ -2120,7 +2124,9 @@ export class DomUI {
 			settingsModalContentBodyButtons: HTMLElement,
 			settingsModalContentBodyButtonsApply: HTMLElement,
 			settingsModalContentBodyButtonsCancel: HTMLElement,
-			settingsModalContentBodyText: HTMLInputElement,
+			settingsModalContentBodyClockSpeed: HTMLInputElement,
+			settingsModalContentBodyHourOfDay: HTMLInputElement,
+			settingsModalContentBodyMapName: HTMLInputElement,
 			settingsModalContentHeader: HTMLElement,
 			spinnerModal: HTMLElement,
 			spinnerModalContent: HTMLElement,
@@ -2549,7 +2555,7 @@ export class DomUI {
 			t = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'];
 			t.textContent = '';
 
-			if (DomUI.uiEditView === VideoCmdGameModeEditApplyView.AUDIO) {
+			if (DomUI.uiEditView === VideoInputCmdGameModeEditApplyView.AUDIO) {
 				// Table: Audio Block
 				tr = document.createElement('tr');
 				td = document.createElement('td');
@@ -2629,7 +2635,7 @@ export class DomUI {
 				t.appendChild(tr);
 			}
 
-			if (DomUI.uiEditView === VideoCmdGameModeEditApplyView.IMAGE) {
+			if (DomUI.uiEditView === VideoInputCmdGameModeEditApplyView.IMAGE) {
 				// Table: Image Block
 				tr = document.createElement('tr');
 				td = document.createElement('td');
@@ -2644,7 +2650,7 @@ export class DomUI {
 				t.appendChild(tr);
 			}
 
-			if (DomUI.uiEditView === VideoCmdGameModeEditApplyView.LIGHT) {
+			if (DomUI.uiEditView === VideoInputCmdGameModeEditApplyView.LIGHT) {
 				// Table: Light
 				tr = document.createElement('tr');
 				td = document.createElement('td');
@@ -2731,11 +2737,12 @@ export class DomUI {
 		settings = document.createElement('div');
 		settings.className = 'dirt-engine-ui-edit settings';
 		settings.onclick = (event: any) => {
+			let mapActive: MapActive = MapEditEngine.getMapActive();
 			settings.classList.add('active');
 
-			// Load in current values
-			// TODO
-			//settingsModalContentBodyText.value = MapEditEngine.map.name;
+			settingsModalContentBodyClockSpeed.value = String(mapActive.clockSpeedRelativeToEarth);
+			settingsModalContentBodyHourOfDay.value = String(mapActive.hourOfDay);
+			settingsModalContentBodyMapName.value = mapActive.name;
 
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'flex';
 			MouseEngine.setSuspendWheel(true);
@@ -2808,7 +2815,7 @@ export class DomUI {
 		viewMenuAudio.className = 'button-style audio';
 		viewMenuAudio.innerText = 'Audio';
 		viewMenuAudio.onclick = (event: any) => {
-			DomUI.uiEditView = VideoCmdGameModeEditApplyView.AUDIO;
+			DomUI.uiEditView = VideoInputCmdGameModeEditApplyView.AUDIO;
 			viewMenuAudio.classList.add('active');
 			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.remove('active');
@@ -2827,7 +2834,7 @@ export class DomUI {
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
 
-			if (DomUI.uiEditZ !== VideoCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ !== VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 				zPrimary.click();
 			}
 		};
@@ -2839,7 +2846,7 @@ export class DomUI {
 		viewMenuImage.className = 'button-style image active';
 		viewMenuImage.innerText = 'Image';
 		viewMenuImage.onclick = () => {
-			DomUI.uiEditView = VideoCmdGameModeEditApplyView.IMAGE;
+			DomUI.uiEditView = VideoInputCmdGameModeEditApplyView.IMAGE;
 			viewMenuAudio.classList.remove('active');
 			viewMenuImage.classList.add('active');
 			viewMenuLight.classList.remove('active');
@@ -2866,7 +2873,7 @@ export class DomUI {
 		viewMenuLight.className = 'button-style light';
 		viewMenuLight.innerText = 'Light';
 		viewMenuLight.onclick = () => {
-			DomUI.uiEditView = VideoCmdGameModeEditApplyView.LIGHT;
+			DomUI.uiEditView = VideoInputCmdGameModeEditApplyView.LIGHT;
 			viewMenuAudio.classList.remove('active');
 			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.add('active');
@@ -2885,7 +2892,7 @@ export class DomUI {
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
 				zPrimary.click();
 			}
 		};
@@ -2941,7 +2948,7 @@ export class DomUI {
 		zBackground.className = 'button background';
 		zBackground.innerText = 'B';
 		zBackground.onclick = () => {
-			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
 				return;
 			}
 			// Display Applications
@@ -2959,7 +2966,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -2973,9 +2980,9 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
-			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 
-			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.BACKGROUND;
+			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.BACKGROUND;
 			zBackground.classList.add('active');
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
@@ -2989,7 +2996,7 @@ export class DomUI {
 		zPrimary.className = 'button primary active';
 		zPrimary.innerText = 'P';
 		zPrimary.onclick = () => {
-			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 				return;
 			}
 			// Display Applications
@@ -3019,9 +3026,9 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
-			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 
-			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.PRIMARY;
+			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.PRIMARY;
 			zBackground.classList.remove('active');
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
@@ -3035,7 +3042,7 @@ export class DomUI {
 		zForeground.className = 'button foreground';
 		zForeground.innerText = 'F';
 		zForeground.onclick = () => {
-			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.FOREGROUND) {
 				return;
 			}
 			// Display Applications
@@ -3053,7 +3060,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -3067,9 +3074,9 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
-			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 
-			DomUI.uiEditZ = VideoCmdGameModeEditApplyZ.FOREGROUND;
+			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.FOREGROUND;
 			zBackground.classList.remove('active');
 			zGlobal.classList.remove('active');
 			zForeground.classList.add('active');
@@ -3113,7 +3120,7 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = true;
 			DomUI.uiEditDraw.grid = false;
-			VideoEngine.workerGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 
 			DomUI.uiEditZ = undefined;
 			copy.classList.remove('active');
@@ -3398,12 +3405,56 @@ export class DomUI {
 		tr.appendChild(td);
 
 		td = document.createElement('td');
-		settingsModalContentBodyText = document.createElement('input');
-		settingsModalContentBodyText.autocomplete = 'off';
-		settingsModalContentBodyText.className = 'input';
-		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-name'] = settingsModalContentBodyText;
-		DomUI.domElementsUIEdit['application-settings-modal-content-body-name'] = settingsModalContentBodyText;
-		td.appendChild(settingsModalContentBodyText);
+		settingsModalContentBodyMapName = document.createElement('input');
+		settingsModalContentBodyMapName.autocomplete = 'off';
+		settingsModalContentBodyMapName.className = 'input';
+		settingsModalContentBodyMapName.type = 'text';
+		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-name'] = settingsModalContentBodyMapName;
+		DomUI.domElementsUIEdit['application-settings-modal-content-body-name'] = settingsModalContentBodyMapName;
+		td.appendChild(settingsModalContentBodyMapName);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Input table: clock speed relative to earch
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Clock Speed Relative to Earth';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		settingsModalContentBodyClockSpeed = document.createElement('input');
+		settingsModalContentBodyClockSpeed.autocomplete = 'off';
+		settingsModalContentBodyClockSpeed.className = 'input';
+		settingsModalContentBodyClockSpeed.max = '86400';
+		settingsModalContentBodyClockSpeed.min = '0';
+		settingsModalContentBodyClockSpeed.step = '1';
+		settingsModalContentBodyClockSpeed.type = 'range';
+		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-clock-speed'] =
+			settingsModalContentBodyClockSpeed;
+		DomUI.domElementsUIEdit['application-settings-modal-content-body-clock-speed'] =
+			settingsModalContentBodyClockSpeed;
+		td.appendChild(settingsModalContentBodyClockSpeed);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Input table: hour of day
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Hour of Day';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		settingsModalContentBodyHourOfDay = document.createElement('input');
+		settingsModalContentBodyHourOfDay.autocomplete = 'off';
+		settingsModalContentBodyHourOfDay.className = 'input';
+		settingsModalContentBodyHourOfDay.max = '23';
+		settingsModalContentBodyHourOfDay.min = '0';
+		settingsModalContentBodyHourOfDay.step = '1';
+		settingsModalContentBodyHourOfDay.type = 'range';
+		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-hour-of-day'] = settingsModalContentBodyHourOfDay;
+		DomUI.domElementsUIEdit['application-settings-modal-content-body-hour-of-day'] =
+			settingsModalContentBodyHourOfDay;
+		td.appendChild(settingsModalContentBodyHourOfDay);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -3435,8 +3486,15 @@ export class DomUI {
 		settingsModalContentBodyButtonsApply.className = 'button green';
 		settingsModalContentBodyButtonsApply.innerText = 'Apply';
 		settingsModalContentBodyButtonsApply.onclick = () => {
-			//TODO
-			//MapEditEngine.map.name = settingsModalContentBodyText.value.trim();
+			let mapConfig: MapConfig = {
+				clockSpeedRelativeToEarth: Number(settingsModalContentBodyClockSpeed.value),
+				gridConfigs: MapEditEngine.getMapActive().gridConfigs,
+				hourOfDay: Number(settingsModalContentBodyHourOfDay.value),
+				name: settingsModalContentBodyMapName.value,
+			};
+
+			MapEditEngine.updateMapSettings(mapConfig);
+			VideoBus.outputGameModeEditSettings(mapConfig);
 
 			settings.classList.remove('active');
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'none';
@@ -3460,5 +3518,17 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-spinner-modal-content'] = spinnerModalContent;
 		DomUI.domElementsUIEdit['application-spinner-modal-content'] = spinnerModalContent;
 		spinnerModal.appendChild(spinnerModalContent);
+	}
+
+	private static updateHourOfDayEff(hourOfDayEff: number): void {
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		console.log('updateHourOfDayEff', hourOfDayEff);
 	}
 }

@@ -14,20 +14,20 @@ import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
 import { MouseAction } from './mouse.engine';
 import {
-	VideoCmdGameModeEditApply,
-	VideoCmdGameModeEditApplyAudioBlock,
-	VideoCmdGameModeEditApplyAudioTriggerEffect,
-	VideoCmdGameModeEditApplyAudioTriggerMusic,
-	VideoCmdGameModeEditApplyAudioTriggerMusicFade,
-	VideoCmdGameModeEditApplyAudioTriggerMusicPause,
-	VideoCmdGameModeEditApplyAudioTriggerMusicUnpause,
-	VideoCmdGameModeEditApplyErase,
-	VideoCmdGameModeEditApplyImageBlock,
-	VideoCmdGameModeEditApplyLight,
-	VideoCmdGameModeEditApplyType,
-	VideoCmdGameModeEditApplyView,
-	VideoCmdGameModeEditApplyZ,
-	VideoWorkerCmdEditCameraUpdate,
+	VideoInputCmdGameModeEditApply,
+	VideoInputCmdGameModeEditApplyAudioBlock,
+	VideoInputCmdGameModeEditApplyAudioTriggerEffect,
+	VideoInputCmdGameModeEditApplyAudioTriggerMusic,
+	VideoInputCmdGameModeEditApplyAudioTriggerMusicFade,
+	VideoInputCmdGameModeEditApplyAudioTriggerMusicPause,
+	VideoInputCmdGameModeEditApplyAudioTriggerMusicUnpause,
+	VideoInputCmdGameModeEditApplyErase,
+	VideoInputCmdGameModeEditApplyImageBlock,
+	VideoInputCmdGameModeEditApplyLight,
+	VideoInputCmdGameModeEditApplyType,
+	VideoInputCmdGameModeEditApplyView,
+	VideoInputCmdGameModeEditApplyZ,
+	VideoOutputCmdEditCameraUpdate,
 } from '../models/video-worker-cmds.model';
 import { UtilEngine } from './util.engine';
 import { LightingEngine } from './lighting.engine';
@@ -50,69 +50,71 @@ export class MapEditEngine {
 	public static uiChanged: boolean;
 	public static uiLoaded: boolean;
 
-	public static apply(apply: VideoCmdGameModeEditApply): void {
+	public static apply(apply: VideoInputCmdGameModeEditApply): void {
 		MapEditEngine.historyAdd();
 
 		switch (apply.applyType) {
-			case VideoCmdGameModeEditApplyType.AUDIO_BLOCK:
-				MapEditEngine.applyAudioBlock(<VideoCmdGameModeEditApplyAudioBlock>apply);
+			case VideoInputCmdGameModeEditApplyType.AUDIO_BLOCK:
+				MapEditEngine.applyAudioBlock(<VideoInputCmdGameModeEditApplyAudioBlock>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT:
-				MapEditEngine.applyAudioTriggerEffect(<VideoCmdGameModeEditApplyAudioTriggerEffect>apply);
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT:
+				MapEditEngine.applyAudioTriggerEffect(<VideoInputCmdGameModeEditApplyAudioTriggerEffect>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC:
-				MapEditEngine.applyAudioTriggerMusic(<VideoCmdGameModeEditApplyAudioTriggerMusic>apply);
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC:
+				MapEditEngine.applyAudioTriggerMusic(<VideoInputCmdGameModeEditApplyAudioTriggerMusic>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE:
-				MapEditEngine.applyAudioTriggerMusicFade(<VideoCmdGameModeEditApplyAudioTriggerMusicFade>apply);
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE:
+				MapEditEngine.applyAudioTriggerMusicFade(<VideoInputCmdGameModeEditApplyAudioTriggerMusicFade>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
-				MapEditEngine.applyAudioTriggerMusicPause(<VideoCmdGameModeEditApplyAudioTriggerMusicPause>apply);
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
+				MapEditEngine.applyAudioTriggerMusicPause(<VideoInputCmdGameModeEditApplyAudioTriggerMusicPause>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
-				MapEditEngine.applyAudioTriggerMusicUnpause(<VideoCmdGameModeEditApplyAudioTriggerMusicUnpause>apply);
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
+				MapEditEngine.applyAudioTriggerMusicUnpause(
+					<VideoInputCmdGameModeEditApplyAudioTriggerMusicUnpause>apply,
+				);
 				break;
-			case VideoCmdGameModeEditApplyType.ERASE:
-				MapEditEngine.applyErase(<VideoCmdGameModeEditApplyErase>apply);
+			case VideoInputCmdGameModeEditApplyType.ERASE:
+				MapEditEngine.applyErase(<VideoInputCmdGameModeEditApplyErase>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.IMAGE_BLOCK:
-				MapEditEngine.applyImageBlock(<VideoCmdGameModeEditApplyImageBlock>apply);
+			case VideoInputCmdGameModeEditApplyType.IMAGE_BLOCK:
+				MapEditEngine.applyImageBlock(<VideoInputCmdGameModeEditApplyImageBlock>apply);
 				break;
-			case VideoCmdGameModeEditApplyType.LIGHT:
-				MapEditEngine.applyLight(<VideoCmdGameModeEditApplyLight>apply);
+			case VideoInputCmdGameModeEditApplyType.LIGHT:
+				MapEditEngine.applyLight(<VideoInputCmdGameModeEditApplyLight>apply);
 				break;
 		}
 	}
 
-	private static applyAudioBlock(apply: VideoCmdGameModeEditApplyAudioBlock): void {
+	private static applyAudioBlock(apply: VideoInputCmdGameModeEditApplyAudioBlock): void {
 		console.warn('MapEditEngine > applyAudioArea: not yet implemented');
 	}
 
-	private static applyAudioTriggerEffect(apply: VideoCmdGameModeEditApplyAudioTriggerEffect): void {
+	private static applyAudioTriggerEffect(apply: VideoInputCmdGameModeEditApplyAudioTriggerEffect): void {
 		console.warn('MapEditEngine > applyAudioTriggerEffect: not yet implemented');
 	}
 
-	private static applyAudioTriggerMusic(apply: VideoCmdGameModeEditApplyAudioTriggerMusic): void {
+	private static applyAudioTriggerMusic(apply: VideoInputCmdGameModeEditApplyAudioTriggerMusic): void {
 		console.warn('MapEditEngine > applyAudioTriggerMusic: not yet implemented');
 	}
 
-	private static applyAudioTriggerMusicFade(apply: VideoCmdGameModeEditApplyAudioTriggerMusicFade): void {
+	private static applyAudioTriggerMusicFade(apply: VideoInputCmdGameModeEditApplyAudioTriggerMusicFade): void {
 		console.warn('MapEditEngine > applyAudioTriggerMusicFade: not yet implemented');
 	}
 
-	private static applyAudioTriggerMusicPause(apply: VideoCmdGameModeEditApplyAudioTriggerMusicPause): void {
+	private static applyAudioTriggerMusicPause(apply: VideoInputCmdGameModeEditApplyAudioTriggerMusicPause): void {
 		console.warn('MapEditEngine > applyAudioTriggerMusicPause: not yet implemented');
 	}
 
-	private static applyAudioTriggerMusicUnpause(apply: VideoCmdGameModeEditApplyAudioTriggerMusicUnpause): void {
+	private static applyAudioTriggerMusicUnpause(apply: VideoInputCmdGameModeEditApplyAudioTriggerMusicUnpause): void {
 		console.warn('MapEditEngine > applyAudioTriggerMusicUnpause: not yet implemented');
 	}
 
-	private static applyErase(apply: VideoCmdGameModeEditApplyErase): void {
+	private static applyErase(apply: VideoInputCmdGameModeEditApplyErase): void {
 		let gHashes: number[] = apply.gHashes,
 			grid: Grid,
 			imageBlocks: GridBlockTable<GridImageBlock>,
-			z: VideoCmdGameModeEditApplyZ = apply.z;
+			z: VideoInputCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
 			grid = KernelEngine.getMapActive().gridActive;
@@ -121,9 +123,9 @@ export class MapEditEngine {
 		}
 
 		// Select object
-		if (z === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+		if (z === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
 			imageBlocks = grid.imageBlocksBackground;
-		} else if (z === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+		} else if (z === VideoInputCmdGameModeEditApplyZ.FOREGROUND) {
 			imageBlocks = grid.imageBlocksForeground;
 		} else {
 			imageBlocks = grid.imageBlocksPrimary;
@@ -143,14 +145,14 @@ export class MapEditEngine {
 		}
 	}
 
-	private static applyImageBlock(apply: VideoCmdGameModeEditApplyImageBlock): void {
+	private static applyImageBlock(apply: VideoInputCmdGameModeEditApplyImageBlock): void {
 		let gCoordinate: GridCoordinate,
 			gHash: number,
 			gHashes: number[] = apply.gHashes,
 			grid: Grid,
 			imageBlocks: GridBlockTable<GridImageBlock>,
 			properties: any = JSON.parse(JSON.stringify(apply)),
-			z: VideoCmdGameModeEditApplyZ = apply.z;
+			z: VideoInputCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
 			grid = KernelEngine.getMapActive().gridActive;
@@ -159,9 +161,9 @@ export class MapEditEngine {
 		}
 
 		// Select object
-		if (z === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+		if (z === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
 			imageBlocks = grid.imageBlocksBackground;
-		} else if (z === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+		} else if (z === VideoInputCmdGameModeEditApplyZ.FOREGROUND) {
 			imageBlocks = grid.imageBlocksForeground;
 		} else {
 			imageBlocks = grid.imageBlocksPrimary;
@@ -267,7 +269,7 @@ export class MapEditEngine {
 		gridBlockTable.hashesGyByGx = hashesGyByGx;
 	}
 
-	private static applyLight(apply: VideoCmdGameModeEditApplyLight): void {
+	private static applyLight(apply: VideoInputCmdGameModeEditApplyLight): void {
 		console.warn('MapEditEngine > applyLight: not yet implemented');
 	}
 
@@ -359,10 +361,10 @@ export class MapEditEngine {
 	/**
 	 * UI only, the video thread sent a camera update through the bus to the UI. So the UI has to update it's cache of the map's camera.
 	 */
-	public static uiCameraUpdate(videoWorkerCmdEditCameraUpdate: VideoWorkerCmdEditCameraUpdate) {
+	public static uiCameraUpdate(VideoOutputCmdEditCameraUpdate: VideoOutputCmdEditCameraUpdate) {
 		MapEditEngine.mapActiveUI.camera = Object.assign(
 			MapEditEngine.mapActiveUI.camera,
-			videoWorkerCmdEditCameraUpdate,
+			VideoOutputCmdEditCameraUpdate,
 		);
 	}
 
@@ -371,43 +373,43 @@ export class MapEditEngine {
 	 */
 	public static uiApply(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		type: VideoCmdGameModeEditApplyType,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApply | undefined {
-		let apply: VideoCmdGameModeEditApply;
+		properties: VideoInputCmdGameModeEditApply,
+		type: VideoInputCmdGameModeEditApplyType,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApply | undefined {
+		let apply: VideoInputCmdGameModeEditApply;
 
 		MapEditEngine.uiChanged = true;
 
 		switch (type) {
-			case VideoCmdGameModeEditApplyType.AUDIO_BLOCK:
+			case VideoInputCmdGameModeEditApplyType.AUDIO_BLOCK:
 				apply = MapEditEngine.uiApplyAudioBlock(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT:
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT:
 				apply = MapEditEngine.uiApplyAudioTriggerEffect(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC:
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC:
 				apply = MapEditEngine.uiApplyAudioTriggerMusic(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE:
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE:
 				apply = MapEditEngine.uiApplyAudioTriggerMusicFade(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
 				apply = MapEditEngine.uiApplyAudioTriggerMusicPause(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
+			case VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
 				apply = MapEditEngine.uiApplyAudioTriggerMusicUnpause(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.ERASE:
-				apply = <VideoCmdGameModeEditApplyErase>{
+			case VideoInputCmdGameModeEditApplyType.ERASE:
+				apply = <VideoInputCmdGameModeEditApplyErase>{
 					gHashes: gHashes,
 					z: z,
 				};
 				break;
-			case VideoCmdGameModeEditApplyType.IMAGE_BLOCK:
+			case VideoInputCmdGameModeEditApplyType.IMAGE_BLOCK:
 				apply = MapEditEngine.uiApplyImageBlock(gHashes, properties, z);
 				break;
-			case VideoCmdGameModeEditApplyType.LIGHT:
+			case VideoInputCmdGameModeEditApplyType.LIGHT:
 				apply = MapEditEngine.uiApplyLight(gHashes, properties, z);
 				break;
 			default:
@@ -423,60 +425,60 @@ export class MapEditEngine {
 	// Try to have unique colors for every area tag.. maybe array of colors?
 	private static uiApplyAudioBlock(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyAudioBlock {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyAudioBlock {
 		return <any>{};
 	}
 
 	private static uiApplyAudioTriggerEffect(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyAudioTriggerEffect {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyAudioTriggerEffect {
 		return <any>{};
 	}
 
 	private static uiApplyAudioTriggerMusic(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyAudioTriggerMusic {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyAudioTriggerMusic {
 		return <any>{};
 	}
 
 	private static uiApplyAudioTriggerMusicFade(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyAudioTriggerMusicFade {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyAudioTriggerMusicFade {
 		return <any>{};
 	}
 
 	private static uiApplyAudioTriggerMusicPause(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyAudioTriggerMusicPause {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyAudioTriggerMusicPause {
 		return <any>{};
 	}
 
 	private static uiApplyAudioTriggerMusicUnpause(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyAudioTriggerMusicUnpause {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyAudioTriggerMusicUnpause {
 		return <any>{};
 	}
 
 	private static uiApplyImageBlock(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyImageBlock {
-		let data: VideoCmdGameModeEditApplyImageBlock = <VideoCmdGameModeEditApplyImageBlock>properties;
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyImageBlock {
+		let data: VideoInputCmdGameModeEditApplyImageBlock = <VideoInputCmdGameModeEditApplyImageBlock>properties;
 
-		if (z === VideoCmdGameModeEditApplyZ.PRIMARY) {
+		if (z === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
 			// Clean
 			if (!data.damageable) {
 				delete data.assetIdDamagedImage;
@@ -514,9 +516,9 @@ export class MapEditEngine {
 
 	private static uiApplyLight(
 		gHashes: number[],
-		properties: VideoCmdGameModeEditApply,
-		z: VideoCmdGameModeEditApplyZ,
-	): VideoCmdGameModeEditApplyLight {
+		properties: VideoInputCmdGameModeEditApply,
+		z: VideoInputCmdGameModeEditApplyZ,
+	): VideoInputCmdGameModeEditApplyLight {
 		return <any>{};
 	}
 
@@ -542,9 +544,38 @@ export class MapEditEngine {
 		);
 	}
 
-	// public static updateMapSettings(mapConfig: MapConfig): void {
-	// 	MapEditEngine.mapActiveUI = Object.assign(MapEditEngine.mapActiveUI, mapConfig);
-	// }
+	public static updateUIHourOfDayEff(hourOfDayEff: number): void {
+		MapEditEngine.mapActiveUI.hourOfDayEff = hourOfDayEff;
+	}
+
+	public static updateMapSettings(mapConfig: MapConfig): void {
+		let mapActive: MapActive;
+
+		if (MapEditEngine.modeUI) {
+			mapActive = MapEditEngine.mapActiveUI;
+		} else {
+			mapActive = KernelEngine.getMapActive();
+		}
+
+		// Apply new Config
+		mapActive.clockSpeedRelativeToEarth = mapConfig.clockSpeedRelativeToEarth;
+		mapActive.gridConfigs = mapConfig.gridConfigs;
+		mapActive.hourOfDay = mapConfig.hourOfDay;
+		mapActive.name = mapConfig.name;
+
+		// Update active map values
+		mapActive.clockTicker = 0;
+		mapActive.durationInMS = 0;
+		mapActive.hourOfDayEff = mapActive.hourOfDay;
+	}
+
+	public static getMapActive(): MapActive {
+		if (MapEditEngine.modeUI) {
+			return MapEditEngine.mapActiveUI;
+		} else {
+			return KernelEngine.getMapActive();
+		}
+	}
 
 	public static getGridActive(): Grid {
 		return MapEditEngine.mapActiveUI.gridActive;
@@ -556,8 +587,8 @@ export class MapEditEngine {
 
 	public static getGridProperty(
 		gHash: number,
-		view: VideoCmdGameModeEditApplyView,
-		z: VideoCmdGameModeEditApplyZ,
+		view: VideoInputCmdGameModeEditApplyView,
+		z: VideoInputCmdGameModeEditApplyZ,
 	): GridObject[] {
 		let mapActive: MapActive;
 
@@ -568,18 +599,18 @@ export class MapEditEngine {
 		}
 
 		switch (view) {
-			case VideoCmdGameModeEditApplyView.AUDIO:
+			case VideoInputCmdGameModeEditApplyView.AUDIO:
 				break;
-			case VideoCmdGameModeEditApplyView.IMAGE:
-				if (z === VideoCmdGameModeEditApplyZ.BACKGROUND) {
+			case VideoInputCmdGameModeEditApplyView.IMAGE:
+				if (z === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
 					return [mapActive.gridActive.imageBlocksBackground.hashes[gHash]];
-				} else if (z === VideoCmdGameModeEditApplyZ.FOREGROUND) {
+				} else if (z === VideoInputCmdGameModeEditApplyZ.FOREGROUND) {
 					return [mapActive.gridActive.imageBlocksForeground.hashes[gHash]];
 				} else {
 					return [mapActive.gridActive.imageBlocksPrimary.hashes[gHash]];
 				}
 				break;
-			case VideoCmdGameModeEditApplyView.LIGHT:
+			case VideoInputCmdGameModeEditApplyView.LIGHT:
 				break;
 		}
 

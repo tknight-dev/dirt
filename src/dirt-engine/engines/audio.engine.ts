@@ -13,8 +13,6 @@ interface AudioCache {
 	audio: HTMLAudioElement;
 	id: string;
 	type: AssetAudioType;
-	volume: number;
-	volumeOffset: number;
 }
 
 interface AudioFade {
@@ -64,17 +62,13 @@ export class AudioEngine {
 		}
 	}
 
-	private static applyVolume(volume: number, type: AssetAudioType): void {
+	private static applyVolumeMusicRelative(volumePercentage: number): void {
 		let cache: { [key: string]: AudioCache } = AudioEngine.cache,
 			cacheInstance: AudioCache;
 
 		for (let audioId in cache) {
 			cacheInstance = cache[audioId];
-
-			if (type === cacheInstance.type) {
-				cacheInstance.audio.volume = Math.max(0, Math.min(1, volume + cacheInstance.volumeOffset));
-				cacheInstance.volume = volume;
-			}
+			cacheInstance.audio.volume = cacheInstance.audio.volume * volumePercentage;
 		}
 	}
 
@@ -246,8 +240,8 @@ export class AudioEngine {
 
 		// Load all files in parallel
 		await Promise.all(loaderWrappers);
-		AudioEngine.applyVolume(AudioEngine.volumeEffect, AssetAudioType.EFFECT);
-		AudioEngine.applyVolume(AudioEngine.volumeMusic, AssetAudioType.MUSIC);
+		// AudioEngine.applyVolume(AudioEngine.volumeEffect, AssetAudioType.EFFECT);
+		// AudioEngine.applyVolume(AudioEngine.volumeMusic, AssetAudioType.MUSIC);
 
 		return Date.now() - timestampInMs;
 	}
@@ -265,8 +259,6 @@ export class AudioEngine {
 					audio: audio,
 					id: assetAudio.id,
 					type: assetAudio.type,
-					volume: AudioEngine.volume,
-					volumeOffset: Math.round(assetAudio.volumeOffset * 1000) / 1000,
 				};
 
 				// Audio loaded, resolve promise
@@ -551,12 +543,12 @@ export class AudioEngine {
 
 		// Precision is 3
 		volume = Math.round(volume * 1000) / 1000;
+		let volumeRelative: number = volume / AudioEngine.volume;
 		AudioEngine.volume = volume;
 
 		// Update audio cache
 		AudioEngine.volumesScale();
-		AudioEngine.applyVolume(AudioEngine.volumeEffectEff, AssetAudioType.EFFECT);
-		AudioEngine.applyVolume(AudioEngine.volumeMusicEff, AssetAudioType.MUSIC);
+		AudioEngine.applyVolumeMusicRelative(volumeRelative);
 	}
 
 	public static getVolume(): number {
@@ -604,7 +596,6 @@ export class AudioEngine {
 
 		// Update audio cache
 		AudioEngine.volumesScale();
-		AudioEngine.applyVolume(AudioEngine.volumeEffectEff, AssetAudioType.EFFECT);
 	}
 
 	public static getVolumeEffect(): number {
@@ -627,11 +618,12 @@ export class AudioEngine {
 
 		// Precision is 3
 		volume = Math.round(volume * 1000) / 1000;
+		let volumeRelative: number = volume / AudioEngine.volume;
 		AudioEngine.volumeMusic = volume;
 
 		// Update audio cache
 		AudioEngine.volumesScale();
-		AudioEngine.applyVolume(AudioEngine.volumeMusicEff, AssetAudioType.MUSIC);
+		AudioEngine.applyVolumeMusicRelative(volumeRelative);
 	}
 
 	public static getVolumeMusic(): number {

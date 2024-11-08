@@ -1,32 +1,33 @@
 import { AssetCollection, AssetImageSrcResolution, AssetManifestMaster, AssetMap } from '../../models/asset.model';
 import { AssetEngine } from '../asset.engine';
+import { ClockCalcEngine } from '../../calc/clock.calc.engine';
 import { Camera } from '../../models/camera.model';
 import { CameraEngine } from '../camera.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
-import { Map, MapActive } from '../../models/map.model';
+import { Map, MapActive, MapConfig } from '../../models/map.model';
 import { MapEngine } from '../map.engine';
 import { MapEditEngine } from '../map-edit.engine';
 import { MouseAction } from '../mouse.engine';
 import { UtilEngine } from '../util.engine';
 import {
-	VideoCmd,
-	VideoCmdInit,
-	VideoCmdMapLoad,
-	VideoCmdMapLoadById,
-	VideoCmdResize,
-	VideoCmdGameModeEdit,
-	VideoCmdGameModeEditApply,
-	VideoCmdGameModeEditDraw,
-	VideoCmdGamePause,
-	VideoCmdGamePauseReason,
-	VideoCmdGameSave,
-	VideoCmdGameStart,
-	VideoCmdGameUnpause,
-	VideoCmdSettings,
+	VideoInputCmd,
+	VideoInputCmdInit,
+	VideoInputCmdMapLoad,
+	VideoInputCmdMapLoadById,
+	VideoInputCmdResize,
+	VideoInputCmdGameModeEdit,
+	VideoInputCmdGameModeEditApply,
+	VideoInputCmdGameModeEditDraw,
+	VideoInputCmdGamePause,
+	VideoInputCmdGamePauseReason,
+	VideoInputCmdGameSave,
+	VideoInputCmdGameStart,
+	VideoInputCmdGameUnpause,
+	VideoInputCmdSettings,
 	VideoPayload,
-	VideoWorkerCmd,
-	VideoWorkerCmdAudioEffect,
+	VideoOutputCmd,
+	VideoOutputCmdAudioEffect,
 	VideoWorkerPayload,
 } from '../../models/video-worker-cmds.model';
 
@@ -38,54 +39,57 @@ self.onmessage = (event: MessageEvent) => {
 	let videoPayload: VideoPayload = event.data;
 
 	switch (videoPayload.cmd) {
-		case VideoCmd.GAME_MODE_EDIT:
-			Video.inputGameModeEdit(<VideoCmdGameModeEdit>videoPayload.data);
+		case VideoInputCmd.GAME_MODE_EDIT:
+			Video.inputGameModeEdit(<VideoInputCmdGameModeEdit>videoPayload.data);
 			break;
-		case VideoCmd.GAME_MODE_EDIT_APPLY:
-			Video.inputGameModeEditApply(<VideoCmdGameModeEditApply>videoPayload.data);
+		case VideoInputCmd.GAME_MODE_EDIT_APPLY:
+			Video.inputGameModeEditApply(<VideoInputCmdGameModeEditApply>videoPayload.data);
 			break;
-		case VideoCmd.GAME_MODE_EDIT_DRAW:
-			Video.inputGameModeEditDraw(<VideoCmdGameModeEditDraw>videoPayload.data);
+		case VideoInputCmd.GAME_MODE_EDIT_DRAW:
+			Video.inputGameModeEditDraw(<VideoInputCmdGameModeEditDraw>videoPayload.data);
 			break;
-		case VideoCmd.GAME_MODE_EDIT_REDO:
+		case VideoInputCmd.GAME_MODE_EDIT_REDO:
 			Video.inputGameModeEditRedo();
 			break;
-		case VideoCmd.GAME_MODE_EDIT_UNDO:
+		case VideoInputCmd.GAME_MODE_EDIT_SETTINGS:
+			Video.inputGameModeEditSettings(<MapConfig>videoPayload.data);
+			break;
+		case VideoInputCmd.GAME_MODE_EDIT_UNDO:
 			Video.inputGameModeEditUndo();
 			break;
-		case VideoCmd.GAME_PAUSE:
-			Video.inputGamePause(<VideoCmdGamePause>videoPayload.data);
+		case VideoInputCmd.GAME_PAUSE:
+			Video.inputGamePause(<VideoInputCmdGamePause>videoPayload.data);
 			break;
-		case VideoCmd.GAME_SAVE:
-			Video.inputGameSave(<VideoCmdGameSave>videoPayload.data);
+		case VideoInputCmd.GAME_SAVE:
+			Video.inputGameSave(<VideoInputCmdGameSave>videoPayload.data);
 			break;
-		case VideoCmd.GAME_START:
-			Video.inputGameStart(<VideoCmdGameStart>videoPayload.data);
+		case VideoInputCmd.GAME_START:
+			Video.inputGameStart(<VideoInputCmdGameStart>videoPayload.data);
 			break;
-		case VideoCmd.GAME_UNPAUSE:
-			Video.inputGameUnpause(<VideoCmdGameUnpause>videoPayload.data);
+		case VideoInputCmd.GAME_UNPAUSE:
+			Video.inputGameUnpause(<VideoInputCmdGameUnpause>videoPayload.data);
 			break;
-		case VideoCmd.INIT:
-			Video.initialize(self, <VideoCmdInit>videoPayload.data);
+		case VideoInputCmd.INIT:
+			Video.initialize(self, <VideoInputCmdInit>videoPayload.data);
 			break;
-		case VideoCmd.KEY:
+		case VideoInputCmd.KEY:
 			KernelEngine.inputKey(<KeyAction>videoPayload.data);
 			break;
-		case VideoCmd.MAP_LOAD:
-			Video.inputMapLoad(<VideoCmdMapLoad>videoPayload.data);
+		case VideoInputCmd.MAP_LOAD:
+			Video.inputMapLoad(<VideoInputCmdMapLoad>videoPayload.data);
 			break;
-		case VideoCmd.MAP_LOAD_BY_ID:
-			Video.inputMapLoadById(<VideoCmdMapLoadById>videoPayload.data);
+		case VideoInputCmd.MAP_LOAD_BY_ID:
+			Video.inputMapLoadById(<VideoInputCmdMapLoadById>videoPayload.data);
 			break;
-		case VideoCmd.MOUSE:
+		case VideoInputCmd.MOUSE:
 			KernelEngine.inputMouse(<MouseAction>videoPayload.data);
 			break;
-		case VideoCmd.RESIZE:
-			Video.inputGamePause({ reason: VideoCmdGamePauseReason.RESIZE });
-			Video.inputResize(<VideoCmdResize>videoPayload.data);
+		case VideoInputCmd.RESIZE:
+			Video.inputGamePause({ reason: VideoInputCmdGamePauseReason.RESIZE });
+			Video.inputResize(<VideoInputCmdResize>videoPayload.data);
 			break;
-		case VideoCmd.SETTINGS:
-			Video.inputSettings(<VideoCmdSettings>videoPayload.data);
+		case VideoInputCmd.SETTINGS:
+			Video.inputSettings(<VideoInputCmdSettings>videoPayload.data);
 			break;
 	}
 };
@@ -108,7 +112,7 @@ class Video {
 	private static resolution: AssetImageSrcResolution;
 	private static self: Window & typeof globalThis;
 
-	public static async initialize(self: Window & typeof globalThis, data: VideoCmdInit): Promise<void> {
+	public static async initialize(self: Window & typeof globalThis, data: VideoInputCmdInit): Promise<void> {
 		if (Video.initialized) {
 			console.error('Video > initialize: already initialized');
 			return;
@@ -151,13 +155,16 @@ class Video {
 		CameraEngine.setCallback((camera: Camera) => {
 			Video.outputEditCameraUpdate(camera);
 		});
+		ClockCalcEngine.setCallbackHourOfDay((hourOfDayEff: number) => {
+			Video.outputHourOfDayEff(hourOfDayEff);
+		});
 		Video.inputResize(data);
 		Video.inputSettings(data);
 
 		// Done
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.STATUS_INITIALIZED,
+				cmd: VideoOutputCmd.STATUS_INITIALIZED,
 				data: {
 					durationInMs: performance.now() - timestamp,
 				},
@@ -165,26 +172,26 @@ class Video {
 		]);
 	}
 
-	public static inputGameModeEdit(modeEdit: VideoCmdGameModeEdit): void {
+	public static inputGameModeEdit(modeEdit: VideoInputCmdGameModeEdit): void {
 		console.log('VideoWorker > modeEdit', modeEdit);
 		Video.gameModeEdit = modeEdit.edit;
 	}
 
-	public static inputGameModeEditApply(apply: VideoCmdGameModeEditApply): void {
+	public static inputGameModeEditApply(apply: VideoInputCmdGameModeEditApply): void {
 		MapEditEngine.apply(apply);
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				cmd: VideoOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
 	}
 
-	public static inputGameModeEditDraw(apply: VideoCmdGameModeEditDraw): void {
+	public static inputGameModeEditDraw(apply: VideoInputCmdGameModeEditDraw): void {
 		KernelEngine.draw(apply);
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				cmd: VideoOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
@@ -194,7 +201,17 @@ class Video {
 		MapEditEngine.historyRedo();
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
+	public static inputGameModeEditSettings(mapConfig: MapConfig): void {
+		MapEditEngine.updateMapSettings(mapConfig);
+		Video.post([
+			{
+				cmd: VideoOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
@@ -204,17 +221,17 @@ class Video {
 		MapEditEngine.historyUndo();
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.EDIT_COMPLETE,
+				cmd: VideoOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
 	}
 
-	public static inputGamePause(pause: VideoCmdGamePause): void {
+	public static inputGamePause(pause: VideoInputCmdGamePause): void {
 		//console.log('VideoWorker > gamePause', pause);
 	}
 
-	public static inputGameSave(save: VideoCmdGameSave): void {
+	public static inputGameSave(save: VideoInputCmdGameSave): void {
 		if (KernelEngine.isModeEdit()) {
 			Video.outputMapSave(KernelEngine.getMapActive());
 		} else {
@@ -225,7 +242,7 @@ class Video {
 	/**
 	 * Start the game (company intro complete)
 	 */
-	public static inputGameStart(start: VideoCmdGameStart): void {
+	public static inputGameStart(start: VideoInputCmdGameStart): void {
 		if (!Video.initialized) {
 			console.error('Video > gameStart: not initialized');
 			return;
@@ -241,11 +258,11 @@ class Video {
 		KernelEngine.setModeEdit(start.modeEdit);
 	}
 
-	public static inputGameUnpause(unpause: VideoCmdGameUnpause): void {
+	public static inputGameUnpause(unpause: VideoInputCmdGameUnpause): void {
 		console.log('VideoWorker > gameUnpause', unpause);
 	}
 
-	public static async inputMapLoad(videoCmdMapLoad: VideoCmdMapLoad): Promise<void> {
+	public static async inputMapLoad(VideoInputCmdMapLoad: VideoInputCmdMapLoad): Promise<void> {
 		let map: Map,
 			mapActive: MapActive,
 			status: boolean = true;
@@ -253,7 +270,7 @@ class Video {
 		//let maps: { [key: string]: AssetMap } = Video.assetManifestMaster.maps
 
 		try {
-			map = UtilEngine.mapDecode(videoCmdMapLoad.data);
+			map = UtilEngine.mapDecode(VideoInputCmdMapLoad.data);
 
 			if (map) {
 				mapActive = MapEngine.loadFromFile(map);
@@ -267,7 +284,7 @@ class Video {
 
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.MAP_LOAD_STATUS,
+				cmd: VideoOutputCmd.MAP_LOAD_STATUS,
 				data: {
 					status: status,
 				},
@@ -275,14 +292,14 @@ class Video {
 		]);
 	}
 
-	public static async inputMapLoadById(videoCmdMapLoadById: VideoCmdMapLoadById): Promise<void> {
+	public static async inputMapLoadById(VideoInputCmdMapLoadById: VideoInputCmdMapLoadById): Promise<void> {
 		let mapActive: MapActive | undefined, mapAsset: AssetMap;
 
 		try {
-			if (!videoCmdMapLoadById.id) {
+			if (!VideoInputCmdMapLoadById.id) {
 				mapActive = MapEngine.default();
 			} else {
-				mapAsset = Video.assetManifestMaster.maps[videoCmdMapLoadById.id];
+				mapAsset = Video.assetManifestMaster.maps[VideoInputCmdMapLoadById.id];
 				mapActive = MapEngine.load(mapAsset);
 			}
 
@@ -295,7 +312,7 @@ class Video {
 
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.MAP_ASSET,
+				cmd: VideoOutputCmd.MAP_ASSET,
 				data: {
 					mapActive: mapActive,
 				},
@@ -306,7 +323,7 @@ class Video {
 	/**
 	 * Supports high dpi screens
 	 */
-	public static inputResize(resize: VideoCmdResize): void {
+	public static inputResize(resize: VideoInputCmdResize): void {
 		let devicePixelRatio: number = resize.devicePixelRatio,
 			height: number = Math.floor(resize.height * devicePixelRatio),
 			width: number = Math.floor(resize.width * devicePixelRatio);
@@ -326,7 +343,7 @@ class Video {
 		Video.canvasOffscreenUnderlay.width = width;
 	}
 
-	public static inputSettings(settings: VideoCmdSettings): void {
+	public static inputSettings(settings: VideoInputCmdSettings): void {
 		console.log('VideoWorker > settings', settings);
 
 		settings.foregroundViewerPercentageOfViewport =
@@ -347,7 +364,7 @@ class Video {
 	): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.AUDIO_EFFECT,
+				cmd: VideoOutputCmd.AUDIO_EFFECT,
 				data: {
 					id: assetId,
 					modulationId: modulationId,
@@ -364,15 +381,15 @@ class Video {
 	 * @param pan between -1 left and 1 right (precision 3)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static outputAudioEffectBatch(effects: VideoWorkerCmdAudioEffect[]): void {
-		let effect: VideoWorkerCmdAudioEffect,
+	public static outputAudioEffectBatch(effects: VideoOutputCmdAudioEffect[]): void {
+		let effect: VideoOutputCmdAudioEffect,
 			payloads: VideoWorkerPayload[] = [];
 
 		for (let i in effects) {
 			effect = effects[i];
 
 			payloads.push({
-				cmd: VideoWorkerCmd.AUDIO_EFFECT,
+				cmd: VideoOutputCmd.AUDIO_EFFECT,
 				data: {
 					id: effect.id,
 					modulationId: effect.modulationId,
@@ -392,7 +409,7 @@ class Video {
 	public static outputAudioMusicFade(assetId: string, durationInMs: number, volumePercentage: number): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.AUDIO_MUSIC_FADE,
+				cmd: VideoOutputCmd.AUDIO_MUSIC_FADE,
 				data: {
 					durationInMs: Math.max(100, Math.round(durationInMs)),
 					id: assetId,
@@ -408,7 +425,7 @@ class Video {
 	public static outputAudioMusicPlay(assetId: string, timeInS: number, volumePercentage: number): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.AUDIO_MUSIC_PLAY,
+				cmd: VideoOutputCmd.AUDIO_MUSIC_PLAY,
 				data: {
 					id: assetId,
 					timeInS: Math.round(timeInS),
@@ -421,7 +438,7 @@ class Video {
 	public static outputAudioMusicPause(assetId: string): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.AUDIO_MUSIC_PAUSE,
+				cmd: VideoOutputCmd.AUDIO_MUSIC_PAUSE,
 				data: {
 					id: assetId,
 				},
@@ -432,7 +449,7 @@ class Video {
 	public static outputAudioMusicUnpause(assetId: string): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.AUDIO_MUSIC_UNPAUSE,
+				cmd: VideoOutputCmd.AUDIO_MUSIC_UNPAUSE,
 				data: {
 					id: assetId,
 				},
@@ -446,7 +463,7 @@ class Video {
 	public static outputAudioVolume(assetId: string, volumePercentage: number): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.AUDIO_VOLUME,
+				cmd: VideoOutputCmd.AUDIO_VOLUME,
 				data: {
 					id: assetId,
 					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
@@ -459,7 +476,7 @@ class Video {
 		if (Video.gameModeEdit) {
 			Video.post([
 				{
-					cmd: VideoWorkerCmd.EDIT_CAMERA_UPDATE,
+					cmd: VideoOutputCmd.EDIT_CAMERA_UPDATE,
 					data: {
 						gInPh: camera.gInPh,
 						gInPw: camera.gInPw,
@@ -476,10 +493,19 @@ class Video {
 		}
 	}
 
+	public static outputHourOfDayEff(hourOfDayEff: number): void {
+		Video.post([
+			{
+				cmd: VideoOutputCmd.MAP_HOUR_OF_DAY_EFF,
+				data: hourOfDayEff,
+			},
+		]);
+	}
+
 	public static outputMapSave(map: Map): void {
 		Video.post([
 			{
-				cmd: VideoWorkerCmd.MAP_SAVE,
+				cmd: VideoOutputCmd.MAP_SAVE,
 				data: {
 					data: UtilEngine.mapEncode(MapEditEngine.gridBlockTableDeflate(<MapActive>map)),
 					name: map.name,

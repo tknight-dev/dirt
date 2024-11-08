@@ -1,3 +1,4 @@
+import { ClockCalcEngine } from '../../../calc/clock.calc.engine';
 import { MapActive } from '../../../models/map.model';
 
 /**
@@ -7,7 +8,9 @@ import { MapActive } from '../../../models/map.model';
 export class CalcPlayEngine {
 	private static mapActive: MapActive;
 
-	public static start(timestampNow: number, timestampThen: number): void {}
+	public static start(timestampDelta: number): void {
+		ClockCalcEngine.start(timestampDelta);
+	}
 
 	public static setMapActive(mapActive: MapActive) {
 		CalcPlayEngine.mapActive = mapActive;

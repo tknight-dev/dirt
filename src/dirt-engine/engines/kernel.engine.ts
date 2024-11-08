@@ -1,6 +1,7 @@
 import { AssetImageSrcResolution } from '../models/asset.model';
 import { CalcEditEngine } from './mode/edit/calc.edit.engine';
 import { CalcPlayEngine } from './mode/play/calc.play.engine';
+import { ClockCalcEngine } from '../calc/clock.calc.engine';
 import { CameraDrawEngine } from '../draw/camera.draw.engine';
 import { CameraEngine } from './camera.engine';
 import { DrawEditEngine } from './mode/edit/draw.edit.engine';
@@ -14,7 +15,11 @@ import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { UtilEngine } from './util.engine';
-import { VideoCmdGameModeEditDraw, VideoCmdSettings, VideoCmdSettingsFPS } from '../models/video-worker-cmds.model';
+import {
+	VideoInputCmdGameModeEditDraw,
+	VideoInputCmdSettings,
+	VideoInputCmdSettingsFPS,
+} from '../models/video-worker-cmds.model';
 
 /**
  * @author tknight-dev
@@ -136,10 +141,10 @@ export class KernelEngine {
 
 				// Start
 				if (KernelEngine.modeEdit) {
-					!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampNow, KernelEngine.timestampThen);
+					!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
 					DrawEditEngine.start();
 				} else {
-					CalcPlayEngine.start(KernelEngine.timestampNow, KernelEngine.timestampThen);
+					CalcPlayEngine.start(KernelEngine.timestampDelta);
 					DrawPlayEngine.start();
 				}
 			}
@@ -148,10 +153,10 @@ export class KernelEngine {
 			 * FPS unlimited
 			 */
 			if (KernelEngine.modeEdit) {
-				!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampNow, KernelEngine.timestampThen);
+				!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
 				DrawEditEngine.start();
 			} else {
-				!KernelEngine.paused && CalcPlayEngine.start(KernelEngine.timestampNow, KernelEngine.timestampThen);
+				!KernelEngine.paused && CalcPlayEngine.start(KernelEngine.timestampDelta);
 				DrawPlayEngine.start();
 			}
 		}
@@ -174,7 +179,7 @@ export class KernelEngine {
 	/**
 	 * Use this to toggle drawn elements in edit mode
 	 */
-	public static async draw(draw: VideoCmdGameModeEditDraw): Promise<void> {
+	public static async draw(draw: VideoInputCmdGameModeEditDraw): Promise<void> {
 		GridDrawEngine.setEnable(draw.grid);
 		ImageBlockDrawEngine.setForegroundViewer(draw.foregroundViewer);
 	}
@@ -191,15 +196,21 @@ export class KernelEngine {
 		DrawEditEngine.setMapActive(mapActive);
 		DrawPlayEngine.setMapActive(mapActive);
 
-		LightingEngine.setMapActive(mapActive);
-
 		// Load into extended engines
 		CameraDrawEngine.setMapActive(mapActive);
+		ClockCalcEngine.setMapActive(mapActive);
 		GridDrawEngine.setMapActive(mapActive);
 		ImageBlockDrawEngine.setMapActive(mapActive);
+		LightingEngine.setMapActive(mapActive);
 		MapDrawEngine.setMapActive(mapActive);
 
 		KernelEngine.cacheResets(false);
+	}
+
+	private static resetMapActive(): void {
+		KernelEngine.mapActive.clockTicker = 0;
+		KernelEngine.mapActive.durationInMS = 0;
+		KernelEngine.mapActive.hourOfDayEff = KernelEngine.mapActive.hourOfDay;
 	}
 
 	public static async start(mapActive: MapActive): Promise<void> {
@@ -212,6 +223,7 @@ export class KernelEngine {
 		}
 		KernelEngine.status = true;
 		KernelEngine.historyUpdate(mapActive);
+		KernelEngine.resetMapActive();
 
 		// Reset camera
 		if (KernelEngine.ctxDimensionHeight && KernelEngine.ctxDimensionWidth) {
@@ -275,13 +287,13 @@ export class KernelEngine {
 		ImageBlockDrawEngine.cacheReset();
 	}
 
-	public static updateSettings(settings: VideoCmdSettings): void {
+	public static updateSettings(settings: VideoInputCmdSettings): void {
 		if (!KernelEngine.initialized) {
 			console.error('KernelEngine > updateSettings: not initialized');
 			return;
 		}
 		KernelEngine.fpms = Math.round(1000 / settings.fps);
-		KernelEngine.fpmsUnlimited = settings.fps === VideoCmdSettingsFPS._unlimited;
+		KernelEngine.fpmsUnlimited = settings.fps === VideoInputCmdSettingsFPS._unlimited;
 
 		// Primary
 		DrawEditEngine.fpsVisible = settings.fpsVisible;

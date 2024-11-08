@@ -10,7 +10,7 @@ import {
 	GridLight,
 } from '../models/grid.model';
 import { KeyAction } from '../engines/keyboard.engine';
-import { Map, MapActive } from '../models/map.model';
+import { Map, MapActive, MapConfig } from '../models/map.model';
 import { MouseAction } from '../engines/mouse.engine';
 
 /**
@@ -21,11 +21,12 @@ import { MouseAction } from '../engines/mouse.engine';
  * @author tknight-dev
  */
 
-export enum VideoCmd {
+export enum VideoInputCmd {
 	GAME_MODE_EDIT,
 	GAME_MODE_EDIT_APPLY,
 	GAME_MODE_EDIT_DRAW,
 	GAME_MODE_EDIT_REDO,
+	GAME_MODE_EDIT_SETTINGS,
 	GAME_MODE_EDIT_UNDO,
 	GAME_MODE_PLAY,
 	GAME_PAUSE,
@@ -41,7 +42,7 @@ export enum VideoCmd {
 	SETTINGS,
 }
 
-export interface VideoCmdInit extends VideoCmdResize, VideoCmdSettings {
+export interface VideoInputCmdInit extends VideoInputCmdResize, VideoInputCmdSettings {
 	assetDeclarations: AssetDeclarations;
 	canvasOffscreenBackground: OffscreenCanvas;
 	canvasOffscreenForeground: OffscreenCanvas;
@@ -50,57 +51,59 @@ export interface VideoCmdInit extends VideoCmdResize, VideoCmdSettings {
 	canvasOffscreenUnderlay: OffscreenCanvas;
 }
 
-export interface VideoCmdMapLoad {
+export interface VideoInputCmdMapLoad {
 	data: string;
 }
 
-export interface VideoCmdMapLoadById {
+export interface VideoInputCmdMapLoadById {
 	id?: string; // undefined for new map
 }
 
-export interface VideoCmdResize {
+export interface VideoInputCmdResize {
 	devicePixelRatio: number; // precision 1
 	force?: boolean;
 	height: number;
 	width: number;
 }
 
-export interface VideoCmdGameModeEdit {
+export interface VideoInputCmdGameModeEdit {
 	edit: boolean;
 }
 
-export interface VideoCmdGameModeEditApply {
-	applyType: VideoCmdGameModeEditApplyType;
+export interface VideoInputCmdGameModeEditApply {
+	applyType: VideoInputCmdGameModeEditApplyType;
 	gHashes: number[];
 }
 
-export interface VideoCmdGameModeEditApplyAudioBlock extends GridAudioBlock, VideoCmdGameModeEditApply {}
+export interface VideoInputCmdGameModeEditApplyAudioBlock extends GridAudioBlock, VideoInputCmdGameModeEditApply {}
 
-export interface VideoCmdGameModeEditApplyAudioTriggerEffect
+export interface VideoInputCmdGameModeEditApplyAudioTriggerEffect
 	extends GridAudioTriggerEffect,
-		VideoCmdGameModeEditApply {}
-export interface VideoCmdGameModeEditApplyAudioTriggerMusic extends GridAudioTriggerMusic, VideoCmdGameModeEditApply {}
-export interface VideoCmdGameModeEditApplyAudioTriggerMusicFade
+		VideoInputCmdGameModeEditApply {}
+export interface VideoInputCmdGameModeEditApplyAudioTriggerMusic
+	extends GridAudioTriggerMusic,
+		VideoInputCmdGameModeEditApply {}
+export interface VideoInputCmdGameModeEditApplyAudioTriggerMusicFade
 	extends GridAudioTriggerMusicFade,
-		VideoCmdGameModeEditApply {}
-export interface VideoCmdGameModeEditApplyAudioTriggerMusicPause
+		VideoInputCmdGameModeEditApply {}
+export interface VideoInputCmdGameModeEditApplyAudioTriggerMusicPause
 	extends GridAudioTriggerMusicPause,
-		VideoCmdGameModeEditApply {}
-export interface VideoCmdGameModeEditApplyAudioTriggerMusicUnpause
+		VideoInputCmdGameModeEditApply {}
+export interface VideoInputCmdGameModeEditApplyAudioTriggerMusicUnpause
 	extends GridAudioTriggerMusicUnpause,
-		VideoCmdGameModeEditApply {}
+		VideoInputCmdGameModeEditApply {}
 
-export interface VideoCmdGameModeEditApplyErase extends VideoCmdGameModeEditApply {
-	z: VideoCmdGameModeEditApplyZ;
+export interface VideoInputCmdGameModeEditApplyErase extends VideoInputCmdGameModeEditApply {
+	z: VideoInputCmdGameModeEditApplyZ;
 }
 
-export interface VideoCmdGameModeEditApplyImageBlock extends GridImageBlock, VideoCmdGameModeEditApply {
-	z: VideoCmdGameModeEditApplyZ;
+export interface VideoInputCmdGameModeEditApplyImageBlock extends GridImageBlock, VideoInputCmdGameModeEditApply {
+	z: VideoInputCmdGameModeEditApplyZ;
 }
 
-export interface VideoCmdGameModeEditApplyLight extends GridLight, VideoCmdGameModeEditApply {}
+export interface VideoInputCmdGameModeEditApplyLight extends GridLight, VideoInputCmdGameModeEditApply {}
 
-export enum VideoCmdGameModeEditApplyType {
+export enum VideoInputCmdGameModeEditApplyType {
 	AUDIO_BLOCK,
 	AUDIO_TRIGGER_EFFECT,
 	AUDIO_TRIGGER_MUSIC,
@@ -112,52 +115,52 @@ export enum VideoCmdGameModeEditApplyType {
 	LIGHT,
 }
 
-export enum VideoCmdGameModeEditApplyZ {
+export enum VideoInputCmdGameModeEditApplyZ {
 	BACKGROUND,
 	FOREGROUND,
 	PRIMARY,
 }
 
-export enum VideoCmdGameModeEditApplyView {
+export enum VideoInputCmdGameModeEditApplyView {
 	AUDIO,
 	IMAGE,
 	LIGHT,
 }
 
-export interface VideoCmdGameModeEditDraw {
+export interface VideoInputCmdGameModeEditDraw {
 	foregroundViewer: boolean;
 	grid: boolean;
 }
 
-export interface VideoCmdGameModePlay {}
+export interface VideoInputCmdGameModePlay {}
 
-export interface VideoCmdGamePause {
-	reason: VideoCmdGamePauseReason;
+export interface VideoInputCmdGamePause {
+	reason: VideoInputCmdGamePauseReason;
 }
 
-export enum VideoCmdGamePauseReason {
+export enum VideoInputCmdGamePauseReason {
 	FULLSCREEN,
 	RESIZE,
 	VISIBILITY,
 }
 
-export interface VideoCmdGameUnpause {}
+export interface VideoInputCmdGameUnpause {}
 
-export interface VideoCmdGameSave {}
+export interface VideoInputCmdGameSave {}
 
-export interface VideoCmdGameStart {
+export interface VideoInputCmdGameStart {
 	modeEdit: boolean;
 }
 
-export interface VideoCmdSettings {
+export interface VideoInputCmdSettings {
 	foregroundViewerPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
-	fps: VideoCmdSettingsFPS;
+	fps: VideoInputCmdSettingsFPS;
 	fpsVisible: boolean;
 	mapVisible: boolean;
 	resolution: AssetImageSrcResolution;
 }
 
-export enum VideoCmdSettingsFPS {
+export enum VideoInputCmdSettingsFPS {
 	_30 = 30,
 	_60 = 60,
 	_120 = 120,
@@ -165,24 +168,25 @@ export enum VideoCmdSettingsFPS {
 }
 
 export interface VideoPayload {
-	cmd: VideoCmd;
+	cmd: VideoInputCmd;
 	data:
 		| KeyAction
+		| MapConfig
 		| MouseAction
-		| VideoCmdGameModeEdit
-		| VideoCmdGameModeEditApply
-		| VideoCmdGamePause
-		| VideoCmdGameSave
-		| VideoCmdGameStart
-		| VideoCmdGameUnpause
-		| VideoCmdInit
-		| VideoCmdMapLoad
-		| VideoCmdMapLoadById
-		| VideoCmdResize
+		| VideoInputCmdGameModeEdit
+		| VideoInputCmdGameModeEditApply
+		| VideoInputCmdGamePause
+		| VideoInputCmdGameSave
+		| VideoInputCmdGameStart
+		| VideoInputCmdGameUnpause
+		| VideoInputCmdInit
+		| VideoInputCmdMapLoad
+		| VideoInputCmdMapLoadById
+		| VideoInputCmdResize
 		| null;
 }
 
-export enum VideoWorkerCmd {
+export enum VideoOutputCmd {
 	AUDIO_EFFECT,
 	AUDIO_MUSIC_FADE,
 	AUDIO_MUSIC_PLAY,
@@ -192,44 +196,45 @@ export enum VideoWorkerCmd {
 	EDIT_CAMERA_UPDATE,
 	EDIT_COMPLETE,
 	MAP_ASSET,
+	MAP_HOUR_OF_DAY_EFF,
 	MAP_LOAD_STATUS,
 	MAP_SAVE,
 	STATUS_INITIALIZED,
 }
 
-export interface VideoWorkerCmdAudioEffect {
+export interface VideoOutputCmdAudioEffect {
 	id: string; // AudioAsset->Id
 	modulationId: string; // EffectModulation->Id
 	pan: number; // -1 left, 0 center, 1 right (precision 3)
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
-export interface VideoWorkerCmdAudioMusicFade {
+export interface VideoOutputCmdAudioMusicFade {
 	durationInMs: number; // min 100 (precision 0)
 	id: string; // AudioAsset->Id
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
-export interface VideoWorkerCmdAudioMusicPlay {
+export interface VideoOutputCmdAudioMusicPlay {
 	id: string; // AudioAsset->Id
 	timeInS: number; // 0-duration (precision 3)
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
-export interface VideoWorkerCmdAudioMusicPause {
+export interface VideoOutputCmdAudioMusicPause {
 	id: string; // AudioAsset->Id
 }
 
-export interface VideoWorkerCmdAudioMusicUnpause {
+export interface VideoOutputCmdAudioMusicUnpause {
 	id: string; // AudioAsset->Id
 }
 
-export interface VideoWorkerCmdAudioVolume {
+export interface VideoOutputCmdAudioVolume {
 	id: string; // AudioAsset->Id
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
-export interface VideoWorkerCmdEditCameraUpdate {
+export interface VideoOutputCmdEditCameraUpdate {
 	gInPh: number; // Precision 3
 	gInPw: number; // Precision 3
 	viewportPh: number; // Precision 0
@@ -241,32 +246,33 @@ export interface VideoWorkerCmdEditCameraUpdate {
 	zoom: number; // Precision 3
 }
 
-export interface VideoWorkerCmdMapAsset {
+export interface VideoOutputCmdMapAsset {
 	mapActive?: MapActive;
 }
 
-export interface VideoWorkerCmdMapLoadStatus {
+export interface VideoOutputCmdMapLoadStatus {
 	status: boolean;
 }
 
-export interface VideoWorkerCmdMapSave {
+export interface VideoOutputCmdMapSave {
 	data: string;
 	name: string;
 }
 
 export interface VideoWorkerPayload {
-	cmd: VideoWorkerCmd;
+	cmd: VideoOutputCmd;
 	data:
-		| VideoWorkerCmdAudioEffect
-		| VideoWorkerCmdAudioMusicFade
-		| VideoWorkerCmdAudioMusicPlay
-		| VideoWorkerCmdAudioMusicPause
-		| VideoWorkerCmdAudioMusicUnpause
-		| VideoWorkerCmdAudioVolume
-		| VideoWorkerCmdEditCameraUpdate
-		| VideoWorkerCmdMapAsset
-		| VideoWorkerCmdMapLoadStatus
-		| VideoWorkerCmdMapSave
+		| number
+		| VideoOutputCmdAudioEffect
+		| VideoOutputCmdAudioMusicFade
+		| VideoOutputCmdAudioMusicPlay
+		| VideoOutputCmdAudioMusicPause
+		| VideoOutputCmdAudioMusicUnpause
+		| VideoOutputCmdAudioVolume
+		| VideoOutputCmdEditCameraUpdate
+		| VideoOutputCmdMapAsset
+		| VideoOutputCmdMapLoadStatus
+		| VideoOutputCmdMapSave
 		| VideoWorkerStatusInitialized
 		| null;
 }

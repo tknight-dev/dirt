@@ -75,6 +75,8 @@ export class MapEngine {
 			gridConfig: GridConfig,
 			gridConfigs: { [key: string]: GridConfig } = map.gridConfigs,
 			mapActive: MapActive = Object.assign(map, {
+				clockTicker: 0,
+				durationInMS: 0,
 				gridActive: map.grids[gridActiveId],
 				gridActiveId: gridActiveId,
 				gridConfigActive: map.gridConfigs[gridActiveId],

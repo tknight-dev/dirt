@@ -10,8 +10,8 @@ import { MapEditEngine } from './engines/map-edit.engine';
 import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
 import { Orientation, OrientationEngine } from './engines/orientation.engine';
 import { ResizeEngine } from './engines/resize.engine';
-import { VideoCmdGamePauseReason, VideoCmdSettings } from './models/video-worker-cmds.model';
-import { VideoEngine } from './engines/video.engine';
+import { VideoInputCmdGamePauseReason, VideoInputCmdSettings } from './models/video-worker-cmds.model';
+import { VideoBus } from './engines/buses/video.bus';
 import { VisibilityEngine } from './engines/visibility.engine';
 
 // Exports
@@ -28,7 +28,7 @@ export {
 	AssetManifest,
 	AssetMeta,
 } from './models/asset.model';
-export { VideoCmdSettings, VideoCmdSettingsFPS } from './models/video-worker-cmds.model';
+export { VideoInputCmdSettings, VideoInputCmdSettingsFPS } from './models/video-worker-cmds.model';
 
 /**
  * @author tknight-dev
@@ -50,7 +50,7 @@ export class DirtEngine extends DomUI {
 		dom: HTMLElement,
 		gameModeEditStart: boolean,
 		oldTVIntro: boolean,
-		settings: VideoCmdSettings,
+		settings: VideoInputCmdSettings,
 	): Promise<void> {
 		if (!(await AssetEngine.verify(assetDeclarations))) {
 			return;
@@ -101,12 +101,12 @@ export class DirtEngine extends DomUI {
 
 		// Start the engine
 		let promise: Promise<void> = new Promise((resolve: any) => {
-			VideoEngine.setCallbackStatusInitialized((durationInMs: number) => {
+			VideoBus.setCallbackStatusInitialized((durationInMs: number) => {
 				console.log('DirtEngine: Video Initialization completed in', durationInMs, 'ms');
 				resolve();
 			});
 		});
-		await VideoEngine.initialize(
+		await VideoBus.initialize(
 			assetDeclarations,
 			DirtEngine.domElements['feed-overflow-streams'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-background-data'],
@@ -122,7 +122,7 @@ export class DirtEngine extends DomUI {
 		DirtEngine.ready = true;
 
 		// TODO: delete me as I just skip the into
-		//DirtEngine.domElements['feed'].click();
+		DirtEngine.domElements['feed'].click();
 	}
 
 	private static async feedTitleOverlay(): Promise<void> {
@@ -166,7 +166,7 @@ export class DirtEngine extends DomUI {
 	private static async feedTitleOverlayRemove(): Promise<void> {
 		// Start game
 		await DirtEngine.initializeHooksGame();
-		VideoEngine.workerGameStart({
+		VideoBus.outputGameStart({
 			modeEdit: DirtEngine.gameModeEditStart,
 		});
 		DirtEngine.setGameModeEdit(DirtEngine.gameModeEditStart);
@@ -235,14 +235,14 @@ export class DirtEngine extends DomUI {
 		};
 
 		// Hook: Edit Camera Update
-		VideoEngine.setCallbackEditCameraUpdate(DomUI.editCameraUpdate);
+		VideoBus.setCallbackEditCameraUpdate(DomUI.editCameraUpdate);
 
 		// Hook: Fullscreen
 		FullscreenEngine.setCallback((state: boolean) => {
 			if (!state) {
-				if (VideoEngine.isGoComplete()) {
-					VideoEngine.workerGamePause({
-						reason: VideoCmdGamePauseReason.FULLSCREEN,
+				if (VideoBus.isGoComplete()) {
+					VideoBus.outputGamePause({
+						reason: VideoInputCmdGamePauseReason.FULLSCREEN,
 					});
 				}
 
@@ -252,9 +252,9 @@ export class DirtEngine extends DomUI {
 			}
 		});
 		DirtEngine.domElements['fullscreen'].onclick = async (event: any) => {
-			if (VideoEngine.isGoComplete()) {
-				VideoEngine.workerGamePause({
-					reason: VideoCmdGamePauseReason.FULLSCREEN,
+			if (VideoBus.isGoComplete()) {
+				VideoBus.outputGamePause({
+					reason: VideoInputCmdGamePauseReason.FULLSCREEN,
 				});
 			}
 
@@ -289,7 +289,7 @@ export class DirtEngine extends DomUI {
 
 			// Load file
 			reader.onload = (event: any) => {
-				VideoEngine.workerMapLoad(event.target.result);
+				VideoBus.outputMapLoad(event.target.result);
 
 				// Reset UI
 				DirtEngine.dragging = false;
@@ -312,10 +312,10 @@ export class DirtEngine extends DomUI {
 		};
 
 		// Hook: Map - Save/load
-		VideoEngine.setCallbackMapLoadStatus((status: boolean) => {
+		VideoBus.setCallbackMapLoadStatus((status: boolean) => {
 			DirtEngine.statusFlash(status);
 		});
-		VideoEngine.setCallbackMapSave((data: string, name: string) => {
+		VideoBus.setCallbackMapSave((data: string, name: string) => {
 			let download: HTMLElement = DirtEngine.domElements['download'];
 			download.setAttribute('href', 'data:application/octet-stream;base64,' + btoa(data));
 			download.setAttribute('download', name + '.map');
@@ -329,7 +329,7 @@ export class DirtEngine extends DomUI {
 		// Hook: Save Button (edit: save map, !edit: save game)
 		DomUI.domElementsUIEdit['save'].onclick = () => {
 			DirtEngine.domElementsUIEdit['save'].classList.add('active');
-			VideoEngine.workerGameSave({});
+			VideoBus.outputGameSave({});
 			setTimeout(() => {
 				DirtEngine.domElementsUIEdit['save'].classList.remove('active');
 			}, 1000);
@@ -365,7 +365,7 @@ export class DirtEngine extends DomUI {
 			if (!isNaN(keyValue)) {
 				KeyboardEngine.register(keyValue, (keyAction: KeyAction) => {
 					if (DirtEngine.gameStarted) {
-						VideoEngine.workerKey(keyAction);
+						VideoBus.outputKey(keyAction);
 					}
 				});
 			}
@@ -374,7 +374,7 @@ export class DirtEngine extends DomUI {
 		//Mouse
 		MouseEngine.setCallback((action: MouseAction) => {
 			if (DirtEngine.gameStarted) {
-				VideoEngine.workerMouse(action);
+				VideoBus.outputMouse(action);
 
 				if (
 					DirtEngine.uiEditMode &&

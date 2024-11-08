@@ -3,7 +3,7 @@ import { LightingEngine } from '../engines/lighting.engine';
 import { Grid, GridBlockTable, GridBlockTableComplex, GridImageBlock } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { UtilEngine } from '../engines/util.engine';
-import { VideoCmdGameModeEditApplyZ } from '../models/video-worker-cmds.model';
+import { VideoInputCmdGameModeEditApplyZ } from '../models/video-worker-cmds.model';
 
 /**
  * Leverage global lighting thread to create 24 darkened/lightened images to represent the day cycle
@@ -13,7 +13,7 @@ import { VideoCmdGameModeEditApplyZ } from '../models/video-worker-cmds.model';
 
 interface ZGroup {
 	ctx: OffscreenCanvasRenderingContext2D;
-	z: VideoCmdGameModeEditApplyZ;
+	z: VideoInputCmdGameModeEditApplyZ;
 }
 
 export class ImageBlockDrawEngine {
@@ -34,7 +34,7 @@ export class ImageBlockDrawEngine {
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
-	private static zGroup: VideoCmdGameModeEditApplyZ[];
+	private static zGroup: VideoInputCmdGameModeEditApplyZ[];
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
@@ -55,9 +55,9 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
 
 		ImageBlockDrawEngine.zGroup = [
-			VideoCmdGameModeEditApplyZ.BACKGROUND,
-			VideoCmdGameModeEditApplyZ.FOREGROUND,
-			VideoCmdGameModeEditApplyZ.PRIMARY,
+			VideoInputCmdGameModeEditApplyZ.BACKGROUND,
+			VideoInputCmdGameModeEditApplyZ.FOREGROUND,
+			VideoInputCmdGameModeEditApplyZ.PRIMARY,
 		];
 	}
 
@@ -93,8 +93,8 @@ export class ImageBlockDrawEngine {
 				startGy: number = camera.viewportGy,
 				stopGx: number = startGx + camera.viewportGwEff,
 				stopGy: number = startGy + camera.viewportGwEff,
-				z: VideoCmdGameModeEditApplyZ,
-				zGroup: VideoCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
+				z: VideoInputCmdGameModeEditApplyZ,
+				zGroup: VideoInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
 			/*
 			 * Iterate through z layers
@@ -103,13 +103,13 @@ export class ImageBlockDrawEngine {
 				// Config
 				z = zGroup[i];
 				switch (z) {
-					case VideoCmdGameModeEditApplyZ.BACKGROUND:
+					case VideoInputCmdGameModeEditApplyZ.BACKGROUND:
 						imageBlocks = grid.imageBlocksBackground;
 						break;
-					case VideoCmdGameModeEditApplyZ.FOREGROUND:
+					case VideoInputCmdGameModeEditApplyZ.FOREGROUND:
 						imageBlocks = grid.imageBlocksForeground;
 						break;
-					case VideoCmdGameModeEditApplyZ.PRIMARY:
+					case VideoInputCmdGameModeEditApplyZ.PRIMARY:
 						imageBlocks = grid.imageBlocksPrimary;
 						break;
 				}
@@ -134,10 +134,10 @@ export class ImageBlockDrawEngine {
 
 				// CacheIt
 				switch (z) {
-					case VideoCmdGameModeEditApplyZ.BACKGROUND:
+					case VideoInputCmdGameModeEditApplyZ.BACKGROUND:
 						ImageBlockDrawEngine.cacheBackground = canvas.transferToImageBitmap();
 						break;
-					case VideoCmdGameModeEditApplyZ.FOREGROUND:
+					case VideoInputCmdGameModeEditApplyZ.FOREGROUND:
 						// "Cut Out" viewport from foreground layer to make the under layers visible to the person
 						if (ImageBlockDrawEngine.foregroundViewerEnable) {
 							let gradient: CanvasGradient,
@@ -161,7 +161,7 @@ export class ImageBlockDrawEngine {
 
 						ImageBlockDrawEngine.cacheForeground = canvas.transferToImageBitmap();
 						break;
-					case VideoCmdGameModeEditApplyZ.PRIMARY:
+					case VideoInputCmdGameModeEditApplyZ.PRIMARY:
 						ImageBlockDrawEngine.cachePrimary = canvas.transferToImageBitmap();
 						break;
 				}
