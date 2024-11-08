@@ -27,6 +27,7 @@ export enum VideoInputCmd {
 	GAME_MODE_EDIT_DRAW,
 	GAME_MODE_EDIT_REDO,
 	GAME_MODE_EDIT_SETTINGS,
+	GAME_MODE_EDIT_TIME_FORCED,
 	GAME_MODE_EDIT_UNDO,
 	GAME_MODE_PLAY,
 	GAME_PAUSE,
@@ -153,6 +154,7 @@ export interface VideoInputCmdGameStart {
 }
 
 export interface VideoInputCmdSettings {
+	darknessMax: number; // between 0 and 1, 1 is totally black, default is .8 (Precision 3)
 	foregroundViewerPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
 	fps: VideoInputCmdSettingsFPS;
 	fpsVisible: boolean;
@@ -170,6 +172,7 @@ export enum VideoInputCmdSettingsFPS {
 export interface VideoPayload {
 	cmd: VideoInputCmd;
 	data:
+		| boolean
 		| KeyAction
 		| MapConfig
 		| MouseAction

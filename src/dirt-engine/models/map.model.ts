@@ -36,4 +36,5 @@ export interface MapActive extends Map {
 	gridActiveId: string;
 	gridConfigActive: GridConfig;
 	hourOfDayEff: number; // current time in game
+	minuteOfHourEff: number; // current time in game
 }

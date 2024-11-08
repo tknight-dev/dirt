@@ -47,7 +47,7 @@ export class MapEngine {
 					viewportGw: Math.round(gridWidth / 2),
 					zoomDefault: 1,
 				},
-				clockSpeedRelativeToEarth: 1,
+				clockSpeedRelativeToEarth: 1440,
 				gridConfigs: {}, // key is gridID
 				grids: {}, // key is gridID
 				hourOfDay: 12,
@@ -76,11 +76,13 @@ export class MapEngine {
 			gridConfigs: { [key: string]: GridConfig } = map.gridConfigs,
 			mapActive: MapActive = Object.assign(map, {
 				clockTicker: 0,
+				clockSpeedRelativeToEarth: map.clockSpeedRelativeToEarth,
 				durationInMS: 0,
 				gridActive: map.grids[gridActiveId],
 				gridActiveId: gridActiveId,
 				gridConfigActive: map.gridConfigs[gridActiveId],
 				hourOfDayEff: map.hourOfDay,
+				minuteOfHourEff: 0,
 			});
 
 		// Camera
@@ -91,7 +93,7 @@ export class MapEngine {
 		// Clock
 		mapActive.clockSpeedRelativeToEarth = Math.max(
 			1,
-			Math.min(5760, Math.round(mapActive.clockSpeedRelativeToEarth * 1000) / 1000),
+			Math.min(86400, Math.round(mapActive.clockSpeedRelativeToEarth * 1000) / 1000),
 		);
 		mapActive.hourOfDay = Math.round(mapActive.hourOfDay);
 

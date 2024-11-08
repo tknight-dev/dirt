@@ -1447,6 +1447,11 @@ export class DomUI {
 					// Done
 					DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
 					DomUI.domElementsUIEdit['copy'].classList.remove('active');
+
+					if (DomUI.uiEditApplicationType === ApplicationType.ERASER) {
+						DomUI.domElementsUIEdit['application-type-menu-pencil'].click();
+					}
+
 					MouseEngine.setSuspendWheel(false);
 				}
 			};
@@ -1640,7 +1645,7 @@ export class DomUI {
 		return gHashes;
 	}
 
-	public static async editMouseUp(mouseAction: MouseAction): Promise<void> {
+	public static async editMouseUp(): Promise<void> {
 		if (!DomUI.uiEditMouseCmdCollectionActive) {
 			return;
 		}
@@ -2131,6 +2136,7 @@ export class DomUI {
 			spinnerModal: HTMLElement,
 			spinnerModalContent: HTMLElement,
 			t: HTMLElement,
+			time: HTMLElement,
 			td: HTMLElement,
 			tr: HTMLElement,
 			undo: HTMLElement,
@@ -2224,6 +2230,8 @@ export class DomUI {
 
 			DomUI.uiEditApplicationType = ApplicationType.PENCIL;
 			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-eye-dropper');
+			feedFitted.classList.remove('dirt-engine-cursor-magnifying-glass');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
@@ -2262,6 +2270,8 @@ export class DomUI {
 
 			DomUI.uiEditApplicationType = ApplicationType.BRUSH;
 			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-eye-dropper');
+			feedFitted.classList.remove('dirt-engine-cursor-magnifying-glass');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
@@ -2366,6 +2376,8 @@ export class DomUI {
 
 			DomUI.uiEditApplicationType = ApplicationType.ERASER;
 			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-eye-dropper');
+			feedFitted.classList.remove('dirt-engine-cursor-magnifying-glass');
 			feedFitted.classList.remove('dirt-engine-cursor-pencil');
 			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
 			feedFitted.classList.remove('dirt-engine-cursor-fill');
@@ -2758,6 +2770,15 @@ export class DomUI {
 		settings.appendChild(settingsButton);
 
 		/*
+		 * Settings
+		 */
+		time = document.createElement('div');
+		time.className = 'dirt-engine-ui-edit time';
+		DomUI.domElements['feed-fitted-ui-time'] = time;
+		DomUI.domElementsUIEdit['time'] = time;
+		domFeedFitted.appendChild(time);
+
+		/*
 		 * View
 		 */
 		view = document.createElement('div');
@@ -2981,6 +3002,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
 			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.BACKGROUND;
 			zBackground.classList.add('active');
@@ -3027,6 +3049,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
 			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.PRIMARY;
 			zBackground.classList.remove('active');
@@ -3075,6 +3098,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
 			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.FOREGROUND;
 			zBackground.classList.remove('active');
@@ -3121,6 +3145,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = true;
 			DomUI.uiEditDraw.grid = false;
 			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoBus.outputGameModeEditTimeForced(false);
 
 			DomUI.uiEditZ = undefined;
 			copy.classList.remove('active');
@@ -3498,6 +3523,7 @@ export class DomUI {
 
 			settings.classList.remove('active');
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'none';
+			MouseEngine.setSuspendWheel(false);
 		};
 		DomUI.domElements['feed-fitted-ui-settings-modal-content-buttons-apply'] = settingsModalContentBodyButtonsApply;
 		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-apply'] =
@@ -3521,14 +3547,6 @@ export class DomUI {
 	}
 
 	private static updateHourOfDayEff(hourOfDayEff: number): void {
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		console.log('updateHourOfDayEff', hourOfDayEff);
+		DomUI.domElementsUIEdit['time'].innerText = String(hourOfDayEff) + ':00';
 	}
 }

@@ -24,7 +24,7 @@ export class ImageBlockDrawEngine {
 	private static cacheHashP: number;
 	private static cacheHashCheckG: number;
 	private static cacheHashCheckP: number;
-	private static cacheHourCheck: number;
+	private static cacheHourPreciseCheck: number;
 	private static cacheZoom: number;
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
@@ -55,9 +55,9 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
 
 		ImageBlockDrawEngine.zGroup = [
+			VideoInputCmdGameModeEditApplyZ.PRIMARY, // Must be first
 			VideoInputCmdGameModeEditApplyZ.BACKGROUND,
 			VideoInputCmdGameModeEditApplyZ.FOREGROUND,
-			VideoInputCmdGameModeEditApplyZ.PRIMARY,
 		];
 	}
 
@@ -74,7 +74,7 @@ export class ImageBlockDrawEngine {
 		if (
 			ImageBlockDrawEngine.cacheHashG !== ImageBlockDrawEngine.cacheHashCheckG ||
 			ImageBlockDrawEngine.cacheHashP !== ImageBlockDrawEngine.cacheHashCheckP ||
-			ImageBlockDrawEngine.cacheHourCheck !== ImageBlockDrawEngine.mapActive.hourOfDayEff ||
+			ImageBlockDrawEngine.cacheHourPreciseCheck !== LightingEngine.getHourPreciseOfDayEff() ||
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
@@ -82,13 +82,22 @@ export class ImageBlockDrawEngine {
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
+				complexesByGx: { [key: number]: GridBlockTableComplex[] },
+				getAssetImageLit: any = LightingEngine.getAssetImageLit,
+				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
+				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
-				hourOfDayEff: number = ImageBlockDrawEngine.mapActive.hourOfDayEff, // 0-23
+				horizonLineGyByGxPrimary: { [key: number]: number } = {},
 				imageBitmap: ImageBitmap,
+				imageBitmaps: ImageBitmap[],
 				imageBlocks: GridBlockTable<GridImageBlock>,
 				imageBlockHashes: { [key: number]: GridImageBlock },
+				j: string,
+				k: number,
+				outside: boolean = ImageBlockDrawEngine.mapActive.gridConfigActive.outside,
+				scratch: number,
 				startGx: number = camera.viewportGx,
 				startGy: number = camera.viewportGy,
 				stopGx: number = startGx + camera.viewportGwEff,
@@ -119,17 +128,38 @@ export class ImageBlockDrawEngine {
 				ctx.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 				// Applicable hashes
-				complexes = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
+				complexesByGx = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
 
-				for (let j in complexes) {
-					complex = complexes[j];
+				for (j in complexesByGx) {
+					complexes = complexesByGx[j];
 
-					imageBitmap = LightingEngine.getAssetImage(imageBlockHashes[complex.hash].assetId, hourOfDayEff);
-					ctx.drawImage(
-						imageBitmap,
-						(<any>complex.gx - startGx) * gInPw,
-						(<any>complex.gy - startGy) * gInPh,
-					);
+					for (k = 0; k < complexes.length; k++) {
+						complex = complexes[k];
+
+						if (outside) {
+							if (k === 0 && z === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+								horizonLineGyByGxPrimary[<number>complex.gx] = <number>complex.gy;
+							}
+							scratch = <number>complex.gy - horizonLineGyByGxPrimary[<number>complex.gx];
+
+							if (scratch > 2) {
+								imageBitmaps = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId);
+								imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
+							} else {
+								imageBitmap = LightingEngine.getAssetImageLit(imageBlockHashes[complex.hash].assetId);
+							}
+						} else {
+							imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[
+								getAssetImageUnlitMax
+							];
+						}
+
+						ctx.drawImage(
+							imageBitmap,
+							(<any>complex.gx - startGx) * gInPw,
+							(<any>complex.gy - startGy) * gInPh,
+						);
+					}
 				}
 
 				// CacheIt
@@ -170,7 +200,7 @@ export class ImageBlockDrawEngine {
 			// Cache it
 			ImageBlockDrawEngine.cacheHashG = ImageBlockDrawEngine.cacheHashCheckG;
 			ImageBlockDrawEngine.cacheHashP = ImageBlockDrawEngine.cacheHashCheckP;
-			ImageBlockDrawEngine.cacheHourCheck = ImageBlockDrawEngine.mapActive.hourOfDayEff;
+			ImageBlockDrawEngine.cacheHourPreciseCheck = LightingEngine.getHourPreciseOfDayEff();
 			ImageBlockDrawEngine.cacheZoom = camera.zoom;
 		}
 

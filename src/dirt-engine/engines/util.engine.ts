@@ -53,13 +53,13 @@ export class UtilEngine {
 		startGy: number,
 		stopGx: number,
 		stopGy: number,
-	): GridBlockTableComplex[] {
+	): { [key: number]: GridBlockTableComplex[] } {
 		let gx: number,
 			gxs: number[] = <number[]>gridBlockTable.gx,
 			gy: GridBlockTableComplex,
 			gys: GridBlockTableComplex[],
 			hashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>gridBlockTable.hashesGyByGx,
-			hashesSlice: GridBlockTableComplex[] = [],
+			hashesGyByGxSlice: { [key: number]: GridBlockTableComplex[] } = {},
 			j: string;
 
 		startGx--;
@@ -75,18 +75,29 @@ export class UtilEngine {
 					gy = gys[j];
 
 					if (gy.value > startGy && gy.value < stopGy) {
-						hashesSlice.push({
-							gx: gx,
-							gy: gy.value,
-							hash: gy.hash,
-							value: 0,
-						});
+						if (hashesGyByGxSlice[gx] === undefined) {
+							hashesGyByGxSlice[gx] = [
+								{
+									gx: gx,
+									gy: gy.value,
+									hash: gy.hash,
+									value: 0,
+								},
+							];
+						} else {
+							hashesGyByGxSlice[gx].push({
+								gx: gx,
+								gy: gy.value,
+								hash: gy.hash,
+								value: 0,
+							});
+						}
 					}
 				}
 			}
 		}
 
-		return hashesSlice;
+		return hashesGyByGxSlice;
 	}
 
 	/**

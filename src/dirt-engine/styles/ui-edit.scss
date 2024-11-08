@@ -130,6 +130,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.redo,
 	&.save,
 	&.settings,
+	&.time,
 	&.undo,
 	&.view {
 		align-items: center;
@@ -150,6 +151,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 
 			&::after {
 				color: rgba(255, 255, 255, 0.5);
+				pointer-events: none;
 				position: absolute;
 			}
 
@@ -196,6 +198,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 		&.overlay-text {
 			&::after {
 				color: rgba(255, 255, 255, 0.5);
+				pointer-events: none;
 				position: absolute;
 			}
 		}
@@ -579,6 +582,17 @@ $dirt-engine-ui-edit-button-width: 40px;
 				transform: rotate(360deg);
 			}
 		}
+	}
+
+	&.time {
+		background-color: rgba(0, 0, 0, 0.25);
+		border: none;
+		border-radius: 5px;
+		height: 40px;
+		left: calc(50% - 220px);
+		pointer-events: none;
+		top: 20px;
+		width: 60px;
 	}
 
 	&.undo {

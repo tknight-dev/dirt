@@ -32,11 +32,12 @@ class Dirt {
 			},
 			domGame: HTMLElement = <HTMLElement>document.getElementById('game'),
 			settings: VideoInputCmdSettings = {
+				darknessMax: 0.8,
 				foregroundViewerPercentageOfViewport: 1.5,
 				fps: VideoInputCmdSettingsFPS._60,
 				fpsVisible: true,
 				mapVisible: true,
-				resolution: AssetImageSrcResolution.ULTRA,
+				resolution: AssetImageSrcResolution.HIGH,
 			};
 
 		DirtEngine.initialize(assetDeclarations, domGame, true, true, settings);

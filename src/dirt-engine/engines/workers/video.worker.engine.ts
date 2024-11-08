@@ -5,6 +5,7 @@ import { Camera } from '../../models/camera.model';
 import { CameraEngine } from '../camera.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
+import { LightingEngine } from '../lighting.engine';
 import { Map, MapActive, MapConfig } from '../../models/map.model';
 import { MapEngine } from '../map.engine';
 import { MapEditEngine } from '../map-edit.engine';
@@ -53,6 +54,9 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case VideoInputCmd.GAME_MODE_EDIT_SETTINGS:
 			Video.inputGameModeEditSettings(<MapConfig>videoPayload.data);
+			break;
+		case VideoInputCmd.GAME_MODE_EDIT_TIME_FORCED:
+			Video.inputGameModeEditTimeForced(<boolean>videoPayload.data);
 			break;
 		case VideoInputCmd.GAME_MODE_EDIT_UNDO:
 			Video.inputGameModeEditUndo();
@@ -148,6 +152,7 @@ class Video {
 			Video.canvasOffscreenPrimaryContext,
 			Video.canvasOffscreenUnderlayContext,
 		);
+		await LightingEngine.initialize();
 		await MapEngine.initialize();
 		await MapEditEngine.initialize(false);
 
@@ -217,6 +222,16 @@ class Video {
 		]);
 	}
 
+	public static inputGameModeEditTimeForced(enable: boolean): void {
+		LightingEngine.setTimeForced(enable);
+		Video.post([
+			{
+				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
 	public static inputGameModeEditUndo(): void {
 		MapEditEngine.historyUndo();
 		Video.post([
@@ -233,7 +248,7 @@ class Video {
 
 	public static inputGameSave(save: VideoInputCmdGameSave): void {
 		if (KernelEngine.isModeEdit()) {
-			Video.outputMapSave(KernelEngine.getMapActive());
+			Video.outputMapSave(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
 		} else {
 			console.log('save current game state', save);
 		}
@@ -274,7 +289,7 @@ class Video {
 
 			if (map) {
 				mapActive = MapEngine.loadFromFile(map);
-				await MapEditEngine.load(mapActive);
+				await MapEditEngine.load(mapActive); // Also starts the
 			} else {
 				status = false;
 			}
@@ -304,7 +319,7 @@ class Video {
 			}
 
 			if (mapActive) {
-				await MapEditEngine.load(mapActive);
+				await MapEditEngine.load(mapActive); // Also starts Kernel
 			}
 		} catch (error: any) {
 			console.error('Video > inputMapLoadById', error);
@@ -329,7 +344,7 @@ class Video {
 			width: number = Math.floor(resize.width * devicePixelRatio);
 
 		UtilEngine.renderOverflowPEff = Math.round(UtilEngine.renderOverflowP * devicePixelRatio * 1000) / 1000;
-		KernelEngine.setDimension(height, width, resize.force);
+		KernelEngine.setDimension(height, width);
 
 		Video.canvasOffscreenBackground.height = height;
 		Video.canvasOffscreenBackground.width = width;
@@ -346,6 +361,7 @@ class Video {
 	public static inputSettings(settings: VideoInputCmdSettings): void {
 		console.log('VideoWorker > settings', settings);
 
+		settings.darknessMax = Math.round(Math.max(0, Math.min(1, settings.darknessMax)) * 1000) / 1000;
 		settings.foregroundViewerPercentageOfViewport =
 			Math.round(Math.max(0, Math.min(2, settings.foregroundViewerPercentageOfViewport)) * 1000) / 1000;
 

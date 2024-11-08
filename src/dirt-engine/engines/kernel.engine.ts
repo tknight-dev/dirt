@@ -250,7 +250,7 @@ export class KernelEngine {
 		KernelEngine.status = false;
 	}
 
-	public static setDimension(height: number, width: number, force?: boolean): void {
+	public static setDimension(height: number, width: number): void {
 		if (!KernelEngine.initialized) {
 			console.error('KernelEngine > setDimensions: not initialized');
 			return;
@@ -261,10 +261,7 @@ export class KernelEngine {
 
 		if (KernelEngine.mapActive) {
 			CameraEngine.updateDimensions(height, width);
-
-			if (force) {
-				LightingEngine.updateZoom(undefined, force);
-			}
+			LightingEngine.updateZoom(undefined, true);
 		}
 	}
 
@@ -302,6 +299,7 @@ export class KernelEngine {
 
 		// Extended
 		ImageBlockDrawEngine.setForegroundViewerSettings(settings.foregroundViewerPercentageOfViewport);
+		LightingEngine.setDarknessMax(settings.darknessMax);
 		FPSDrawEngine.fpsTarget = settings.fps;
 
 		// Last

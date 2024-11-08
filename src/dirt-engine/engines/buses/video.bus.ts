@@ -246,6 +246,7 @@ export class VideoBus {
 							console.error('VideoBus > input: map asset callback not set');
 						}
 						break;
+						1440;
 					case VideoOutputCmd.MAP_HOUR_OF_DAY_EFF:
 						if (VideoBus.callbackMapHourOfDayEff !== undefined) {
 							VideoBus.callbackMapHourOfDayEff(<number>videoWorkerPayload.data);
@@ -345,6 +346,13 @@ export class VideoBus {
 		VideoBus.worker.postMessage({
 			cmd: VideoInputCmd.GAME_MODE_EDIT_SETTINGS,
 			data: mapConfig,
+		});
+	}
+
+	public static outputGameModeEditTimeForced(enable: boolean): void {
+		VideoBus.worker.postMessage({
+			cmd: VideoInputCmd.GAME_MODE_EDIT_TIME_FORCED,
+			data: enable,
 		});
 	}
 

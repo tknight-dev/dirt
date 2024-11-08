@@ -372,6 +372,11 @@ export class DirtEngine extends DomUI {
 		});
 
 		//Mouse
+		DirtEngine.domElements['feed'].onmouseout = () => {
+			if (DirtEngine.gameStarted && DirtEngine.uiEditMode && MapEditEngine.uiLoaded) {
+				DomUI.editMouseUp();
+			}
+		};
 		MouseEngine.setCallback((action: MouseAction) => {
 			if (DirtEngine.gameStarted) {
 				VideoBus.outputMouse(action);
@@ -385,7 +390,7 @@ export class DirtEngine extends DomUI {
 						if (action.down) {
 							DomUI.editMouseDown(action);
 						} else {
-							DomUI.editMouseUp(action);
+							DomUI.editMouseUp();
 						}
 					} else if (action.cmd === MouseCmd.MOVE) {
 						DomUI.editMouseMove(action);

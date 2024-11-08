@@ -546,6 +546,7 @@ export class MapEditEngine {
 
 	public static updateUIHourOfDayEff(hourOfDayEff: number): void {
 		MapEditEngine.mapActiveUI.hourOfDayEff = hourOfDayEff;
+		MapEditEngine.mapActiveUI.minuteOfHourEff = 0;
 	}
 
 	public static updateMapSettings(mapConfig: MapConfig): void {
@@ -567,6 +568,7 @@ export class MapEditEngine {
 		mapActive.clockTicker = 0;
 		mapActive.durationInMS = 0;
 		mapActive.hourOfDayEff = mapActive.hourOfDay;
+		mapActive.minuteOfHourEff = 0;
 	}
 
 	public static getMapActive(): MapActive {
