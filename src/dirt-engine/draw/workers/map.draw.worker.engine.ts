@@ -106,8 +106,8 @@ class MapDrawWorkerEngine {
 
 		// Draw interval
 		setInterval(() => {
-			requestAnimationFrame(MapDrawWorkerEngine._draw);
-		}, 500);
+			MapDrawWorkerEngine._draw();
+		}, 750);
 	}
 
 	public static inputSetAssets(data: MapDrawBusInputPlayloadAssets): void {
@@ -205,6 +205,7 @@ class MapDrawWorkerEngine {
 				getAssetImageLit: any = LightingEngine.getAssetImageLit,
 				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
 				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
+				gradient: CanvasGradient,
 				grid: Grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId],
 				gridBlockTableComplexFull: GridBlockTableComplexFull,
 				gridConfig: GridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId],
@@ -223,8 +224,14 @@ class MapDrawWorkerEngine {
 				j: string,
 				k: number,
 				outside: boolean = gridConfig.outside,
+				radius: number,
+				radius2: number,
 				resolutionMultiple: number = 4,
+				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
+				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
 				scratch: number,
+				x: number,
+				y: number,
 				z: VideoBusInputCmdGameModeEditApplyZ,
 				zBitmapBackground: ImageBitmap = canvas.transferToImageBitmap(),
 				zBitmapForeground: ImageBitmap = canvas.transferToImageBitmap(),
@@ -239,10 +246,16 @@ class MapDrawWorkerEngine {
 			ctx.imageSmoothingEnabled = false;
 			ctxTmp.imageSmoothingEnabled = false;
 
+			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
+
 			canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
 			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
 			gHeightMaxEff = gHeightMax * resolutionMultiple;
 			gWidthMaxEff = gWidthMax * resolutionMultiple;
+			radius = Math.round(
+				(((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple,
+			);
+			radius2 = radius * 2;
 
 			// Calc all ys
 			gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(
@@ -306,8 +319,8 @@ class MapDrawWorkerEngine {
 
 								ctxTmp.drawImage(
 									imageBitmap,
-									(<any>complex.gx - gWidth) * resolutionMultiple,
-									(<any>complex.gy - gHeight) * resolutionMultiple,
+									Math.round((<any>complex.gx - gWidth) * resolutionMultiple),
+									Math.round((<any>complex.gy - gHeight) * resolutionMultiple),
 								);
 							}
 						}
@@ -319,13 +332,8 @@ class MapDrawWorkerEngine {
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 								// "Cut Out" viewport from foreground layer to make the under layers visible to the person
 								if (foregroundViewerEnable) {
-									let gradient: CanvasGradient,
-										radius: number =
-											(((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) /
-												camera.zoom) *
-											resolutionMultiple,
-										x: number = (camera.gx - gWidth) * resolutionMultiple,
-										y: number = (camera.gy - gHeight) * resolutionMultiple;
+									x = Math.round((camera.gx - gWidth) * resolutionMultiple);
+									y = Math.round((camera.gy - gHeight) * resolutionMultiple);
 
 									gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
 									gradient.addColorStop(0, 'rgba(255,255,255,1)');
@@ -334,7 +342,7 @@ class MapDrawWorkerEngine {
 
 									ctxTmp.globalCompositeOperation = 'destination-out';
 									ctxTmp.fillStyle = gradient;
-									ctxTmp.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+									ctxTmp.fillRect(x - radius, y - radius, radius2, radius2);
 									ctxTmp.globalCompositeOperation = 'source-over'; // restore default setting
 								}
 								zBitmapForeground = canvasTmp.transferToImageBitmap();
@@ -346,7 +354,6 @@ class MapDrawWorkerEngine {
 					}
 
 					// Build final cut of the map
-					ctxTmp.clearRect(0, 0, canvasTmpGw, canvasTmpGh);
 					ctxTmp.drawImage(zBitmapBackground, 0, 0);
 					ctxTmp.drawImage(zBitmapPrimary, 0, 0);
 					ctxTmp.drawImage(zBitmapForeground, 0, 0);
@@ -363,20 +370,19 @@ class MapDrawWorkerEngine {
 							0,
 							canvasTmpGwEff,
 							canvasTmpGhEff,
-							canvasWidth * (gWidth / gWidthMax),
-							canvasHeight * (gHeight / gHeightMax),
-							canvasWidth * (canvasTmpGw / gWidthMax),
-							canvasHeight * (canvasTmpGh / gHeightMax),
+							Math.round(canvasWidth * (gWidth / gWidthMax)),
+							Math.round(canvasHeight * (gHeight / gHeightMax)),
+							scaledImageWidth,
+							scaledImageHeight,
 						);
 					}
 				}
 			}
 
 			// Done
-			MapDrawWorkerEngine.outputBitmap(MapDrawWorkerEngine.canvas.transferToImageBitmap());
+			MapDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());
 		} catch (e: any) {
-			// console.error('e', e);
-			// Maybe a needed asset hasn't loaded in, this should only happen during a couple ms of inits
+			//console.error('e', e);
 		}
 		MapDrawWorkerEngine.busy = false;
 	}

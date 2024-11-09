@@ -5,6 +5,7 @@ import {
 	GridBlockTable,
 	GridBlockTableComplex,
 	GridBlockTableComplexFull,
+	GridConfig,
 	GridImageBlock,
 } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
@@ -95,7 +96,9 @@ export class ImageBlockDrawEngine {
 				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
+				gradient: CanvasGradient,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
+				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
 				gridBlockTableComplexFull: GridBlockTableComplexFull,
 				horizonLineGyByGxPrimary: { [key: number]: number } = {},
 				imageBitmap: ImageBitmap,
@@ -105,15 +108,26 @@ export class ImageBlockDrawEngine {
 				j: string,
 				k: number,
 				outside: boolean = ImageBlockDrawEngine.mapActive.gridConfigActive.outside,
+				radius: number,
+				radius2: number,
 				scratch: number,
 				startGx: number = camera.viewportGx,
 				startGy: number = camera.viewportGy,
 				stopGx: number = startGx + camera.viewportGwEff,
 				stopGy: number = startGy + camera.viewportGwEff,
+				x: number,
+				y: number,
 				z: VideoBusInputCmdGameModeEditApplyZ,
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
+			// Config
 			ctx.imageSmoothingEnabled = false;
+			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
+			radius = Math.round(
+				((camera.viewportPh / 2) * ImageBlockDrawEngine.foregroundViewerPercentageOfViewport) / camera.zoom,
+			);
+			radius2 = radius * 2;
+
 			/*
 			 * Iterate through z layers
 			 */
@@ -173,8 +187,8 @@ export class ImageBlockDrawEngine {
 
 						ctx.drawImage(
 							imageBitmap,
-							(<any>complex.gx - startGx) * gInPw,
-							(<any>complex.gy - startGy) * gInPh,
+							Math.round((<any>complex.gx - startGx) * gInPw),
+							Math.round((<any>complex.gy - startGy) * gInPh),
 						);
 					}
 				}
@@ -187,13 +201,8 @@ export class ImageBlockDrawEngine {
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 						// "Cut Out" viewport from foreground layer to make the under layers visible to the person
 						if (ImageBlockDrawEngine.foregroundViewerEnable) {
-							let gradient: CanvasGradient,
-								radius: number =
-									((camera.viewportPh / 2) *
-										ImageBlockDrawEngine.foregroundViewerPercentageOfViewport) /
-									camera.zoom,
-								x: number = (camera.gx - startGx) * gInPw,
-								y: number = (camera.gy - startGy) * gInPh;
+							x = Math.round((camera.gx - startGx) * gInPw);
+							y = Math.round((camera.gy - startGy) * gInPh);
 
 							gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
 							gradient.addColorStop(0, 'rgba(255,255,255,1)');
@@ -202,7 +211,7 @@ export class ImageBlockDrawEngine {
 
 							ctx.globalCompositeOperation = 'destination-out';
 							ctx.fillStyle = gradient;
-							ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+							ctx.fillRect(x - radius, y - radius, radius2, radius2);
 							ctx.globalCompositeOperation = 'source-over'; // restore default setting
 						}
 

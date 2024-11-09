@@ -176,6 +176,7 @@ export class AssetEngine {
 			filenameOriginalShared: string,
 			filenamesCustom: string[] = [],
 			image: boolean,
+			textDecoder: TextDecoder = new TextDecoder('ISO-8859-1'),
 			timestamp: number = Date.now(),
 			zip: JSZip;
 
@@ -282,12 +283,20 @@ export class AssetEngine {
 			if (asset.dataURLType) {
 				AssetEngine.assets[asset.filename] = {
 					data:
-						'data:' + asset.dataURLType + ';base64,' + btoa(String.fromCharCode(...new Uint8Array(buffer))),
+						'data:' +
+						asset.dataURLType +
+						';base64,' +
+						btoa(
+							new Uint8Array(buffer).reduce(
+								(acc, i) => (acc += String.fromCharCode.apply(null, [i])),
+								'',
+							),
+						),
 					original: asset.original,
 				};
 			} else {
 				AssetEngine.assets[asset.filename] = {
-					data: String.fromCharCode(...new Uint8Array(buffer)),
+					data: new Uint8Array(buffer).reduce((acc, i) => (acc += String.fromCharCode.apply(null, [i])), ''),
 					original: asset.original,
 				};
 			}

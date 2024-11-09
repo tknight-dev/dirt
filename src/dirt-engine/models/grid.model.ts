@@ -42,7 +42,7 @@ export interface GridConfig {
 	gHorizon: number; // Precision 0
 	gWidth: number; // Precision 0
 	id: string;
-	lightIntensityGlobal: number; // defaulted by MapEngine (Precision 3)
+	lightIntensityGlobal: number; // 1.000 is default (Precision 3)
 	outside: boolean; // defaulted by MapEngine
 	startGxCamera: number; // Precision 3
 	startGyCamera: number; // Precision 3

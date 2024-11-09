@@ -189,7 +189,8 @@ export class LightingEngine {
 			litAlgDarknessNight: string | undefined,
 			litAlgGolden: string | undefined,
 			unlitLength: number = LightingEngine.cacheZoomedUnlitLength,
-			scratch: number;
+			scratch: number,
+			scratch2: number;
 
 		if (!camera) {
 			if (LightingEngine.mapActive === undefined) {
@@ -210,19 +211,19 @@ export class LightingEngine {
 		if (hourPreciseOfDayEff < 4 || hourPreciseOfDayEff > 23) {
 			// 11pm > time < 4am
 			litAlgApplied = true;
-			litAlgDarknessNight = 'rgba(0,0,0,' + darknessMax + ')';
+			litAlgDarknessNight = 'brightness(' + (1 - darknessMax) + ')';
 		} else if (hourPreciseOfDayEff < 10) {
 			// 10pm
 			scratch = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
 
 			litAlgApplied = true;
-			litAlgDarknessMorning = 'rgba(0,0,0,' + scratch + ')';
+			litAlgDarknessMorning = 'brightness(' + (1 - scratch) + ')';
 		} else if (hourPreciseOfDayEff > 18) {
 			// 6pm
 			scratch = Math.min(darknessMax, Math.round(((hourPreciseOfDayEff - 18) / 6) * 1000) / 1000);
 
 			litAlgApplied = true;
-			litAlgDarknessEvening = 'rgba(0,0,0,' + scratch + ')';
+			litAlgDarknessEvening = 'brightness(' + (1 - scratch) + ')';
 		}
 
 		if (
@@ -230,13 +231,24 @@ export class LightingEngine {
 			(hourPreciseOfDayEff > 18 && hourPreciseOfDayEff < 19)
 		) {
 			scratch = hourPreciseOfDayEff - Math.floor(hourPreciseOfDayEff);
+			scratch2 = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
 
 			if (scratch >= 0.5) {
 				scratch = 0.5 - (scratch - 0.5);
 			}
 
 			litAlgApplied = true;
-			litAlgGolden = 'saturate(' + Math.round(scratch * 750 + 1000) / 1000 + ')';
+			if (hourPreciseOfDayEff < 8) {
+				litAlgGolden =
+					'brightness(' + (1 - scratch2) + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
+			} else {
+				litAlgGolden =
+					'brightness(' +
+					Math.round(scratch * 250 + 1000) / 1000 +
+					') saturate(' +
+					Math.round(scratch * 500 + 1000) / 1000 +
+					')';
+			}
 		}
 
 		/*
@@ -260,26 +272,17 @@ export class LightingEngine {
 				 */
 				if (litAlgGolden) {
 					ctx.filter = litAlgGolden;
+				} else if (litAlgDarknessNight) {
+					ctx.filter = litAlgDarknessNight;
+				} else if (litAlgDarknessMorning) {
+					ctx.filter = litAlgDarknessMorning;
+				} else if (litAlgDarknessEvening) {
+					ctx.filter = litAlgDarknessEvening;
 				} else {
 					ctx.filter = 'none';
 				}
 
 				ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
-
-				if (litAlgDarknessNight) {
-					// 11pm > time < 4am
-					ctx.fillStyle = litAlgDarknessNight;
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
-				} else if (litAlgDarknessMorning) {
-					// 12pm
-					ctx.fillStyle = litAlgDarknessMorning;
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
-				} else if (litAlgDarknessEvening) {
-					// 6pm
-					ctx.fillStyle = litAlgDarknessEvening;
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
-				}
-
 				LightingEngine.cacheZoomedLit[id] = canvas.transferToImageBitmap();
 
 				/*
@@ -290,27 +293,18 @@ export class LightingEngine {
 
 				if (litAlgGolden) {
 					ctx.filter = litAlgGolden;
+				} else if (litAlgDarknessNight) {
+					ctx.filter = litAlgDarknessNight;
+				} else if (litAlgDarknessMorning) {
+					ctx.filter = litAlgDarknessMorning;
+				} else if (litAlgDarknessEvening) {
+					ctx.filter = litAlgDarknessEvening;
 				} else {
 					ctx.filter = 'none';
 				}
 
 				for (j = 0; j < unlitLength; j++) {
 					ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
-
-					// Match brightest darkness
-					if (litAlgDarknessNight) {
-						// 11pm > time < 4am
-						ctx.fillStyle = litAlgDarknessNight;
-					} else if (litAlgDarknessMorning) {
-						// 12pm
-						ctx.fillStyle = litAlgDarknessMorning;
-					} else if (litAlgDarknessEvening) {
-						// 6pm
-						ctx.fillStyle = litAlgDarknessEvening;
-					} else {
-						ctx.fillStyle = darkness;
-					}
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 					// Make it darker
 					ctx.fillStyle = darkness;

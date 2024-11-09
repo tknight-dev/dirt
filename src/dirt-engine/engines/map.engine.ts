@@ -105,6 +105,7 @@ export class MapEngine {
 			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 
 			gridConfig.gHorizon = Math.round(gridConfig.gHeight / 2);
+
 			gridConfig.lightIntensityGlobal = Math.round(gridConfig.lightIntensityGlobal * 1000) / 1000;
 		}
 
