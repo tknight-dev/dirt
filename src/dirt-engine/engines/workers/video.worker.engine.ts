@@ -12,93 +12,93 @@ import { MapEditEngine } from '../map-edit.engine';
 import { MouseAction } from '../mouse.engine';
 import { UtilEngine } from '../util.engine';
 import {
-	VideoInputCmd,
-	VideoInputCmdInit,
-	VideoInputCmdMapLoad,
-	VideoInputCmdMapLoadById,
-	VideoInputCmdResize,
-	VideoInputCmdGameModeEdit,
-	VideoInputCmdGameModeEditApply,
-	VideoInputCmdGameModeEditDraw,
-	VideoInputCmdGamePause,
-	VideoInputCmdGamePauseReason,
-	VideoInputCmdGameSave,
-	VideoInputCmdGameStart,
-	VideoInputCmdGameUnpause,
-	VideoInputCmdSettings,
-	VideoPayload,
-	VideoOutputCmd,
-	VideoOutputCmdAudioEffect,
-	VideoWorkerPayload,
-} from '../../models/video-worker-cmds.model';
+	VideoBusInputCmd,
+	VideoBusInputCmdInit,
+	VideoBusInputCmdMapLoad,
+	VideoBusInputCmdMapLoadById,
+	VideoBusInputCmdResize,
+	VideoBusInputCmdGameModeEdit,
+	VideoBusInputCmdGameModeEditApply,
+	VideoBusInputCmdGameModeEditDraw,
+	VideoBusInputCmdGamePause,
+	VideoBusInputCmdGamePauseReason,
+	VideoBusInputCmdGameSave,
+	VideoBusInputCmdGameStart,
+	VideoBusInputCmdGameUnpause,
+	VideoBusInputCmdSettings,
+	VideoBusPayload,
+	VideoBusOutputCmd,
+	VideoBusOutputCmdAudioEffect,
+	VideoBusWorkerPayload,
+} from '../../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
  */
 
 self.onmessage = (event: MessageEvent) => {
-	let videoPayload: VideoPayload = event.data;
+	let videoBusPayload: VideoBusPayload = event.data;
 
-	switch (videoPayload.cmd) {
-		case VideoInputCmd.GAME_MODE_EDIT:
-			Video.inputGameModeEdit(<VideoInputCmdGameModeEdit>videoPayload.data);
+	switch (videoBusPayload.cmd) {
+		case VideoBusInputCmd.GAME_MODE_EDIT:
+			VideoWorkerEngine.inputGameModeEdit(<VideoBusInputCmdGameModeEdit>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_MODE_EDIT_APPLY:
-			Video.inputGameModeEditApply(<VideoInputCmdGameModeEditApply>videoPayload.data);
+		case VideoBusInputCmd.GAME_MODE_EDIT_APPLY:
+			VideoWorkerEngine.inputGameModeEditApply(<VideoBusInputCmdGameModeEditApply>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_MODE_EDIT_DRAW:
-			Video.inputGameModeEditDraw(<VideoInputCmdGameModeEditDraw>videoPayload.data);
+		case VideoBusInputCmd.GAME_MODE_EDIT_DRAW:
+			VideoWorkerEngine.inputGameModeEditDraw(<VideoBusInputCmdGameModeEditDraw>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_MODE_EDIT_REDO:
-			Video.inputGameModeEditRedo();
+		case VideoBusInputCmd.GAME_MODE_EDIT_REDO:
+			VideoWorkerEngine.inputGameModeEditRedo();
 			break;
-		case VideoInputCmd.GAME_MODE_EDIT_SETTINGS:
-			Video.inputGameModeEditSettings(<MapConfig>videoPayload.data);
+		case VideoBusInputCmd.GAME_MODE_EDIT_SETTINGS:
+			VideoWorkerEngine.inputGameModeEditSettings(<MapConfig>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_MODE_EDIT_TIME_FORCED:
-			Video.inputGameModeEditTimeForced(<boolean>videoPayload.data);
+		case VideoBusInputCmd.GAME_MODE_EDIT_TIME_FORCED:
+			VideoWorkerEngine.inputGameModeEditTimeForced(<boolean>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_MODE_EDIT_UNDO:
-			Video.inputGameModeEditUndo();
+		case VideoBusInputCmd.GAME_MODE_EDIT_UNDO:
+			VideoWorkerEngine.inputGameModeEditUndo();
 			break;
-		case VideoInputCmd.GAME_PAUSE:
-			Video.inputGamePause(<VideoInputCmdGamePause>videoPayload.data);
+		case VideoBusInputCmd.GAME_PAUSE:
+			VideoWorkerEngine.inputGamePause(<VideoBusInputCmdGamePause>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_SAVE:
-			Video.inputGameSave(<VideoInputCmdGameSave>videoPayload.data);
+		case VideoBusInputCmd.GAME_SAVE:
+			VideoWorkerEngine.inputGameSave(<VideoBusInputCmdGameSave>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_START:
-			Video.inputGameStart(<VideoInputCmdGameStart>videoPayload.data);
+		case VideoBusInputCmd.GAME_START:
+			VideoWorkerEngine.inputGameStart(<VideoBusInputCmdGameStart>videoBusPayload.data);
 			break;
-		case VideoInputCmd.GAME_UNPAUSE:
-			Video.inputGameUnpause(<VideoInputCmdGameUnpause>videoPayload.data);
+		case VideoBusInputCmd.GAME_UNPAUSE:
+			VideoWorkerEngine.inputGameUnpause(<VideoBusInputCmdGameUnpause>videoBusPayload.data);
 			break;
-		case VideoInputCmd.INIT:
-			Video.initialize(self, <VideoInputCmdInit>videoPayload.data);
+		case VideoBusInputCmd.INIT:
+			VideoWorkerEngine.initialize(self, <VideoBusInputCmdInit>videoBusPayload.data);
 			break;
-		case VideoInputCmd.KEY:
-			KernelEngine.inputKey(<KeyAction>videoPayload.data);
+		case VideoBusInputCmd.KEY:
+			KernelEngine.inputKey(<KeyAction>videoBusPayload.data);
 			break;
-		case VideoInputCmd.MAP_LOAD:
-			Video.inputMapLoad(<VideoInputCmdMapLoad>videoPayload.data);
+		case VideoBusInputCmd.MAP_LOAD:
+			VideoWorkerEngine.inputMapLoad(<VideoBusInputCmdMapLoad>videoBusPayload.data);
 			break;
-		case VideoInputCmd.MAP_LOAD_BY_ID:
-			Video.inputMapLoadById(<VideoInputCmdMapLoadById>videoPayload.data);
+		case VideoBusInputCmd.MAP_LOAD_BY_ID:
+			VideoWorkerEngine.inputMapLoadById(<VideoBusInputCmdMapLoadById>videoBusPayload.data);
 			break;
-		case VideoInputCmd.MOUSE:
-			KernelEngine.inputMouse(<MouseAction>videoPayload.data);
+		case VideoBusInputCmd.MOUSE:
+			KernelEngine.inputMouse(<MouseAction>videoBusPayload.data);
 			break;
-		case VideoInputCmd.RESIZE:
-			Video.inputGamePause({ reason: VideoInputCmdGamePauseReason.RESIZE });
-			Video.inputResize(<VideoInputCmdResize>videoPayload.data);
+		case VideoBusInputCmd.RESIZE:
+			VideoWorkerEngine.inputGamePause({ reason: VideoBusInputCmdGamePauseReason.RESIZE });
+			VideoWorkerEngine.inputResize(<VideoBusInputCmdResize>videoBusPayload.data);
 			break;
-		case VideoInputCmd.SETTINGS:
-			Video.inputSettings(<VideoInputCmdSettings>videoPayload.data);
+		case VideoBusInputCmd.SETTINGS:
+			VideoWorkerEngine.inputSettings(<VideoBusInputCmdSettings>videoBusPayload.data);
 			break;
 	}
 };
 
-class Video {
+class VideoWorkerEngine {
 	private static assetManifestMaster: AssetManifestMaster;
 	private static canvasOffscreenBackground: OffscreenCanvas; // Z-2
 	private static canvasOffscreenBackgroundContext: OffscreenCanvasRenderingContext2D;
@@ -116,41 +116,53 @@ class Video {
 	private static resolution: AssetImageSrcResolution;
 	private static self: Window & typeof globalThis;
 
-	public static async initialize(self: Window & typeof globalThis, data: VideoInputCmdInit): Promise<void> {
-		if (Video.initialized) {
+	public static async initialize(self: Window & typeof globalThis, data: VideoBusInputCmdInit): Promise<void> {
+		if (VideoWorkerEngine.initialized) {
 			console.error('Video > initialize: already initialized');
 			return;
 		}
-		Video.initialized = true;
+		VideoWorkerEngine.initialized = true;
 		let timestamp: number = performance.now();
 
 		// Assign
-		Video.assetManifestMaster = AssetEngine.compileMasterManifest(data.assetDeclarations.manifest || <any>{});
-		Video.canvasOffscreenBackground = data.canvasOffscreenBackground;
-		Video.canvasOffscreenForeground = data.canvasOffscreenForeground;
-		Video.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
-		Video.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
-		Video.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
-		Video.resolution = data.resolution;
-		Video.self = self;
+		VideoWorkerEngine.assetManifestMaster = AssetEngine.compileMasterManifest(
+			data.assetDeclarations.manifest || <any>{},
+		);
+		VideoWorkerEngine.canvasOffscreenBackground = data.canvasOffscreenBackground;
+		VideoWorkerEngine.canvasOffscreenForeground = data.canvasOffscreenForeground;
+		VideoWorkerEngine.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
+		VideoWorkerEngine.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
+		VideoWorkerEngine.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
+		VideoWorkerEngine.resolution = data.resolution;
+		VideoWorkerEngine.self = self;
 
 		// Get contexts
-		Video.canvasOffscreenBackgroundContext = <any>Video.canvasOffscreenBackground.getContext('2d');
-		Video.canvasOffscreenForegroundContext = <any>Video.canvasOffscreenForeground.getContext('2d');
-		Video.canvasOffscreenOverlayContext = <any>Video.canvasOffscreenOverlay.getContext('2d');
-		Video.canvasOffscreenPrimaryContext = <any>Video.canvasOffscreenPrimary.getContext('2d');
-		Video.canvasOffscreenUnderlayContext = <any>Video.canvasOffscreenUnderlay.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenBackgroundContext = <any>(
+			VideoWorkerEngine.canvasOffscreenBackground.getContext('2d')
+		);
+		VideoWorkerEngine.canvasOffscreenForegroundContext = <any>(
+			VideoWorkerEngine.canvasOffscreenForeground.getContext('2d')
+		);
+		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>(
+			VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d')
+		);
+		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>(
+			VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d')
+		);
+		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>(
+			VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d')
+		);
 
 		// Engines
 		await AssetEngine.initialize(data.assetDeclarations, AssetCollection.VIDEO);
 		await AssetEngine.load();
 		await CameraEngine.initialize();
 		await KernelEngine.initialize(
-			Video.canvasOffscreenBackgroundContext,
-			Video.canvasOffscreenForegroundContext,
-			Video.canvasOffscreenOverlayContext,
-			Video.canvasOffscreenPrimaryContext,
-			Video.canvasOffscreenUnderlayContext,
+			VideoWorkerEngine.canvasOffscreenBackgroundContext,
+			VideoWorkerEngine.canvasOffscreenForegroundContext,
+			VideoWorkerEngine.canvasOffscreenOverlayContext,
+			VideoWorkerEngine.canvasOffscreenPrimaryContext,
+			VideoWorkerEngine.canvasOffscreenUnderlayContext,
 		);
 		await LightingEngine.initialize();
 		await MapEngine.initialize();
@@ -158,18 +170,18 @@ class Video {
 
 		// Config
 		CameraEngine.setCallback((camera: Camera) => {
-			Video.outputEditCameraUpdate(camera);
+			VideoWorkerEngine.outputEditCameraUpdate(camera);
 		});
 		ClockCalcEngine.setCallbackHourOfDay((hourOfDayEff: number) => {
-			Video.outputHourOfDayEff(hourOfDayEff);
+			VideoWorkerEngine.outputHourOfDayEff(hourOfDayEff);
 		});
-		Video.inputResize(data);
-		Video.inputSettings(data);
+		VideoWorkerEngine.inputResize(data);
+		VideoWorkerEngine.inputSettings(data);
 
 		// Done
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.STATUS_INITIALIZED,
+				cmd: VideoBusOutputCmd.STATUS_INITIALIZED,
 				data: {
 					durationInMs: performance.now() - timestamp,
 				},
@@ -177,26 +189,26 @@ class Video {
 		]);
 	}
 
-	public static inputGameModeEdit(modeEdit: VideoInputCmdGameModeEdit): void {
-		console.log('VideoWorker > modeEdit', modeEdit);
-		Video.gameModeEdit = modeEdit.edit;
+	public static inputGameModeEdit(modeEdit: VideoBusInputCmdGameModeEdit): void {
+		console.log('VideoBusWorker > modeEdit', modeEdit);
+		VideoWorkerEngine.gameModeEdit = modeEdit.edit;
 	}
 
-	public static inputGameModeEditApply(apply: VideoInputCmdGameModeEditApply): void {
+	public static inputGameModeEditApply(apply: VideoBusInputCmdGameModeEditApply): void {
 		MapEditEngine.apply(apply);
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
 	}
 
-	public static inputGameModeEditDraw(apply: VideoInputCmdGameModeEditDraw): void {
+	public static inputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
 		KernelEngine.draw(apply);
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
@@ -204,9 +216,9 @@ class Video {
 
 	public static inputGameModeEditRedo(): void {
 		MapEditEngine.historyRedo();
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
@@ -214,9 +226,9 @@ class Video {
 
 	public static inputGameModeEditSettings(mapConfig: MapConfig): void {
 		MapEditEngine.updateMapSettings(mapConfig);
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
@@ -224,9 +236,9 @@ class Video {
 
 	public static inputGameModeEditTimeForced(enable: boolean): void {
 		LightingEngine.setTimeForced(enable);
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
@@ -234,21 +246,21 @@ class Video {
 
 	public static inputGameModeEditUndo(): void {
 		MapEditEngine.historyUndo();
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.EDIT_COMPLETE,
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
 				data: null,
 			},
 		]);
 	}
 
-	public static inputGamePause(pause: VideoInputCmdGamePause): void {
-		//console.log('VideoWorker > gamePause', pause);
+	public static inputGamePause(pause: VideoBusInputCmdGamePause): void {
+		//console.log('VideoBusWorker > gamePause', pause);
 	}
 
-	public static inputGameSave(save: VideoInputCmdGameSave): void {
+	public static inputGameSave(save: VideoBusInputCmdGameSave): void {
 		if (KernelEngine.isModeEdit()) {
-			Video.outputMapSave(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
+			VideoWorkerEngine.outputMapSave(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
 		} else {
 			console.log('save current game state', save);
 		}
@@ -257,35 +269,35 @@ class Video {
 	/**
 	 * Start the game (company intro complete)
 	 */
-	public static inputGameStart(start: VideoInputCmdGameStart): void {
-		if (!Video.initialized) {
+	public static inputGameStart(start: VideoBusInputCmdGameStart): void {
+		if (!VideoWorkerEngine.initialized) {
 			console.error('Video > gameStart: not initialized');
 			return;
-		} else if (Video.gameStarted) {
+		} else if (VideoWorkerEngine.gameStarted) {
 			console.error('Video > gameStart: already started');
 			return;
 		}
-		Video.gameStarted = true;
-		Video.gameModeEdit = start.modeEdit;
-		console.log('VideoWorker > gameStart', start);
+		VideoWorkerEngine.gameStarted = true;
+		VideoWorkerEngine.gameModeEdit = start.modeEdit;
+		console.log('VideoBusWorker > gameStart', start);
 
 		// Last
 		KernelEngine.setModeEdit(start.modeEdit);
 	}
 
-	public static inputGameUnpause(unpause: VideoInputCmdGameUnpause): void {
-		console.log('VideoWorker > gameUnpause', unpause);
+	public static inputGameUnpause(unpause: VideoBusInputCmdGameUnpause): void {
+		console.log('VideoBusWorker > gameUnpause', unpause);
 	}
 
-	public static async inputMapLoad(VideoInputCmdMapLoad: VideoInputCmdMapLoad): Promise<void> {
+	public static async inputMapLoad(VideoBusInputCmdMapLoad: VideoBusInputCmdMapLoad): Promise<void> {
 		let map: Map,
 			mapActive: MapActive,
 			status: boolean = true;
 
-		//let maps: { [key: string]: AssetMap } = Video.assetManifestMaster.maps
+		//let maps: { [key: string]: AssetMap } = VideoWorkerEngine.assetManifestMaster.maps
 
 		try {
-			map = UtilEngine.mapDecode(VideoInputCmdMapLoad.data);
+			map = UtilEngine.mapDecode(VideoBusInputCmdMapLoad.data);
 
 			if (map) {
 				mapActive = MapEngine.loadFromFile(map);
@@ -297,9 +309,9 @@ class Video {
 			status = false;
 		}
 
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.MAP_LOAD_STATUS,
+				cmd: VideoBusOutputCmd.MAP_LOAD_STATUS,
 				data: {
 					status: status,
 				},
@@ -307,14 +319,14 @@ class Video {
 		]);
 	}
 
-	public static async inputMapLoadById(VideoInputCmdMapLoadById: VideoInputCmdMapLoadById): Promise<void> {
+	public static async inputMapLoadById(VideoBusInputCmdMapLoadById: VideoBusInputCmdMapLoadById): Promise<void> {
 		let mapActive: MapActive | undefined, mapAsset: AssetMap;
 
 		try {
-			if (!VideoInputCmdMapLoadById.id) {
+			if (!VideoBusInputCmdMapLoadById.id) {
 				mapActive = MapEngine.default();
 			} else {
-				mapAsset = Video.assetManifestMaster.maps[VideoInputCmdMapLoadById.id];
+				mapAsset = VideoWorkerEngine.assetManifestMaster.maps[VideoBusInputCmdMapLoadById.id];
 				mapActive = MapEngine.load(mapAsset);
 			}
 
@@ -325,9 +337,9 @@ class Video {
 			console.error('Video > inputMapLoadById', error);
 		}
 
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.MAP_ASSET,
+				cmd: VideoBusOutputCmd.MAP_ASSET,
 				data: {
 					mapActive: mapActive,
 				},
@@ -338,7 +350,7 @@ class Video {
 	/**
 	 * Supports high dpi screens
 	 */
-	public static inputResize(resize: VideoInputCmdResize): void {
+	public static inputResize(resize: VideoBusInputCmdResize): void {
 		let devicePixelRatio: number = resize.devicePixelRatio,
 			height: number = Math.floor(resize.height * devicePixelRatio),
 			width: number = Math.floor(resize.width * devicePixelRatio);
@@ -346,20 +358,20 @@ class Video {
 		UtilEngine.renderOverflowPEff = Math.round(UtilEngine.renderOverflowP * devicePixelRatio * 1000) / 1000;
 		KernelEngine.setDimension(height, width);
 
-		Video.canvasOffscreenBackground.height = height;
-		Video.canvasOffscreenBackground.width = width;
-		Video.canvasOffscreenForeground.height = height;
-		Video.canvasOffscreenForeground.width = width;
-		Video.canvasOffscreenOverlay.height = height;
-		Video.canvasOffscreenOverlay.width = width;
-		Video.canvasOffscreenPrimary.height = height;
-		Video.canvasOffscreenPrimary.width = width;
-		Video.canvasOffscreenUnderlay.height = height;
-		Video.canvasOffscreenUnderlay.width = width;
+		VideoWorkerEngine.canvasOffscreenBackground.height = height;
+		VideoWorkerEngine.canvasOffscreenBackground.width = width;
+		VideoWorkerEngine.canvasOffscreenForeground.height = height;
+		VideoWorkerEngine.canvasOffscreenForeground.width = width;
+		VideoWorkerEngine.canvasOffscreenOverlay.height = height;
+		VideoWorkerEngine.canvasOffscreenOverlay.width = width;
+		VideoWorkerEngine.canvasOffscreenPrimary.height = height;
+		VideoWorkerEngine.canvasOffscreenPrimary.width = width;
+		VideoWorkerEngine.canvasOffscreenUnderlay.height = height;
+		VideoWorkerEngine.canvasOffscreenUnderlay.width = width;
 	}
 
-	public static inputSettings(settings: VideoInputCmdSettings): void {
-		console.log('VideoWorker > settings', settings);
+	public static inputSettings(settings: VideoBusInputCmdSettings): void {
+		console.log('VideoBusWorker > settings', settings);
 
 		settings.darknessMax = Math.round(Math.max(0, Math.min(1, settings.darknessMax)) * 1000) / 1000;
 		settings.foregroundViewerPercentageOfViewport =
@@ -378,9 +390,9 @@ class Video {
 		pan: number,
 		volumePercentage: number,
 	): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.AUDIO_EFFECT,
+				cmd: VideoBusOutputCmd.AUDIO_EFFECT,
 				data: {
 					id: assetId,
 					modulationId: modulationId,
@@ -397,15 +409,15 @@ class Video {
 	 * @param pan between -1 left and 1 right (precision 3)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static outputAudioEffectBatch(effects: VideoOutputCmdAudioEffect[]): void {
-		let effect: VideoOutputCmdAudioEffect,
-			payloads: VideoWorkerPayload[] = [];
+	public static outputAudioEffectBatch(effects: VideoBusOutputCmdAudioEffect[]): void {
+		let effect: VideoBusOutputCmdAudioEffect,
+			payloads: VideoBusWorkerPayload[] = [];
 
 		for (let i in effects) {
 			effect = effects[i];
 
 			payloads.push({
-				cmd: VideoOutputCmd.AUDIO_EFFECT,
+				cmd: VideoBusOutputCmd.AUDIO_EFFECT,
 				data: {
 					id: effect.id,
 					modulationId: effect.modulationId,
@@ -415,7 +427,7 @@ class Video {
 			});
 		}
 
-		Video.post(payloads);
+		VideoWorkerEngine.post(payloads);
 	}
 
 	/**
@@ -423,9 +435,9 @@ class Video {
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
 	public static outputAudioMusicFade(assetId: string, durationInMs: number, volumePercentage: number): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.AUDIO_MUSIC_FADE,
+				cmd: VideoBusOutputCmd.AUDIO_MUSIC_FADE,
 				data: {
 					durationInMs: Math.max(100, Math.round(durationInMs)),
 					id: assetId,
@@ -439,9 +451,9 @@ class Video {
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
 	public static outputAudioMusicPlay(assetId: string, timeInS: number, volumePercentage: number): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.AUDIO_MUSIC_PLAY,
+				cmd: VideoBusOutputCmd.AUDIO_MUSIC_PLAY,
 				data: {
 					id: assetId,
 					timeInS: Math.round(timeInS),
@@ -452,9 +464,9 @@ class Video {
 	}
 
 	public static outputAudioMusicPause(assetId: string): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.AUDIO_MUSIC_PAUSE,
+				cmd: VideoBusOutputCmd.AUDIO_MUSIC_PAUSE,
 				data: {
 					id: assetId,
 				},
@@ -463,9 +475,9 @@ class Video {
 	}
 
 	public static outputAudioMusicUnpause(assetId: string): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.AUDIO_MUSIC_UNPAUSE,
+				cmd: VideoBusOutputCmd.AUDIO_MUSIC_UNPAUSE,
 				data: {
 					id: assetId,
 				},
@@ -477,9 +489,9 @@ class Video {
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
 	public static outputAudioVolume(assetId: string, volumePercentage: number): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.AUDIO_VOLUME,
+				cmd: VideoBusOutputCmd.AUDIO_VOLUME,
 				data: {
 					id: assetId,
 					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
@@ -489,10 +501,10 @@ class Video {
 	}
 
 	public static outputEditCameraUpdate(camera: Camera): void {
-		if (Video.gameModeEdit) {
-			Video.post([
+		if (VideoWorkerEngine.gameModeEdit) {
+			VideoWorkerEngine.post([
 				{
-					cmd: VideoOutputCmd.EDIT_CAMERA_UPDATE,
+					cmd: VideoBusOutputCmd.EDIT_CAMERA_UPDATE,
 					data: {
 						gInPh: camera.gInPh,
 						gInPw: camera.gInPw,
@@ -510,18 +522,18 @@ class Video {
 	}
 
 	public static outputHourOfDayEff(hourOfDayEff: number): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.MAP_HOUR_OF_DAY_EFF,
+				cmd: VideoBusOutputCmd.MAP_HOUR_OF_DAY_EFF,
 				data: hourOfDayEff,
 			},
 		]);
 	}
 
 	public static outputMapSave(map: Map): void {
-		Video.post([
+		VideoWorkerEngine.post([
 			{
-				cmd: VideoOutputCmd.MAP_SAVE,
+				cmd: VideoBusOutputCmd.MAP_SAVE,
 				data: {
 					data: UtilEngine.mapEncode(MapEditEngine.gridBlockTableDeflate(<MapActive>map)),
 					name: map.name,
@@ -530,9 +542,9 @@ class Video {
 		]);
 	}
 
-	private static post(videoWorkerPayloads: VideoWorkerPayload[]): void {
-		Video.self.postMessage({
-			payloads: videoWorkerPayloads,
+	private static post(VideoBusWorkerPayloads: VideoBusWorkerPayload[]): void {
+		VideoWorkerEngine.self.postMessage({
+			payloads: VideoBusWorkerPayloads,
 		});
 	}
 }

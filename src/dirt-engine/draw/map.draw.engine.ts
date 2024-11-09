@@ -2,6 +2,7 @@ import { Camera } from '../models/camera.model';
 import { CameraEngine } from '../engines/camera.engine';
 import { GridConfig } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
+import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
 
 /**
@@ -19,6 +20,7 @@ export class MapDrawEngine {
 	private static cacheZoom: number;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
+	private static mapImage: ImageBitmap;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	private static mapActiveGridConfig: GridConfig;
@@ -43,6 +45,11 @@ export class MapDrawEngine {
 		}
 		MapDrawEngine.initialized = true;
 		MapDrawEngine.ctxOverlay = ctxOverlay;
+		MapDrawEngineBus.initialize();
+		MapDrawEngineBus.setCallbackBitmap((imageBitmap: ImageBitmap) => {
+			MapDrawEngine.mapImage = imageBitmap;
+			MapDrawEngine.cacheBackgroundHashP = -1;
+		});
 	}
 
 	public static cacheReset(): void {
@@ -79,11 +86,10 @@ export class MapDrawEngine {
 		/*
 		 * Background
 		 */
-		MapDrawEngine.cacheHashCheckP = UtilEngine.pixelHashTo(
-			MapDrawEngine.mapActiveCamera.windowPw,
-			MapDrawEngine.mapActiveCamera.windowPh,
-		);
-		if (MapDrawEngine.cacheHashCheckP !== MapDrawEngine.cacheBackgroundHashP) {
+		MapDrawEngine.cacheHashCheckP = UtilEngine.pixelHashTo(camera.windowPw, camera.windowPh);
+		if (MapDrawEngine.cacheBackgroundHashP !== MapDrawEngine.cacheHashCheckP) {
+			MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
+
 			// Draw from scratch
 			let cacheCanvas: OffscreenCanvas,
 				ctx: OffscreenCanvasRenderingContext2D,
@@ -95,12 +101,14 @@ export class MapDrawEngine {
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 
 			// Background
-			ctx.beginPath();
-			ctx.fillStyle = 'rgba(0,0,0,.9)';
+			if (MapDrawEngine.mapImage) {
+				ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
+			}
+
+			// Background Border
 			ctx.lineWidth = 1;
 			ctx.rect(0, 0, backgroundPw, backgroundPh);
 			ctx.strokeStyle = 'white';
-			ctx.fill();
 			ctx.stroke();
 
 			// Cache it
@@ -254,5 +262,7 @@ export class MapDrawEngine {
 		MapDrawEngine.mapActive = mapActive;
 		MapDrawEngine.mapActiveCamera = mapActive.camera;
 		MapDrawEngine.mapActiveGridConfig = mapActive.gridConfigActive;
+
+		MapDrawEngineBus.outputGrids(mapActive.grids);
 	}
 }

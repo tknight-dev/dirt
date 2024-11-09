@@ -27,14 +27,14 @@ import { MapEditEngine } from '../engines/map-edit.engine';
 import { MouseAction, MouseEngine } from '../engines/mouse.engine';
 import { UtilEngine } from '../engines/util.engine';
 import {
-	VideoInputCmdGameModeEditApply,
-	VideoInputCmdGameModeEditApplyType,
-	VideoInputCmdGameModeEditApplyView,
-	VideoInputCmdGameModeEditApplyZ,
-	VideoInputCmdGameModeEditDraw,
-	VideoOutputCmdEditCameraUpdate,
-} from '../models/video-worker-cmds.model';
-import { VideoBus } from '../engines/buses/video.bus';
+	VideoBusInputCmdGameModeEditApply,
+	VideoBusInputCmdGameModeEditApplyType,
+	VideoBusInputCmdGameModeEditApplyView,
+	VideoBusInputCmdGameModeEditApplyZ,
+	VideoBusInputCmdGameModeEditDraw,
+	VideoBusOutputCmdEditCameraUpdate,
+} from '../engines/buses/video.model.bus';
+import { VideoEngineBus } from '../engines/buses/video.engine.bus';
 
 /**
  * @author tknight-dev
@@ -57,12 +57,12 @@ export class DomUI {
 	private static domUIinitialized: boolean;
 	private static uiEditApplicationProperties: {};
 	private static uiEditApplicationType: ApplicationType;
-	public static uiEditApplyType: VideoInputCmdGameModeEditApplyType;
+	public static uiEditApplyType: VideoBusInputCmdGameModeEditApplyType;
 	private static uiEditBrushSize: number;
 	private static uiEditCursorGInPh: number;
 	private static uiEditCursorGInPw: number;
 	private static uiEditCursorReady: boolean;
-	private static uiEditDraw: VideoInputCmdGameModeEditDraw;
+	private static uiEditDraw: VideoBusInputCmdGameModeEditDraw;
 	protected static uiEditMode: boolean;
 	private static uiEditMouseCmdCollection: DoubleLinkedList<number> = new DoubleLinkedList<number>();
 	private static uiEditMouseCmdCollectionHashesEffected: { [key: number]: null } = {};
@@ -71,8 +71,8 @@ export class DomUI {
 	private static uiEditMouseCmdCollectionEngaged: boolean;
 	private static uiEditMouseCmdCollectionPromise: Promise<void>;
 	private static uiEditSpinnerStatus: boolean;
-	private static uiEditView: VideoInputCmdGameModeEditApplyView;
-	private static uiEditZ: VideoInputCmdGameModeEditApplyZ | undefined;
+	private static uiEditView: VideoBusInputCmdGameModeEditApplyView;
+	private static uiEditZ: VideoBusInputCmdGameModeEditApplyZ | undefined;
 
 	private static detailsModalSelector(
 		assetAudio: boolean,
@@ -206,7 +206,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_BLOCK;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -345,7 +345,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -509,7 +509,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -629,7 +629,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -709,7 +709,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -789,7 +789,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -857,7 +857,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Asset - Damaged
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Damaged';
@@ -887,7 +887,7 @@ export class DomUI {
 		}
 
 		// Asset - Damaged Walked On
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Damaged Walked On Audio Effect';
@@ -918,7 +918,7 @@ export class DomUI {
 		}
 
 		// Asset - Walked On
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Walked On Audio Effect';
@@ -949,7 +949,7 @@ export class DomUI {
 		}
 
 		// Damageable
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Damageable';
@@ -983,7 +983,7 @@ export class DomUI {
 		}
 
 		// strengthToDamangeInN
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Damange In N';
@@ -1004,7 +1004,7 @@ export class DomUI {
 		}
 
 		// strengthToDestroyInN
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Destroy In N';
@@ -1053,7 +1053,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Viscocity
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Viscocity';
@@ -1074,7 +1074,7 @@ export class DomUI {
 		}
 
 		// Weight In Kg
-		if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Weight In Kg';
@@ -1103,7 +1103,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.IMAGE_BLOCK;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-image');
@@ -1135,7 +1135,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			//DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.LIGHT;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.LIGHT;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-light');
@@ -1198,13 +1198,13 @@ export class DomUI {
 	/**
 	 * Updates the UI cache of the camera contained within the mapActive
 	 */
-	protected static editCameraUpdate(VideoOutputCmdEditCameraUpdate: VideoOutputCmdEditCameraUpdate) {
-		MapEditEngine.uiCameraUpdate(VideoOutputCmdEditCameraUpdate);
+	protected static editCameraUpdate(VideoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate) {
+		MapEditEngine.uiCameraUpdate(VideoBusOutputCmdEditCameraUpdate);
 
 		DomUI.uiEditCursorGInPh =
-			Math.round((VideoOutputCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
+			Math.round((VideoBusOutputCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
 		DomUI.uiEditCursorGInPw =
-			Math.round((VideoOutputCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
+			Math.round((VideoBusOutputCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
 		DomUI.editCursor();
 	}
 
@@ -1337,7 +1337,7 @@ export class DomUI {
 
 	private static editMapSelect(assetMapId: string | undefined): void {
 		DomUI.displaySpinner(true);
-		VideoBus.outputMapLoadById(assetMapId);
+		VideoEngineBus.outputMapLoadById(assetMapId);
 	}
 
 	public static editMouseDown(mouseAction: MouseAction): void {
@@ -1350,7 +1350,7 @@ export class DomUI {
 					MapEditEngine.getGridProperty(
 						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
 						DomUI.uiEditView,
-						<VideoInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
+						<VideoBusInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
 					),
 				);
 			} else if (classList.contains('dirt-engine-cursor-magnifying-glass')) {
@@ -1359,7 +1359,7 @@ export class DomUI {
 					MapEditEngine.getGridProperty(
 						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
 						DomUI.uiEditView,
-						<VideoInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
+						<VideoBusInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
 					),
 				);
 			}
@@ -1420,7 +1420,7 @@ export class DomUI {
 			td.onclick = () => {
 				if (copy) {
 					DomUI.uiEditApplicationProperties = gridObject;
-					DomUI.uiEditApplyType = VideoInputCmdGameModeEditApplyType.IMAGE_BLOCK;
+					DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK;
 
 					// Show cursor config buttons
 					DomUI.domElementsUIEdit['application'].style.display = 'flex';
@@ -1479,7 +1479,7 @@ export class DomUI {
 
 	// Submit commands based on interval
 	private static editMouseProcessor(resolve: any): void {
-		let applyType: VideoInputCmdGameModeEditApplyType,
+		let applyType: VideoBusInputCmdGameModeEditApplyType,
 			arrayPush: any = Array.prototype.push,
 			collection: DoubleLinkedList<number> = DomUI.uiEditMouseCmdCollection,
 			coordinate: GridCoordinate,
@@ -1508,13 +1508,13 @@ export class DomUI {
 						gHashes,
 						<any>DomUI.uiEditApplicationProperties,
 						DomUI.uiEditApplicationType === ApplicationType.ERASER
-							? VideoInputCmdGameModeEditApplyType.ERASE
+							? VideoBusInputCmdGameModeEditApplyType.ERASE
 							: DomUI.uiEditApplyType,
 						z,
 					); // Auto-applies to map
 
 					if (payload) {
-						VideoBus.outputGameModeEditApply(payload);
+						VideoEngineBus.outputGameModeEditApply(payload);
 					} else {
 						console.error('DomIU > editMouseProcessor: payload failed to generate');
 					}
@@ -1526,8 +1526,8 @@ export class DomUI {
 				}
 			}, 40),
 			length: number,
-			payload: VideoInputCmdGameModeEditApply | undefined,
-			z: VideoInputCmdGameModeEditApplyZ = <VideoInputCmdGameModeEditApplyZ>DomUI.uiEditZ;
+			payload: VideoBusInputCmdGameModeEditApply | undefined,
+			z: VideoBusInputCmdGameModeEditApplyZ = <VideoBusInputCmdGameModeEditApplyZ>DomUI.uiEditZ;
 		gridConfig = MapEditEngine.getGridConfigActive();
 	}
 
@@ -1679,13 +1679,13 @@ export class DomUI {
 	private static editRedo(): void {
 		DomUI.displaySpinner(true);
 		MapEditEngine.historyRedo();
-		VideoBus.outputGameModeEditRedo();
+		VideoEngineBus.outputGameModeEditRedo();
 	}
 
 	private static editUndo(): void {
 		DomUI.displaySpinner(true);
 		MapEditEngine.historyUndo();
-		VideoBus.outputGameModeEditUndo();
+		VideoEngineBus.outputGameModeEditUndo();
 	}
 
 	protected static async initializeDomUI(oldTVIntro: boolean): Promise<void> {
@@ -1698,7 +1698,7 @@ export class DomUI {
 			(a: AssetMap, b: AssetMap) => a.order - b.order,
 		);
 
-		VideoBus.setCallbackMapAsset((mapActive: MapActive | undefined) => {
+		VideoEngineBus.setCallbackMapAsset((mapActive: MapActive | undefined) => {
 			if (mapActive) {
 				MapEditEngine.load(mapActive);
 
@@ -1713,10 +1713,10 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application-map-modal'].style.display = 'none';
 			DomUI.displaySpinner(false);
 		});
-		VideoBus.setCallbackEditComplete(() => {
+		VideoEngineBus.setCallbackEditComplete(() => {
 			DomUI.displaySpinner(false);
 		});
-		VideoBus.setCallbackMapHourOfDayEff((hourOfDayEff: number) => {
+		VideoEngineBus.setCallbackMapHourOfDayEff((hourOfDayEff: number) => {
 			DomUI.updateHourOfDayEff(hourOfDayEff);
 			MapEditEngine.updateUIHourOfDayEff(hourOfDayEff);
 		});
@@ -1756,7 +1756,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['map'].click();
 			DomUI.domElementsUIEdit['mode-menu-image'].click();
 
-			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.PRIMARY;
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.PRIMARY;
 			DomUI.domElementsUIEdit['z-global'].click();
 		} else {
 			DomUI.domElements['feed-fitted'].removeEventListener('mousemove', DomUI.editCursorMove);
@@ -2567,7 +2567,7 @@ export class DomUI {
 			t = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'];
 			t.textContent = '';
 
-			if (DomUI.uiEditView === VideoInputCmdGameModeEditApplyView.AUDIO) {
+			if (DomUI.uiEditView === VideoBusInputCmdGameModeEditApplyView.AUDIO) {
 				// Table: Audio Block
 				tr = document.createElement('tr');
 				td = document.createElement('td');
@@ -2647,7 +2647,7 @@ export class DomUI {
 				t.appendChild(tr);
 			}
 
-			if (DomUI.uiEditView === VideoInputCmdGameModeEditApplyView.IMAGE) {
+			if (DomUI.uiEditView === VideoBusInputCmdGameModeEditApplyView.IMAGE) {
 				// Table: Image Block
 				tr = document.createElement('tr');
 				td = document.createElement('td');
@@ -2662,7 +2662,7 @@ export class DomUI {
 				t.appendChild(tr);
 			}
 
-			if (DomUI.uiEditView === VideoInputCmdGameModeEditApplyView.LIGHT) {
+			if (DomUI.uiEditView === VideoBusInputCmdGameModeEditApplyView.LIGHT) {
 				// Table: Light
 				tr = document.createElement('tr');
 				td = document.createElement('td');
@@ -2836,7 +2836,7 @@ export class DomUI {
 		viewMenuAudio.className = 'button-style audio';
 		viewMenuAudio.innerText = 'Audio';
 		viewMenuAudio.onclick = (event: any) => {
-			DomUI.uiEditView = VideoInputCmdGameModeEditApplyView.AUDIO;
+			DomUI.uiEditView = VideoBusInputCmdGameModeEditApplyView.AUDIO;
 			viewMenuAudio.classList.add('active');
 			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.remove('active');
@@ -2855,7 +2855,7 @@ export class DomUI {
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
 
-			if (DomUI.uiEditZ !== VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ !== VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 				zPrimary.click();
 			}
 		};
@@ -2867,7 +2867,7 @@ export class DomUI {
 		viewMenuImage.className = 'button-style image active';
 		viewMenuImage.innerText = 'Image';
 		viewMenuImage.onclick = () => {
-			DomUI.uiEditView = VideoInputCmdGameModeEditApplyView.IMAGE;
+			DomUI.uiEditView = VideoBusInputCmdGameModeEditApplyView.IMAGE;
 			viewMenuAudio.classList.remove('active');
 			viewMenuImage.classList.add('active');
 			viewMenuLight.classList.remove('active');
@@ -2894,7 +2894,7 @@ export class DomUI {
 		viewMenuLight.className = 'button-style light';
 		viewMenuLight.innerText = 'Light';
 		viewMenuLight.onclick = () => {
-			DomUI.uiEditView = VideoInputCmdGameModeEditApplyView.LIGHT;
+			DomUI.uiEditView = VideoBusInputCmdGameModeEditApplyView.LIGHT;
 			viewMenuAudio.classList.remove('active');
 			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.add('active');
@@ -2913,7 +2913,7 @@ export class DomUI {
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
 				zPrimary.click();
 			}
 		};
@@ -2969,7 +2969,7 @@ export class DomUI {
 		zBackground.className = 'button background';
 		zBackground.innerText = 'B';
 		zBackground.onclick = () => {
-			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.BACKGROUND) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
 				return;
 			}
 			// Display Applications
@@ -2987,7 +2987,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -3001,10 +3001,10 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
-			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoBus.outputGameModeEditTimeForced(true);
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.BACKGROUND;
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.BACKGROUND;
 			zBackground.classList.add('active');
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
@@ -3018,7 +3018,7 @@ export class DomUI {
 		zPrimary.className = 'button primary active';
 		zPrimary.innerText = 'P';
 		zPrimary.onclick = () => {
-			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 				return;
 			}
 			// Display Applications
@@ -3048,10 +3048,10 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
-			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoBus.outputGameModeEditTimeForced(true);
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.PRIMARY;
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.PRIMARY;
 			zBackground.classList.remove('active');
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
@@ -3065,7 +3065,7 @@ export class DomUI {
 		zForeground.className = 'button foreground';
 		zForeground.innerText = 'F';
 		zForeground.onclick = () => {
-			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.FOREGROUND) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
 				return;
 			}
 			// Display Applications
@@ -3083,7 +3083,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -3097,10 +3097,10 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
-			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoBus.outputGameModeEditTimeForced(true);
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoInputCmdGameModeEditApplyZ.FOREGROUND;
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.FOREGROUND;
 			zBackground.classList.remove('active');
 			zGlobal.classList.remove('active');
 			zForeground.classList.add('active');
@@ -3144,8 +3144,8 @@ export class DomUI {
 			// Draw Options
 			DomUI.uiEditDraw.foregroundViewer = true;
 			DomUI.uiEditDraw.grid = false;
-			VideoBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoBus.outputGameModeEditTimeForced(false);
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditTimeForced(false);
 
 			DomUI.uiEditZ = undefined;
 			copy.classList.remove('active');
@@ -3519,7 +3519,7 @@ export class DomUI {
 			};
 
 			MapEditEngine.updateMapSettings(mapConfig);
-			VideoBus.outputGameModeEditSettings(mapConfig);
+			VideoEngineBus.outputGameModeEditSettings(mapConfig);
 
 			settings.classList.remove('active');
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'none';

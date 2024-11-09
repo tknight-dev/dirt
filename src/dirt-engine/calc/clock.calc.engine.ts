@@ -1,4 +1,5 @@
 import { MapActive } from '../models/map.model';
+import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 
 /**
  * @author tknight-dev
@@ -34,6 +35,7 @@ export class ClockCalcEngine {
 			if (tmp !== mapActive.minuteOfHourEff) {
 				mapActive.minuteOfHourEff = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
 				setTimeout(() => {
+					MapDrawEngineBus.outputMinuteOfDayEff(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 					ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 				});
 			}

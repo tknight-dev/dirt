@@ -323,7 +323,7 @@ $dirt-engine-old-tv-background: #162fd8;
 				}
 			}
 
-			// Position maintained by the "VideoBus > resized()" (DPI offsets with game feed)
+			// Position maintained by the "VideoEngineBus > resized()" (DPI offsets with game feed)
 			.map-interaction {
 				cursor: pointer;
 				display: flex;

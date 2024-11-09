@@ -1,6 +1,7 @@
 import { Camera } from '../models/camera.model';
 import { GridConfig } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
+import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { KernelEngine } from './kernel.engine';
 import { UtilEngine } from './util.engine';
 
@@ -98,6 +99,7 @@ export class CameraEngine {
 		// console.log('camera.viewportGx', camera.viewportGx);
 		KernelEngine.updateZoom();
 		setTimeout(() => {
+			MapDrawEngineBus.outputCamera(camera);
 			CameraEngine.callback(camera);
 		});
 	}

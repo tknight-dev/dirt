@@ -13,13 +13,14 @@ import { KeyAction, KeyCommon } from './keyboard.engine';
 import { LightingEngine } from './lighting.engine';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
+import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { UtilEngine } from './util.engine';
 import {
-	VideoInputCmdGameModeEditDraw,
-	VideoInputCmdSettings,
-	VideoInputCmdSettingsFPS,
-} from '../models/video-worker-cmds.model';
+	VideoBusInputCmdGameModeEditDraw,
+	VideoBusInputCmdSettings,
+	VideoBusInputCmdSettingsFPS,
+} from '../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
@@ -179,7 +180,7 @@ export class KernelEngine {
 	/**
 	 * Use this to toggle drawn elements in edit mode
 	 */
-	public static async draw(draw: VideoInputCmdGameModeEditDraw): Promise<void> {
+	public static async draw(draw: VideoBusInputCmdGameModeEditDraw): Promise<void> {
 		GridDrawEngine.setEnable(draw.grid);
 		ImageBlockDrawEngine.setForegroundViewer(draw.foregroundViewer);
 	}
@@ -205,6 +206,7 @@ export class KernelEngine {
 		MapDrawEngine.setMapActive(mapActive);
 
 		KernelEngine.cacheResets(false);
+		KernelEngine.updateGridActive(mapActive.gridActiveId);
 	}
 
 	private static resetMapActive(): void {
@@ -277,6 +279,10 @@ export class KernelEngine {
 		// Load into extended engines
 	}
 
+	public static updateGridActive(id: string): void {
+		MapDrawEngineBus.outputGridActive(id);
+	}
+
 	/*
 	 * Used by MapEditEngine on block placement
 	 */
@@ -284,13 +290,13 @@ export class KernelEngine {
 		ImageBlockDrawEngine.cacheReset();
 	}
 
-	public static updateSettings(settings: VideoInputCmdSettings): void {
+	public static updateSettings(settings: VideoBusInputCmdSettings): void {
 		if (!KernelEngine.initialized) {
 			console.error('KernelEngine > updateSettings: not initialized');
 			return;
 		}
 		KernelEngine.fpms = Math.round(1000 / settings.fps);
-		KernelEngine.fpmsUnlimited = settings.fps === VideoInputCmdSettingsFPS._unlimited;
+		KernelEngine.fpmsUnlimited = settings.fps === VideoBusInputCmdSettingsFPS._unlimited;
 
 		// Primary
 		DrawEditEngine.fpsVisible = settings.fpsVisible;

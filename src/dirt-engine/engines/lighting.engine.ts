@@ -4,6 +4,8 @@ import { ClockCalcEngine } from '../calc/clock.calc.engine';
 import { Grid, GridImageBlock } from '../models/grid.model';
 import { Camera } from '../models/camera.model';
 import { MapActive } from '../models/map.model';
+import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
+import { MapDrawBusInputPlayloadAsset } from '../draw/buses/map.draw.model.bus';
 
 /**
  * @author tknight-dev
@@ -99,6 +101,10 @@ export class LightingEngine {
 			// Build the cache(s)
 			LightingEngine.buildBinaries([assetImageId]);
 			LightingEngine.updateZoom(assetImageId);
+
+			setTimeout(() => {
+				MapDrawEngineBus.outputAssets(<{ [key: string]: MapDrawBusInputPlayloadAsset }>LightingEngine.cache);
+			});
 		}
 	}
 
@@ -112,32 +118,49 @@ export class LightingEngine {
 		// Build the cache(s)
 		LightingEngine.buildBinaries();
 		LightingEngine.updateZoom(undefined, true);
+
+		setTimeout(() => {
+			MapDrawEngineBus.outputAssets(<{ [key: string]: MapDrawBusInputPlayloadAsset }>LightingEngine.cache);
+		});
 	}
 
-	public static async initialize(): Promise<void> {
+	public static cacheWorkerImport(assets: { [key: string]: MapDrawBusInputPlayloadAsset }) {
+		LightingEngine.cache = <{ [key: string]: CacheInstance }>assets;
+	}
+
+	/**
+	 * Only call from workers when outside of this class
+	 */
+	public static clock(hourPreciseOfDayEff: number): void {
+		/**
+		 * Only update this value when the time difference is 10% of an hour
+		 */
+		if (hourPreciseOfDayEff - 0.1 > LightingEngine.hourPreciseOfDayEff % 23) {
+			LightingEngine.hourPreciseOfDayEff = hourPreciseOfDayEff;
+
+			if (LightingEngine.cacheZoomedValue !== undefined) {
+				LightingEngine.updateLighting();
+			}
+		}
+	}
+
+	public static async initialize(worker?: boolean): Promise<void> {
 		if (LightingEngine.initialized) {
 			console.error('LightingEngine > initialize: already initialized');
 			return;
 		}
 		LightingEngine.initialized = true;
 
-		let hourPreciseOfDayEff: number;
-		ClockCalcEngine.setCallbackMinuteOfDay((hourOfDayEff: number, minuteOfDayEff: number) => {
-			hourPreciseOfDayEff =
-				LightingEngine.mapActive.hourOfDayEff +
-				Math.round((LightingEngine.mapActive.minuteOfHourEff / 60) * 100) / 100;
+		if (worker !== true) {
+			let hourPreciseOfDayEff: number;
+			ClockCalcEngine.setCallbackMinuteOfDay((hourOfDayEff: number, minuteOfDayEff: number) => {
+				hourPreciseOfDayEff =
+					LightingEngine.mapActive.hourOfDayEff +
+					Math.round((LightingEngine.mapActive.minuteOfHourEff / 60) * 100) / 100;
 
-			/**
-			 * Only update this value when the time difference is 10% of an hour
-			 */
-			if (hourPreciseOfDayEff - 0.1 > LightingEngine.hourPreciseOfDayEff % 23) {
-				LightingEngine.hourPreciseOfDayEff = hourPreciseOfDayEff;
-
-				if (LightingEngine.cacheZoomedValue !== undefined) {
-					LightingEngine.updateLighting();
-				}
-			}
-		});
+				LightingEngine.clock(hourPreciseOfDayEff);
+			});
+		}
 	}
 
 	private static updateLighting(assetImageId?: string, zoomChanged?: boolean): void {
