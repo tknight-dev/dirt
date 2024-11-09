@@ -1,7 +1,9 @@
 import { Camera } from '../../models/camera.model';
-import { Grid } from '../../models/grid.model';
+import { Grid, GridConfig } from '../../models/grid.model';
+import { MapDrawEngine } from '../map.draw.engine';
 import {
 	MapDrawBusInputCmd,
+	MapDrawBusInputPlayload,
 	MapDrawBusInputPlayloadAsset,
 	MapDrawBusOutputCmd,
 	MapDrawBusOutputPlayload,
@@ -14,9 +16,12 @@ import {
 
 export class MapDrawEngineBus {
 	private static callbackBitmap: (image: ImageBitmap) => void;
+	private static darknessMax: number = 0.9;
 	private static foregroundViewerEnable: boolean = true;
 	private static foregroundViewerPercentageOfViewport: number;
 	private static initialized: boolean;
+	private static mapVisible: boolean;
+	private static timeForced: boolean;
 	private static worker: Worker;
 
 	public static async initialize(): Promise<void> {
@@ -30,10 +35,7 @@ export class MapDrawEngineBus {
 
 		MapDrawEngineBus.worker.postMessage({
 			cmd: MapDrawBusInputCmd.INITIALIZE,
-			data: {
-				foregroundViewerEnable: MapDrawEngineBus.foregroundViewerEnable,
-				foregroundViewerPercentageOfViewport: MapDrawEngineBus.foregroundViewerPercentageOfViewport,
-			},
+			data: undefined,
 		});
 	}
 
@@ -66,10 +68,14 @@ export class MapDrawEngineBus {
 		MapDrawEngineBus.worker.postMessage({
 			cmd: MapDrawBusInputCmd.SET_CAMERA,
 			data: {
-				gInPh: camera.gInPh,
-				gInPw: camera.gInPw,
+				gInPh: 4,
+				gInPw: 4,
 				gx: camera.gx,
 				gy: camera.gy,
+				viewportGh: camera.viewportGh,
+				windowPh: camera.windowPh,
+				windowPw: camera.windowPw,
+				zoom: camera.zoom,
 			},
 		});
 	}
@@ -83,30 +89,21 @@ export class MapDrawEngineBus {
 		});
 	}
 
-	public static outputGrids(grids: { [key: string]: Grid }): void {
+	public static outputGrids(grids: { [key: string]: Grid }, gridConfigs: { [key: string]: GridConfig }): void {
 		MapDrawEngineBus.worker.postMessage({
 			cmd: MapDrawBusInputCmd.SET_GRIDS,
 			data: {
 				grids: grids,
+				gridConfigs: gridConfigs,
 			},
 		});
 	}
 
-	private static outputForegroundViewer(): void {
+	public static outputHourOfDayEff(hourOfDayEff: number): void {
 		MapDrawEngineBus.worker.postMessage({
-			cmd: MapDrawBusInputCmd.SET_FOREGROUND_VIEWER,
+			cmd: MapDrawBusInputCmd.SET_HOUR_OF_DAY_EFF,
 			data: {
-				foregroundViewerEnable: MapDrawEngineBus.foregroundViewerEnable,
-				foregroundViewerPercentageOfViewport: MapDrawEngineBus.foregroundViewerPercentageOfViewport,
-			},
-		});
-	}
-
-	public static outputMinuteOfDayEff(hourOfDayEff: number, minuteOfDayEff: number): void {
-		MapDrawEngineBus.worker.postMessage({
-			cmd: MapDrawBusInputCmd.SET_HOUR_PRECISE_OF_DAY_EFF,
-			data: {
-				hourPreciseOfDayEff: hourOfDayEff + Math.round((minuteOfDayEff / 60) * 100) / 100,
+				hourOfDayEff: hourOfDayEff,
 			},
 		});
 	}
@@ -124,17 +121,48 @@ export class MapDrawEngineBus {
 		});
 	}
 
+	private static outputSettings(): void {
+		MapDrawEngineBus.worker.postMessage({
+			cmd: MapDrawBusInputCmd.SET_SETTINGS,
+			data: {
+				darknessMax: MapDrawEngineBus.darknessMax,
+				foregroundViewerEnable: MapDrawEngineBus.foregroundViewerEnable,
+				foregroundViewerPercentageOfViewport: MapDrawEngineBus.foregroundViewerPercentageOfViewport,
+				mapVisible: MapDrawEngineBus.mapVisible,
+			},
+		});
+	}
+
+	public static outputTimeForced(forced: boolean): void {
+		MapDrawEngineBus.worker.postMessage({
+			cmd: MapDrawBusInputCmd.SET_TIME_FORCED,
+			data: {
+				forced: forced,
+			},
+		});
+	}
+
 	public static setCallbackBitmap(callbackBitmap: (image: ImageBitmap) => void): void {
 		MapDrawEngineBus.callbackBitmap = callbackBitmap;
 	}
 
+	public static setDarknessMax(darknessMax: number): void {
+		MapDrawEngineBus.darknessMax = darknessMax;
+		MapDrawEngineBus.outputSettings();
+	}
+
 	public static setForegroundViewer(enable: boolean) {
 		MapDrawEngineBus.foregroundViewerEnable = enable;
-		MapDrawEngineBus.outputForegroundViewer();
+		MapDrawEngineBus.outputSettings();
 	}
 
 	public static setForegroundViewerPercentageOfViewport(foregroundViewerPercentageOfViewport: number) {
 		MapDrawEngineBus.foregroundViewerPercentageOfViewport = foregroundViewerPercentageOfViewport;
-		MapDrawEngineBus.outputForegroundViewer();
+		MapDrawEngineBus.outputSettings();
+	}
+
+	public static setMapVisible(mapVisible: boolean) {
+		MapDrawEngineBus.mapVisible = mapVisible;
+		MapDrawEngineBus.outputSettings();
 	}
 }

@@ -36,8 +36,8 @@ export class CameraEngine {
 	public static moveIncremental(gx: number, gy: number): void {
 		let mapActive = CameraEngine.mapActive;
 
-		mapActive.camera.gx += gx * 0.75;
-		mapActive.camera.gy += gy * 0.75;
+		mapActive.camera.gx += gx * 0.3;
+		mapActive.camera.gy += gy * 0.3;
 
 		CameraEngine.updatePosition();
 	}

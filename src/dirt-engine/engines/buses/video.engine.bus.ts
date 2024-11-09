@@ -335,6 +335,13 @@ export class VideoEngineBus {
 		});
 	}
 
+	public static outputGameModeEditApplyGroup(group: boolean): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.GAME_MODE_EDIT_APPLY_GROUP,
+			data: group,
+		});
+	}
+
 	public static outputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
 		VideoEngineBus.worker.postMessage({
 			cmd: VideoBusInputCmd.GAME_MODE_EDIT_DRAW,

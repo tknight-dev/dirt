@@ -81,6 +81,7 @@ export class GridDrawEngine {
 				// Canvas
 				cacheCanvas = new OffscreenCanvas(windowPw, windowPh);
 				ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
+				ctx.imageSmoothingEnabled = false;
 
 				// Perimeter
 				ctx.beginPath();

@@ -32,6 +32,11 @@ export interface GridBlockTableComplex {
 	value: number;
 }
 
+export interface GridBlockTableComplexFull {
+	gyMinByGx: { [key: number]: number };
+	hashes: { [key: number]: GridBlockTableComplex[] };
+}
+
 export interface GridConfig {
 	gHeight: number; // calculated, Precision 0
 	gHorizon: number; // Precision 0

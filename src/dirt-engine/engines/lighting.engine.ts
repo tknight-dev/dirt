@@ -11,20 +11,21 @@ import { MapDrawBusInputPlayloadAsset } from '../draw/buses/map.draw.model.bus';
  * @author tknight-dev
  */
 
-interface CacheInstance {
+export interface LightingCacheInstance {
 	gHeight: number;
 	gWidth: number;
 	image: ImageBitmap;
 }
 
 export class LightingEngine {
-	private static cache: { [key: string]: CacheInstance } = {}; // key is assetImageId
+	private static cache: { [key: string]: LightingCacheInstance } = {}; // key is assetImageId
 	private static cacheZoomed: { [key: string]: ImageBitmap } = {}; // key is assetImageId
 	private static cacheZoomedLit: { [key: string]: ImageBitmap } = {}; // key is assetImageId
 	private static cacheZoomedUnlit: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
 	public static readonly cacheZoomedUnlitLength: number = 4;
 	private static cacheZoomedValue: number;
 	private static darknessMax: number;
+	private static darknessMaxNew: boolean;
 	private static initialized: boolean;
 	private static hourPreciseOfDayEff: number = 0;
 	private static mapActive: MapActive;
@@ -34,7 +35,7 @@ export class LightingEngine {
 	private static buildBinaries(assetIds?: string[]): void {
 		let assetImage: AssetImage,
 			assetImages: { [key: string]: AssetImage } = AssetEngine.getAssetManifestMaster().images,
-			cacheInstance: CacheInstance | undefined,
+			cacheInstance: LightingCacheInstance | undefined,
 			resolution: AssetImageSrcResolution = LightingEngine.resolution;
 
 		if (!assetIds) {
@@ -124,14 +125,18 @@ export class LightingEngine {
 		});
 	}
 
-	public static cacheWorkerImport(assets: { [key: string]: MapDrawBusInputPlayloadAsset }) {
-		LightingEngine.cache = <{ [key: string]: CacheInstance }>assets;
+	public static cacheWorkerImport(assets: { [key: string]: MapDrawBusInputPlayloadAsset }, camera?: Camera) {
+		LightingEngine.cache = Object.assign(LightingEngine.cache || {}, assets);
+
+		if (camera) {
+			LightingEngine.updateZoom(undefined, true, camera);
+		}
 	}
 
 	/**
 	 * Only call from workers when outside of this class
 	 */
-	public static clock(hourPreciseOfDayEff: number): void {
+	public static clock(hourPreciseOfDayEff: number, camera?: Camera): void {
 		/**
 		 * Only update this value when the time difference is 10% of an hour
 		 */
@@ -139,7 +144,8 @@ export class LightingEngine {
 			LightingEngine.hourPreciseOfDayEff = hourPreciseOfDayEff;
 
 			if (LightingEngine.cacheZoomedValue !== undefined) {
-				LightingEngine.updateLighting();
+				LightingEngine.updateLighting(undefined, LightingEngine.darknessMaxNew, camera);
+				LightingEngine.darknessMaxNew = false;
 			}
 		}
 	}
@@ -163,16 +169,15 @@ export class LightingEngine {
 		}
 	}
 
-	private static updateLighting(assetImageId?: string, zoomChanged?: boolean): void {
-		let camera: Camera = LightingEngine.mapActive.camera,
-			assetImageIds: string[],
-			cacheInstance: CacheInstance,
+	private static updateLighting(assetImageId?: string, zoomChanged?: boolean, camera?: Camera): void {
+		let assetImageIds: string[],
+			cacheInstance: LightingCacheInstance,
 			canvas: OffscreenCanvas,
 			ctx: OffscreenCanvasRenderingContext2D,
 			darkness: string,
 			darknessMax: number = LightingEngine.darknessMax,
-			gInPh: number = camera.gInPh,
-			gInPw: number = camera.gInPw,
+			gInPh: number,
+			gInPw: number,
 			hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff,
 			id: string,
 			imageBitmaps: ImageBitmap[],
@@ -186,9 +191,17 @@ export class LightingEngine {
 			unlitLength: number = LightingEngine.cacheZoomedUnlitLength,
 			scratch: number;
 
+		if (!camera) {
+			if (LightingEngine.mapActive === undefined) {
+				return;
+			}
+			camera = LightingEngine.mapActive.camera;
+		}
+		gInPh = camera.gInPh;
+		gInPw = camera.gInPw;
+
 		if (LightingEngine.timeForced) {
 			hourPreciseOfDayEff = 12;
-			litAlgApplied = true;
 		}
 
 		/*
@@ -314,16 +327,21 @@ export class LightingEngine {
 		}
 	}
 
-	public static updateZoom(assetImageId?: string, force?: boolean): void {
-		let camera: Camera = LightingEngine.mapActive.camera,
-			zoom: number = camera.zoom;
+	public static updateZoom(assetImageId?: string, force?: boolean, camera?: Camera): void {
+		if (!camera) {
+			if (LightingEngine.mapActive === undefined) {
+				return;
+			}
+			camera = LightingEngine.mapActive.camera;
+		}
+		let zoom: number = camera.zoom;
 
 		/**
 		 * gInPh/gInPw +2 to fix the rounding issue
 		 */
 		if (assetImageId || LightingEngine.cacheZoomedValue !== zoom || force) {
 			let assetImageIds: string[] = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache),
-				cacheInstance: CacheInstance,
+				cacheInstance: LightingCacheInstance,
 				canvas: OffscreenCanvas = new OffscreenCanvas(0, 0),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				gInPh: number = camera.gInPh,
@@ -341,8 +359,15 @@ export class LightingEngine {
 			}
 
 			LightingEngine.cacheZoomedValue = zoom;
-			LightingEngine.updateLighting(assetImageId, true);
+			LightingEngine.updateLighting(assetImageId, true, camera);
 		}
+	}
+
+	/**
+	 * Do not modify returned object
+	 */
+	public static getCacheInstance(assetImageId: string): LightingCacheInstance {
+		return LightingEngine.cache[assetImageId];
 	}
 
 	public static getAssetImage(assetImageId: string): ImageBitmap {
@@ -357,8 +382,10 @@ export class LightingEngine {
 		return LightingEngine.cacheZoomedUnlit[assetImageId];
 	}
 
-	public static setDarknessMax(darknessMax: number): void {
+	public static setDarknessMax(darknessMax: number, camera?: Camera): void {
 		LightingEngine.darknessMax = darknessMax;
+		LightingEngine.darknessMaxNew = true;
+		LightingEngine.updateLighting(undefined, true, camera);
 	}
 
 	public static getHourPreciseOfDayEff(): number {
@@ -374,7 +401,8 @@ export class LightingEngine {
 		LightingEngine.resolution = resolution;
 	}
 
-	public static setTimeForced(timeForced: boolean) {
+	public static setTimeForced(timeForced: boolean, camera?: Camera) {
 		LightingEngine.timeForced = timeForced;
+		LightingEngine.updateLighting(undefined, true, camera);
 	}
 }

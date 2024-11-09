@@ -12,6 +12,7 @@ import {
 } from '../models/grid.model';
 import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
+import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction } from './mouse.engine';
 import {
 	VideoBusInputCmdGameModeEditApply,
@@ -30,7 +31,7 @@ import {
 	VideoBusOutputCmdEditCameraUpdate,
 } from '../engines/buses/video.model.bus';
 import { UtilEngine } from './util.engine';
-import { LightingEngine } from './lighting.engine';
+import { LightingCacheInstance, LightingEngine } from './lighting.engine';
 
 /**
  * Mainted by UI and Video threads for map editing. Allows for full object restores, and minimizes bus communication.
@@ -39,7 +40,8 @@ import { LightingEngine } from './lighting.engine';
  */
 
 export class MapEditEngine {
-	public static readonly gHeightMax: number = 0xffff - 1000;
+	public static applyGroup: boolean;
+	public static readonly gHeightMax: number = 36301;
 	public static readonly gWidthMax: number = 0xffff - 1000;
 	private static initialized: boolean;
 	private static mapActiveUI: MapActive;
@@ -51,7 +53,8 @@ export class MapEditEngine {
 	public static uiLoaded: boolean;
 
 	public static apply(apply: VideoBusInputCmdGameModeEditApply): void {
-		MapEditEngine.historyAdd();
+		// MapEditEngine.historyAdd();
+		// console.log('applyGroup', MapEditEngine.applyGroup);
 
 		switch (apply.applyType) {
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
@@ -195,8 +198,17 @@ export class MapEditEngine {
 		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
 
 		if (!MapEditEngine.modeUI) {
+			let assetUpdate: { [key: string]: LightingCacheInstance } = {};
+
 			LightingEngine.cacheAdd(apply.assetId);
-			apply.assetIdDamagedImage && LightingEngine.cacheAdd(apply.assetIdDamagedImage);
+			assetUpdate[apply.assetId] = LightingEngine.getCacheInstance(apply.assetId);
+
+			if (apply.assetIdDamagedImage) {
+				LightingEngine.cacheAdd(apply.assetIdDamagedImage);
+				assetUpdate[apply.assetIdDamagedImage] = LightingEngine.getCacheInstance(apply.assetIdDamagedImage);
+			}
+
+			MapDrawEngineBus.outputAssets(assetUpdate);
 			KernelEngine.updateMap();
 		}
 	}
@@ -573,6 +585,16 @@ export class MapEditEngine {
 		mapActive.durationInMS = 0;
 		mapActive.hourOfDayEff = mapActive.hourOfDay;
 		mapActive.minuteOfHourEff = 0;
+	}
+
+	public static setApplyGroup(applyGroup: boolean): void {
+		if (MapEditEngine.applyGroup !== applyGroup) {
+			MapEditEngine.applyGroup = applyGroup;
+
+			if (applyGroup) {
+				MapEditEngine.historyAdd();
+			}
+		}
 	}
 
 	public static getMapActive(): MapActive {

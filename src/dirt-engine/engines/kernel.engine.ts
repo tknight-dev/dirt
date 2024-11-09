@@ -54,6 +54,12 @@ export class KernelEngine {
 		}
 		KernelEngine.initialized = true;
 
+		ctxBackground.imageSmoothingEnabled = false;
+		ctxForeground.imageSmoothingEnabled = false;
+		ctxOverlay.imageSmoothingEnabled = false;
+		ctxPrimary.imageSmoothingEnabled = false;
+		ctxUnderlay.imageSmoothingEnabled = false;
+
 		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 
@@ -79,28 +85,28 @@ export class KernelEngine {
 				CameraEngine.moveIncremental(0, 1);
 				KernelEngine.tmpV = setInterval(() => {
 					CameraEngine.moveIncremental(0, 1);
-				}, 75);
+				}, 30);
 			}
 			if (action.down && action.key === KeyCommon.LEFT) {
 				clearInterval(KernelEngine.tmpH);
 				CameraEngine.moveIncremental(-1, 0);
 				KernelEngine.tmpH = setInterval(() => {
 					CameraEngine.moveIncremental(-1, 0);
-				}, 75);
+				}, 30);
 			}
 			if (action.down && action.key === KeyCommon.RIGHT) {
 				clearInterval(KernelEngine.tmpH);
 				CameraEngine.moveIncremental(1, 0);
 				KernelEngine.tmpH = setInterval(() => {
 					CameraEngine.moveIncremental(1, 0);
-				}, 75);
+				}, 30);
 			}
 			if (action.down && action.key === KeyCommon.UP) {
 				clearInterval(KernelEngine.tmpV);
 				CameraEngine.moveIncremental(0, -1);
 				KernelEngine.tmpV = setInterval(() => {
 					CameraEngine.moveIncremental(0, -1);
-				}, 75);
+				}, 30);
 			}
 		}
 	}
@@ -288,6 +294,7 @@ export class KernelEngine {
 	 */
 	public static updateMap(): void {
 		ImageBlockDrawEngine.cacheReset();
+		MapDrawEngineBus.outputGrids(KernelEngine.getMapActive().grids, KernelEngine.getMapActive().gridConfigs);
 	}
 
 	public static updateSettings(settings: VideoBusInputCmdSettings): void {
@@ -304,9 +311,11 @@ export class KernelEngine {
 		DrawPlayEngine.fpsVisible = settings.fpsVisible;
 
 		// Extended
+		FPSDrawEngine.fpsTarget = settings.fps;
 		ImageBlockDrawEngine.setForegroundViewerSettings(settings.foregroundViewerPercentageOfViewport);
 		LightingEngine.setDarknessMax(settings.darknessMax);
-		FPSDrawEngine.fpsTarget = settings.fps;
+		MapDrawEngineBus.setDarknessMax(settings.darknessMax);
+		MapDrawEngineBus.setMapVisible(settings.mapVisible);
 
 		// Last
 		if (KernelEngine.resolution !== settings.resolution) {

@@ -24,6 +24,7 @@ import { MouseAction } from '../mouse.engine';
 export enum VideoBusInputCmd {
 	GAME_MODE_EDIT,
 	GAME_MODE_EDIT_APPLY,
+	GAME_MODE_EDIT_APPLY_GROUP,
 	GAME_MODE_EDIT_DRAW,
 	GAME_MODE_EDIT_REDO,
 	GAME_MODE_EDIT_SETTINGS,

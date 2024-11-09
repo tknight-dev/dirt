@@ -63,6 +63,7 @@ export class CameraDrawEngine {
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>(
 					cacheCanvas.getContext('2d')
 				);
+			ctx.imageSmoothingEnabled = false;
 
 			ctx.beginPath();
 			ctx.lineWidth = 2;

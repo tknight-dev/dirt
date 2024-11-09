@@ -100,6 +100,7 @@ export class MapEngine {
 		// Grids
 		for (let i in gridConfigs) {
 			gridConfig = gridConfigs[i];
+
 			gridConfig.gWidth = Math.round(gridConfig.gWidth);
 			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 

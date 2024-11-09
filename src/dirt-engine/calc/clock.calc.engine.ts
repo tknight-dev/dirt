@@ -27,6 +27,7 @@ export class ClockCalcEngine {
 			mapActive.minuteOfHourEff = 0;
 
 			setTimeout(() => {
+				MapDrawEngineBus.outputHourOfDayEff(mapActive.hourOfDayEff);
 				ClockCalcEngine.callbackHourOfDay(mapActive.hourOfDayEff);
 			});
 		} else {
@@ -35,7 +36,6 @@ export class ClockCalcEngine {
 			if (tmp !== mapActive.minuteOfHourEff) {
 				mapActive.minuteOfHourEff = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
 				setTimeout(() => {
-					MapDrawEngineBus.outputMinuteOfDayEff(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 					ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 				});
 			}

@@ -7,6 +7,7 @@ import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
 import { LightingEngine } from '../lighting.engine';
 import { Map, MapActive, MapConfig } from '../../models/map.model';
+import { MapDrawEngineBus } from '../../draw/buses/map.draw.engine.bus';
 import { MapEngine } from '../map.engine';
 import { MapEditEngine } from '../map-edit.engine';
 import { MouseAction } from '../mouse.engine';
@@ -45,6 +46,9 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT_APPLY:
 			VideoWorkerEngine.inputGameModeEditApply(<VideoBusInputCmdGameModeEditApply>videoBusPayload.data);
+			break;
+		case VideoBusInputCmd.GAME_MODE_EDIT_APPLY_GROUP:
+			VideoWorkerEngine.inputGameModeEditApplyGroup(<boolean>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT_DRAW:
 			VideoWorkerEngine.inputGameModeEditDraw(<VideoBusInputCmdGameModeEditDraw>videoBusPayload.data);
@@ -204,7 +208,18 @@ class VideoWorkerEngine {
 		]);
 	}
 
+	public static inputGameModeEditApplyGroup(group: boolean): void {
+		MapEditEngine.setApplyGroup(group);
+		VideoWorkerEngine.post([
+			{
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
 	public static inputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
+		MapDrawEngineBus.setForegroundViewer(apply.foregroundViewer);
 		KernelEngine.draw(apply);
 		VideoWorkerEngine.post([
 			{
@@ -235,6 +250,7 @@ class VideoWorkerEngine {
 	}
 
 	public static inputGameModeEditTimeForced(enable: boolean): void {
+		MapDrawEngineBus.outputTimeForced(enable);
 		LightingEngine.setTimeForced(enable);
 		VideoWorkerEngine.post([
 			{

@@ -1,6 +1,12 @@
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
-import { Grid, GridBlockTable, GridBlockTableComplex, GridImageBlock } from '../models/grid.model';
+import {
+	Grid,
+	GridBlockTable,
+	GridBlockTableComplex,
+	GridBlockTableComplexFull,
+	GridImageBlock,
+} from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
@@ -90,6 +96,7 @@ export class ImageBlockDrawEngine {
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
+				gridBlockTableComplexFull: GridBlockTableComplexFull,
 				horizonLineGyByGxPrimary: { [key: number]: number } = {},
 				imageBitmap: ImageBitmap,
 				imageBitmaps: ImageBitmap[],
@@ -106,6 +113,7 @@ export class ImageBlockDrawEngine {
 				z: VideoBusInputCmdGameModeEditApplyZ,
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
+			ctx.imageSmoothingEnabled = false;
 			/*
 			 * Iterate through z layers
 			 */
@@ -129,7 +137,18 @@ export class ImageBlockDrawEngine {
 				ctx.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 				// Applicable hashes
-				complexesByGx = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
+				gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(
+					imageBlocks,
+					startGx,
+					startGy,
+					stopGx,
+					stopGy,
+				);
+				complexesByGx = gridBlockTableComplexFull.hashes;
+
+				if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+					horizonLineGyByGxPrimary = gridBlockTableComplexFull.gyMinByGx;
+				}
 
 				for (j in complexesByGx) {
 					complexes = complexesByGx[j];
@@ -138,16 +157,13 @@ export class ImageBlockDrawEngine {
 						complex = complexes[k];
 
 						if (outside) {
-							if (k === 0 && z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-								horizonLineGyByGxPrimary[<number>complex.gx] = <number>complex.gy;
-							}
 							scratch = <number>complex.gy - horizonLineGyByGxPrimary[<number>complex.gx];
 
 							if (scratch > 2) {
 								imageBitmaps = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId);
 								imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
 							} else {
-								imageBitmap = LightingEngine.getAssetImageLit(imageBlockHashes[complex.hash].assetId);
+								imageBitmap = getAssetImageLit(imageBlockHashes[complex.hash].assetId);
 							}
 						} else {
 							imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[

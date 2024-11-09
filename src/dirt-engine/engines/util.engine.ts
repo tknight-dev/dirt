@@ -1,5 +1,5 @@
 import { Coordinate } from '../models/px.model';
-import { GridCoordinate, GridBlockTable, GridBlockTableComplex } from '../models/grid.model';
+import { GridCoordinate, GridBlockTable, GridBlockTableComplex, GridBlockTableComplexFull } from '../models/grid.model';
 import { Map } from '../models/map.model';
 
 /**
@@ -53,10 +53,11 @@ export class UtilEngine {
 		startGy: number,
 		stopGx: number,
 		stopGy: number,
-	): { [key: number]: GridBlockTableComplex[] } {
+	): GridBlockTableComplexFull {
 		let gx: number,
 			gxs: number[] = <number[]>gridBlockTable.gx,
 			gy: GridBlockTableComplex,
+			gyMinByGx: { [key: number]: number } = {},
 			gys: GridBlockTableComplex[],
 			hashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>gridBlockTable.hashesGyByGx,
 			hashesGyByGxSlice: { [key: number]: GridBlockTableComplex[] } = {},
@@ -68,11 +69,17 @@ export class UtilEngine {
 		stopGy++;
 		for (let i in gxs) {
 			gx = gxs[i];
-			if (gx > startGx && gx < stopGx) {
-				gys = hashesGyByGx[gx];
+			gys = hashesGyByGx[gx];
 
+			// Slice g in the viewport
+			if (gx > startGx && gx < stopGx) {
 				for (j in gys) {
 					gy = gys[j];
+
+					// Detect the min y value for the LightingEngine effect
+					if (gyMinByGx[gx] === undefined || gy.value < gyMinByGx[gx]) {
+						gyMinByGx[gx] = gy.value;
+					}
 
 					if (gy.value > startGy && gy.value < stopGy) {
 						if (hashesGyByGxSlice[gx] === undefined) {
@@ -94,10 +101,22 @@ export class UtilEngine {
 						}
 					}
 				}
+			} else {
+				// Detect the min y value for the LightingEngine effect (even outside of viewer)
+				for (j in gys) {
+					gy = gys[j];
+
+					if (gyMinByGx[gx] === undefined || gy.value < gyMinByGx[gx]) {
+						gyMinByGx[gx] = gy.value;
+					}
+				}
 			}
 		}
 
-		return hashesGyByGxSlice;
+		return {
+			gyMinByGx: gyMinByGx,
+			hashes: hashesGyByGxSlice,
+		};
 	}
 
 	/**

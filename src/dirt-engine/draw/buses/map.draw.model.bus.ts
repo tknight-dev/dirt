@@ -1,4 +1,4 @@
-import { Grid } from '../../models/grid.model';
+import { Grid, GridConfig } from '../../models/grid.model';
 
 /**
  * @author tknight-dev
@@ -8,11 +8,12 @@ export enum MapDrawBusInputCmd {
 	INITIALIZE,
 	SET_ASSETS,
 	SET_CAMERA,
-	SET_FOREGROUND_VIEWER,
 	SET_GRID_ACTIVE,
 	SET_GRIDS,
-	SET_HOUR_PRECISE_OF_DAY_EFF,
+	SET_HOUR_OF_DAY_EFF,
 	SET_RESOLUTION,
+	SET_SETTINGS,
+	SET_TIME_FORCED,
 }
 
 export interface MapDrawBusInputPlayload {
@@ -20,12 +21,12 @@ export interface MapDrawBusInputPlayload {
 	data:
 		| MapDrawBusInputPlayloadAssets
 		| MapDrawBusInputPlayloadCamera
-		| MapDrawBusInputPlayloadForegroundViewer
 		| MapDrawBusInputPlayloadGridActive
 		| MapDrawBusInputPlayloadGrids
-		| MapDrawBusInputPlayloadHourPreciseOfDayEff
-		| MapDrawBusInputPlayloadInitial
-		| MapDrawBusInputPlayloadResolution;
+		| MapDrawBusInputPlayloadHourOfDayEff
+		| MapDrawBusInputPlayloadResolution
+		| MapDrawBusInputPlayloadSettings
+		| MapDrawBusInputPlayloadTimeForced;
 }
 
 export interface MapDrawBusInputPlayloadAsset {
@@ -43,11 +44,10 @@ export interface MapDrawBusInputPlayloadCamera {
 	gInPw: number;
 	gx: number;
 	gy: number;
-}
-
-export interface MapDrawBusInputPlayloadForegroundViewer {
-	foregroundViewerEnable: boolean;
-	foregroundViewerPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
+	viewportGh: number;
+	windowPh: number;
+	windowPw: number;
+	zoom: number;
 }
 
 export interface MapDrawBusInputPlayloadGridActive {
@@ -56,17 +56,27 @@ export interface MapDrawBusInputPlayloadGridActive {
 
 export interface MapDrawBusInputPlayloadGrids {
 	grids: { [key: string]: Grid };
+	gridConfigs: { [key: string]: GridConfig };
 }
 
-export interface MapDrawBusInputPlayloadHourPreciseOfDayEff {
-	hourPreciseOfDayEff: number;
+export interface MapDrawBusInputPlayloadHourOfDayEff {
+	hourOfDayEff: number;
 }
-
-export interface MapDrawBusInputPlayloadInitial extends MapDrawBusInputPlayloadForegroundViewer {}
 
 export interface MapDrawBusInputPlayloadResolution {
 	height: number;
 	width: number;
+}
+
+export interface MapDrawBusInputPlayloadSettings {
+	darknessMax: number;
+	foregroundViewerEnable: boolean;
+	foregroundViewerPercentageOfViewport: number;
+	mapVisible: boolean;
+}
+
+export interface MapDrawBusInputPlayloadTimeForced {
+	forced: boolean;
 }
 
 export enum MapDrawBusOutputCmd {

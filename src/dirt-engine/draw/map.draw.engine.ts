@@ -101,6 +101,8 @@ export class MapDrawEngine {
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 
 			// Background
+			ctx.fillStyle = 'rgba(0,0,0,.5)';
+			ctx.fillRect(0, 0, backgroundPw, backgroundPh);
 			if (MapDrawEngine.mapImage) {
 				ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
 			}
@@ -157,6 +159,7 @@ export class MapDrawEngine {
 			// Canvas
 			cacheCanvas = new OffscreenCanvas(backgroundPw, backgroundPh);
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
+			ctx.imageSmoothingEnabled = false;
 
 			// Calc
 			ghRelScaled = backgroundPh * (camera.viewportGhEff / gh);
@@ -263,6 +266,6 @@ export class MapDrawEngine {
 		MapDrawEngine.mapActiveCamera = mapActive.camera;
 		MapDrawEngine.mapActiveGridConfig = mapActive.gridConfigActive;
 
-		MapDrawEngineBus.outputGrids(mapActive.grids);
+		MapDrawEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
 	}
 }

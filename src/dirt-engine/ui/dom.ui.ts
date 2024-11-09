@@ -1370,6 +1370,11 @@ export class DomUI {
 		}
 		DomUI.uiEditMouseCmdCollectionActive = true;
 
+		setTimeout(() => {
+			VideoEngineBus.outputGameModeEditApplyGroup(true);
+			MapEditEngine.setApplyGroup(true);
+		});
+
 		let hash: number = MapEditEngine.uiRelXYToGBlockHash(mouseAction);
 		DomUI.uiEditMouseCmdCollection.pushEnd(hash);
 		DomUI.uiEditMouseCmdCollectionHashesOrigin[hash] = null;
@@ -1662,17 +1667,22 @@ export class DomUI {
 			DomUI.displaySpinner(false);
 			DomUI.uiEditMouseCmdCollectionActive = false;
 
-			if (MapEditEngine.getHistoryRedoLength()) {
-				DomUI.domElementsUIEdit['redo'].classList.remove('disabled');
-			} else {
-				DomUI.domElementsUIEdit['redo'].classList.add('disabled');
-			}
+			setTimeout(() => {
+				VideoEngineBus.outputGameModeEditApplyGroup(false);
+				MapEditEngine.setApplyGroup(false);
 
-			if (MapEditEngine.getHistoryUndoLength()) {
-				DomUI.domElementsUIEdit['undo'].classList.remove('disabled');
-			} else {
-				DomUI.domElementsUIEdit['undo'].classList.add('disabled');
-			}
+				if (MapEditEngine.getHistoryRedoLength()) {
+					DomUI.domElementsUIEdit['redo'].classList.remove('disabled');
+				} else {
+					DomUI.domElementsUIEdit['redo'].classList.add('disabled');
+				}
+
+				if (MapEditEngine.getHistoryUndoLength()) {
+					DomUI.domElementsUIEdit['undo'].classList.remove('disabled');
+				} else {
+					DomUI.domElementsUIEdit['undo'].classList.add('disabled');
+				}
+			});
 		});
 	}
 
@@ -3075,8 +3085,8 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
 
 			// Hide application
