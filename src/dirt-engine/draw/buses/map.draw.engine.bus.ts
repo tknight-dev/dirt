@@ -9,7 +9,7 @@ import { MapDrawBusInputCmd, MapDrawBusInputPlayload, MapDrawBusInputPlayloadAss
 
 export class MapDrawEngineBus {
 	private static callbackBitmap: (image: ImageBitmap) => void;
-	private static darknessMax: number = 0.9;
+	private static darknessMax: number = 0.7;
 	private static foregroundViewerEnable: boolean = true;
 	private static foregroundViewerPercentageOfViewport: number;
 	private static initialized: boolean;
@@ -78,15 +78,6 @@ export class MapDrawEngineBus {
 			data: {
 				grids: grids,
 				gridConfigs: gridConfigs,
-			},
-		});
-	}
-
-	public static outputHourOfDayEff(hourOfDayEff: number): void {
-		MapDrawEngineBus.worker.postMessage({
-			cmd: MapDrawBusInputCmd.SET_HOUR_OF_DAY_EFF,
-			data: {
-				hourOfDayEff: hourOfDayEff,
 			},
 		});
 	}

@@ -60,6 +60,7 @@ export class DirtEngine extends DomUI {
 		DirtEngine.initialized = true;
 		DomUI.assetManifestMaster = AssetEngine.compileMasterManifest(assetDeclarations.manifest || <any>{});
 		DomUI.dom = dom;
+		DomUI.domUIRumbleEnable = settings.screenShakeEnable;
 		DirtEngine.gameModeEditStart = gameModeEditStart;
 
 		console.log('DirtEngine: Initializing...');
@@ -131,19 +132,19 @@ export class DirtEngine extends DomUI {
 		return new Promise((resolve: any) => {
 			DirtEngine.domElements['spinner'].classList.remove('start');
 			setTimeout(() => {
-				AudioEngine.trigger('TITLE_SCREEN_EFFECT', AudioModulation.NONE, 0, 0.5);
+				AudioEngine.trigger('title_screen_effect', AudioModulation.NONE, 0, 0.5);
 
 				setTimeout(() => {
 					// Expand the feed out
 					DirtEngine.domElements['spinner'].style.display = 'none';
-					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['TKNIGHT_DEV'].srcs[0].src);
+					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['tknight_dev'].srcs[0].src);
 					if (asset) {
 						DirtEngine.domElements['feed-fitted-title-content-logo-company'].style.background = 'url("' + asset.data + '")';
 					} else {
 						console.error('DirtEngine > feedTitleOverlay: missing company logo');
 					}
 
-					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['DIRT_ENGINE'].srcs[0].src);
+					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['dirt_engine'].srcs[0].src);
 					if (asset) {
 						DirtEngine.domElements['feed-fitted-title-content-logo-engine'].style.background = 'url("' + asset.data + '")';
 					} else {
@@ -153,7 +154,7 @@ export class DirtEngine extends DomUI {
 					DirtEngine.domElements['feed'].classList.add('start');
 					setTimeout(() => {
 						DirtEngine.domElements['feed'].classList.add('clickable');
-						AudioEngine.play('TITLE_SCREEN_MUSIC', 0, 0.15);
+						AudioEngine.play('title_screen_music', 0, 0.15);
 						resolve();
 					}, 500);
 				}, 500);
@@ -170,9 +171,9 @@ export class DirtEngine extends DomUI {
 		DirtEngine.setGameModeEdit(DirtEngine.gameModeEditStart);
 
 		// Audio
-		AudioEngine.fade('TITLE_SCREEN_MUSIC', 1000, 0);
+		AudioEngine.fade('title_screen_music', 1000, 0);
 		setTimeout(() => {
-			AudioEngine.pause('TITLE_SCREEN_MUSIC');
+			AudioEngine.pause('title_screen_music');
 		}, 1000);
 
 		// Visual

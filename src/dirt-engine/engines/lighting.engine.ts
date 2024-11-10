@@ -133,23 +133,6 @@ export class LightingEngine {
 		}
 	}
 
-	/**
-	 * Only call from workers when outside of this class
-	 */
-	public static clock(hourPreciseOfDayEff: number, camera?: Camera): void {
-		/**
-		 * Only update this value when the time difference is 10% of an hour
-		 */
-		if (hourPreciseOfDayEff - 0.1 > LightingEngine.hourPreciseOfDayEff % 23) {
-			LightingEngine.hourPreciseOfDayEff = hourPreciseOfDayEff;
-
-			if (LightingEngine.cacheZoomedValue !== undefined) {
-				LightingEngine.updateLighting(undefined, LightingEngine.darknessMaxNew, camera);
-				LightingEngine.darknessMaxNew = false;
-			}
-		}
-	}
-
 	public static async initialize(worker?: boolean): Promise<void> {
 		if (LightingEngine.initialized) {
 			console.error('LightingEngine > initialize: already initialized');
@@ -158,12 +141,16 @@ export class LightingEngine {
 		LightingEngine.initialized = true;
 
 		if (worker !== true) {
-			let hourPreciseOfDayEff: number;
 			ClockCalcEngine.setCallbackMinuteOfDay((hourOfDayEff: number, minuteOfDayEff: number) => {
-				hourPreciseOfDayEff =
-					LightingEngine.mapActive.hourOfDayEff + Math.round((LightingEngine.mapActive.minuteOfHourEff / 60) * 100) / 100;
+				if (minuteOfDayEff % 5 == 0) {
+					// Only update very 5min in game
+					LightingEngine.hourPreciseOfDayEff = hourOfDayEff + Math.round((minuteOfDayEff / 60) * 100) / 100;
+					LightingEngine.updateLighting(undefined, LightingEngine.darknessMaxNew);
 
-				LightingEngine.clock(hourPreciseOfDayEff);
+					if (LightingEngine.darknessMaxNew) {
+						LightingEngine.darknessMaxNew = false;
+					}
+				}
 			});
 		}
 	}

@@ -1,5 +1,3 @@
-import { AudioModulation } from './audio-modulation.model';
-
 /**
  * Edges of the grid may fall outside of viewer as they may reside in buffer space
  *
@@ -30,11 +28,6 @@ export interface GridBlockTableComplex {
 	gy?: number;
 	hash: number;
 	value: number;
-}
-
-export interface GridBlockTableComplexFull {
-	gyMinByGx: { [key: number]: number };
-	hashes: { [key: number]: GridBlockTableComplex[] };
 }
 
 export interface GridConfig {
@@ -105,6 +98,7 @@ export interface GridImageBlock extends GridObject {
 	damageable?: boolean;
 	destructible?: boolean;
 	hash: number;
+	passthrough?: boolean;
 	strengthToDamangeInN?: number; // newtons of force required to destroy
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 	type: GridImageBlockType;

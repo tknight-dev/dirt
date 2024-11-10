@@ -32,12 +32,13 @@ class Dirt {
 			},
 			domGame: HTMLElement = <HTMLElement>document.getElementById('game'),
 			settings: VideoBusInputCmdSettings = {
-				darknessMax: 0.8,
+				darknessMax: 0.7,
 				foregroundViewerPercentageOfViewport: 1.5,
 				fps: VideoBusInputCmdSettingsFPS._60,
 				fpsVisible: true,
 				mapVisible: true,
 				resolution: AssetImageSrcResolution.HIGH,
+				screenShakeEnable: true, // Screen rumble (earthquake, proximity to explosion)
 			};
 
 		DirtEngine.initialize(assetDeclarations, domGame, true, true, settings);

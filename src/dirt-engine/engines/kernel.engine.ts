@@ -26,6 +26,7 @@ export class KernelEngine {
 	private static ctxDimensionHeight: number;
 	private static ctxDimensionWidth: number;
 	private static fpms: number;
+	private static fpmsCamera: number = 35;
 	private static fpmsUnlimited: boolean;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
@@ -34,8 +35,10 @@ export class KernelEngine {
 	private static resolution: AssetImageSrcResolution;
 	private static status: boolean;
 	private static timestampDelta: number;
+	private static timestampDeltaCamera: number;
 	private static timestampNow: number;
 	private static timestampThen: number = performance.now();
+	private static timestampThenCamera: number = performance.now();
 
 	public static async initialize(
 		ctxBackground: OffscreenCanvasRenderingContext2D,
@@ -81,28 +84,28 @@ export class KernelEngine {
 				CameraEngine.moveIncremental(0, 1);
 				KernelEngine.tmpV = setInterval(() => {
 					CameraEngine.moveIncremental(0, 1);
-				}, 30);
+				}, KernelEngine.fpmsCamera);
 			}
 			if (action.down && action.key === KeyCommon.LEFT) {
 				clearInterval(KernelEngine.tmpH);
 				CameraEngine.moveIncremental(-1, 0);
 				KernelEngine.tmpH = setInterval(() => {
 					CameraEngine.moveIncremental(-1, 0);
-				}, 30);
+				}, KernelEngine.fpmsCamera);
 			}
 			if (action.down && action.key === KeyCommon.RIGHT) {
 				clearInterval(KernelEngine.tmpH);
 				CameraEngine.moveIncremental(1, 0);
 				KernelEngine.tmpH = setInterval(() => {
 					CameraEngine.moveIncremental(1, 0);
-				}, 30);
+				}, KernelEngine.fpmsCamera);
 			}
 			if (action.down && action.key === KeyCommon.UP) {
 				clearInterval(KernelEngine.tmpV);
 				CameraEngine.moveIncremental(0, -1);
 				KernelEngine.tmpV = setInterval(() => {
 					CameraEngine.moveIncremental(0, -1);
-				}, 30);
+				}, KernelEngine.fpmsCamera);
 			}
 		}
 	}
@@ -131,13 +134,21 @@ export class KernelEngine {
 
 		//Start the request for the next frame
 		requestAnimationFrame(KernelEngine.loop);
+		KernelEngine.timestampNow = performance.now();
+		KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
+		KernelEngine.timestampDeltaCamera = KernelEngine.timestampNow - KernelEngine.timestampThenCamera;
+
+		if (KernelEngine.timestampDeltaCamera > KernelEngine.fpmsCamera) {
+			KernelEngine.timestampThenCamera = KernelEngine.timestampNow - (KernelEngine.timestampDeltaCamera % KernelEngine.fpmsCamera);
+			setTimeout(() => {
+				CameraEngine.update();
+			});
+		}
 
 		if (!KernelEngine.fpmsUnlimited) {
 			/**
 			 * FPS limited
 			 */
-			KernelEngine.timestampNow = performance.now();
-			KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
 			if (KernelEngine.timestampDelta > KernelEngine.fpms) {
 				KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
 
@@ -154,6 +165,7 @@ export class KernelEngine {
 			/**
 			 * FPS unlimited
 			 */
+			CameraEngine.update();
 			if (KernelEngine.modeEdit) {
 				!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
 				DrawEditEngine.start();
@@ -230,7 +242,7 @@ export class KernelEngine {
 
 		// Reset camera
 		if (KernelEngine.ctxDimensionHeight && KernelEngine.ctxDimensionWidth) {
-			CameraEngine.updateDimensions(KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
+			CameraEngine.dimensions(KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
 		} else {
 			console.error('KernelEngine > start: no dimensions set');
 			return;
@@ -263,7 +275,7 @@ export class KernelEngine {
 		KernelEngine.ctxDimensionWidth = width;
 
 		if (KernelEngine.mapActive) {
-			CameraEngine.updateDimensions(height, width);
+			CameraEngine.dimensions(height, width);
 			LightingEngine.updateZoom(undefined, true);
 		}
 	}
@@ -322,10 +334,6 @@ export class KernelEngine {
 				KernelEngine.cacheResets();
 			}
 		}
-	}
-
-	public static updateZoom(): void {
-		LightingEngine.updateZoom();
 	}
 
 	public static getMapActive(): MapActive {

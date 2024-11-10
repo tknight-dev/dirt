@@ -26,6 +26,7 @@ export enum VideoBusInputCmd {
 	GAME_MODE_EDIT_APPLY,
 	GAME_MODE_EDIT_APPLY_GROUP,
 	GAME_MODE_EDIT_DRAW,
+	GAME_MODE_EDIT_DRAW_NULL,
 	GAME_MODE_EDIT_REDO,
 	GAME_MODE_EDIT_SETTINGS,
 	GAME_MODE_EDIT_TIME_FORCED,
@@ -157,6 +158,7 @@ export interface VideoBusInputCmdSettings {
 	fpsVisible: boolean;
 	mapVisible: boolean;
 	resolution: AssetImageSrcResolution;
+	screenShakeEnable: boolean;
 }
 
 export enum VideoBusInputCmdSettingsFPS {

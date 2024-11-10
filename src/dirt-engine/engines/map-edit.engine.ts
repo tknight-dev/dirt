@@ -272,7 +272,7 @@ export class MapEditEngine {
 			.map((v) => Number(v))
 			.sort();
 		for (let i in gx) {
-			hashesGyByGx[gx[i]] = hashesGyByGx[gx[i]].sort();
+			hashesGyByGx[gx[i]] = hashesGyByGx[gx[i]].sort((a: GridBlockTableComplex, b: GridBlockTableComplex) => a.value - b.value);
 		}
 
 		gridBlockTable.gx = gx;
@@ -487,6 +487,20 @@ export class MapEditEngine {
 
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			// Clean
+			if (data.passthrough) {
+				data.assetId = 'null2';
+				delete data.assetIdDamagedImage;
+				delete data.assetIdDamangedWalkedOnAudioEffect;
+				delete data.damageable;
+				delete data.destructible;
+				delete data.strengthToDamangeInN;
+				delete data.strengthToDestroyInN;
+
+				data.type === GridImageBlockType.SOLID;
+			} else if (data.assetId === 'null2') {
+				data.assetId = 'null';
+			}
+
 			if (!data.damageable) {
 				delete data.assetIdDamagedImage;
 				delete data.assetIdDamangedWalkedOnAudioEffect;

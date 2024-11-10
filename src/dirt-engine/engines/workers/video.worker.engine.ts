@@ -3,6 +3,7 @@ import { AssetEngine } from '../asset.engine';
 import { ClockCalcEngine } from '../../calc/clock.calc.engine';
 import { Camera } from '../../models/camera.model';
 import { CameraEngine } from '../camera.engine';
+import { ImageBlockDrawEngine } from '../../draw/image-block.draw.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
 import { LightingEngine } from '../lighting.engine';
@@ -52,6 +53,9 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT_DRAW:
 			VideoWorkerEngine.inputGameModeEditDraw(<VideoBusInputCmdGameModeEditDraw>videoBusPayload.data);
+			break;
+		case VideoBusInputCmd.GAME_MODE_EDIT_DRAW_NULL:
+			VideoWorkerEngine.inputGameModeEditDrawNull(<boolean>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT_REDO:
 			VideoWorkerEngine.inputGameModeEditRedo();
@@ -179,11 +183,6 @@ class VideoWorkerEngine {
 				},
 			},
 		]);
-
-		setTimeout(() => {
-			console.log('RUMBLE');
-			VideoWorkerEngine.outputRumble(true, 0, 10);
-		});
 	}
 
 	public static inputGameModeEdit(modeEdit: VideoBusInputCmdGameModeEdit): void {
@@ -214,6 +213,16 @@ class VideoWorkerEngine {
 	public static inputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
 		MapDrawEngineBus.setForegroundViewer(apply.foregroundViewer);
 		KernelEngine.draw(apply);
+		VideoWorkerEngine.post([
+			{
+				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
+				data: null,
+			},
+		]);
+	}
+
+	public static inputGameModeEditDrawNull(drawNull: boolean): void {
+		ImageBlockDrawEngine.setDrawNull(drawNull);
 		VideoWorkerEngine.post([
 			{
 				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
@@ -288,7 +297,6 @@ class VideoWorkerEngine {
 		}
 		VideoWorkerEngine.gameStarted = true;
 		VideoWorkerEngine.gameModeEdit = start.modeEdit;
-		console.log('VideoBusWorker > gameStart', start);
 
 		// Last
 		KernelEngine.setModeEdit(start.modeEdit);
@@ -540,7 +548,7 @@ class VideoWorkerEngine {
 				cmd: VideoBusOutputCmd.RUMBLE,
 				data: {
 					enable: enable,
-					durationInMS: Math.max(0, Math.min(10000, intensity)),
+					durationInMS: Math.max(0, Math.min(10000, durationInMS)),
 					intensity: Math.max(1, Math.min(10, intensity)),
 				},
 			},

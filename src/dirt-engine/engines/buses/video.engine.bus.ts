@@ -35,6 +35,7 @@ import {
 	VideoBusOutputCmdMapAsset,
 	VideoBusOutputCmdMapLoadStatus,
 	VideoBusOutputCmdMapSave,
+	VideoBusOutputCmdRumble,
 	VideoBusWorkerPayload,
 	VideoBusWorkerStatusInitialized,
 } from '../../engines/buses/video.model.bus';
@@ -47,6 +48,7 @@ export class VideoEngineBus {
 	private static callbackMapHourOfDayEff: (hourOfDayEff: number) => void;
 	private static callbackMapLoadStatus: (status: boolean) => void;
 	private static callbackMapSave: (data: string, name: string) => void;
+	private static callbackRumble: (durationInMs: number, enable: boolean, intensity: number) => void;
 	private static callbackStatusInitialized: (durationInMs: number) => void;
 	private static canvasBackground: HTMLCanvasElement;
 	private static canvasForeground: HTMLCanvasElement;
@@ -54,7 +56,6 @@ export class VideoEngineBus {
 	private static canvasPrimary: HTMLCanvasElement;
 	private static canvasUnderlay: HTMLCanvasElement;
 	private static complete: boolean;
-	private static fps: number = 60;
 	private static initialized: boolean;
 	private static mapInteration: HTMLElement;
 	private static streams: HTMLElement;
@@ -157,73 +158,74 @@ export class VideoEngineBus {
 	 */
 	private static input(): void {
 		let audioModulation: AudioModulation | null,
-			VideoBusOutputCmdAudioEffect: VideoBusOutputCmdAudioEffect,
-			VideoBusOutputCmdAudioMusicFade: VideoBusOutputCmdAudioMusicFade,
-			VideoBusOutputCmdAudioMusicPlay: VideoBusOutputCmdAudioMusicPlay,
-			VideoBusOutputCmdAudioMusicPause: VideoBusOutputCmdAudioMusicPause,
-			VideoBusOutputCmdAudioMusicUnpause: VideoBusOutputCmdAudioMusicUnpause,
-			VideoBusOutputCmdAudioVolume: VideoBusOutputCmdAudioVolume,
-			VideoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate,
-			VideoBusOutputCmdMapAsset: VideoBusOutputCmdMapAsset,
-			VideoBusOutputCmdMapLoadStatus: VideoBusOutputCmdMapLoadStatus,
-			VideoBusOutputCmdMapSave: VideoBusOutputCmdMapSave,
-			VideoBusWorkerPayload: VideoBusWorkerPayload,
-			VideoBusWorkerPayloads: VideoBusWorkerPayload[],
-			VideoBusWorkerStatusInitialized: VideoBusWorkerStatusInitialized;
+			videoBusOutputCmdAudioEffect: VideoBusOutputCmdAudioEffect,
+			videoBusOutputCmdAudioMusicFade: VideoBusOutputCmdAudioMusicFade,
+			videoBusOutputCmdAudioMusicPlay: VideoBusOutputCmdAudioMusicPlay,
+			videoBusOutputCmdAudioMusicPause: VideoBusOutputCmdAudioMusicPause,
+			videoBusOutputCmdAudioMusicUnpause: VideoBusOutputCmdAudioMusicUnpause,
+			videoBusOutputCmdAudioVolume: VideoBusOutputCmdAudioVolume,
+			videoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate,
+			videoBusOutputCmdMapAsset: VideoBusOutputCmdMapAsset,
+			videoBusOutputCmdMapLoadStatus: VideoBusOutputCmdMapLoadStatus,
+			videoBusOutputCmdMapSave: VideoBusOutputCmdMapSave,
+			videoBusOutputCmdRumble: VideoBusOutputCmdRumble,
+			videoBusWorkerPayload: VideoBusWorkerPayload,
+			videoBusWorkerPayloads: VideoBusWorkerPayload[],
+			videoBusWorkerStatusInitialized: VideoBusWorkerStatusInitialized;
 
 		VideoEngineBus.worker.onmessage = (event: MessageEvent) => {
-			VideoBusWorkerPayloads = event.data.payloads;
+			videoBusWorkerPayloads = event.data.payloads;
 
-			for (let i = 0; i < VideoBusWorkerPayloads.length; i++) {
-				VideoBusWorkerPayload = VideoBusWorkerPayloads[i];
+			for (let i = 0; i < videoBusWorkerPayloads.length; i++) {
+				videoBusWorkerPayload = videoBusWorkerPayloads[i];
 
-				switch (VideoBusWorkerPayload.cmd) {
+				switch (videoBusWorkerPayload.cmd) {
 					case VideoBusOutputCmd.AUDIO_EFFECT:
-						VideoBusOutputCmdAudioEffect = <VideoBusOutputCmdAudioEffect>VideoBusWorkerPayload.data;
-						audioModulation = AudioModulation.find(VideoBusOutputCmdAudioEffect.modulationId);
+						videoBusOutputCmdAudioEffect = <VideoBusOutputCmdAudioEffect>videoBusWorkerPayload.data;
+						audioModulation = AudioModulation.find(videoBusOutputCmdAudioEffect.modulationId);
 						if (audioModulation) {
 							AudioEngine.trigger(
-								VideoBusOutputCmdAudioEffect.id,
+								videoBusOutputCmdAudioEffect.id,
 								audioModulation,
-								VideoBusOutputCmdAudioEffect.pan,
-								VideoBusOutputCmdAudioEffect.volumePercentage,
+								videoBusOutputCmdAudioEffect.pan,
+								videoBusOutputCmdAudioEffect.volumePercentage,
 							);
 						} else {
 							console.error('GameEngine > video: effect asset-id or modulation-id invalid');
 						}
 						break;
 					case VideoBusOutputCmd.AUDIO_MUSIC_FADE:
-						VideoBusOutputCmdAudioMusicFade = <VideoBusOutputCmdAudioMusicFade>VideoBusWorkerPayload.data;
+						videoBusOutputCmdAudioMusicFade = <VideoBusOutputCmdAudioMusicFade>videoBusWorkerPayload.data;
 						AudioEngine.fade(
-							VideoBusOutputCmdAudioMusicFade.id,
-							VideoBusOutputCmdAudioMusicFade.durationInMs,
-							VideoBusOutputCmdAudioMusicPlay.volumePercentage,
+							videoBusOutputCmdAudioMusicFade.id,
+							videoBusOutputCmdAudioMusicFade.durationInMs,
+							videoBusOutputCmdAudioMusicPlay.volumePercentage,
 						);
 						break;
 					case VideoBusOutputCmd.AUDIO_MUSIC_PLAY:
-						VideoBusOutputCmdAudioMusicPlay = <VideoBusOutputCmdAudioMusicPlay>VideoBusWorkerPayload.data;
+						videoBusOutputCmdAudioMusicPlay = <VideoBusOutputCmdAudioMusicPlay>videoBusWorkerPayload.data;
 						AudioEngine.play(
-							VideoBusOutputCmdAudioMusicPlay.id,
-							VideoBusOutputCmdAudioMusicPlay.timeInS,
-							VideoBusOutputCmdAudioMusicPlay.volumePercentage,
+							videoBusOutputCmdAudioMusicPlay.id,
+							videoBusOutputCmdAudioMusicPlay.timeInS,
+							videoBusOutputCmdAudioMusicPlay.volumePercentage,
 						);
 						break;
 					case VideoBusOutputCmd.AUDIO_MUSIC_PAUSE:
-						VideoBusOutputCmdAudioMusicPause = <VideoBusOutputCmdAudioMusicPause>VideoBusWorkerPayload.data;
-						AudioEngine.pause(VideoBusOutputCmdAudioMusicPause.id);
+						videoBusOutputCmdAudioMusicPause = <VideoBusOutputCmdAudioMusicPause>videoBusWorkerPayload.data;
+						AudioEngine.pause(videoBusOutputCmdAudioMusicPause.id);
 						break;
 					case VideoBusOutputCmd.AUDIO_MUSIC_UNPAUSE:
-						VideoBusOutputCmdAudioMusicUnpause = <VideoBusOutputCmdAudioMusicUnpause>VideoBusWorkerPayload.data;
-						AudioEngine.unpause(VideoBusOutputCmdAudioMusicUnpause.id);
+						videoBusOutputCmdAudioMusicUnpause = <VideoBusOutputCmdAudioMusicUnpause>videoBusWorkerPayload.data;
+						AudioEngine.unpause(videoBusOutputCmdAudioMusicUnpause.id);
 						break;
 					case VideoBusOutputCmd.AUDIO_VOLUME:
-						VideoBusOutputCmdAudioVolume = <VideoBusOutputCmdAudioVolume>VideoBusWorkerPayload.data;
-						AudioEngine.setVolumeAsset(VideoBusOutputCmdAudioVolume.id, VideoBusOutputCmdAudioVolume.volumePercentage);
+						videoBusOutputCmdAudioVolume = <VideoBusOutputCmdAudioVolume>videoBusWorkerPayload.data;
+						AudioEngine.setVolumeAsset(videoBusOutputCmdAudioVolume.id, videoBusOutputCmdAudioVolume.volumePercentage);
 						break;
 					case VideoBusOutputCmd.EDIT_CAMERA_UPDATE:
-						VideoBusOutputCmdEditCameraUpdate = <VideoBusOutputCmdEditCameraUpdate>VideoBusWorkerPayload.data;
+						videoBusOutputCmdEditCameraUpdate = <VideoBusOutputCmdEditCameraUpdate>videoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackEditCameraUpdate !== undefined) {
-							VideoEngineBus.callbackEditCameraUpdate(VideoBusOutputCmdEditCameraUpdate);
+							VideoEngineBus.callbackEditCameraUpdate(videoBusOutputCmdEditCameraUpdate);
 						} else {
 							console.error('VideoEngineBus > input: edit camera update callback not set');
 						}
@@ -236,40 +238,51 @@ export class VideoEngineBus {
 						}
 						break;
 					case VideoBusOutputCmd.MAP_ASSET:
-						VideoBusOutputCmdMapAsset = <VideoBusOutputCmdMapAsset>VideoBusWorkerPayload.data;
+						videoBusOutputCmdMapAsset = <VideoBusOutputCmdMapAsset>videoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackMapAsset !== undefined) {
-							VideoEngineBus.callbackMapAsset(VideoBusOutputCmdMapAsset.mapActive);
+							VideoEngineBus.callbackMapAsset(videoBusOutputCmdMapAsset.mapActive);
 						} else {
 							console.error('VideoEngineBus > input: map asset callback not set');
 						}
 						break;
-						1440;
 					case VideoBusOutputCmd.MAP_HOUR_OF_DAY_EFF:
 						if (VideoEngineBus.callbackMapHourOfDayEff !== undefined) {
-							VideoEngineBus.callbackMapHourOfDayEff(<number>VideoBusWorkerPayload.data);
+							VideoEngineBus.callbackMapHourOfDayEff(<number>videoBusWorkerPayload.data);
 						} else {
 							console.error('VideoEngineBus > input: hour of day eff callback not set');
 						}
 						break;
 					case VideoBusOutputCmd.MAP_LOAD_STATUS:
-						VideoBusOutputCmdMapLoadStatus = <VideoBusOutputCmdMapLoadStatus>VideoBusWorkerPayload.data;
+						videoBusOutputCmdMapLoadStatus = <VideoBusOutputCmdMapLoadStatus>videoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackMapLoadStatus !== undefined) {
-							VideoEngineBus.callbackMapLoadStatus(VideoBusOutputCmdMapLoadStatus.status);
+							VideoEngineBus.callbackMapLoadStatus(videoBusOutputCmdMapLoadStatus.status);
 						} else {
 							console.error('VideoEngineBus > input: map load status callback not set');
 						}
 						break;
 					case VideoBusOutputCmd.MAP_SAVE:
-						VideoBusOutputCmdMapSave = <VideoBusOutputCmdMapSave>VideoBusWorkerPayload.data;
+						videoBusOutputCmdMapSave = <VideoBusOutputCmdMapSave>videoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackMapSave !== undefined) {
-							VideoEngineBus.callbackMapSave(VideoBusOutputCmdMapSave.data, VideoBusOutputCmdMapSave.name);
+							VideoEngineBus.callbackMapSave(videoBusOutputCmdMapSave.data, videoBusOutputCmdMapSave.name);
+						} else {
+							console.error('VideoEngineBus > input: map save callback not set');
+						}
+						break;
+					case VideoBusOutputCmd.RUMBLE:
+						videoBusOutputCmdRumble = <VideoBusOutputCmdRumble>videoBusWorkerPayload.data;
+						if (VideoEngineBus.callbackRumble !== undefined) {
+							VideoEngineBus.callbackRumble(
+								videoBusOutputCmdRumble.durationInMS,
+								videoBusOutputCmdRumble.enable,
+								videoBusOutputCmdRumble.intensity,
+							);
 						} else {
 							console.error('VideoEngineBus > input: map save callback not set');
 						}
 						break;
 					case VideoBusOutputCmd.STATUS_INITIALIZED:
-						VideoBusWorkerStatusInitialized = <VideoBusWorkerStatusInitialized>VideoBusWorkerPayload.data;
-						VideoEngineBus.callbackStatusInitialized(VideoBusWorkerStatusInitialized.durationInMs);
+						videoBusWorkerStatusInitialized = <VideoBusWorkerStatusInitialized>videoBusWorkerPayload.data;
+						VideoEngineBus.callbackStatusInitialized(videoBusWorkerStatusInitialized.durationInMs);
 						break;
 				}
 			}
@@ -336,6 +349,13 @@ export class VideoEngineBus {
 		VideoEngineBus.worker.postMessage({
 			cmd: VideoBusInputCmd.GAME_MODE_EDIT_DRAW,
 			data: apply,
+		});
+	}
+
+	public static outputGameModeEditDrawNull(drawNull: boolean): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.GAME_MODE_EDIT_DRAW_NULL,
+			data: drawNull,
 		});
 	}
 
@@ -466,6 +486,10 @@ export class VideoEngineBus {
 
 	public static setCallbackMapSave(callbackMapSave: (data: string, name: string) => void): void {
 		VideoEngineBus.callbackMapSave = callbackMapSave;
+	}
+
+	public static setCallbackRumble(callbackRumble: (durationInMs: number, enable: boolean, intensity: number) => void): void {
+		VideoEngineBus.callbackRumble = callbackRumble;
 	}
 
 	public static setCallbackStatusInitialized(callbackStatusInitialized: (durationInMs: number) => void): void {

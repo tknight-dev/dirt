@@ -10,7 +10,6 @@ export enum MapDrawBusInputCmd {
 	SET_CAMERA,
 	SET_GRID_ACTIVE,
 	SET_GRIDS,
-	SET_HOUR_OF_DAY_EFF,
 	SET_RESOLUTION,
 	SET_SETTINGS,
 	SET_TIME_FORCED,
@@ -23,7 +22,6 @@ export interface MapDrawBusInputPlayload {
 		| MapDrawBusInputPlayloadCamera
 		| MapDrawBusInputPlayloadGridActive
 		| MapDrawBusInputPlayloadGrids
-		| MapDrawBusInputPlayloadHourOfDayEff
 		| MapDrawBusInputPlayloadResolution
 		| MapDrawBusInputPlayloadSettings
 		| MapDrawBusInputPlayloadTimeForced;
@@ -57,10 +55,6 @@ export interface MapDrawBusInputPlayloadGridActive {
 export interface MapDrawBusInputPlayloadGrids {
 	grids: { [key: string]: Grid };
 	gridConfigs: { [key: string]: GridConfig };
-}
-
-export interface MapDrawBusInputPlayloadHourOfDayEff {
-	hourOfDayEff: number;
 }
 
 export interface MapDrawBusInputPlayloadResolution {

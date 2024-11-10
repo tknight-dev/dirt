@@ -1,5 +1,5 @@
 import { Coordinate } from '../models/px.model';
-import { GridCoordinate, GridBlockTable, GridBlockTableComplex, GridBlockTableComplexFull } from '../models/grid.model';
+import { GridCoordinate, GridBlockTable, GridBlockTableComplex } from '../models/grid.model';
 import { Map } from '../models/map.model';
 
 /**
@@ -53,7 +53,7 @@ export class UtilEngine {
 		startGy: number,
 		stopGx: number,
 		stopGy: number,
-	): GridBlockTableComplexFull {
+	): { [key: number]: GridBlockTableComplex[] } {
 		let gx: number,
 			gxs: number[] = <number[]>gridBlockTable.gx,
 			gy: GridBlockTableComplex,
@@ -101,22 +101,10 @@ export class UtilEngine {
 						}
 					}
 				}
-			} else {
-				// Detect the min y value for the LightingEngine effect (even outside of viewer)
-				for (j in gys) {
-					gy = gys[j];
-
-					if (gyMinByGx[gx] === undefined || gy.value < gyMinByGx[gx]) {
-						gyMinByGx[gx] = gy.value;
-					}
-				}
 			}
 		}
 
-		return {
-			gyMinByGx: gyMinByGx,
-			hashes: hashesGyByGxSlice,
-		};
+		return hashesGyByGxSlice;
 	}
 
 	/**

@@ -59,6 +59,7 @@ export class AssetEngine {
 		if (assetManifestDeclared.audio) {
 			for (let i in assetManifestDeclared.audio) {
 				asset = assetManifestDeclared.audio[i];
+				asset.id = asset.id.toLowerCase();
 				if (audio[asset.id] === undefined) {
 					audio[asset.id] = asset;
 				} else {
@@ -69,6 +70,7 @@ export class AssetEngine {
 		if (assetManifestDeclared.images) {
 			for (let i in assetManifestDeclared.images) {
 				assetImage = assetManifestDeclared.images[i];
+				assetImage.id = assetImage.id.toLowerCase();
 				if (images[assetImage.id] === undefined) {
 					images[assetImage.id] = assetImage;
 
@@ -83,6 +85,7 @@ export class AssetEngine {
 		if (assetManifestDeclared.maps) {
 			for (let i in assetManifestDeclared.maps) {
 				asset = assetManifestDeclared.maps[i];
+				asset.id = asset.id.toLowerCase();
 				if (maps[asset.id] === undefined) {
 					maps[asset.id] = asset;
 				} else {
@@ -94,12 +97,14 @@ export class AssetEngine {
 		// Process defaults second
 		for (let i in dirtEngineDefaultAudioManifest) {
 			asset = dirtEngineDefaultAudioManifest[i];
+			asset.id = asset.id.toLowerCase();
 			if (audio[asset.id] === undefined) {
 				audio[asset.id] = asset;
 			}
 		}
 		for (let i in dirtEngineDefaultImageManifest) {
 			assetImage = dirtEngineDefaultImageManifest[i];
+			assetImage.id = assetImage.id.toLowerCase();
 			if (images[assetImage.id] === undefined) {
 				images[assetImage.id] = assetImage;
 
@@ -110,6 +115,7 @@ export class AssetEngine {
 		}
 		for (let i in dirtEngineDefaultMapManifest) {
 			asset = dirtEngineDefaultMapManifest[i];
+			asset.id = asset.id.toLowerCase();
 			if (maps[asset.id] === undefined) {
 				maps[asset.id] = asset;
 			}

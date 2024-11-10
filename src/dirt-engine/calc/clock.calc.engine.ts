@@ -16,29 +16,28 @@ export class ClockCalcEngine {
 	public static start(timestampDelta: number): void {
 		let mapActive: MapActive = ClockCalcEngine.mapActive,
 			clockSpeedRelativeToEarthEff = Math.round(86400000 / mapActive.clockSpeedRelativeToEarth),
-			tmp: number;
+			minute: number;
 
 		mapActive.clockTicker += timestampDelta;
 		mapActive.durationInMS += timestampDelta;
 
-		if (mapActive.clockTicker >= clockSpeedRelativeToEarthEff) {
+		minute = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
+
+		if (minute === 60) {
 			mapActive.clockTicker = 0;
 			mapActive.hourOfDayEff = (mapActive.hourOfDayEff + 1) % 24;
 			mapActive.minuteOfHourEff = 0;
 
 			setTimeout(() => {
-				MapDrawEngineBus.outputHourOfDayEff(mapActive.hourOfDayEff);
 				ClockCalcEngine.callbackHourOfDay(mapActive.hourOfDayEff);
+				ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 			});
-		} else {
-			tmp = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
+		} else if (minute !== mapActive.minuteOfHourEff) {
+			mapActive.minuteOfHourEff = minute;
 
-			if (tmp !== mapActive.minuteOfHourEff) {
-				mapActive.minuteOfHourEff = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
-				setTimeout(() => {
-					ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
-				});
-			}
+			setTimeout(() => {
+				ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
+			});
 		}
 	}
 

@@ -32,6 +32,7 @@ $dirt-engine-old-tv-background: #162fd8;
 	* {
 		box-sizing: border-box;
 		outline: none;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	.download {
@@ -145,7 +146,7 @@ $dirt-engine-old-tv-background: #162fd8;
 				bottom: 50%;
 				left: 50%;
 				opacity: 0;
-				//overflow: hidden;
+				overflow: hidden;
 				right: 50%;
 				top: 50%;
 				transition:
@@ -164,7 +165,7 @@ $dirt-engine-old-tv-background: #162fd8;
 					z-index: 2;
 
 					.outline {
-						border: 1px solid red;
+						// border: 1px solid red;
 						pointer-events: none;
 						z-index: 9999;
 					}
@@ -240,6 +241,7 @@ $dirt-engine-old-tv-background: #162fd8;
 					.streams {
 						height: 100%;
 						position: relative;
+						transform-origin: 50% 50%;
 						width: 100%;
 
 						.stream {
@@ -249,10 +251,7 @@ $dirt-engine-old-tv-background: #162fd8;
 							position: absolute;
 							right: 0;
 							top: 0;
-
-							&.canvas {
-								z-index: 1;
-							}
+							transform-origin: 50% 50%;
 
 							&.background {
 								z-index: 2;
@@ -263,7 +262,15 @@ $dirt-engine-old-tv-background: #162fd8;
 							}
 
 							&.overlay {
+								z-index: 5;
+							}
+
+							&.primary {
 								z-index: 4;
+							}
+
+							&.underlay {
+								z-index: 1;
 							}
 
 							.data {

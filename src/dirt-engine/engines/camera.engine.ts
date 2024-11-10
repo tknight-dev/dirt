@@ -1,8 +1,8 @@
 import { Camera } from '../models/camera.model';
 import { GridConfig } from '../models/grid.model';
+import { LightingEngine } from './lighting.engine';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
-import { KernelEngine } from './kernel.engine';
 import { UtilEngine } from './util.engine';
 
 /**
@@ -13,6 +13,9 @@ export class CameraEngine {
 	private static callback: (camera: Camera) => void;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
+	private static loopPositionGx: number;
+	private static loopPositionGy: number;
+	private static loopZoom: number;
 
 	public static async initialize(): Promise<void> {
 		if (CameraEngine.initialized) {
@@ -21,41 +24,8 @@ export class CameraEngine {
 		CameraEngine.initialized = true;
 	}
 
-	public static moveG(gx: number, gy: number): void {
-		let mapActive = CameraEngine.mapActive;
-
-		mapActive.camera.gx = gx;
-		mapActive.camera.gy = gy;
-
-		CameraEngine.updatePosition();
-	}
-
-	/**
-	 * Solve smooth moving... and remove this function?
-	 */
-	public static moveIncremental(gx: number, gy: number): void {
-		let mapActive = CameraEngine.mapActive;
-
-		mapActive.camera.gx += gx * 0.3;
-		mapActive.camera.gy += gy * 0.3;
-
-		CameraEngine.updatePosition();
-	}
-
-	public static reset(): void {
-		let mapActive = CameraEngine.mapActive,
-			camera: Camera = mapActive.camera;
-
-		camera.gx = mapActive.gridConfigActive.startGxCamera;
-		camera.gy = mapActive.gridConfigActive.startGyCamera;
-		camera.zoom = mapActive.gridConfigActive.zoomDefault;
-
-		CameraEngine.zoom(null);
-	}
-
-	public static updateDimensions(ctxDimensionHeight: number, ctxDimensionWidth: number): void {
-		let mapActive = CameraEngine.mapActive,
-			camera: Camera = mapActive.camera,
+	public static dimensions(ctxDimensionHeight: number, ctxDimensionWidth: number): void {
+		let camera: Camera = CameraEngine.mapActive.camera,
 			renderOverflowP: number = UtilEngine.renderOverflowP;
 
 		camera.viewportPh = ctxDimensionHeight - 2 * renderOverflowP;
@@ -68,57 +38,102 @@ export class CameraEngine {
 		camera.windowPw = ctxDimensionWidth;
 		camera.windowPx = 0;
 		camera.windowPy = 0;
-
-		CameraEngine.zoom(null);
+		CameraEngine.update(true);
 	}
 
-	public static updatePosition(): void {
+	public static moveG(gx: number, gy: number): void {
+		CameraEngine.loopPositionGx = gx;
+		CameraEngine.loopPositionGy = gy;
+	}
+
+	/**
+	 * Solve smooth moving... and remove this function?
+	 */
+	public static moveIncremental(gx: number, gy: number): void {
+		CameraEngine.loopPositionGx += gx * 0.5;
+		CameraEngine.loopPositionGy += gy * 0.5;
+	}
+
+	public static reset(): void {
+		let gridConfig: GridConfig = CameraEngine.mapActive.gridConfigActive;
+
+		CameraEngine.loopPositionGx = gridConfig.startGxCamera;
+		CameraEngine.loopPositionGy = gridConfig.startGyCamera;
+		CameraEngine.loopZoom = gridConfig.zoomDefault;
+		CameraEngine.update();
+	}
+
+	public static update(forced?: boolean): void {
 		let mapActive = CameraEngine.mapActive,
 			camera: Camera = mapActive.camera,
-			gridConfig: GridConfig = mapActive.gridConfigActive;
+			gridConfig: GridConfig = mapActive.gridConfigActive,
+			gHeight: number = gridConfig.gHeight,
+			gWidth: number = gridConfig.gWidth,
+			viewportGhEff: number = camera.viewportGhEff,
+			viewportGwEff: number = camera.viewportGwEff,
+			zoomUpdated: boolean = false;
 
-		camera.gx = Math.max(0, Math.min(gridConfig.gWidth, camera.gx));
-		camera.gy = Math.max(0, Math.min(gridConfig.gHeight, camera.gy));
+		// Zoom
+		if (forced || camera.zoom !== CameraEngine.loopZoom) {
+			camera.zoom = Math.round(CameraEngine.loopZoom * 1000) / 1000;
 
-		camera.viewportGx = Math.max(
-			0,
-			Math.min(gridConfig.gWidth - camera.viewportGwEff, Math.round((camera.gx - camera.viewportGwEff / 2) * 1000) / 1000),
-		);
-		camera.viewportGy = Math.max(
-			0,
-			Math.min(gridConfig.gHeight - camera.viewportGhEff, Math.round((camera.gy - camera.viewportGhEff / 2) * 1000) / 1000),
-		);
+			// viewport
+			viewportGhEff = Math.round(camera.viewportGh * camera.zoom * 1000) / 1000;
+			viewportGwEff = Math.round(camera.viewportGw * camera.zoom * 1000) / 1000;
 
-		// console.log('camera.gx', camera.gx);
-		// console.log('camera.viewportGx', camera.viewportGx);
-		KernelEngine.updateZoom();
-		setTimeout(() => {
-			MapDrawEngineBus.outputCamera(camera);
-			CameraEngine.callback(camera);
-		});
+			if (viewportGhEff < 2 || viewportGwEff < 2) {
+				// Max zoom in (min 3 blocks)
+				return;
+			} else if (viewportGhEff > gHeight + 1 || viewportGwEff > gWidth + 1) {
+				// Max zoom out
+				return;
+			}
+
+			camera.viewportGhEff = viewportGhEff;
+			camera.viewportGwEff = viewportGwEff;
+
+			// gInP
+			camera.gInPh = Math.round((camera.windowPh / viewportGhEff) * 1000) / 1000;
+			camera.gInPw = Math.round((camera.windowPw / viewportGwEff) * 1000) / 1000;
+
+			// Done
+			zoomUpdated = true;
+			CameraEngine.loopZoom = camera.zoom;
+		}
+
+		// Gx Gy
+		if (zoomUpdated || camera.gx !== CameraEngine.loopPositionGx || camera.gy !== CameraEngine.loopPositionGy) {
+			camera.gx = Math.max(0, Math.min(gWidth, CameraEngine.loopPositionGx));
+			camera.gy = Math.max(0, Math.min(gHeight, CameraEngine.loopPositionGy));
+
+			camera.viewportGx = Math.max(0, Math.min(gWidth - viewportGwEff, Math.round((camera.gx - viewportGwEff / 2) * 1000) / 1000));
+			camera.viewportGy = Math.max(0, Math.min(gHeight - viewportGhEff, Math.round((camera.gy - viewportGhEff / 2) * 1000) / 1000));
+
+			// Done
+			zoomUpdated && LightingEngine.updateZoom();
+			setTimeout(() => {
+				MapDrawEngineBus.outputCamera(camera);
+				CameraEngine.callback(camera);
+			});
+			CameraEngine.loopPositionGx = camera.gx;
+			CameraEngine.loopPositionGy = camera.gy;
+		}
 	}
 
 	/**
 	 * Solve smooth zooming
 	 */
-	public static zoom(zoomIn: boolean | null): void {
-		let mapActive = CameraEngine.mapActive,
-			camera: Camera = mapActive.camera,
-			gridConfig: GridConfig = mapActive.gridConfigActive,
+	public static zoom(zoomIn: boolean): void {
+		let camera: Camera = CameraEngine.mapActive.camera,
+			gridConfig: GridConfig = CameraEngine.mapActive.gridConfigActive,
 			viewportGhEff: number,
 			viewportGwEff: number,
-			zoom: number = camera.zoom;
+			zoom: number = Math.round((camera.zoom + (zoomIn ? -0.05 : 0.05)) * 1000) / 1000;
 
-		// Zoom step
-		if (zoomIn !== null) {
-			zoom = Math.round((zoom + (zoomIn ? -0.05 : 0.05)) * 1000) / 1000;
-		}
+		viewportGhEff = camera.viewportGh * zoom;
+		viewportGwEff = camera.viewportGw * zoom;
 
-		// viewport
-		viewportGhEff = Math.round(camera.viewportGh * zoom * 1000) / 1000;
-		viewportGwEff = Math.round(camera.viewportGw * zoom * 1000) / 1000;
-
-		if (viewportGhEff < 2 || viewportGwEff < 2) {
+		if (viewportGhEff < 3 || viewportGwEff < 3) {
 			// Max zoom in (min 3 blocks)
 			return;
 		} else if (viewportGhEff > gridConfig.gHeight + 1 || viewportGwEff > gridConfig.gWidth + 1) {
@@ -126,15 +141,7 @@ export class CameraEngine {
 			return;
 		}
 
-		camera.viewportGhEff = viewportGhEff;
-		camera.viewportGwEff = viewportGwEff;
-		camera.zoom = zoom;
-
-		// gInP
-		camera.gInPh = Math.round((camera.windowPh / viewportGhEff) * 1000) / 1000;
-		camera.gInPw = Math.round((camera.windowPw / viewportGwEff) * 1000) / 1000;
-
-		CameraEngine.updatePosition();
+		CameraEngine.loopZoom = zoom;
 	}
 
 	public static setMapActive(mapActive: MapActive) {

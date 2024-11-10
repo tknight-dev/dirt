@@ -1,6 +1,6 @@
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
-import { Grid, GridBlockTable, GridBlockTableComplex, GridBlockTableComplexFull, GridConfig, GridImageBlock } from '../models/grid.model';
+import { Grid, GridBlockTable, GridBlockTableComplex, GridConfig, GridImageBlock } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
@@ -30,6 +30,7 @@ export class ImageBlockDrawEngine {
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static drawNull: boolean;
 	private static foregroundViewerEnable: boolean = true;
 	private static foregroundViewerPercentageOfViewport: number;
 	private static initialized: boolean;
@@ -79,7 +80,8 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
-			let canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
+			let assetId: string,
+				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
@@ -92,8 +94,8 @@ export class ImageBlockDrawEngine {
 				gradient: CanvasGradient,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
 				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
-				gridBlockTableComplexFull: GridBlockTableComplexFull,
-				horizonLineGyByGxPrimary: { [key: number]: number } = {},
+				gyMin: number,
+				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
 				imageBitmap: ImageBitmap,
 				imageBitmaps: ImageBitmap[],
 				imageBlocks: GridBlockTable<GridImageBlock>,
@@ -142,30 +144,32 @@ export class ImageBlockDrawEngine {
 				ctx.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 				// Applicable hashes
-				gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
-				complexesByGx = gridBlockTableComplexFull.hashes;
-
-				if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-					horizonLineGyByGxPrimary = gridBlockTableComplexFull.gyMinByGx;
-				}
+				complexesByGx = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
+				hashesGyByGx = <any>imageBlocks.hashesGyByGx;
 
 				for (j in complexesByGx) {
 					complexes = complexesByGx[j];
+					gyMin = hashesGyByGx[Number(j)][0].value;
 
 					for (k = 0; k < complexes.length; k++) {
 						complex = complexes[k];
+						assetId = imageBlockHashes[complex.hash].assetId;
+
+						if (!ImageBlockDrawEngine.drawNull && (assetId === 'null' || assetId === 'null2')) {
+							continue;
+						}
 
 						if (outside) {
-							scratch = <number>complex.gy - horizonLineGyByGxPrimary[<number>complex.gx];
+							scratch = <number>complex.gy - gyMin;
 
 							if (scratch > 2) {
-								imageBitmaps = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId);
+								imageBitmaps = getAssetImageUnlit(assetId);
 								imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
 							} else {
-								imageBitmap = getAssetImageLit(imageBlockHashes[complex.hash].assetId);
+								imageBitmap = getAssetImageLit(assetId);
 							}
 						} else {
-							imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[getAssetImageUnlitMax];
+							imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
 						}
 
 						ctx.drawImage(
@@ -220,6 +224,10 @@ export class ImageBlockDrawEngine {
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;
 		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
+	}
+
+	public static setDrawNull(drawNull: boolean) {
+		ImageBlockDrawEngine.drawNull = drawNull;
 	}
 
 	public static setMapActive(mapActive: MapActive) {

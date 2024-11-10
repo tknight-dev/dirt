@@ -55,6 +55,10 @@ export class DomUI {
 	protected static domElementsInputVolumeTimeout: ReturnType<typeof setTimeout>;
 	protected static domElementsUIEdit: { [key: string]: HTMLElement } = {};
 	private static domUIinitialized: boolean;
+	protected static domUIRumbleEnable: boolean;
+	private static domUIRumbleAnimations: Animation[];
+	private static domUIRumbleAnimationStreams: HTMLElement[] = [];
+	private static domUIRumbleTimeout: ReturnType<typeof setTimeout>;
 	private static uiEditApplicationProperties: {};
 	private static uiEditApplicationType: ApplicationType;
 	public static uiEditApplyType: VideoBusInputCmdGameModeEditApplyType;
@@ -103,6 +107,10 @@ export class DomUI {
 		}
 
 		selectors.forEach((selector: any) => {
+			if (selector.value === 'null2') {
+				return;
+			}
+
 			div = document.createElement('div');
 			div.className = 'button';
 			div.innerText = selector.name;
@@ -783,9 +791,10 @@ export class DomUI {
 				assetIdDamagedImage: undefined,
 				assetIdDamangedWalkedOnAudioEffect: undefined,
 				assetIdWalkedOnAudioEffect: undefined,
-				damageable: false,
-				destructible: false,
+				damageable: undefined,
+				destructible: undefined,
 				objectType: GridObjectType.IMAGE_BLOCK,
+				passthrough: undefined,
 				strengthToDamangeInN: undefined,
 				strengthToDestroyInN: undefined,
 				type: GridImageBlockType.SOLID,
@@ -954,6 +963,22 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
+		// Passthrough
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Passthrough';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.passthrough;
+		input.oninput = (event: any) => {
+			applicationProperties.passthrough = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// strengthToDamangeInN
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
@@ -1069,7 +1094,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Music';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -1698,8 +1723,71 @@ export class DomUI {
 			DomUI.updateHourOfDayEff(hourOfDayEff);
 			MapEditEngine.updateUIHourOfDayEff(hourOfDayEff);
 		});
+		VideoEngineBus.setCallbackRumble((durationInMs: number, enable: boolean, intensity: number) => {
+			DomUI.rumble(durationInMs, enable, intensity);
+		});
 
 		await DomUI.initDom(maps, oldTVIntro);
+	}
+
+	/**
+	 * @param durationInMs 0 is never off
+	 * @param intensity is between 1 and 10
+	 */
+	private static rumble(durationInMs: number, enable: boolean, intensity: number) {
+		let animations: Animation[] = DomUI.domUIRumbleAnimations,
+			animationFrames: Keyframe[],
+			animationOptions: KeyframeAnimationOptions = {
+				duration: 1000,
+				iterations: Infinity,
+			},
+			animationStreams: HTMLElement[] = DomUI.domUIRumbleAnimationStreams,
+			intensityFrames: number,
+			intensityShake: number;
+
+		if (!animations) {
+			DomUI.domUIRumbleAnimations = new Array(animationStreams.length);
+			animations = DomUI.domUIRumbleAnimations;
+		}
+
+		if (DomUI.domUIRumbleEnable && enable) {
+			// Calc intensity
+			animationFrames = [{ transform: 'rotate(0deg) translate(0, 0)' }];
+			intensityFrames = intensity * 10 + 40;
+			intensityShake = Math.max(1.5, intensity / 2.5);
+			for (let i = 0; i < intensityFrames; i++) {
+				animationFrames.push({
+					transform:
+						'rotate(' +
+						(Math.floor(Math.random() * intensityShake) - 1) +
+						'deg) translate(' +
+						(Math.floor(Math.random() * intensityShake) - 1) +
+						'px, ' +
+						(Math.floor(Math.random() * intensityShake) - 1) +
+						'px)',
+				});
+			}
+			animationFrames.push(animationFrames[0]);
+
+			for (let i = 0; i < animationStreams.length; i++) {
+				if (animations[i]) {
+					animations[i].cancel(); // Just in case
+				}
+
+				animations[i] = animationStreams[i].animate(animationFrames, animationOptions);
+			}
+
+			if (durationInMs !== 0) {
+				setTimeout(() => {
+					DomUI.rumble(0, false, 0);
+				}, durationInMs);
+			}
+		} else {
+			clearTimeout(DomUI.domUIRumbleTimeout);
+			for (let i in animations) {
+				animations[i].cancel();
+			}
+		}
 	}
 
 	/**
@@ -1973,12 +2061,15 @@ export class DomUI {
 					break;
 				case 1:
 					streamName = 'background';
+					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 2:
 					streamName = 'primary';
+					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 3:
 					streamName = 'foreground';
+					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 4:
 					streamName = 'overlay';
@@ -2193,7 +2284,7 @@ export class DomUI {
 			//applicationTypeMenuStamp.classList.remove('active');
 
 			applicationTypePixelSizeInputRange.disabled = false;
-			applicationTypePixelSizeInputRange.max = '1';
+			applicationTypePixelSizeInputRange.max = '100';
 			applicationTypePixelSizeInputRange.min = '1';
 			applicationTypePixelSizeInputRange.value = '1';
 			applicationTypePixelSizeInputText.disabled = false;
@@ -2977,6 +3068,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.BACKGROUND;
@@ -3024,6 +3116,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.PRIMARY;
@@ -3073,6 +3166,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.FOREGROUND;
@@ -3120,6 +3214,7 @@ export class DomUI {
 			DomUI.uiEditDraw.foregroundViewer = true;
 			DomUI.uiEditDraw.grid = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditDrawNull(false);
 			VideoEngineBus.outputGameModeEditTimeForced(false);
 
 			DomUI.uiEditZ = undefined;
@@ -3510,6 +3605,6 @@ export class DomUI {
 	}
 
 	private static updateHourOfDayEff(hourOfDayEff: number): void {
-		DomUI.domElementsUIEdit['time'].innerText = String(hourOfDayEff) + ':00';
+		DomUI.domElementsUIEdit['time'].innerText = hourOfDayEff + ':00';
 	}
 }

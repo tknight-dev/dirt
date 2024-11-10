@@ -108,6 +108,42 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK,
 	},
 	{
+		id: 'NULL',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.SHARED,
+				resolution: AssetImageSrcResolution.HIGH,
+				src: 'images/grid-objects/null_16_16.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
+	},
+	{
+		id: 'NULL2',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.SHARED,
+				resolution: AssetImageSrcResolution.HIGH,
+				src: 'images/grid-objects/null2_16_16.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
+	},
+	{
 		id: 'ROCK',
 		meta: {
 			author: 'tknight-dev',

@@ -1,12 +1,5 @@
 import { Camera } from '../../models/camera.model';
-import {
-	Grid,
-	GridConfig,
-	GridBlockTable,
-	GridBlockTableComplex,
-	GridBlockTableComplexFull,
-	GridImageBlock,
-} from '../../models/grid.model';
+import { Grid, GridConfig, GridBlockTable, GridBlockTableComplex, GridImageBlock } from '../../models/grid.model';
 import { LightingEngine } from '../../engines/lighting.engine';
 import {
 	MapDrawBusInputCmd,
@@ -15,7 +8,6 @@ import {
 	MapDrawBusInputPlayloadCamera,
 	MapDrawBusInputPlayloadGridActive,
 	MapDrawBusInputPlayloadGrids,
-	MapDrawBusInputPlayloadHourOfDayEff,
 	MapDrawBusInputPlayloadResolution,
 	MapDrawBusInputPlayloadSettings,
 	MapDrawBusInputPlayloadTimeForced,
@@ -45,9 +37,6 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case MapDrawBusInputCmd.SET_GRIDS:
 			MapDrawWorkerEngine.inputSetGrids(<MapDrawBusInputPlayloadGrids>payload.data);
-			break;
-		case MapDrawBusInputCmd.SET_HOUR_OF_DAY_EFF:
-			MapDrawWorkerEngine.inputSetHourOfDayEff(<MapDrawBusInputPlayloadHourOfDayEff>payload.data);
 			break;
 		case MapDrawBusInputCmd.SET_RESOLUTION:
 			MapDrawWorkerEngine.inputSetResolution(<MapDrawBusInputPlayloadResolution>payload.data);
@@ -129,13 +118,6 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.gridConfigs = data.gridConfigs;
 	}
 
-	public static inputSetHourOfDayEff(data: MapDrawBusInputPlayloadHourOfDayEff): void {
-		// console.log('MapDrawWorkerEngine > inputSetHourOfDayEff', data);
-		if (MapDrawWorkerEngine.camera) {
-			LightingEngine.clock(data.hourOfDayEff, <Camera>MapDrawWorkerEngine.camera);
-		}
-	}
-
 	public static inputSetResolution(data: MapDrawBusInputPlayloadResolution): void {
 		// console.log('MapDrawWorkerEngine > inputSetResolution', data);
 		MapDrawWorkerEngine.height = data.height;
@@ -172,7 +154,8 @@ class MapDrawWorkerEngine {
 		}
 		MapDrawWorkerEngine.busy = true;
 		try {
-			let camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
+			let assetId: string,
+				camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
 				canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
 				canvasHeight: number = MapDrawWorkerEngine.height,
 				canvasTmp: OffscreenCanvas = MapDrawWorkerEngine.canvasTmp,
@@ -181,11 +164,11 @@ class MapDrawWorkerEngine {
 				canvasTmpGw: number = MapDrawWorkerEngine.canvasTmpGw,
 				canvasTmpGwEff: number,
 				canvasWidth: number = MapDrawWorkerEngine.width,
-				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				ctx: OffscreenCanvasRenderingContext2D = MapDrawWorkerEngine.ctx,
 				ctxTmp: OffscreenCanvasRenderingContext2D = MapDrawWorkerEngine.ctxTmp,
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
+				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				foregroundViewerEnable: boolean = MapDrawWorkerEngine.foregroundViewerEnable,
 				foregroundViewerPercentageOfViewport: number = MapDrawWorkerEngine.foregroundViewerPercentageOfViewport,
 				getAssetImageLit: any = LightingEngine.getAssetImageLit,
@@ -193,7 +176,6 @@ class MapDrawWorkerEngine {
 				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
 				gradient: CanvasGradient,
 				grid: Grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId],
-				gridBlockTableComplexFull: GridBlockTableComplexFull,
 				gridConfig: GridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId],
 				gHeight: number,
 				gHeightMax: number = gridConfig.gHeight,
@@ -201,7 +183,8 @@ class MapDrawWorkerEngine {
 				gWidth: number,
 				gWidthMax: number = gridConfig.gWidth,
 				gWidthMaxEff: number,
-				horizonLineGyByGxPrimary: { [key: number]: number } = {},
+				gyMin: number,
+				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
 				i: string,
 				imageBitmap: ImageBitmap,
 				imageBitmaps: ImageBitmap[],
@@ -241,10 +224,6 @@ class MapDrawWorkerEngine {
 			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple);
 			radius2 = radius * 2;
 
-			// Calc all ys
-			gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(grid.imageBlocksPrimary, 0, 0, gWidthMax, gHeightMax);
-			horizonLineGyByGxPrimary = gridBlockTableComplexFull.gyMinByGx;
-
 			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
 				for (gHeight = 0; gHeight < gHeightMax; gHeight += canvasTmpGh) {
 					ctxTmp.clearRect(0, 0, canvasTmpGw, canvasTmpGh);
@@ -265,39 +244,43 @@ class MapDrawWorkerEngine {
 						imageBlockHashes = imageBlocks.hashes;
 
 						// Applicable hashes
-						gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(
+						complexesByGx = UtilEngine.gridBlockTableSliceHashes(
 							imageBlocks,
 							gWidth,
 							gHeight,
 							gWidth + canvasTmpGw,
 							gHeight + canvasTmpGh,
 						);
-						complexesByGx = gridBlockTableComplexFull.hashes;
+						hashesGyByGx = <any>imageBlocks.hashesGyByGx;
 
 						for (j in complexesByGx) {
 							complexes = complexesByGx[j];
+							gyMin = hashesGyByGx[Number(j)][0].value;
 
 							for (k = 0; k < complexes.length; k++) {
 								complex = complexes[k];
+								assetId = imageBlockHashes[complex.hash].assetId;
 
-								if (outside) {
-									scratch = <number>complex.gy - horizonLineGyByGxPrimary[<number>complex.gx];
+								if (assetId !== 'null' && assetId !== 'null2') {
+									if (outside) {
+										scratch = <number>complex.gy - gyMin;
 
-									if (scratch > 2) {
-										imageBitmaps = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId);
-										imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
+										if (scratch > 2) {
+											imageBitmaps = getAssetImageUnlit(assetId);
+											imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
+										} else {
+											imageBitmap = getAssetImageLit(assetId);
+										}
 									} else {
-										imageBitmap = getAssetImageLit(imageBlockHashes[complex.hash].assetId);
+										imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
 									}
-								} else {
-									imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[getAssetImageUnlitMax];
-								}
 
-								ctxTmp.drawImage(
-									imageBitmap,
-									Math.round((<any>complex.gx - gWidth) * resolutionMultiple),
-									Math.round((<any>complex.gy - gHeight) * resolutionMultiple),
-								);
+									ctxTmp.drawImage(
+										imageBitmap,
+										Math.round((<any>complex.gx - gWidth) * resolutionMultiple),
+										Math.round((<any>complex.gy - gHeight) * resolutionMultiple),
+									);
+								}
 							}
 						}
 
