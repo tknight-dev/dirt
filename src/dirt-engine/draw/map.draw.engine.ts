@@ -118,11 +118,7 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheBackgroundHashP = MapDrawEngine.cacheHashCheckP;
 		}
 		// Draw from cache
-		MapDrawEngine.ctxOverlay.drawImage(
-			MapDrawEngine.cacheBackground,
-			MapDrawEngine.backgroundPx,
-			MapDrawEngine.backgroundPy,
-		);
+		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 
 		/*
 		 * Camera Lines
@@ -235,11 +231,7 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheCameraLinesHashP = MapDrawEngine.cacheHashCheckP;
 			MapDrawEngine.cacheZoom = camera.zoom;
 		}
-		MapDrawEngine.ctxOverlay.drawImage(
-			MapDrawEngine.cacheCameraLines,
-			MapDrawEngine.backgroundPx,
-			MapDrawEngine.backgroundPy,
-		);
+		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;

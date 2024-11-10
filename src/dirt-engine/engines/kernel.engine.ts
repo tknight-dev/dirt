@@ -16,11 +16,7 @@ import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { UtilEngine } from './util.engine';
-import {
-	VideoBusInputCmdGameModeEditDraw,
-	VideoBusInputCmdSettings,
-	VideoBusInputCmdSettingsFPS,
-} from '../engines/buses/video.model.bus';
+import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings, VideoBusInputCmdSettingsFPS } from '../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
@@ -143,8 +139,7 @@ export class KernelEngine {
 			KernelEngine.timestampNow = performance.now();
 			KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
 			if (KernelEngine.timestampDelta > KernelEngine.fpms) {
-				KernelEngine.timestampThen =
-					KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
+				KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
 
 				// Start
 				if (KernelEngine.modeEdit) {

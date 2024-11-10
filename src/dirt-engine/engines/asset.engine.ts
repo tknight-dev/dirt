@@ -62,11 +62,7 @@ export class AssetEngine {
 				if (audio[asset.id] === undefined) {
 					audio[asset.id] = asset;
 				} else {
-					console.warn(
-						"AssetEngine > compileMasterManifest: declared audio asset id '" +
-							asset.id +
-							"' already exists",
-					);
+					console.warn("AssetEngine > compileMasterManifest: declared audio asset id '" + asset.id + "' already exists");
 				}
 			}
 		}
@@ -80,11 +76,7 @@ export class AssetEngine {
 						return a.resolution - b.resolution;
 					});
 				} else {
-					console.warn(
-						"AssetEngine > compileMasterManifest: declared image asset id '" +
-							assetImage.id +
-							"' already exists",
-					);
+					console.warn("AssetEngine > compileMasterManifest: declared image asset id '" + assetImage.id + "' already exists");
 				}
 			}
 		}
@@ -94,9 +86,7 @@ export class AssetEngine {
 				if (maps[asset.id] === undefined) {
 					maps[asset.id] = asset;
 				} else {
-					console.warn(
-						"AssetEngine > compileMasterManifest: declared map asset id '" + asset.id + "' already exists",
-					);
+					console.warn("AssetEngine > compileMasterManifest: declared map asset id '" + asset.id + "' already exists");
 				}
 			}
 		}
@@ -222,9 +212,7 @@ export class AssetEngine {
 						break;
 					case 'svg':
 						if (collection === AssetCollection.VIDEO) {
-							console.error(
-								'AssetEngine > load: SVG image asset "' + filename + "' ignored in video collection",
-							);
+							console.error('AssetEngine > load: SVG image asset "' + filename + "' ignored in video collection");
 						} else {
 							dataURLType = 'image/svg+xml';
 							image = true;
@@ -286,12 +274,7 @@ export class AssetEngine {
 						'data:' +
 						asset.dataURLType +
 						';base64,' +
-						btoa(
-							new Uint8Array(buffer).reduce(
-								(acc, i) => (acc += String.fromCharCode.apply(null, [i])),
-								'',
-							),
-						),
+						btoa(new Uint8Array(buffer).reduce((acc, i) => (acc += String.fromCharCode.apply(null, [i])), '')),
 					original: asset.original,
 				};
 			} else {

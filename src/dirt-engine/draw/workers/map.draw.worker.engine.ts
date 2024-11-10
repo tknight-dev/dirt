@@ -19,9 +19,6 @@ import {
 	MapDrawBusInputPlayloadResolution,
 	MapDrawBusInputPlayloadSettings,
 	MapDrawBusInputPlayloadTimeForced,
-	MapDrawBusOutputCmd,
-	MapDrawBusOutputPlayload,
-	MapDrawBusOutputPlayloadBitmap,
 } from '../buses/map.draw.model.bus';
 import { UtilEngine } from '../../engines/util.engine';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.model.bus';
@@ -159,18 +156,7 @@ class MapDrawWorkerEngine {
 	}
 
 	protected static outputBitmap(image: ImageBitmap): void {
-		MapDrawWorkerEngine.post({
-			cmd: MapDrawBusOutputCmd.SET_BITMAP,
-			data: {
-				image: image,
-			},
-		});
-	}
-
-	private static post(data: MapDrawBusOutputPlayload): void {
-		MapDrawWorkerEngine.self.postMessage({
-			payload: data,
-		});
+		MapDrawWorkerEngine.self.postMessage(image);
 	}
 
 	/**
@@ -252,19 +238,11 @@ class MapDrawWorkerEngine {
 			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
 			gHeightMaxEff = gHeightMax * resolutionMultiple;
 			gWidthMaxEff = gWidthMax * resolutionMultiple;
-			radius = Math.round(
-				(((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple,
-			);
+			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple);
 			radius2 = radius * 2;
 
 			// Calc all ys
-			gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(
-				grid.imageBlocksPrimary,
-				0,
-				0,
-				gWidthMax,
-				gHeightMax,
-			);
+			gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(grid.imageBlocksPrimary, 0, 0, gWidthMax, gHeightMax);
 			horizonLineGyByGxPrimary = gridBlockTableComplexFull.gyMinByGx;
 
 			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
@@ -312,9 +290,7 @@ class MapDrawWorkerEngine {
 										imageBitmap = getAssetImageLit(imageBlockHashes[complex.hash].assetId);
 									}
 								} else {
-									imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[
-										getAssetImageUnlitMax
-									];
+									imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[getAssetImageUnlitMax];
 								}
 
 								ctxTmp.drawImage(
@@ -336,8 +312,8 @@ class MapDrawWorkerEngine {
 									y = Math.round((camera.gy - gHeight) * resolutionMultiple);
 
 									gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
-									gradient.addColorStop(0, 'rgba(255,255,255,1)');
-									gradient.addColorStop(0.75, 'rgba(255,255,255,1)');
+									gradient.addColorStop(0, 'white');
+									gradient.addColorStop(0.75, 'white');
 									gradient.addColorStop(1, 'transparent');
 
 									ctxTmp.globalCompositeOperation = 'destination-out';

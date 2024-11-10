@@ -49,10 +49,7 @@ export class GridDrawEngine {
 		//let start: number = performance.now();
 
 		if (GridDrawEngine.enable) {
-			GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
-				GridDrawEngine.mapActiveCamera.gx,
-				GridDrawEngine.mapActiveCamera.gy,
-			);
+			GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(GridDrawEngine.mapActiveCamera.gx, GridDrawEngine.mapActiveCamera.gy);
 			GridDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(
 				GridDrawEngine.mapActiveCamera.windowPw,
 				GridDrawEngine.mapActiveCamera.windowPh,

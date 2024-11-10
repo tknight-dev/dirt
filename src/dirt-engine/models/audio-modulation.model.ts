@@ -7,21 +7,9 @@ import { IEnum } from './enum.interface';
 
 export class AudioModulation extends Enum implements IEnum<AudioModulation> {
 	public static readonly NONE: AudioModulation = new AudioModulation('NONE', 0, 'None', 0, 0);
-	public static readonly REVERB_CAVE: AudioModulation = new AudioModulation(
-		'REVERB_CAVE',
-		2,
-		'Reverb Cave',
-		1.75,
-		1.5,
-	);
+	public static readonly REVERB_CAVE: AudioModulation = new AudioModulation('REVERB_CAVE', 2, 'Reverb Cave', 1.75, 1.5);
 	public static readonly REVERB_HALL: AudioModulation = new AudioModulation('REVERB_HALL', 2, 'Reverb Hall', 1, 2);
-	public static readonly REVERB_ROOM: AudioModulation = new AudioModulation(
-		'REVERB_ROOM',
-		2,
-		'Reverb Room',
-		0.5,
-		2.5,
-	);
+	public static readonly REVERB_ROOM: AudioModulation = new AudioModulation('REVERB_ROOM', 2, 'Reverb Room', 0.5, 2.5);
 
 	public static readonly values: AudioModulation[] = [
 		AudioModulation.NONE,

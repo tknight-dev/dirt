@@ -91,10 +91,7 @@ export class MapEngine {
 		mapActive.camera.viewportGh = Math.round((mapActive.camera.viewportGw * 9000) / 16) / 1000;
 
 		// Clock
-		mapActive.clockSpeedRelativeToEarth = Math.max(
-			1,
-			Math.min(86400, Math.round(mapActive.clockSpeedRelativeToEarth * 1000) / 1000),
-		);
+		mapActive.clockSpeedRelativeToEarth = Math.max(1, Math.min(86400, Math.round(mapActive.clockSpeedRelativeToEarth * 1000) / 1000));
 		mapActive.hourOfDay = Math.round(mapActive.hourOfDay);
 
 		// Grids

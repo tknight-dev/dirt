@@ -213,22 +213,15 @@ export class VideoEngineBus {
 						AudioEngine.pause(VideoBusOutputCmdAudioMusicPause.id);
 						break;
 					case VideoBusOutputCmd.AUDIO_MUSIC_UNPAUSE:
-						VideoBusOutputCmdAudioMusicUnpause = <VideoBusOutputCmdAudioMusicUnpause>(
-							VideoBusWorkerPayload.data
-						);
+						VideoBusOutputCmdAudioMusicUnpause = <VideoBusOutputCmdAudioMusicUnpause>VideoBusWorkerPayload.data;
 						AudioEngine.unpause(VideoBusOutputCmdAudioMusicUnpause.id);
 						break;
 					case VideoBusOutputCmd.AUDIO_VOLUME:
 						VideoBusOutputCmdAudioVolume = <VideoBusOutputCmdAudioVolume>VideoBusWorkerPayload.data;
-						AudioEngine.setVolumeAsset(
-							VideoBusOutputCmdAudioVolume.id,
-							VideoBusOutputCmdAudioVolume.volumePercentage,
-						);
+						AudioEngine.setVolumeAsset(VideoBusOutputCmdAudioVolume.id, VideoBusOutputCmdAudioVolume.volumePercentage);
 						break;
 					case VideoBusOutputCmd.EDIT_CAMERA_UPDATE:
-						VideoBusOutputCmdEditCameraUpdate = <VideoBusOutputCmdEditCameraUpdate>(
-							VideoBusWorkerPayload.data
-						);
+						VideoBusOutputCmdEditCameraUpdate = <VideoBusOutputCmdEditCameraUpdate>VideoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackEditCameraUpdate !== undefined) {
 							VideoEngineBus.callbackEditCameraUpdate(VideoBusOutputCmdEditCameraUpdate);
 						} else {
@@ -269,10 +262,7 @@ export class VideoEngineBus {
 					case VideoBusOutputCmd.MAP_SAVE:
 						VideoBusOutputCmdMapSave = <VideoBusOutputCmdMapSave>VideoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackMapSave !== undefined) {
-							VideoEngineBus.callbackMapSave(
-								VideoBusOutputCmdMapSave.data,
-								VideoBusOutputCmdMapSave.name,
-							);
+							VideoEngineBus.callbackMapSave(VideoBusOutputCmdMapSave.data, VideoBusOutputCmdMapSave.name);
 						} else {
 							console.error('VideoEngineBus > input: map save callback not set');
 						}
@@ -435,8 +425,7 @@ export class VideoEngineBus {
 		VideoEngineBus.canvasUnderlay.style.transform = 'scale(' + devicePixelRatioEff + ')';
 
 		// Transform the map interaction to the correct starting place
-		VideoEngineBus.mapInteration.style.transform =
-			'translate(' + -20 * devicePixelRatioEff + 'px, ' + 20 * devicePixelRatioEff + 'px)';
+		VideoEngineBus.mapInteration.style.transform = 'translate(' + -20 * devicePixelRatioEff + 'px, ' + 20 * devicePixelRatioEff + 'px)';
 
 		data = {
 			devicePixelRatio: devicePixelRatio,
@@ -455,9 +444,7 @@ export class VideoEngineBus {
 		return data;
 	}
 
-	public static setCallbackEditCameraUpdate(
-		callbackEditCameraUpdate: (update: VideoBusOutputCmdEditCameraUpdate) => void,
-	): void {
+	public static setCallbackEditCameraUpdate(callbackEditCameraUpdate: (update: VideoBusOutputCmdEditCameraUpdate) => void): void {
 		VideoEngineBus.callbackEditCameraUpdate = callbackEditCameraUpdate;
 	}
 

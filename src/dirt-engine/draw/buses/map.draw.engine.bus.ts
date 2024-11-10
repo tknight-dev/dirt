@@ -1,14 +1,7 @@
 import { Camera } from '../../models/camera.model';
 import { Grid, GridConfig } from '../../models/grid.model';
 import { MapDrawEngine } from '../map.draw.engine';
-import {
-	MapDrawBusInputCmd,
-	MapDrawBusInputPlayload,
-	MapDrawBusInputPlayloadAsset,
-	MapDrawBusOutputCmd,
-	MapDrawBusOutputPlayload,
-	MapDrawBusOutputPlayloadBitmap,
-} from './map.draw.model.bus';
+import { MapDrawBusInputCmd, MapDrawBusInputPlayload, MapDrawBusInputPlayloadAsset } from './map.draw.model.bus';
 
 /**
  * @author tknight-dev
@@ -40,18 +33,8 @@ export class MapDrawEngineBus {
 	}
 
 	private static input(): void {
-		let mapDrawBusOutputPlayload: MapDrawBusOutputPlayload,
-			mapDrawBusOutputPlayloadBitmap: MapDrawBusOutputPlayloadBitmap;
-
 		MapDrawEngineBus.worker.onmessage = (event: MessageEvent) => {
-			mapDrawBusOutputPlayload = event.data.payload;
-
-			switch (mapDrawBusOutputPlayload.cmd) {
-				case MapDrawBusOutputCmd.SET_BITMAP:
-					mapDrawBusOutputPlayloadBitmap = <MapDrawBusOutputPlayloadBitmap>mapDrawBusOutputPlayload.data;
-					MapDrawEngineBus.callbackBitmap(mapDrawBusOutputPlayloadBitmap.image);
-					break;
-			}
+			MapDrawEngineBus.callbackBitmap(event.data);
 		};
 	}
 

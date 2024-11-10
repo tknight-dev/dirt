@@ -43,10 +43,7 @@ export class ResizeEngine {
 		});
 
 		setInterval(() => {
-			if (
-				ResizeEngine.dimensionHeight !== window.innerHeight ||
-				ResizeEngine.dimensionWidth !== window.innerWidth
-			) {
+			if (ResizeEngine.dimensionHeight !== window.innerHeight || ResizeEngine.dimensionWidth !== window.innerWidth) {
 				ResizeEngine.dimensionHeight = window.innerHeight;
 				ResizeEngine.dimensionWidth = window.innerWidth;
 			}

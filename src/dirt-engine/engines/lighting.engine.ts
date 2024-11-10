@@ -161,8 +161,7 @@ export class LightingEngine {
 			let hourPreciseOfDayEff: number;
 			ClockCalcEngine.setCallbackMinuteOfDay((hourOfDayEff: number, minuteOfDayEff: number) => {
 				hourPreciseOfDayEff =
-					LightingEngine.mapActive.hourOfDayEff +
-					Math.round((LightingEngine.mapActive.minuteOfHourEff / 60) * 100) / 100;
+					LightingEngine.mapActive.hourOfDayEff + Math.round((LightingEngine.mapActive.minuteOfHourEff / 60) * 100) / 100;
 
 				LightingEngine.clock(hourPreciseOfDayEff);
 			});
@@ -226,10 +225,7 @@ export class LightingEngine {
 			litAlgDarknessEvening = 'brightness(' + (1 - scratch) + ')';
 		}
 
-		if (
-			(hourPreciseOfDayEff > 7 && hourPreciseOfDayEff < 8) ||
-			(hourPreciseOfDayEff > 18 && hourPreciseOfDayEff < 19)
-		) {
+		if ((hourPreciseOfDayEff > 7 && hourPreciseOfDayEff < 8) || (hourPreciseOfDayEff > 18 && hourPreciseOfDayEff < 19)) {
 			scratch = hourPreciseOfDayEff - Math.floor(hourPreciseOfDayEff);
 			scratch2 = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
 
@@ -239,15 +235,10 @@ export class LightingEngine {
 
 			litAlgApplied = true;
 			if (hourPreciseOfDayEff < 8) {
-				litAlgGolden =
-					'brightness(' + (1 - scratch2) + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
+				litAlgGolden = 'brightness(' + (1 - scratch2) + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
 			} else {
 				litAlgGolden =
-					'brightness(' +
-					Math.round(scratch * 250 + 1000) / 1000 +
-					') saturate(' +
-					Math.round(scratch * 500 + 1000) / 1000 +
-					')';
+					'brightness(' + Math.round(scratch * 250 + 1000) / 1000 + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
 			}
 		}
 

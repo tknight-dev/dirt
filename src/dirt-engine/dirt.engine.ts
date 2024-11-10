@@ -138,16 +138,14 @@ export class DirtEngine extends DomUI {
 					DirtEngine.domElements['spinner'].style.display = 'none';
 					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['TKNIGHT_DEV'].srcs[0].src);
 					if (asset) {
-						DirtEngine.domElements['feed-fitted-title-content-logo-company'].style.background =
-							'url("' + asset.data + '")';
+						DirtEngine.domElements['feed-fitted-title-content-logo-company'].style.background = 'url("' + asset.data + '")';
 					} else {
 						console.error('DirtEngine > feedTitleOverlay: missing company logo');
 					}
 
 					asset = AssetEngine.getAsset(DirtEngine.assetManifestMaster.images['DIRT_ENGINE'].srcs[0].src);
 					if (asset) {
-						DirtEngine.domElements['feed-fitted-title-content-logo-engine'].style.background =
-							'url("' + asset.data + '")';
+						DirtEngine.domElements['feed-fitted-title-content-logo-engine'].style.background = 'url("' + asset.data + '")';
 					} else {
 						console.error('DirtEngine > feedTitleOverlay: missing engine logo');
 					}
@@ -381,11 +379,7 @@ export class DirtEngine extends DomUI {
 			if (DirtEngine.gameStarted) {
 				VideoEngineBus.outputMouse(action);
 
-				if (
-					DirtEngine.uiEditMode &&
-					MapEditEngine.uiLoaded &&
-					action.elementId === DomUI.domElements['feed-fitted'].id
-				) {
+				if (DirtEngine.uiEditMode && MapEditEngine.uiLoaded && action.elementId === DomUI.domElements['feed-fitted'].id) {
 					if (action.cmd === MouseCmd.LEFT) {
 						if (action.down) {
 							DomUI.editMouseDown(action);

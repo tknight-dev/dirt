@@ -129,9 +129,7 @@ class VideoWorkerEngine {
 		let timestamp: number = performance.now();
 
 		// Assign
-		VideoWorkerEngine.assetManifestMaster = AssetEngine.compileMasterManifest(
-			data.assetDeclarations.manifest || <any>{},
-		);
+		VideoWorkerEngine.assetManifestMaster = AssetEngine.compileMasterManifest(data.assetDeclarations.manifest || <any>{});
 		VideoWorkerEngine.canvasOffscreenBackground = data.canvasOffscreenBackground;
 		VideoWorkerEngine.canvasOffscreenForeground = data.canvasOffscreenForeground;
 		VideoWorkerEngine.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
@@ -141,21 +139,11 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.self = self;
 
 		// Get contexts
-		VideoWorkerEngine.canvasOffscreenBackgroundContext = <any>(
-			VideoWorkerEngine.canvasOffscreenBackground.getContext('2d')
-		);
-		VideoWorkerEngine.canvasOffscreenForegroundContext = <any>(
-			VideoWorkerEngine.canvasOffscreenForeground.getContext('2d')
-		);
-		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>(
-			VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d')
-		);
-		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>(
-			VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d')
-		);
-		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>(
-			VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d')
-		);
+		VideoWorkerEngine.canvasOffscreenBackgroundContext = <any>VideoWorkerEngine.canvasOffscreenBackground.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenForegroundContext = <any>VideoWorkerEngine.canvasOffscreenForeground.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d');
 
 		// Engines
 		await AssetEngine.initialize(data.assetDeclarations, AssetCollection.VIDEO);
@@ -191,6 +179,11 @@ class VideoWorkerEngine {
 				},
 			},
 		]);
+
+		setTimeout(() => {
+			console.log('RUMBLE');
+			VideoWorkerEngine.outputRumble(true, 0, 10);
+		});
 	}
 
 	public static inputGameModeEdit(modeEdit: VideoBusInputCmdGameModeEdit): void {
@@ -400,12 +393,7 @@ class VideoWorkerEngine {
 	 * @param pan between -1 left and 1 right (precision 3)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static outputAudioEffect(
-		assetId: string,
-		modulationId: string,
-		pan: number,
-		volumePercentage: number,
-	): void {
+	public static outputAudioEffect(assetId: string, modulationId: string, pan: number, volumePercentage: number): void {
 		VideoWorkerEngine.post([
 			{
 				cmd: VideoBusOutputCmd.AUDIO_EFFECT,
@@ -542,6 +530,19 @@ class VideoWorkerEngine {
 			{
 				cmd: VideoBusOutputCmd.MAP_HOUR_OF_DAY_EFF,
 				data: hourOfDayEff,
+			},
+		]);
+	}
+
+	public static outputRumble(enable: boolean, durationInMS: number, intensity: number): void {
+		VideoWorkerEngine.post([
+			{
+				cmd: VideoBusOutputCmd.RUMBLE,
+				data: {
+					enable: enable,
+					durationInMS: Math.max(0, Math.min(10000, intensity)),
+					intensity: Math.max(1, Math.min(10, intensity)),
+				},
 			},
 		]);
 	}

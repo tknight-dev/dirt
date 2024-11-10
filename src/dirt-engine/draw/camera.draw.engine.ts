@@ -60,9 +60,7 @@ export class CameraDrawEngine {
 		if (!CameraDrawEngine.cache) {
 			// Draw from scratch
 			let cacheCanvas: OffscreenCanvas = new OffscreenCanvas(24, 24),
-				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>(
-					cacheCanvas.getContext('2d')
-				);
+				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 			ctx.imageSmoothingEnabled = false;
 
 			ctx.beginPath();
@@ -94,9 +92,7 @@ export class CameraDrawEngine {
 			} else if (viewportGx + camera.viewportGwEff === CameraDrawEngine.mapActive.gridConfigActive.gWidth) {
 				// Right
 				CameraDrawEngine.cachePositionPx = Math.round(
-					camera.viewportPx +
-						camera.viewportPw / 2 +
-						(camera.gx - (viewportGx + camera.viewportGwEff / 2)) * camera.gInPw,
+					camera.viewportPx + camera.viewportPw / 2 + (camera.gx - (viewportGx + camera.viewportGwEff / 2)) * camera.gInPw,
 				);
 			} else {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.viewportPx + camera.viewportPw / 2);
@@ -107,9 +103,7 @@ export class CameraDrawEngine {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.gy * camera.gInPh);
 			} else if (viewportGy + camera.viewportGhEff === CameraDrawEngine.mapActive.gridConfigActive.gHeight) {
 				CameraDrawEngine.cachePositionPy = Math.round(
-					camera.viewportPy +
-						camera.viewportPh / 2 +
-						(camera.gy - (viewportGy + camera.viewportGhEff / 2)) * camera.gInPh,
+					camera.viewportPy + camera.viewportPh / 2 + (camera.gy - (viewportGy + camera.viewportGhEff / 2)) * camera.gInPh,
 				);
 			} else {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.viewportPy + camera.viewportPh / 2);
@@ -121,11 +115,7 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cacheZoom = camera.zoom;
 		}
 
-		CameraDrawEngine.ctxOverlay.drawImage(
-			CameraDrawEngine.cache,
-			CameraDrawEngine.cachePositionPx,
-			CameraDrawEngine.cachePositionPy,
-		);
+		CameraDrawEngine.ctxOverlay.drawImage(CameraDrawEngine.cache, CameraDrawEngine.cachePositionPx, CameraDrawEngine.cachePositionPy);
 	}
 
 	public static setMapActive(mapActive: MapActive) {

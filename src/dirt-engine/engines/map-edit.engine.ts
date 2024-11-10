@@ -70,14 +70,10 @@ export class MapEditEngine {
 				MapEditEngine.applyAudioTriggerMusicFade(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade>apply);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
-				MapEditEngine.applyAudioTriggerMusicPause(
-					<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause>apply,
-				);
+				MapEditEngine.applyAudioTriggerMusicPause(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause>apply);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
-				MapEditEngine.applyAudioTriggerMusicUnpause(
-					<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause>apply,
-				);
+				MapEditEngine.applyAudioTriggerMusicUnpause(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause>apply);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.ERASE:
 				MapEditEngine.applyErase(<VideoBusInputCmdGameModeEditApplyErase>apply);
@@ -111,9 +107,7 @@ export class MapEditEngine {
 		console.warn('MapEditEngine > applyAudioTriggerMusicPause: not yet implemented');
 	}
 
-	private static applyAudioTriggerMusicUnpause(
-		apply: VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause,
-	): void {
+	private static applyAudioTriggerMusicUnpause(apply: VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause): void {
 		console.warn('MapEditEngine > applyAudioTriggerMusicUnpause: not yet implemented');
 	}
 
@@ -378,10 +372,7 @@ export class MapEditEngine {
 	 * UI only, the video thread sent a camera update through the bus to the UI. So the UI has to update it's cache of the map's camera.
 	 */
 	public static uiCameraUpdate(VideoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate) {
-		MapEditEngine.mapActiveUI.camera = Object.assign(
-			MapEditEngine.mapActiveUI.camera,
-			VideoBusOutputCmdEditCameraUpdate,
-		);
+		MapEditEngine.mapActiveUI.camera = Object.assign(MapEditEngine.mapActiveUI.camera, VideoBusOutputCmdEditCameraUpdate);
 	}
 
 	/**
@@ -546,15 +537,11 @@ export class MapEditEngine {
 
 		return UtilEngine.gridHashTo(
 			Math.floor(
-				(camera.viewportPx + camera.viewportPw * mouseAction.position.xRel) /
-					camera.gInPw /
-					window.devicePixelRatio +
+				(camera.viewportPx + camera.viewportPw * mouseAction.position.xRel) / camera.gInPw / window.devicePixelRatio +
 					camera.viewportGx,
 			),
 			Math.floor(
-				(camera.viewportPy + camera.viewportPh * mouseAction.position.yRel) /
-					camera.gInPh /
-					window.devicePixelRatio +
+				(camera.viewportPy + camera.viewportPh * mouseAction.position.yRel) / camera.gInPh / window.devicePixelRatio +
 					camera.viewportGy,
 			),
 		);

@@ -1,13 +1,6 @@
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
-import {
-	Grid,
-	GridBlockTable,
-	GridBlockTableComplex,
-	GridBlockTableComplexFull,
-	GridConfig,
-	GridImageBlock,
-} from '../models/grid.model';
+import { Grid, GridBlockTable, GridBlockTableComplex, GridBlockTableComplexFull, GridConfig, GridImageBlock } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
@@ -123,9 +116,7 @@ export class ImageBlockDrawEngine {
 			// Config
 			ctx.imageSmoothingEnabled = false;
 			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
-			radius = Math.round(
-				((camera.viewportPh / 2) * ImageBlockDrawEngine.foregroundViewerPercentageOfViewport) / camera.zoom,
-			);
+			radius = Math.round(((camera.viewportPh / 2) * ImageBlockDrawEngine.foregroundViewerPercentageOfViewport) / camera.zoom);
 			radius2 = radius * 2;
 
 			/*
@@ -151,13 +142,7 @@ export class ImageBlockDrawEngine {
 				ctx.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 				// Applicable hashes
-				gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(
-					imageBlocks,
-					startGx,
-					startGy,
-					stopGx,
-					stopGy,
-				);
+				gridBlockTableComplexFull = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
 				complexesByGx = gridBlockTableComplexFull.hashes;
 
 				if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
@@ -180,9 +165,7 @@ export class ImageBlockDrawEngine {
 								imageBitmap = getAssetImageLit(imageBlockHashes[complex.hash].assetId);
 							}
 						} else {
-							imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[
-								getAssetImageUnlitMax
-							];
+							imageBitmap = getAssetImageUnlit(imageBlockHashes[complex.hash].assetId)[getAssetImageUnlitMax];
 						}
 
 						ctx.drawImage(
@@ -205,8 +188,8 @@ export class ImageBlockDrawEngine {
 							y = Math.round((camera.gy - startGy) * gInPh);
 
 							gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-							gradient.addColorStop(0, 'rgba(255,255,255,1)');
-							gradient.addColorStop(0.75, 'rgba(255,255,255,1)');
+							gradient.addColorStop(0, 'white');
+							gradient.addColorStop(0.75, 'white');
 							gradient.addColorStop(1, 'transparent');
 
 							ctx.globalCompositeOperation = 'destination-out';
@@ -252,8 +235,6 @@ export class ImageBlockDrawEngine {
 
 	public static setForegroundViewerSettings(foregroundViewerPercentageOfViewport: number) {
 		ImageBlockDrawEngine.foregroundViewerPercentageOfViewport = foregroundViewerPercentageOfViewport;
-		MapDrawEngineBus.setForegroundViewerPercentageOfViewport(
-			ImageBlockDrawEngine.foregroundViewerPercentageOfViewport,
-		);
+		MapDrawEngineBus.setForegroundViewerPercentageOfViewport(ImageBlockDrawEngine.foregroundViewerPercentageOfViewport);
 	}
 }

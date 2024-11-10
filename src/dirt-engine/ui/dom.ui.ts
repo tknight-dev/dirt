@@ -214,12 +214,8 @@ export class DomUI {
 	}
 
 	private static detailsModalAudioTagEffectTrigger(): void {
-		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter(
-				(v) => v.type === AssetAudioType.EFFECT,
-			),
-			valuesTrip: GridAudioTriggerTripType[] = <any>(
-				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
-			),
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				assetId: valuesAudio[0].id,
 				objectType: GridObjectType.AUDIO_TRIGGER_EFFECT,
@@ -322,12 +318,7 @@ export class DomUI {
 			applicationProperties.volumePercentage = Number(event.target.value);
 
 			// Play sample at volume
-			AudioEngine.trigger(
-				applicationProperties.assetId,
-				AudioModulation.NONE,
-				0,
-				applicationProperties.volumePercentage,
-			);
+			AudioEngine.trigger(applicationProperties.assetId, AudioModulation.NONE, 0, applicationProperties.volumePercentage);
 		};
 		input.step = '.1';
 		input.type = 'range';
@@ -353,12 +344,8 @@ export class DomUI {
 	}
 
 	private static detailsModalAudioTagMusicTrigger(): void {
-		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter(
-				(v) => v.type === AssetAudioType.MUSIC,
-			),
-			valuesTrip: GridAudioTriggerTripType[] = <any>(
-				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
-			),
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.MUSIC),
+			valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				assetId: valuesAudio[0].id,
 				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC,
@@ -517,9 +504,7 @@ export class DomUI {
 	}
 
 	private static detailsModalAudioTagMusicFadeTrigger(): void {
-		let valuesTrip: GridAudioTriggerTripType[] = <any>(
-				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
-			),
+		let valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				fadeDurationInMs: 1000,
 				fadeTo: 0.5,
@@ -622,8 +607,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText =
-			'Palette: Audio Tag - Fade Music';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Fade Music';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -637,9 +621,7 @@ export class DomUI {
 	}
 
 	private static detailsModalAudioTagMusicPauseTrigger(): void {
-		let valuesTrip: GridAudioTriggerTripType[] = <any>(
-				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
-			),
+		let valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_PAUSE,
 				tagId: '', // TODO validation logic
@@ -702,8 +684,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText =
-			'Palette: Audio Tag - Pause Music';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Pause Music';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -717,9 +698,7 @@ export class DomUI {
 	}
 
 	private static detailsModalAudioTagMusicUnpauseTrigger(): void {
-		let valuesTrip: GridAudioTriggerTripType[] = <any>(
-				Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string')
-			),
+		let valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_UNPAUSE,
 				tagId: '', // TODO validation logic
@@ -782,8 +761,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText =
-			'Palette: Audio Tag - Unpause Music';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Unpause Music';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -797,15 +775,9 @@ export class DomUI {
 	}
 
 	private static detailsModalImageBlock(): void {
-		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter(
-				(v) => v.type === AssetAudioType.EFFECT,
-			),
-			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
-				(v) => v.type === AssetImageType.GRID_BLOCK,
-			),
-			valuesTypes: GridImageBlockType[] = <any>(
-				Object.values(GridImageBlockType).filter((v) => typeof v !== 'string')
-			),
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter((v) => v.type === AssetImageType.GRID_BLOCK),
+			valuesTypes: GridImageBlockType[] = <any>Object.values(GridImageBlockType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				assetId: valuesImage[0].id,
 				assetIdDamagedImage: undefined,
@@ -1201,10 +1173,8 @@ export class DomUI {
 	protected static editCameraUpdate(VideoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate) {
 		MapEditEngine.uiCameraUpdate(VideoBusOutputCmdEditCameraUpdate);
 
-		DomUI.uiEditCursorGInPh =
-			Math.round((VideoBusOutputCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
-		DomUI.uiEditCursorGInPw =
-			Math.round((VideoBusOutputCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
+		DomUI.uiEditCursorGInPh = Math.round((VideoBusOutputCmdEditCameraUpdate.gInPh / window.devicePixelRatio) * 1000) / 1000;
+		DomUI.uiEditCursorGInPw = Math.round((VideoBusOutputCmdEditCameraUpdate.gInPw / window.devicePixelRatio) * 1000) / 1000;
 		DomUI.editCursor();
 	}
 
@@ -1704,9 +1674,7 @@ export class DomUI {
 			return;
 		}
 		DomUI.domUIinitialized = true;
-		let maps: AssetMap[] = Object.values(DomUI.assetManifestMaster.maps).sort(
-			(a: AssetMap, b: AssetMap) => a.order - b.order,
-		);
+		let maps: AssetMap[] = Object.values(DomUI.assetManifestMaster.maps).sort((a: AssetMap, b: AssetMap) => a.order - b.order);
 
 		VideoEngineBus.setCallbackMapAsset((mapActive: MapActive | undefined) => {
 			if (mapActive) {
@@ -1747,10 +1715,7 @@ export class DomUI {
 		if (modeEdit) {
 			for (let i in domUIEdit) {
 				domUIEditElement = domUIEdit[i];
-				if (
-					domUIEditElement.className.includes('dirt-engine-ui-edit') &&
-					!domUIEditElement.className.includes('modal')
-				) {
+				if (domUIEditElement.className.includes('dirt-engine-ui-edit') && !domUIEditElement.className.includes('modal')) {
 					domUIEditElement.style.opacity = '0';
 					domUIEditElement.style.display = 'flex';
 					domUIEditElement.style.opacity = '1';
@@ -3284,8 +3249,7 @@ export class DomUI {
 		mouseDownSelectModalContentHeader.className = 'header';
 		mouseDownSelectModalContentHeader.innerText = 'Copy or Inspect';
 		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-header'] = mouseDownSelectModalContentHeader;
-		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-header'] =
-			mouseDownSelectModalContentHeader;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-header'] = mouseDownSelectModalContentHeader;
 		mouseDownSelectModalContent.appendChild(mouseDownSelectModalContentHeader);
 
 		mouseDownSelectModalContentBody = document.createElement('div');
@@ -3303,10 +3267,8 @@ export class DomUI {
 		// Cancel/Save
 		mouseDownSelectModalContentBodyButtons = document.createElement('div');
 		mouseDownSelectModalContentBodyButtons.className = 'buttons';
-		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons'] =
-			mouseDownSelectModalContentBodyButtons;
-		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-buttons'] =
-			mouseDownSelectModalContentBodyButtons;
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons'] = mouseDownSelectModalContentBodyButtons;
+		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-buttons'] = mouseDownSelectModalContentBodyButtons;
 		mouseDownSelectModalContent.appendChild(mouseDownSelectModalContentBodyButtons);
 
 		mouseDownSelectModalContentBodyButtonsCancel = document.createElement('div');
@@ -3316,8 +3278,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
 			MouseEngine.setSuspendWheel(false);
 		};
-		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons-cancel'] =
-			mouseDownSelectModalContentBodyButtonsCancel;
+		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons-cancel'] = mouseDownSelectModalContentBodyButtonsCancel;
 		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-buttons-cancel'] =
 			mouseDownSelectModalContentBodyButtonsCancel;
 		mouseDownSelectModalContentBodyButtons.appendChild(mouseDownSelectModalContentBodyButtonsCancel);
@@ -3375,16 +3336,14 @@ export class DomUI {
 			MouseEngine.setSuspendWheel(false);
 		};
 		DomUI.domElements['feed-fitted-ui-palette-modal-content-buttons-cancel'] = paletteModalContentBodyButtonsCancel;
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-cancel'] =
-			paletteModalContentBodyButtonsCancel;
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-cancel'] = paletteModalContentBodyButtonsCancel;
 		paletteModalContentBodyButtons.appendChild(paletteModalContentBodyButtonsCancel);
 
 		paletteModalContentBodyButtonsApply = document.createElement('div');
 		paletteModalContentBodyButtonsApply.className = 'button green';
 		paletteModalContentBodyButtonsApply.innerText = 'Apply';
 		DomUI.domElements['feed-fitted-ui-palette-modal-content-buttons-apply'] = paletteModalContentBodyButtonsApply;
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'] =
-			paletteModalContentBodyButtonsApply;
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'] = paletteModalContentBodyButtonsApply;
 		paletteModalContentBodyButtons.appendChild(paletteModalContentBodyButtonsApply);
 
 		/*
@@ -3464,10 +3423,8 @@ export class DomUI {
 		settingsModalContentBodyClockSpeed.min = '0';
 		settingsModalContentBodyClockSpeed.step = '1';
 		settingsModalContentBodyClockSpeed.type = 'range';
-		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-clock-speed'] =
-			settingsModalContentBodyClockSpeed;
-		DomUI.domElementsUIEdit['application-settings-modal-content-body-clock-speed'] =
-			settingsModalContentBodyClockSpeed;
+		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-clock-speed'] = settingsModalContentBodyClockSpeed;
+		DomUI.domElementsUIEdit['application-settings-modal-content-body-clock-speed'] = settingsModalContentBodyClockSpeed;
 		td.appendChild(settingsModalContentBodyClockSpeed);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -3487,8 +3444,7 @@ export class DomUI {
 		settingsModalContentBodyHourOfDay.step = '1';
 		settingsModalContentBodyHourOfDay.type = 'range';
 		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-hour-of-day'] = settingsModalContentBodyHourOfDay;
-		DomUI.domElementsUIEdit['application-settings-modal-content-body-hour-of-day'] =
-			settingsModalContentBodyHourOfDay;
+		DomUI.domElementsUIEdit['application-settings-modal-content-body-hour-of-day'] = settingsModalContentBodyHourOfDay;
 		td.appendChild(settingsModalContentBodyHourOfDay);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -3511,10 +3467,8 @@ export class DomUI {
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'none';
 			MouseEngine.setSuspendWheel(false);
 		};
-		DomUI.domElements['feed-fitted-ui-settings-modal-content-buttons-cancel'] =
-			settingsModalContentBodyButtonsCancel;
-		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-cancel'] =
-			settingsModalContentBodyButtonsCancel;
+		DomUI.domElements['feed-fitted-ui-settings-modal-content-buttons-cancel'] = settingsModalContentBodyButtonsCancel;
+		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-cancel'] = settingsModalContentBodyButtonsCancel;
 		settingsModalContentBodyButtons.appendChild(settingsModalContentBodyButtonsCancel);
 
 		settingsModalContentBodyButtonsApply = document.createElement('div');
@@ -3536,8 +3490,7 @@ export class DomUI {
 			MouseEngine.setSuspendWheel(false);
 		};
 		DomUI.domElements['feed-fitted-ui-settings-modal-content-buttons-apply'] = settingsModalContentBodyButtonsApply;
-		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-apply'] =
-			settingsModalContentBodyButtonsApply;
+		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-apply'] = settingsModalContentBodyButtonsApply;
 		settingsModalContentBodyButtons.appendChild(settingsModalContentBodyButtonsApply);
 
 		/*

@@ -82,17 +82,11 @@ export class CameraEngine {
 
 		camera.viewportGx = Math.max(
 			0,
-			Math.min(
-				gridConfig.gWidth - camera.viewportGwEff,
-				Math.round((camera.gx - camera.viewportGwEff / 2) * 1000) / 1000,
-			),
+			Math.min(gridConfig.gWidth - camera.viewportGwEff, Math.round((camera.gx - camera.viewportGwEff / 2) * 1000) / 1000),
 		);
 		camera.viewportGy = Math.max(
 			0,
-			Math.min(
-				gridConfig.gHeight - camera.viewportGhEff,
-				Math.round((camera.gy - camera.viewportGhEff / 2) * 1000) / 1000,
-			),
+			Math.min(gridConfig.gHeight - camera.viewportGhEff, Math.round((camera.gy - camera.viewportGhEff / 2) * 1000) / 1000),
 		);
 
 		// console.log('camera.gx', camera.gx);

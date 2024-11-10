@@ -77,16 +77,10 @@ export interface VideoBusInputCmdGameModeEditApply {
 	gHashes: number[];
 }
 
-export interface VideoBusInputCmdGameModeEditApplyAudioBlock
-	extends GridAudioBlock,
-		VideoBusInputCmdGameModeEditApply {}
+export interface VideoBusInputCmdGameModeEditApplyAudioBlock extends GridAudioBlock, VideoBusInputCmdGameModeEditApply {}
 
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerEffect
-	extends GridAudioTriggerEffect,
-		VideoBusInputCmdGameModeEditApply {}
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusic
-	extends GridAudioTriggerMusic,
-		VideoBusInputCmdGameModeEditApply {}
+export interface VideoBusInputCmdGameModeEditApplyAudioTriggerEffect extends GridAudioTriggerEffect, VideoBusInputCmdGameModeEditApply {}
+export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusic extends GridAudioTriggerMusic, VideoBusInputCmdGameModeEditApply {}
 export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade
 	extends GridAudioTriggerMusicFade,
 		VideoBusInputCmdGameModeEditApply {}
@@ -205,6 +199,7 @@ export enum VideoBusOutputCmd {
 	MAP_HOUR_OF_DAY_EFF,
 	MAP_LOAD_STATUS,
 	MAP_SAVE,
+	RUMBLE,
 	STATUS_INITIALIZED,
 }
 
@@ -265,6 +260,12 @@ export interface VideoBusOutputCmdMapSave {
 	name: string;
 }
 
+export interface VideoBusOutputCmdRumble {
+	enable: boolean;
+	durationInMS: number; // 0 = INF, max 10000
+	intensity: number; // 0-10
+}
+
 export interface VideoBusWorkerPayload {
 	cmd: VideoBusOutputCmd;
 	data:
@@ -279,6 +280,7 @@ export interface VideoBusWorkerPayload {
 		| VideoBusOutputCmdMapAsset
 		| VideoBusOutputCmdMapLoadStatus
 		| VideoBusOutputCmdMapSave
+		| VideoBusOutputCmdRumble
 		| VideoBusWorkerStatusInitialized
 		| null;
 }

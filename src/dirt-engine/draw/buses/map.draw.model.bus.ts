@@ -78,16 +78,3 @@ export interface MapDrawBusInputPlayloadSettings {
 export interface MapDrawBusInputPlayloadTimeForced {
 	forced: boolean;
 }
-
-export enum MapDrawBusOutputCmd {
-	SET_BITMAP,
-}
-
-export interface MapDrawBusOutputPlayload {
-	cmd: MapDrawBusOutputCmd;
-	data: MapDrawBusOutputPlayloadBitmap;
-}
-
-export interface MapDrawBusOutputPlayloadBitmap {
-	image: ImageBitmap;
-}
