@@ -1,4 +1,4 @@
-import { AssetCollection, AssetImage, AssetImageSrcResolution, AssetImageType } from '../dirt-engine/dirt.engine';
+import { AssetCollection, AssetImage, AssetImageSrcQuality, AssetImageType } from '../dirt-engine/dirt.engine';
 
 /**
  * @author tknight-dev

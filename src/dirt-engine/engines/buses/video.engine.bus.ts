@@ -39,11 +39,13 @@ import {
 	VideoBusWorkerPayload,
 	VideoBusWorkerStatusInitialized,
 } from '../../engines/buses/video.model.bus';
+import { UtilEngine } from '../util.engine';
 import { VisibilityEngine } from '../visibility.engine';
 
 export class VideoEngineBus {
 	private static callbackEditCameraUpdate: (update: VideoBusOutputCmdEditCameraUpdate) => void;
 	private static callbackEditComplete: () => void;
+	private static callbackFPS: (fps: number) => void;
 	private static callbackMapAsset: (mapActive: MapActive | undefined) => void;
 	private static callbackMapHourOfDayEff: (hourOfDayEff: number) => void;
 	private static callbackMapLoadStatus: (status: boolean) => void;
@@ -58,6 +60,7 @@ export class VideoEngineBus {
 	private static complete: boolean;
 	private static initialized: boolean;
 	private static mapInteration: HTMLElement;
+	private static resolution: null | number;
 	private static streams: HTMLElement;
 	private static worker: Worker;
 
@@ -73,7 +76,7 @@ export class VideoEngineBus {
 		canvasPrimary: HTMLCanvasElement,
 		canvasUnderlay: HTMLCanvasElement,
 		mapInteration: HTMLElement,
-		VideoBusInputCmdSettings: VideoBusInputCmdSettings,
+		settings: VideoBusInputCmdSettings,
 	): Promise<void> {
 		if (VideoEngineBus.initialized) {
 			console.error('VideoEngineBus > initialize: already initialized');
@@ -86,9 +89,9 @@ export class VideoEngineBus {
 			canvasOffscreenPrimary: OffscreenCanvas = canvasPrimary.transferControlToOffscreen(),
 			canvasOffscreenForeground: OffscreenCanvas = canvasForeground.transferControlToOffscreen(),
 			canvasOffscreenOverlay: OffscreenCanvas = canvasOverlay.transferControlToOffscreen(),
-			VideoBusInputCmdInit: VideoBusInputCmdInit,
-			VideoBusInputCmdResize: VideoBusInputCmdResize,
-			VideoBusPayload: VideoBusPayload;
+			videoBusInputCmdInit: VideoBusInputCmdInit,
+			videoBusInputCmdResize: VideoBusInputCmdResize,
+			videoBusPayload: VideoBusPayload;
 
 		// Cache
 		VideoEngineBus.canvasBackground = canvasBackground;
@@ -100,6 +103,7 @@ export class VideoEngineBus {
 		VideoEngineBus.streams = streams;
 
 		// Config
+		VideoEngineBus.resolution = settings.resolution;
 		ResizeEngine.setCallback(VideoEngineBus.resized);
 		VisibilityEngine.setCallback((visible: boolean) => {
 			if (!visible) {
@@ -123,8 +127,8 @@ export class VideoEngineBus {
 			/*
 			 * Initialization payload
 			 */
-			VideoBusInputCmdResize = VideoEngineBus.resized(true);
-			VideoBusInputCmdInit = Object.assign(
+			videoBusInputCmdResize = VideoEngineBus.resized(true);
+			videoBusInputCmdInit = Object.assign(
 				{
 					assetDeclarations: assetDeclarations,
 					canvasOffscreenBackground: canvasOffscreenBackground,
@@ -133,14 +137,14 @@ export class VideoEngineBus {
 					canvasOffscreenPrimary: canvasOffscreenPrimary,
 					canvasOffscreenUnderlay: canvasOffscreenUnderlay,
 				},
-				VideoBusInputCmdResize,
-				VideoBusInputCmdSettings,
+				videoBusInputCmdResize,
+				settings,
 			);
-			VideoBusPayload = {
+			videoBusPayload = {
 				cmd: VideoBusInputCmd.INIT,
-				data: VideoBusInputCmdInit,
+				data: videoBusInputCmdInit,
 			};
-			VideoEngineBus.worker.postMessage(VideoBusPayload, [
+			VideoEngineBus.worker.postMessage(videoBusPayload, [
 				canvasOffscreenBackground,
 				canvasOffscreenForeground,
 				canvasOffscreenOverlay,
@@ -235,6 +239,13 @@ export class VideoEngineBus {
 							VideoEngineBus.callbackEditComplete();
 						} else {
 							console.error('VideoEngineBus > input: edit complete callback not set');
+						}
+						break;
+					case VideoBusOutputCmd.FPS:
+						if (VideoEngineBus.callbackFPS !== undefined) {
+							VideoEngineBus.callbackFPS(<number>videoBusWorkerPayload.data);
+						} else {
+							console.error('VideoEngineBus > input: fps callback not set');
 						}
 						break;
 					case VideoBusOutputCmd.MAP_ASSET:
@@ -434,23 +445,60 @@ export class VideoEngineBus {
 			devicePixelRatio: number = Math.round(window.devicePixelRatio * 1000) / 1000,
 			devicePixelRatioEff: number = Math.round((1 / window.devicePixelRatio) * 1000) / 1000,
 			domRect: DOMRect = VideoEngineBus.streams.getBoundingClientRect(),
-			height: number = domRect.height,
-			width: number = domRect.width;
+			height: number,
+			scaler: number,
+			width: null | number = VideoEngineBus.resolution;
+
+		switch (width) {
+			case 128:
+				height = 72;
+				break;
+			case 256:
+				height = 144;
+				break;
+			case 384:
+				height = 216;
+				break;
+			case 512:
+				height = 288;
+				break;
+			case 640: // 360p
+				height = 360;
+				break;
+			case 1280: // 720p
+				height = 720;
+				break;
+			case 1920: // 1080p
+				height = 1080;
+				break;
+			default: // native
+				height = domRect.height;
+				width = domRect.width;
+				break;
+		}
+
+		if (VideoEngineBus.resolution !== null) {
+			scaler = Math.round(((devicePixelRatioEff * domRect.width) / width) * 1000) / 1000;
+		} else {
+			scaler = devicePixelRatioEff;
+		}
 
 		// Transform the canvas to the intended size
-		VideoEngineBus.canvasBackground.style.transform = 'scale(' + devicePixelRatioEff + ')';
-		VideoEngineBus.canvasForeground.style.transform = 'scale(' + devicePixelRatioEff + ')';
-		VideoEngineBus.canvasOverlay.style.transform = 'scale(' + devicePixelRatioEff + ')';
-		VideoEngineBus.canvasPrimary.style.transform = 'scale(' + devicePixelRatioEff + ')';
-		VideoEngineBus.canvasUnderlay.style.transform = 'scale(' + devicePixelRatioEff + ')';
+		VideoEngineBus.canvasBackground.style.transform = 'scale(' + scaler + ')';
+		VideoEngineBus.canvasForeground.style.transform = 'scale(' + scaler + ')';
+		VideoEngineBus.canvasOverlay.style.transform = 'scale(' + scaler + ')';
+		VideoEngineBus.canvasPrimary.style.transform = 'scale(' + scaler + ')';
+		VideoEngineBus.canvasUnderlay.style.transform = 'scale(' + scaler + ')';
 
 		// Transform the map interaction to the correct starting place
-		VideoEngineBus.mapInteration.style.transform = 'translate(' + -20 * devicePixelRatioEff + 'px, ' + 20 * devicePixelRatioEff + 'px)';
+		VideoEngineBus.mapInteration.style.transform =
+			'translate(' + -UtilEngine.renderOverflowP * scaler + 'px, ' + UtilEngine.renderOverflowP * scaler + 'px)';
 
 		data = {
 			devicePixelRatio: devicePixelRatio,
 			force: force,
 			height: Math.round(height),
+			scaler: Math.round((domRect.width / width / devicePixelRatioEff) * 1000) / 1000,
 			width: Math.round(width),
 		};
 
@@ -470,6 +518,10 @@ export class VideoEngineBus {
 
 	public static setCallbackEditComplete(callbackEditComplete: () => void): void {
 		VideoEngineBus.callbackEditComplete = callbackEditComplete;
+	}
+
+	public static setCallbackFPS(callbackFPS: (fps: number) => void): void {
+		VideoEngineBus.callbackFPS = callbackFPS;
 	}
 
 	public static setCallbackMapAsset(callbackMapAsset: (mapActive: MapActive | undefined) => void): void {

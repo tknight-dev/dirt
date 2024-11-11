@@ -75,7 +75,7 @@ export class AssetEngine {
 					images[assetImage.id] = assetImage;
 
 					assetImage.srcs = assetImage.srcs.sort((a: AssetImageSrc, b: AssetImageSrc) => {
-						return a.resolution - b.resolution;
+						return a.quality - b.quality;
 					});
 				} else {
 					console.warn("AssetEngine > compileMasterManifest: declared image asset id '" + assetImage.id + "' already exists");
@@ -109,7 +109,7 @@ export class AssetEngine {
 				images[assetImage.id] = assetImage;
 
 				assetImage.srcs = assetImage.srcs.sort((a: AssetImageSrc, b: AssetImageSrc) => {
-					return a.resolution - b.resolution;
+					return a.quality - b.quality;
 				});
 			}
 		}

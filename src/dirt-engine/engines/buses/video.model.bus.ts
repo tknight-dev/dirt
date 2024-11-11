@@ -1,4 +1,4 @@
-import { AssetDeclarations, AssetImageSrcResolution } from '../../models/asset.model';
+import { AssetDeclarations, AssetImageSrcQuality } from '../../models/asset.model';
 import {
 	GridAudioBlock,
 	GridAudioTriggerEffect,
@@ -66,6 +66,7 @@ export interface VideoBusInputCmdResize {
 	devicePixelRatio: number; // precision 1
 	force?: boolean;
 	height: number;
+	scaler: number;
 	width: number;
 }
 
@@ -157,7 +158,8 @@ export interface VideoBusInputCmdSettings {
 	fps: VideoBusInputCmdSettingsFPS;
 	fpsVisible: boolean;
 	mapVisible: boolean;
-	resolution: AssetImageSrcResolution;
+	quality: AssetImageSrcQuality;
+	resolution: null | 256 | 384 | 512 | 640 | 1280 | 1920; // null is native resolution
 	screenShakeEnable: boolean;
 }
 
@@ -197,6 +199,7 @@ export enum VideoBusOutputCmd {
 	AUDIO_VOLUME,
 	EDIT_CAMERA_UPDATE,
 	EDIT_COMPLETE,
+	FPS,
 	MAP_ASSET,
 	MAP_HOUR_OF_DAY_EFF,
 	MAP_LOAD_STATUS,

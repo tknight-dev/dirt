@@ -1,4 +1,4 @@
-import { AssetImageSrcResolution } from '../models/asset.model';
+import { AssetImageSrcQuality } from '../models/asset.model';
 import { CalcEditEngine } from './mode/edit/calc.edit.engine';
 import { CalcPlayEngine } from './mode/play/calc.play.engine';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
@@ -7,7 +7,6 @@ import { CameraEngine } from './camera.engine';
 import { DrawEditEngine } from './mode/edit/draw.edit.engine';
 import { DrawPlayEngine } from './mode/play/draw.play.engine';
 import { GridDrawEngine } from '../draw/grid.draw.engine';
-import { FPSDrawEngine } from '../draw/fps.draw.engine';
 import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
 import { KeyAction, KeyCommon } from './keyboard.engine';
 import { LightingEngine } from './lighting.engine';
@@ -23,8 +22,11 @@ import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings, VideoBusInp
  */
 
 export class KernelEngine {
+	private static callbackFPS: (fps: number) => void;
 	private static ctxDimensionHeight: number;
 	private static ctxDimensionWidth: number;
+	private static frames: number = 0;
+	private static framesInterval: ReturnType<typeof setInterval>;
 	private static fpms: number;
 	private static fpmsCamera: number = 35;
 	private static fpmsUnlimited: boolean;
@@ -32,7 +34,7 @@ export class KernelEngine {
 	private static mapActive: MapActive;
 	private static modeEdit: boolean;
 	private static paused: boolean;
-	private static resolution: AssetImageSrcResolution;
+	private static quality: AssetImageSrcQuality;
 	private static status: boolean;
 	private static timestampDelta: number;
 	private static timestampDeltaCamera: number;
@@ -64,7 +66,6 @@ export class KernelEngine {
 
 		// Extended
 		await CameraDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
-		await FPSDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
 		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
@@ -113,8 +114,8 @@ export class KernelEngine {
 	public static inputMouse(action: MouseAction): void {
 		if (KernelEngine.status) {
 			if (action.cmd == MouseCmd.LEFT_CLICK) {
-				if (MapDrawEngine.isPixelInMap(action.position.x, action.position.y)) {
-					MapDrawEngine.moveToPx(action.position.x, action.position.y);
+				if (MapDrawEngine.isPixelInMap(action.position.xRel, action.position.yRel)) {
+					MapDrawEngine.moveToPx(action.position.xRel, action.position.yRel);
 				}
 			}
 			if (action.cmd == MouseCmd.WHEEL) {
@@ -151,6 +152,7 @@ export class KernelEngine {
 			 */
 			if (KernelEngine.timestampDelta > KernelEngine.fpms) {
 				KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
+				KernelEngine.frames++;
 
 				// Start
 				if (KernelEngine.modeEdit) {
@@ -165,7 +167,7 @@ export class KernelEngine {
 			/**
 			 * FPS unlimited
 			 */
-			CameraEngine.update();
+			KernelEngine.frames++;
 			if (KernelEngine.modeEdit) {
 				!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
 				DrawEditEngine.start();
@@ -251,6 +253,12 @@ export class KernelEngine {
 
 		// Last
 		await KernelEngine.cacheResets(true);
+
+		KernelEngine.framesInterval = setInterval(() => {
+			let frames = KernelEngine.frames;
+			KernelEngine.frames = 0;
+			KernelEngine.callbackFPS(frames);
+		}, 1000);
 		requestAnimationFrame(KernelEngine.loop);
 	}
 
@@ -262,6 +270,7 @@ export class KernelEngine {
 			console.error('KernelEngine > stop: already stopped');
 			return;
 		}
+		clearInterval(KernelEngine.framesInterval);
 		KernelEngine.status = false;
 	}
 
@@ -313,27 +322,29 @@ export class KernelEngine {
 		KernelEngine.fpmsUnlimited = settings.fps === VideoBusInputCmdSettingsFPS._unlimited;
 
 		// Primary
-		DrawEditEngine.fpsVisible = settings.fpsVisible;
 		DrawEditEngine.mapVisible = settings.mapVisible;
-		DrawPlayEngine.fpsVisible = settings.fpsVisible;
 
 		// Extended
-		FPSDrawEngine.fpsTarget = settings.fps;
 		ImageBlockDrawEngine.setForegroundViewerSettings(settings.foregroundViewerPercentageOfViewport);
 		LightingEngine.setDarknessMax(settings.darknessMax);
+		MapDrawEngine.resolution = settings.resolution;
 		MapDrawEngineBus.setDarknessMax(settings.darknessMax);
 		MapDrawEngineBus.setMapVisible(settings.mapVisible);
 
 		// Last
-		if (KernelEngine.resolution !== settings.resolution) {
-			KernelEngine.resolution = settings.resolution;
-			LightingEngine.setResolution(settings.resolution);
+		if (KernelEngine.quality !== settings.quality) {
+			KernelEngine.quality = settings.quality;
+			LightingEngine.setResolution(settings.quality);
 
 			// Last
 			if (KernelEngine.mapActive) {
 				KernelEngine.cacheResets();
 			}
 		}
+	}
+
+	public static setCallbackFPS(callbackFPS: (fps: number) => void): void {
+		KernelEngine.callbackFPS = callbackFPS;
 	}
 
 	public static getMapActive(): MapActive {

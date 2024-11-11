@@ -1,4 +1,4 @@
-import { AssetCollection, AssetImage, AssetImageSrcResolution, AssetImageType } from '../models/asset.model';
+import { AssetCollection, AssetImage, AssetImageSrcQuality, AssetImageType } from '../models/asset.model';
 
 /**
  * @author tknight-dev
@@ -17,17 +17,17 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.LOW,
+				quality: AssetImageSrcQuality.LOW,
 				src: 'images/grid-objects/bedrock_16_16.webp',
 			},
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.MEDIUM,
+				quality: AssetImageSrcQuality.MEDIUM,
 				src: 'images/grid-objects/bedrock_32_32.webp',
 			},
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/bedrock_64_64.webp',
 			},
 		],
@@ -45,17 +45,17 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.LOW,
+				quality: AssetImageSrcQuality.LOW,
 				src: 'images/grid-objects/dirt_16_16.webp',
 			},
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.MEDIUM,
+				quality: AssetImageSrcQuality.MEDIUM,
 				src: 'images/grid-objects/dirt_32_32.webp',
 			},
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/dirt_64_64.webp',
 			},
 		],
@@ -73,7 +73,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.UI,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/logo/dirt-engine.webp',
 			},
 		],
@@ -91,17 +91,17 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.LOW,
+				quality: AssetImageSrcQuality.LOW,
 				src: 'images/grid-objects/dirt_grass_16_16.webp',
 			},
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.MEDIUM,
+				quality: AssetImageSrcQuality.MEDIUM,
 				src: 'images/grid-objects/dirt_grass_32_32.webp',
 			},
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/dirt_grass_64_64.webp',
 			},
 		],
@@ -119,7 +119,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/null_16_16.webp',
 			},
 		],
@@ -137,7 +137,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/null2_16_16.webp',
 			},
 		],
@@ -155,17 +155,17 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.LOW,
+				quality: AssetImageSrcQuality.LOW,
 				src: 'images/grid-objects/rock_16_16.webp',
 			},
 			{
 				collection: AssetCollection.VIDEO,
-				resolution: AssetImageSrcResolution.MEDIUM,
+				quality: AssetImageSrcQuality.MEDIUM,
 				src: 'images/grid-objects/rock_32_32.webp',
 			},
 			{
 				collection: AssetCollection.SHARED,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/rock_64_64.webp',
 			},
 		],
@@ -183,7 +183,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		srcs: [
 			{
 				collection: AssetCollection.UI,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/logo/tknight-dev.svg',
 			},
 		],

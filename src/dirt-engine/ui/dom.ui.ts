@@ -54,6 +54,8 @@ export class DomUI {
 	protected static domElementsInput: { [key: string]: HTMLInputElement } = {};
 	protected static domElementsInputVolumeTimeout: ReturnType<typeof setTimeout>;
 	protected static domElementsUIEdit: { [key: string]: HTMLElement } = {};
+	protected static domUIFPSTarget: number;
+	protected static domUIFPSVisible: boolean;
 	private static domUIinitialized: boolean;
 	protected static domUIRumbleEnable: boolean;
 	private static domUIRumbleAnimations: Animation[];
@@ -74,6 +76,7 @@ export class DomUI {
 	private static uiEditMouseCmdCollectionActive: boolean;
 	private static uiEditMouseCmdCollectionEngaged: boolean;
 	private static uiEditMouseCmdCollectionPromise: Promise<void>;
+	protected static uiEditResolution: null | number;
 	private static uiEditSpinnerStatus: boolean;
 	private static uiEditView: VideoBusInputCmdGameModeEditApplyView;
 	private static uiEditZ: VideoBusInputCmdGameModeEditApplyZ | undefined;
@@ -143,9 +146,9 @@ export class DomUI {
 				let imageSrc: AssetImageSrc | undefined = undefined;
 
 				DomUI.assetManifestMaster.images[selector.value].srcs.forEach((assetImageSrc: AssetImageSrc) => {
-					// Grab the highest available resolution
+					// Grab the highest available quality
 					if (assetImageSrc.collection === AssetCollection.SHARED) {
-						if (!imageSrc || imageSrc.resolution < assetImageSrc.resolution) {
+						if (!imageSrc || imageSrc.quality < assetImageSrc.quality) {
 							imageSrc = assetImageSrc;
 						}
 					}
@@ -1229,11 +1232,18 @@ export class DomUI {
 		} else {
 			div = document.createElement('div');
 			div.className = 'node';
-			div.style.height = gInPh + 'px';
-			div.style.width = gInPw + 'px';
 			divs = [];
 			divWrapper = document.createElement('div');
 			divWrapper.className = 'group';
+
+			if (DomUI.uiEditResolution === null) {
+				div.style.height = gInPh + 'px';
+				div.style.width = gInPw + 'px';
+			} else {
+				let domRect: DOMRect = DomUI.domElements['feed-overflow-streams'].getBoundingClientRect();
+				div.style.height = (gInPh * domRect.width) / DomUI.uiEditResolution + 'px';
+				div.style.width = (gInPw * domRect.width) / DomUI.uiEditResolution + 'px';
+			}
 
 			if (applicationType === ApplicationType.BRUSH) {
 				brushSizeEff = brushSize + 1;
@@ -1719,9 +1729,30 @@ export class DomUI {
 		VideoEngineBus.setCallbackEditComplete(() => {
 			DomUI.displaySpinner(false);
 		});
+		VideoEngineBus.setCallbackFPS((fps: number) => {
+			let div: HTMLElement = DomUI.domElementsUIEdit['fps'];
+
+			if (fps < DomUI.domUIFPSTarget - 20) {
+				div.classList.add('bad');
+				div.classList.remove('warn');
+			} else if (fps < DomUI.domUIFPSTarget - 10) {
+				div.classList.remove('bad');
+				div.classList.add('warn');
+			} else {
+				div.classList.remove('bad');
+				div.classList.remove('warn');
+			}
+
+			div.innerText = String(fps);
+		});
+		let test: boolean = true;
 		VideoEngineBus.setCallbackMapHourOfDayEff((hourOfDayEff: number) => {
-			DomUI.updateHourOfDayEff(hourOfDayEff);
-			MapEditEngine.updateUIHourOfDayEff(hourOfDayEff);
+			if (test) {
+				// This makes the clock work.. idk why.. something about thread syncing?
+				console.log('DomUI > hourOfDay:', hourOfDayEff);
+				test = false;
+			}
+			DomUI.domElementsUIEdit['time'].innerText = hourOfDayEff + ':00';
 		});
 		VideoEngineBus.setCallbackRumble((durationInMs: number, enable: boolean, intensity: number) => {
 			DomUI.rumble(durationInMs, enable, intensity);
@@ -2149,6 +2180,7 @@ export class DomUI {
 			feedFitted: HTMLElement = DomUI.domElements['feed-fitted'],
 			foregroundViewer: HTMLElement,
 			foregroundViewerButton: HTMLElement,
+			fps: HTMLElement,
 			grid: HTMLElement,
 			gridButton: HTMLElement,
 			gridModal: HTMLElement,
@@ -2538,6 +2570,18 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-copy-button'] = copyButton;
 		DomUI.domElementsUIEdit['copy-button'] = copyButton;
 		copy.appendChild(copyButton);
+
+		/*
+		 * FPS
+		 */
+		fps = document.createElement('div');
+		fps.className = 'dirt-engine-ui-edit fps';
+		if (!DomUI.domUIFPSVisible) {
+			fps.style.display = 'none';
+		}
+		DomUI.domElements['feed-fitted-ui-fps'] = fps;
+		DomUI.domElementsUIEdit['fps'] = fps;
+		domFeedFitted.appendChild(fps);
 
 		/*
 		 * Grid
@@ -3602,9 +3646,5 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-spinner-modal-content'] = spinnerModalContent;
 		DomUI.domElementsUIEdit['application-spinner-modal-content'] = spinnerModalContent;
 		spinnerModal.appendChild(spinnerModalContent);
-	}
-
-	private static updateHourOfDayEff(hourOfDayEff: number): void {
-		DomUI.domElementsUIEdit['time'].innerText = hourOfDayEff + ':00';
 	}
 }

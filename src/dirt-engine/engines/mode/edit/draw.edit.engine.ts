@@ -1,6 +1,5 @@
 import { Camera } from '../../../models/camera.model';
 import { CameraDrawEngine } from '../../../draw/camera.draw.engine';
-import { FPSDrawEngine } from '../../../draw/fps.draw.engine';
 import { GridDrawEngine } from '../../../draw/grid.draw.engine';
 import { ImageBlockDrawEngine } from '../../../draw/image-block.draw.engine';
 import { MapActive } from '../../../models/map.model';
@@ -17,7 +16,6 @@ export class DrawEditEngine {
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
-	public static fpsVisible: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	public static mapVisible: boolean;
@@ -67,9 +65,6 @@ export class DrawEditEngine {
 		// Draw Last
 		if (DrawEditEngine.mapVisible) {
 			MapDrawEngine.start();
-		}
-		if (DrawEditEngine.fpsVisible) {
-			FPSDrawEngine.start();
 		}
 	}
 

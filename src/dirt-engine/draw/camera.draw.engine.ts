@@ -9,6 +9,8 @@ import { UtilEngine } from '../engines/util.engine';
 
 export class CameraDrawEngine {
 	private static cache: ImageBitmap;
+	private static cacheGInP: number;
+	private static cacheGInPCheck: number;
 	private static cachePositionHashG: number;
 	private static cachePositionHashP: number;
 	private static cachePositionHashCheckG: number;
@@ -50,16 +52,16 @@ export class CameraDrawEngine {
 		CameraDrawEngine.cacheZoom = -1;
 	}
 
-	/**
-	 * DOESN"T WORK ON RIGHT AND BOTTOM!!!! AFTER ZOOM APPLIED!!!
-	 */
 	public static start(): void {
 		//let start: number = performance.now();
-		let camera: Camera = CameraDrawEngine.mapActiveCamera;
+		let camera: Camera = CameraDrawEngine.mapActiveCamera,
+			sizeEff: number = 0;
 
-		if (!CameraDrawEngine.cache) {
+		CameraDrawEngine.cacheGInPCheck = camera.gInPh;
+		if (!CameraDrawEngine.cache || CameraDrawEngine.cacheGInP !== CameraDrawEngine.cacheGInPCheck) {
 			// Draw from scratch
-			let cacheCanvas: OffscreenCanvas = new OffscreenCanvas(24, 24),
+			sizeEff = Math.round((camera.gInPh / 4) * 1000) / 1000;
+			let cacheCanvas: OffscreenCanvas = new OffscreenCanvas(sizeEff * 2, sizeEff * 2),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 			ctx.imageSmoothingEnabled = false;
 
@@ -67,12 +69,13 @@ export class CameraDrawEngine {
 			ctx.lineWidth = 2;
 			ctx.fillStyle = 'rgba(255,255,255,.25)';
 			ctx.strokeStyle = 'white';
-			ctx.arc(12, 12, 10, 0, 2 * Math.PI);
+			ctx.arc(sizeEff, sizeEff, sizeEff / 2, 0, 2 * Math.PI);
 			ctx.fill();
 			ctx.stroke();
 
 			// Cache It
 			CameraDrawEngine.cache = cacheCanvas.transferToImageBitmap();
+			CameraDrawEngine.cacheGInP = CameraDrawEngine.cacheGInPCheck;
 		}
 
 		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(camera.gx, camera.gy);
@@ -86,6 +89,10 @@ export class CameraDrawEngine {
 			let viewportGx: number = camera.viewportGx,
 				viewportGy: number = camera.viewportGy;
 
+			if (!sizeEff) {
+				sizeEff = Math.round((camera.gInPh / 4) * 1000) / 1000;
+			}
+
 			if (viewportGx === 0) {
 				// Left
 				CameraDrawEngine.cachePositionPx = Math.round(camera.gx * camera.gInPw);
@@ -97,7 +104,7 @@ export class CameraDrawEngine {
 			} else {
 				CameraDrawEngine.cachePositionPx = Math.round(camera.viewportPx + camera.viewportPw / 2);
 			}
-			CameraDrawEngine.cachePositionPx -= 12; // Offset to circle center
+			CameraDrawEngine.cachePositionPx -= sizeEff; // Offset to circle center
 
 			if (viewportGy === 0) {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.gy * camera.gInPh);
@@ -108,7 +115,7 @@ export class CameraDrawEngine {
 			} else {
 				CameraDrawEngine.cachePositionPy = Math.round(camera.viewportPy + camera.viewportPh / 2);
 			}
-			CameraDrawEngine.cachePositionPy -= 12; // Offset to circle center
+			CameraDrawEngine.cachePositionPy -= sizeEff; // Offset to circle center
 
 			CameraDrawEngine.cachePositionHashG = CameraDrawEngine.cachePositionHashCheckG;
 			CameraDrawEngine.cachePositionHashP = CameraDrawEngine.cachePositionHashCheckP;

@@ -1,4 +1,4 @@
-import { AssetCollection, AssetImageSrcResolution, AssetManifestMaster, AssetMap } from '../../models/asset.model';
+import { AssetCollection, AssetImageSrcQuality, AssetManifestMaster, AssetMap } from '../../models/asset.model';
 import { AssetEngine } from '../asset.engine';
 import { ClockCalcEngine } from '../../calc/clock.calc.engine';
 import { Camera } from '../../models/camera.model';
@@ -8,6 +8,7 @@ import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
 import { LightingEngine } from '../lighting.engine';
 import { Map, MapActive, MapConfig } from '../../models/map.model';
+import { MapDrawEngine } from '../../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../../draw/buses/map.draw.engine.bus';
 import { MapEngine } from '../map.engine';
 import { MapEditEngine } from '../map-edit.engine';
@@ -121,7 +122,7 @@ class VideoWorkerEngine {
 	private static gameModeEdit: boolean;
 	private static gameStarted: boolean;
 	private static initialized: boolean;
-	private static resolution: AssetImageSrcResolution;
+	private static quality: AssetImageSrcQuality;
 	private static self: Window & typeof globalThis;
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoBusInputCmdInit): Promise<void> {
@@ -139,7 +140,7 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
 		VideoWorkerEngine.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
 		VideoWorkerEngine.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
-		VideoWorkerEngine.resolution = data.resolution;
+		VideoWorkerEngine.quality = data.quality;
 		VideoWorkerEngine.self = self;
 
 		// Get contexts
@@ -170,6 +171,9 @@ class VideoWorkerEngine {
 		});
 		ClockCalcEngine.setCallbackHourOfDay((hourOfDayEff: number) => {
 			VideoWorkerEngine.outputHourOfDayEff(hourOfDayEff);
+		});
+		KernelEngine.setCallbackFPS((fps: number) => {
+			VideoWorkerEngine.outputFPS(fps);
 		});
 		VideoWorkerEngine.inputResize(data);
 		VideoWorkerEngine.inputSettings(data);
@@ -375,6 +379,10 @@ class VideoWorkerEngine {
 		UtilEngine.renderOverflowPEff = Math.round(UtilEngine.renderOverflowP * devicePixelRatio * 1000) / 1000;
 		KernelEngine.setDimension(height, width);
 
+		MapDrawEngine.scaler = resize.scaler;
+		MapDrawEngine.devicePixelRatio = devicePixelRatio;
+		MapDrawEngine.devicePixelRatioEff = Math.round((1 / devicePixelRatio) * 1000) / 1000;
+
 		VideoWorkerEngine.canvasOffscreenBackground.height = height;
 		VideoWorkerEngine.canvasOffscreenBackground.width = width;
 		VideoWorkerEngine.canvasOffscreenForeground.height = height;
@@ -531,6 +539,15 @@ class VideoWorkerEngine {
 				},
 			]);
 		}
+	}
+
+	public static outputFPS(fps: number): void {
+		VideoWorkerEngine.post([
+			{
+				cmd: VideoBusOutputCmd.FPS,
+				data: fps,
+			},
+		]);
 	}
 
 	public static outputHourOfDayEff(hourOfDayEff: number): void {

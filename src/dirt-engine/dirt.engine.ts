@@ -1,5 +1,5 @@
 // Imports
-import { AssetCollection, AssetDeclarations, AssetImageSrcResolution, AssetManifestMaster } from './models/asset.model';
+import { AssetCollection, AssetDeclarations, AssetImageSrcQuality, AssetManifestMaster } from './models/asset.model';
 import { AssetCache, AssetEngine } from './engines/asset.engine';
 import { AudioEngine } from './engines/audio.engine';
 import { AudioModulation } from './models/audio-modulation.model';
@@ -22,7 +22,7 @@ export {
 	AssetDeclarations,
 	AssetImage,
 	AssetImageSrc,
-	AssetImageSrcResolution,
+	AssetImageSrcQuality,
 	AssetImageType,
 	AssetMap,
 	AssetManifest,
@@ -60,6 +60,9 @@ export class DirtEngine extends DomUI {
 		DirtEngine.initialized = true;
 		DomUI.assetManifestMaster = AssetEngine.compileMasterManifest(assetDeclarations.manifest || <any>{});
 		DomUI.dom = dom;
+		DomUI.domUIFPSTarget = settings.fps;
+		DomUI.domUIFPSVisible = settings.fpsVisible;
+		DomUI.uiEditResolution = settings.resolution;
 		DomUI.domUIRumbleEnable = settings.screenShakeEnable;
 		DirtEngine.gameModeEditStart = gameModeEditStart;
 

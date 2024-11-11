@@ -1,5 +1,5 @@
 import { AssetCache, AssetEngine } from './asset.engine';
-import { AssetImage, AssetImageSrcResolution } from '../models/asset.model';
+import { AssetImage, AssetImageSrcQuality } from '../models/asset.model';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
 import { Grid, GridImageBlock } from '../models/grid.model';
 import { Camera } from '../models/camera.model';
@@ -29,14 +29,14 @@ export class LightingEngine {
 	private static initialized: boolean;
 	private static hourPreciseOfDayEff: number = 0;
 	private static mapActive: MapActive;
-	private static resolution: AssetImageSrcResolution;
+	private static quality: AssetImageSrcQuality;
 	private static timeForced: boolean;
 
 	private static buildBinaries(assetIds?: string[]): void {
 		let assetImage: AssetImage,
 			assetImages: { [key: string]: AssetImage } = AssetEngine.getAssetManifestMaster().images,
 			cacheInstance: LightingCacheInstance | undefined,
-			resolution: AssetImageSrcResolution = LightingEngine.resolution;
+			quality: AssetImageSrcQuality = LightingEngine.quality;
 
 		if (!assetIds) {
 			assetIds = LightingEngine.buildBinariesCollectAssetIds();
@@ -51,9 +51,9 @@ export class LightingEngine {
 				continue;
 			}
 
-			// Try to load target resolution
+			// Try to load target quality
 			for (let j in assetImage.srcs) {
-				if (assetImage.srcs[j].resolution === resolution) {
+				if (assetImage.srcs[j].quality === quality) {
 					cacheInstance = {
 						gHeight: assetImage.gHeight || 1,
 						gWidth: assetImage.gWidth || 1,
@@ -63,7 +63,7 @@ export class LightingEngine {
 				}
 			}
 
-			// Fill with lowest resolution if target resolution is missing
+			// Fill with lowest quality if target quality is missing
 			if (!cacheInstance) {
 				cacheInstance = {
 					gHeight: assetImage.gHeight || 1,
@@ -369,8 +369,8 @@ export class LightingEngine {
 		LightingEngine.mapActive = mapActive;
 	}
 
-	public static setResolution(resolution: AssetImageSrcResolution) {
-		LightingEngine.resolution = resolution;
+	public static setResolution(quality: AssetImageSrcQuality) {
+		LightingEngine.quality = quality;
 	}
 
 	public static setTimeForced(timeForced: boolean, camera?: Camera) {

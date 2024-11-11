@@ -10,6 +10,11 @@ import { UtilEngine } from '../engines/util.engine';
  */
 
 export class MapDrawEngine {
+	private static readonly backgroundRatio: number = 0.175;
+	private static backgroundPh: number;
+	private static backgroundPw: number;
+	private static backgroundPx: number;
+	private static backgroundPy: number;
 	private static cacheBackground: ImageBitmap;
 	private static cacheBackgroundHashP: number;
 	private static cacheCameraLines: ImageBitmap;
@@ -24,11 +29,10 @@ export class MapDrawEngine {
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	private static mapActiveGridConfig: GridConfig;
-	private static readonly backgroundRatio: number = 0.175;
-	private static backgroundPh: number;
-	private static backgroundPw: number;
-	private static backgroundPx: number;
-	private static backgroundPy: number;
+	public static resolution: null | number;
+	public static scaler: number;
+	public static devicePixelRatio: number;
+	public static devicePixelRatioEff: number;
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
@@ -59,17 +63,17 @@ export class MapDrawEngine {
 		MapDrawEngine.cacheZoom = -1;
 	}
 
-	public static moveToPx(px: number, py: number): void {
-		let xRel: number = Math.round(
-				((px - MapDrawEngine.backgroundPx + UtilEngine.renderOverflowPEff) / MapDrawEngine.backgroundPw) * 1000,
-			),
-			yRel: number = Math.round(
-				((py - MapDrawEngine.backgroundPy + UtilEngine.renderOverflowPEff) / MapDrawEngine.backgroundPh) * 1000,
-			);
+	public static moveToPx(xRel: number, yRel: number): void {
+		let camera: Camera = MapDrawEngine.mapActiveCamera,
+			px: number = Math.round((camera.viewportPx + camera.viewportPw * xRel) * MapDrawEngine.devicePixelRatioEff),
+			py: number = Math.round((camera.viewportPy + camera.viewportPh * yRel) * MapDrawEngine.devicePixelRatioEff);
+
+		xRel = (px - MapDrawEngine.backgroundPx) / MapDrawEngine.backgroundPw;
+		yRel = (py - MapDrawEngine.backgroundPy) / MapDrawEngine.backgroundPh;
 
 		CameraEngine.moveG(
-			Math.round(MapDrawEngine.mapActiveGridConfig.gWidth * xRel) / 1000,
-			Math.round(MapDrawEngine.mapActiveGridConfig.gHeight * yRel) / 1000,
+			Math.round(MapDrawEngine.mapActiveGridConfig.gWidth * xRel * 1000) / 1000,
+			Math.round(MapDrawEngine.mapActiveGridConfig.gHeight * yRel * 1000) / 1000,
 		);
 	}
 
@@ -78,10 +82,13 @@ export class MapDrawEngine {
 
 		// calcs
 		let camera: Camera = MapDrawEngine.mapActiveCamera;
+
 		MapDrawEngine.backgroundPh = Math.round(camera.viewportPh * MapDrawEngine.backgroundRatio);
 		MapDrawEngine.backgroundPw = Math.round(camera.viewportPw * MapDrawEngine.backgroundRatio);
-		MapDrawEngine.backgroundPx = camera.viewportPx2 - MapDrawEngine.backgroundPw - UtilEngine.renderOverflowPEff;
-		MapDrawEngine.backgroundPy = camera.viewportPy + UtilEngine.renderOverflowPEff;
+		MapDrawEngine.backgroundPx = Math.round(
+			camera.viewportPx2 - MapDrawEngine.backgroundPw - UtilEngine.renderOverflowPEff / MapDrawEngine.scaler,
+		);
+		MapDrawEngine.backgroundPy = Math.round(camera.viewportPy + UtilEngine.renderOverflowPEff / MapDrawEngine.scaler);
 
 		/*
 		 * Background
@@ -99,6 +106,7 @@ export class MapDrawEngine {
 			// Canvas
 			cacheCanvas = new OffscreenCanvas(backgroundPw, backgroundPh);
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
+			ctx.imageSmoothingEnabled = false;
 
 			// Background
 			ctx.fillStyle = 'rgba(0,0,0,.5)';
@@ -165,8 +173,8 @@ export class MapDrawEngine {
 
 			// Calc eff
 			ghRelScaledEffB = gyRelScaled + Math.round(ghRelScaled * 0.3);
-			ghRelScaledEffL = gxRelScaled + Math.round(gwRelScaled * 0.2);
-			ghRelScaledEffR = gxRelScaled + Math.round(gwRelScaled * 0.8);
+			ghRelScaledEffL = gxRelScaled + Math.round(gwRelScaled * 0.16875);
+			ghRelScaledEffR = gxRelScaled + Math.round(gwRelScaled * 0.83125);
 			ghRelScaledEffT = gyRelScaled + Math.round(ghRelScaled * 0.7);
 			gxRelScaledEff = gxRelScaled + gwRelScaled;
 			gyRelScaledEff = gyRelScaled + ghRelScaled;
@@ -238,9 +246,11 @@ export class MapDrawEngine {
 		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
 	}
 
-	public static isPixelInMap(px: number, py: number): boolean {
-		px += UtilEngine.renderOverflowPEff;
-		py += UtilEngine.renderOverflowPEff;
+	public static isPixelInMap(xRel: number, yRel: number): boolean {
+		let camera: Camera = MapDrawEngine.mapActiveCamera,
+			px: number = Math.round((camera.viewportPx + camera.viewportPw * xRel) * MapDrawEngine.devicePixelRatioEff),
+			py: number = Math.round((camera.viewportPy + camera.viewportPh * yRel) * MapDrawEngine.devicePixelRatioEff);
+
 		if (
 			px >= MapDrawEngine.backgroundPx &&
 			py >= MapDrawEngine.backgroundPy &&

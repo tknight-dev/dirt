@@ -195,7 +195,7 @@ class MapDrawWorkerEngine {
 				outside: boolean = gridConfig.outside,
 				radius: number,
 				radius2: number,
-				resolutionMultiple: number = 4,
+				qualityMultiple: number = 4,
 				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
 				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
 				scratch: number,
@@ -210,18 +210,18 @@ class MapDrawWorkerEngine {
 			// Config
 			canvas.height = canvasHeight;
 			canvas.width = canvasWidth;
-			canvasTmp.height = canvasTmpGh * resolutionMultiple;
-			canvasTmp.width = canvasTmpGw * resolutionMultiple;
+			canvasTmp.height = canvasTmpGh * qualityMultiple;
+			canvasTmp.width = canvasTmpGw * qualityMultiple;
 			ctx.imageSmoothingEnabled = false;
 			ctxTmp.imageSmoothingEnabled = false;
 
 			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
 
-			canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
-			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
-			gHeightMaxEff = gHeightMax * resolutionMultiple;
-			gWidthMaxEff = gWidthMax * resolutionMultiple;
-			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple);
+			canvasTmpGhEff = canvasTmpGh * qualityMultiple;
+			canvasTmpGwEff = canvasTmpGw * qualityMultiple;
+			gHeightMaxEff = gHeightMax * qualityMultiple;
+			gWidthMaxEff = gWidthMax * qualityMultiple;
+			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * qualityMultiple);
 			radius2 = radius * 2;
 
 			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
@@ -277,8 +277,8 @@ class MapDrawWorkerEngine {
 
 									ctxTmp.drawImage(
 										imageBitmap,
-										Math.round((<any>complex.gx - gWidth) * resolutionMultiple),
-										Math.round((<any>complex.gy - gHeight) * resolutionMultiple),
+										Math.round((<any>complex.gx - gWidth) * qualityMultiple),
+										Math.round((<any>complex.gy - gHeight) * qualityMultiple),
 									);
 								}
 							}
@@ -291,8 +291,8 @@ class MapDrawWorkerEngine {
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 								// "Cut Out" viewport from foreground layer to make the under layers visible to the person
 								if (foregroundViewerEnable) {
-									x = Math.round((camera.gx - gWidth) * resolutionMultiple);
-									y = Math.round((camera.gy - gHeight) * resolutionMultiple);
+									x = Math.round((camera.gx - gWidth) * qualityMultiple);
+									y = Math.round((camera.gy - gHeight) * qualityMultiple);
 
 									gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
 									gradient.addColorStop(0, 'white');

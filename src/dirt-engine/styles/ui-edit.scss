@@ -2,9 +2,10 @@
  * @author tknight-dev
  */
 
+$dirt-engine-color-blue: rgb(42, 67, 176);
 $dirt-engine-color-green: rgb(67, 176, 42);
 $dirt-engine-color-red: rgb(176, 42, 67);
-$dirt-engine-color-blue: rgb(42, 67, 176);
+$dirt-engine-color-yellow: rgb(176, 176, 42);
 $dirt-engine-controls-height: 50px;
 $dirt-engine-ui-edit-button-height: 40px;
 $dirt-engine-ui-edit-button-width: 40px;
@@ -123,6 +124,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.application,
 	&.copy,
 	&.grid,
+	&.fps,
 	&.inspect,
 	&.map,
 	&.palette,
@@ -330,6 +332,26 @@ $dirt-engine-ui-edit-button-width: 40px;
 			}
 			.header {
 			}
+		}
+	}
+
+	&.fps {
+		background-color: transparent;
+		border: none;
+		box-shadow: none;
+		color: $dirt-engine-color-green;
+		font-weight: bold;
+		font-size: 28px;
+		left: 10px;
+		pointer-events: none;
+		top: 10px;
+
+		&.bad {
+			color: $dirt-engine-color-red;
+		}
+
+		&.warn {
+			color: $dirt-engine-color-yellow;
 		}
 	}
 

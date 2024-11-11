@@ -37,17 +37,17 @@ export interface AssetDeclarations {
 export interface AssetImage extends Asset {
 	gHeight?: number;
 	gWidth?: number;
-	srcs: AssetImageSrc[]; // requires atleast one, missing resolutions will load from a smaller resolution, smallest first
+	srcs: AssetImageSrc[]; // requires atleast one, missing qualitys will load from a smaller quality, smallest first
 	type: AssetImageType;
 }
 
 export interface AssetImageSrc {
 	collection: AssetCollection;
-	resolution: AssetImageSrcResolution;
+	quality: AssetImageSrcQuality;
 	src: string;
 }
 
-export enum AssetImageSrcResolution {
+export enum AssetImageSrcQuality {
 	LOW,
 	MEDIUM,
 	HIGH,

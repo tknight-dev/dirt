@@ -42,14 +42,14 @@ export class ClockCalcEngine {
 	}
 
 	/**
-	 * Low resolution
+	 * Low quality
 	 */
 	public static setCallbackHourOfDay(callbackHourOfDay: (hourOfDayEff: number) => void) {
 		ClockCalcEngine.callbackHourOfDay = callbackHourOfDay;
 	}
 
 	/**
-	 * High resolution
+	 * High quality
 	 */
 	public static setCallbackMinuteOfDay(callbackMinuteOfDay: (hourOfDayEff: number, minuteOfDayEff: number) => void) {
 		ClockCalcEngine.callbackMinuteOfDay = callbackMinuteOfDay;

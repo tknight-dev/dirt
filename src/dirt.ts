@@ -1,6 +1,6 @@
 import {
 	AssetDeclarations,
-	AssetImageSrcResolution,
+	AssetImageSrcQuality,
 	AssetManifest,
 	DirtEngine,
 	VideoBusInputCmdSettings,
@@ -37,7 +37,9 @@ class Dirt {
 				fps: VideoBusInputCmdSettingsFPS._60,
 				fpsVisible: true,
 				mapVisible: true,
-				resolution: AssetImageSrcResolution.HIGH,
+				quality: AssetImageSrcQuality.HIGH,
+				resolution: null,
+				//resolution: 640,
 				screenShakeEnable: true, // Screen rumble (earthquake, proximity to explosion)
 			};
 
