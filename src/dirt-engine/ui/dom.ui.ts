@@ -25,6 +25,7 @@ import {
 import { Map, MapActive, MapConfig } from '../models/map.model';
 import { MapEditEngine } from '../engines/map-edit.engine';
 import { MouseAction, MouseEngine } from '../engines/mouse.engine';
+import { TouchAction } from '../engines/touch.engine';
 import { UtilEngine } from '../engines/util.engine';
 import {
 	VideoBusInputCmdGameModeEditApply,
@@ -1345,7 +1346,7 @@ export class DomUI {
 		VideoEngineBus.outputMapLoadById(assetMapId);
 	}
 
-	public static editMouseDown(mouseAction: MouseAction): void {
+	public static editMouseDown(action: MouseAction | TouchAction): void {
 		if (!DomUI.uiEditCursorReady) {
 			let classList: DOMTokenList = DomUI.domElements['feed-fitted'].classList;
 
@@ -1353,7 +1354,7 @@ export class DomUI {
 				DomUI.editMouseDownSelectMenu(
 					true,
 					MapEditEngine.getGridProperty(
-						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
+						MapEditEngine.uiRelXYToGBlockHash(action),
 						DomUI.uiEditView,
 						<VideoBusInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
 					),
@@ -1362,7 +1363,7 @@ export class DomUI {
 				DomUI.editMouseDownSelectMenu(
 					false,
 					MapEditEngine.getGridProperty(
-						MapEditEngine.uiRelXYToGBlockHash(mouseAction),
+						MapEditEngine.uiRelXYToGBlockHash(action),
 						DomUI.uiEditView,
 						<VideoBusInputCmdGameModeEditApplyZ>DomUI.uiEditZ,
 					),
@@ -1380,7 +1381,7 @@ export class DomUI {
 			MapEditEngine.setApplyGroup(true);
 		});
 
-		let hash: number = MapEditEngine.uiRelXYToGBlockHash(mouseAction);
+		let hash: number = MapEditEngine.uiRelXYToGBlockHash(action);
 		DomUI.uiEditMouseCmdCollection.pushEnd(hash);
 		DomUI.uiEditMouseCmdCollectionHashesOrigin[hash] = null;
 
@@ -1474,11 +1475,11 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'flex';
 	}
 
-	public static editMouseMove(mouseAction: MouseAction): void {
+	public static editMouseMove(action: MouseAction | TouchAction): void {
 		if (!DomUI.uiEditMouseCmdCollectionEngaged) {
 			return;
 		}
-		let hash: number = MapEditEngine.uiRelXYToGBlockHash(mouseAction);
+		let hash: number = MapEditEngine.uiRelXYToGBlockHash(action);
 
 		// Only add unique origins (don't recalc what's already been done)
 		if (DomUI.uiEditMouseCmdCollectionHashesOrigin[hash] === undefined) {

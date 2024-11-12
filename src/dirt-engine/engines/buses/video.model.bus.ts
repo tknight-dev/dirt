@@ -10,8 +10,9 @@ import {
 	GridLight,
 } from '../../models/grid.model';
 import { KeyAction } from '../keyboard.engine';
-import { Map, MapActive, MapConfig } from '../../models/map.model';
+import { MapActive, MapConfig } from '../../models/map.model';
 import { MouseAction } from '../mouse.engine';
+import { TouchAction } from '../touch.engine';
 
 /**
  * Defines input and output date types for the communication bus between the UI thread and the VideoBus thread
@@ -43,6 +44,7 @@ export enum VideoBusInputCmd {
 	MOUSE,
 	RESIZE,
 	SETTINGS,
+	TOUCH,
 }
 
 export interface VideoBusInputCmdInit extends VideoBusInputCmdResize, VideoBusInputCmdSettings {
@@ -177,6 +179,7 @@ export interface VideoBusPayload {
 		| KeyAction
 		| MapConfig
 		| MouseAction
+		| TouchAction
 		| VideoBusInputCmdGameModeEdit
 		| VideoBusInputCmdGameModeEditApply
 		| VideoBusInputCmdGamePause

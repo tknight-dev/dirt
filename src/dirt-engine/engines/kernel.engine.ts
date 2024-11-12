@@ -14,6 +14,7 @@ import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction, MouseCmd } from './mouse.engine';
+import { TouchAction, TouchCmd } from './touch.engine';
 import { UtilEngine } from './util.engine';
 import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings, VideoBusInputCmdSettingsFPS } from '../engines/buses/video.model.bus';
 
@@ -41,6 +42,10 @@ export class KernelEngine {
 	private static timestampNow: number;
 	private static timestampThen: number = performance.now();
 	private static timestampThenCamera: number = performance.now();
+	private static touchDistanceActive: boolean;
+	private static touchDistanceOrig: number;
+	private static touchDistanceOrigX: number;
+	private static touchDistanceOrigY: number;
 
 	public static async initialize(
 		ctxBackground: OffscreenCanvasRenderingContext2D,
@@ -123,6 +128,58 @@ export class KernelEngine {
 					CameraEngine.zoom(false);
 				} else {
 					CameraEngine.zoom(true);
+				}
+			}
+		}
+	}
+
+	public static inputTouch(action: TouchAction): void {
+		if (KernelEngine.status) {
+			if (action.cmd == TouchCmd.ZOOM) {
+				if (action.down) {
+					KernelEngine.touchDistanceActive = true;
+					KernelEngine.touchDistanceOrig = <number>action.positions[0].distance;
+					KernelEngine.touchDistanceOrigX = <number>action.positions[0].x;
+					KernelEngine.touchDistanceOrigY = <number>action.positions[0].y;
+				} else {
+					KernelEngine.touchDistanceActive = false;
+				}
+			} else if (action.cmd == TouchCmd.ZOOM_MOVE && KernelEngine.touchDistanceActive) {
+				let distance: number = <number>action.positions[0].distance,
+					x: number = <number>action.positions[0].x,
+					y: number = <number>action.positions[0].y,
+					absX: number = Math.abs(KernelEngine.touchDistanceOrigX - x),
+					absY: number = Math.abs(KernelEngine.touchDistanceOrigY - y),
+					absZoom: number = Math.abs(KernelEngine.touchDistanceOrig - distance);
+
+				// Move X
+				if (absX > 40) {
+					if (KernelEngine.touchDistanceOrigX - x > 0) {
+						CameraEngine.moveIncremental(1, 0);
+					} else {
+						CameraEngine.moveIncremental(-1, 0);
+					}
+					KernelEngine.touchDistanceOrigX = x;
+				}
+
+				// Move Y
+				if (absY > 40) {
+					if (KernelEngine.touchDistanceOrigY - y > 0) {
+						CameraEngine.moveIncremental(0, 1);
+					} else {
+						CameraEngine.moveIncremental(0, -1);
+					}
+					KernelEngine.touchDistanceOrigY = y;
+				}
+
+				// Zoom
+				if (absZoom > 40) {
+					if (KernelEngine.touchDistanceOrig - distance > 0) {
+						CameraEngine.zoom(false);
+					} else {
+						CameraEngine.zoom(true);
+					}
+					KernelEngine.touchDistanceOrig = distance;
 				}
 			}
 		}

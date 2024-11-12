@@ -8,6 +8,7 @@ import { AudioModulation } from '../../models/audio-modulation.model';
 import { KeyAction, KeyCommon } from '../keyboard.engine';
 import { Map, MapActive, MapConfig } from '../../models/map.model';
 import { MouseAction } from '../mouse.engine';
+import { TouchAction } from '../touch.engine';
 import { ResizeEngine } from '../resize.engine';
 import {
 	VideoBusInputCmd,
@@ -300,41 +301,6 @@ export class VideoEngineBus {
 		};
 	}
 
-	public static outputKey(keyAction: KeyAction): void {
-		VideoEngineBus.worker.postMessage({
-			cmd: VideoBusInputCmd.KEY,
-			data: keyAction,
-		});
-	}
-
-	public static outputMouse(action: MouseAction): void {
-		VideoEngineBus.worker.postMessage({
-			cmd: VideoBusInputCmd.MOUSE,
-			data: action,
-		});
-	}
-
-	public static outputMapLoad(file: string): void {
-		VideoEngineBus.worker.postMessage({
-			cmd: VideoBusInputCmd.MAP_LOAD,
-			data: {
-				data: file,
-			},
-		});
-	}
-
-	/**
-	 * @param id undefined indicates a new map
-	 */
-	public static outputMapLoadById(id: string | undefined): void {
-		VideoEngineBus.worker.postMessage({
-			cmd: VideoBusInputCmd.MAP_LOAD_BY_ID,
-			data: {
-				id: id,
-			},
-		});
-	}
-
 	public static outputGameModeEdit(edit: VideoBusInputCmdGameModeEdit): void {
 		VideoEngineBus.worker.postMessage({
 			cmd: VideoBusInputCmd.GAME_MODE_EDIT,
@@ -433,10 +399,52 @@ export class VideoEngineBus {
 		});
 	}
 
+	public static outputKey(keyAction: KeyAction): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.KEY,
+			data: keyAction,
+		});
+	}
+
+	public static outputMapLoad(file: string): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.MAP_LOAD,
+			data: {
+				data: file,
+			},
+		});
+	}
+
+	/**
+	 * @param id undefined indicates a new map
+	 */
+	public static outputMapLoadById(id: string | undefined): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.MAP_LOAD_BY_ID,
+			data: {
+				id: id,
+			},
+		});
+	}
+
+	public static outputMouse(action: MouseAction): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.MOUSE,
+			data: action,
+		});
+	}
+
 	public static outputSettings(settings: VideoBusInputCmdSettings): void {
 		VideoEngineBus.worker.postMessage({
 			cmd: VideoBusInputCmd.SETTINGS,
 			data: settings,
+		});
+	}
+
+	public static outputTouch(action: TouchAction): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.TOUCH,
+			data: action,
 		});
 	}
 

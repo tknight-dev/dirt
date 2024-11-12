@@ -10,6 +10,7 @@ import { MapEditEngine } from './engines/map-edit.engine';
 import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
 import { Orientation, OrientationEngine } from './engines/orientation.engine';
 import { ResizeEngine } from './engines/resize.engine';
+import { TouchAction, TouchCmd, TouchEngine } from './engines/touch.engine';
 import { VideoBusInputCmdGamePauseReason, VideoBusInputCmdSettings } from './engines/buses/video.model.bus';
 import { VideoEngineBus } from './engines/buses/video.engine.bus';
 import { VisibilityEngine } from './engines/visibility.engine';
@@ -94,6 +95,7 @@ export class DirtEngine extends DomUI {
 		await MouseEngine.initialize(DirtEngine.domElements['feed-fitted']);
 		await OrientationEngine.initialize();
 		await ResizeEngine.initialize();
+		await TouchEngine.initialize(DirtEngine.domElements['feed-fitted']);
 		await VisibilityEngine.initialize();
 
 		// Hooks
@@ -391,6 +393,27 @@ export class DirtEngine extends DomUI {
 							DomUI.editMouseUp();
 						}
 					} else if (action.cmd === MouseCmd.MOVE) {
+						DomUI.editMouseMove(action);
+					}
+				}
+			}
+		});
+
+		// Touch
+		TouchEngine.setCallback((action: TouchAction) => {
+			if (DirtEngine.gameStarted) {
+				VideoEngineBus.outputTouch(action);
+
+				//DomUI.domElements['feed-fitted'].innerText = String(action.positions[0].distance) + ', ' + String(action.positions[0].distanceRel);
+
+				if (DirtEngine.uiEditMode && MapEditEngine.uiLoaded && action.elementId === DomUI.domElements['feed-fitted'].id) {
+					if (action.cmd === TouchCmd.LEFT) {
+						if (action.down) {
+							DomUI.editMouseDown(action);
+						} else {
+							DomUI.editMouseUp();
+						}
+					} else if (action.cmd === TouchCmd.LEFT_MOVE) {
 						DomUI.editMouseMove(action);
 					}
 				}

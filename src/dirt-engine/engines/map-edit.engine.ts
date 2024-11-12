@@ -14,6 +14,7 @@ import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction } from './mouse.engine';
+import { TouchAction } from './touch.engine';
 import {
 	VideoBusInputCmdGameModeEditApply,
 	VideoBusInputCmdGameModeEditApplyAudioBlock,
@@ -546,17 +547,22 @@ export class MapEditEngine {
 	/**
 	 * Only for initial grid block positions (precision 0)
 	 */
-	public static uiRelXYToGBlockHash(mouseAction: MouseAction): number {
-		let camera: Camera = MapEditEngine.mapActiveUI.camera;
+	public static uiRelXYToGBlockHash(action: MouseAction | TouchAction): number {
+		let camera: Camera = MapEditEngine.mapActiveUI.camera,
+			position: any;
+
+		if ((<TouchAction>action).positions) {
+			position = (<TouchAction>action).positions[0];
+		} else {
+			position = (<MouseAction>action).position;
+		}
 
 		return UtilEngine.gridHashTo(
 			Math.floor(
-				(camera.viewportPx + camera.viewportPw * mouseAction.position.xRel) / camera.gInPw / window.devicePixelRatio +
-					camera.viewportGx,
+				(camera.viewportPx + camera.viewportPw * position.xRel) / camera.gInPw / window.devicePixelRatio + camera.viewportGx,
 			),
 			Math.floor(
-				(camera.viewportPy + camera.viewportPh * mouseAction.position.yRel) / camera.gInPh / window.devicePixelRatio +
-					camera.viewportGy,
+				(camera.viewportPy + camera.viewportPh * position.yRel) / camera.gInPh / window.devicePixelRatio + camera.viewportGy,
 			),
 		);
 	}

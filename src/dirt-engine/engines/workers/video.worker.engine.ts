@@ -13,6 +13,7 @@ import { MapDrawEngineBus } from '../../draw/buses/map.draw.engine.bus';
 import { MapEngine } from '../map.engine';
 import { MapEditEngine } from '../map-edit.engine';
 import { MouseAction } from '../mouse.engine';
+import { TouchAction } from '../touch.engine';
 import { UtilEngine } from '../util.engine';
 import {
 	VideoBusInputCmd,
@@ -103,6 +104,9 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case VideoBusInputCmd.SETTINGS:
 			VideoWorkerEngine.inputSettings(<VideoBusInputCmdSettings>videoBusPayload.data);
+			break;
+		case VideoBusInputCmd.TOUCH:
+			KernelEngine.inputTouch(<TouchAction>videoBusPayload.data);
 			break;
 	}
 };
