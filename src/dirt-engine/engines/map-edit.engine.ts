@@ -134,8 +134,10 @@ export class MapEditEngine {
 			imageBlocks = grid.imageBlocksBackground;
 		} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
 			imageBlocks = grid.imageBlocksForeground;
-		} else {
+		} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			imageBlocks = grid.imageBlocksPrimary;
+		} else {
+			imageBlocks = grid.imageBlocksVanishing;
 		}
 
 		// Apply
@@ -175,7 +177,6 @@ export class MapEditEngine {
 			gHashes: number[] = apply.gHashes,
 			gHashesOverwritten: number[],
 			grid: Grid,
-			imageBlock: GridImageBlock,
 			imageBlocks: GridBlockTable<GridImageBlock>,
 			properties: any = JSON.parse(JSON.stringify(apply)),
 			x: number,
@@ -193,8 +194,10 @@ export class MapEditEngine {
 			imageBlocks = grid.imageBlocksBackground;
 		} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
 			imageBlocks = grid.imageBlocksForeground;
-		} else {
+		} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			imageBlocks = grid.imageBlocksPrimary;
+		} else {
+			imageBlocks = grid.imageBlocksVanishing;
 		}
 
 		if (imageBlocks.hashes === undefined) {
@@ -279,6 +282,7 @@ export class MapEditEngine {
 			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksBackground);
 			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksForeground);
 			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksPrimary);
+			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksVanishing);
 		});
 		return map;
 	}
@@ -299,6 +303,7 @@ export class MapEditEngine {
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksBackground);
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksForeground);
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksPrimary);
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishing);
 		});
 		return map;
 	}
@@ -725,8 +730,10 @@ export class MapEditEngine {
 					imageBlockHashes = mapActive.gridActive.imageBlocksBackground.hashes;
 				} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
 					imageBlockHashes = mapActive.gridActive.imageBlocksForeground.hashes;
-				} else {
+				} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 					imageBlockHashes = mapActive.gridActive.imageBlocksPrimary.hashes;
+				} else {
+					imageBlockHashes = mapActive.gridActive.imageBlocksVanishing.hashes;
 				}
 
 				if (!imageBlockHashes) {

@@ -54,6 +54,7 @@ export interface VideoBusInputCmdInit extends VideoBusInputCmdResize, VideoBusIn
 	canvasOffscreenOverlay: OffscreenCanvas;
 	canvasOffscreenPrimary: OffscreenCanvas;
 	canvasOffscreenUnderlay: OffscreenCanvas;
+	canvasOffscreenVanishing: OffscreenCanvas;
 }
 
 export interface VideoBusInputCmdMapLoad {
@@ -74,6 +75,7 @@ export interface VideoBusInputCmdResize {
 
 export interface VideoBusInputCmdGameModeEdit {
 	edit: boolean;
+	vanishingEnable: boolean;
 }
 
 export interface VideoBusInputCmdGameModeEditApply {
@@ -121,6 +123,7 @@ export enum VideoBusInputCmdGameModeEditApplyZ {
 	BACKGROUND,
 	FOREGROUND,
 	PRIMARY,
+	VANISHING,
 }
 
 export enum VideoBusInputCmdGameModeEditApplyView {
@@ -130,8 +133,8 @@ export enum VideoBusInputCmdGameModeEditApplyView {
 }
 
 export interface VideoBusInputCmdGameModeEditDraw {
-	foregroundViewer: boolean;
 	grid: boolean;
+	vanishingEnable: boolean;
 }
 
 export interface VideoBusInputCmdGameModePlay {}
@@ -156,13 +159,13 @@ export interface VideoBusInputCmdGameStart {
 
 export interface VideoBusInputCmdSettings {
 	darknessMax: number; // between 0 and 1, 1 is totally black, default is .8 (Precision 3)
-	foregroundViewerPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
 	fps: VideoBusInputCmdSettingsFPS;
 	fpsVisible: boolean;
 	mapVisible: boolean;
 	quality: AssetImageSrcQuality;
 	resolution: null | 256 | 384 | 512 | 640 | 1280 | 1920; // null is native resolution
 	screenShakeEnable: boolean;
+	vanishingPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
 }
 
 export enum VideoBusInputCmdSettingsFPS {

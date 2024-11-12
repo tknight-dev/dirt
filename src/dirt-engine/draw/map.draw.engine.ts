@@ -42,6 +42,7 @@ export class MapDrawEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (MapDrawEngine.initialized) {
 			console.error('MapDrawEngine > initialize: already initialized');

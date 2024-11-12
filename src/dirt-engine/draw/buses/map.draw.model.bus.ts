@@ -70,9 +70,9 @@ export interface MapDrawBusInputPlayloadResolution {
 
 export interface MapDrawBusInputPlayloadSettings {
 	darknessMax: number;
-	foregroundViewerEnable: boolean;
-	foregroundViewerPercentageOfViewport: number;
 	mapVisible: boolean;
+	vanishingEnable: boolean;
+	vanishingPercentageOfViewport: number;
 }
 
 export interface MapDrawBusInputPlayloadTimeForced {

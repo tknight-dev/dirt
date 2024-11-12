@@ -33,7 +33,6 @@ class Dirt {
 			domGame: HTMLElement = <HTMLElement>document.getElementById('game'),
 			settings: VideoBusInputCmdSettings = {
 				darknessMax: 0.7,
-				foregroundViewerPercentageOfViewport: 1.5,
 				fps: VideoBusInputCmdSettingsFPS._60,
 				fpsVisible: true,
 				mapVisible: true,
@@ -41,6 +40,7 @@ class Dirt {
 				resolution: null,
 				//resolution: 640,
 				screenShakeEnable: true, // Screen rumble (earthquake, proximity to explosion)
+				vanishingPercentageOfViewport: 1.5,
 			};
 
 		DirtEngine.initialize(assetDeclarations, domGame, true, true, settings);

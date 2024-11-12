@@ -123,6 +123,8 @@ class VideoWorkerEngine {
 	private static canvasOffscreenPrimaryContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenUnderlay: OffscreenCanvas; // Z-1
 	private static canvasOffscreenUnderlayContext: OffscreenCanvasRenderingContext2D;
+	private static canvasOffscreenVanishing: OffscreenCanvas; // Z-1
+	private static canvasOffscreenVanishingContext: OffscreenCanvasRenderingContext2D;
 	private static gameModeEdit: boolean;
 	private static gameStarted: boolean;
 	private static initialized: boolean;
@@ -144,6 +146,7 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
 		VideoWorkerEngine.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
 		VideoWorkerEngine.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
+		VideoWorkerEngine.canvasOffscreenVanishing = data.canvasOffscreenVanishing;
 		VideoWorkerEngine.quality = data.quality;
 		VideoWorkerEngine.self = self;
 
@@ -153,6 +156,7 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenVanishingContext = <any>VideoWorkerEngine.canvasOffscreenVanishing.getContext('2d');
 
 		// Engines
 		await AssetEngine.initialize(data.assetDeclarations, AssetCollection.VIDEO);
@@ -164,6 +168,7 @@ class VideoWorkerEngine {
 			VideoWorkerEngine.canvasOffscreenOverlayContext,
 			VideoWorkerEngine.canvasOffscreenPrimaryContext,
 			VideoWorkerEngine.canvasOffscreenUnderlayContext,
+			VideoWorkerEngine.canvasOffscreenVanishingContext,
 		);
 		await LightingEngine.initialize();
 		await MapEngine.initialize();
@@ -219,7 +224,7 @@ class VideoWorkerEngine {
 	}
 
 	public static inputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
-		MapDrawEngineBus.setForegroundViewer(apply.foregroundViewer);
+		MapDrawEngineBus.setVanishingEnable(apply.vanishingEnable);
 		KernelEngine.draw(apply);
 		VideoWorkerEngine.post([
 			{
@@ -395,14 +400,15 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenPrimary.width = width;
 		VideoWorkerEngine.canvasOffscreenUnderlay.height = height;
 		VideoWorkerEngine.canvasOffscreenUnderlay.width = width;
+		VideoWorkerEngine.canvasOffscreenVanishing.height = height;
+		VideoWorkerEngine.canvasOffscreenVanishing.width = width;
 	}
 
 	public static inputSettings(settings: VideoBusInputCmdSettings): void {
 		console.log('VideoBusWorker > settings', settings);
 
 		settings.darknessMax = Math.round(Math.max(0, Math.min(1, settings.darknessMax)) * 1000) / 1000;
-		settings.foregroundViewerPercentageOfViewport =
-			Math.round(Math.max(0, Math.min(2, settings.foregroundViewerPercentageOfViewport)) * 1000) / 1000;
+		settings.vanishingPercentageOfViewport = Math.round(Math.max(0, Math.min(2, settings.vanishingPercentageOfViewport)) * 1000) / 1000;
 
 		KernelEngine.updateSettings(settings);
 	}

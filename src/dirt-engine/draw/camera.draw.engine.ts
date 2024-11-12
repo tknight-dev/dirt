@@ -23,6 +23,7 @@ export class CameraDrawEngine {
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
+	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
@@ -35,13 +36,14 @@ export class CameraDrawEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (CameraDrawEngine.initialized) {
 			console.error('CameraDrawEngine > initialize: already initialized');
 			return;
 		}
 		CameraDrawEngine.initialized = true;
-		CameraDrawEngine.ctxOverlay = ctxOverlay;
+		CameraDrawEngine.ctxPrimary = ctxPrimary;
 	}
 
 	public static cacheReset(): void {
@@ -122,7 +124,7 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cacheZoom = camera.zoom;
 		}
 
-		CameraDrawEngine.ctxOverlay.drawImage(CameraDrawEngine.cache, CameraDrawEngine.cachePositionPx, CameraDrawEngine.cachePositionPy);
+		CameraDrawEngine.ctxPrimary.drawImage(CameraDrawEngine.cache, CameraDrawEngine.cachePositionPx, CameraDrawEngine.cachePositionPy);
 	}
 
 	public static setMapActive(mapActive: MapActive) {

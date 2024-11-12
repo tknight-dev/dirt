@@ -24,6 +24,7 @@ export class ImageBlockDrawEngine {
 	private static cacheBackground: ImageBitmap;
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
+	private static cacheVanishing: ImageBitmap;
 	private static cacheHashG: number;
 	private static cacheHashP: number;
 	private static cacheHashCheckG: number;
@@ -33,12 +34,13 @@ export class ImageBlockDrawEngine {
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static drawNull: boolean;
-	private static foregroundViewerEnable: boolean = true;
-	private static foregroundViewerPercentageOfViewport: number;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
+	private static vanishingEnable: boolean;
+	private static vanishingPercentageOfViewport: number;
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[];
 	// private static count: number = 0;
 	// private static sum: number = 0;
@@ -49,6 +51,7 @@ export class ImageBlockDrawEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (ImageBlockDrawEngine.initialized) {
 			console.error('ImageBlockDrawEngine > initialize: already initialized');
@@ -59,11 +62,13 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxBackground = ctxBackground;
 		ImageBlockDrawEngine.ctxForeground = ctxForeground;
 		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
+		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
 
 		ImageBlockDrawEngine.zGroup = [
-			VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // Must be first
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
 			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
+			VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // After foreground
+			VideoBusInputCmdGameModeEditApplyZ.VANISHING,
 		];
 	}
 
@@ -94,8 +99,9 @@ export class ImageBlockDrawEngine {
 				extended: boolean,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
-				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
+				extendedHashPrimary: { [key: number]: null } = {},
+				extendedHashVanishing: { [key: number]: null } = {},
 				getAssetImageLit: any = LightingEngine.getAssetImageLit,
 				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
 				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
@@ -109,6 +115,7 @@ export class ImageBlockDrawEngine {
 				gy: number,
 				gyMin: number,
 				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
+				hashesGyByGxForeground: { [key: number]: GridBlockTableComplex[] } = {},
 				imageBitmap: ImageBitmap,
 				imageBitmaps: ImageBitmap[],
 				imageBlocks: GridBlockTable<GridImageBlock>,
@@ -132,7 +139,7 @@ export class ImageBlockDrawEngine {
 			// Config
 			ctx.imageSmoothingEnabled = false;
 			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
-			radius = Math.round(((camera.viewportPh / 2) * ImageBlockDrawEngine.foregroundViewerPercentageOfViewport) / camera.zoom);
+			radius = Math.round(((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom);
 			radius2 = radius * 2;
 
 			/*
@@ -154,6 +161,10 @@ export class ImageBlockDrawEngine {
 						extendedHash = extendedHashPrimary;
 						imageBlocks = grid.imageBlocksPrimary;
 						break;
+					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+						extendedHash = extendedHashVanishing;
+						imageBlocks = grid.imageBlocksVanishing;
+						break;
 				}
 				imageBlockHashes = imageBlocks.hashes;
 
@@ -164,9 +175,22 @@ export class ImageBlockDrawEngine {
 				complexesByGx = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
 				hashesGyByGx = <any>imageBlocks.hashesGyByGx;
 
+				if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
+					hashesGyByGxForeground = hashesGyByGx;
+				}
+
 				for (j in complexesByGx) {
 					complexes = complexesByGx[j];
-					gyMin = hashesGyByGx[Number(j)][0].value;
+
+					if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+						if (hashesGyByGxForeground[Number(j)] !== undefined) {
+							gyMin = hashesGyByGxForeground[Number(j)][0].value;
+						} else {
+							gyMin = Infinity;
+						}
+					} else {
+						gyMin = hashesGyByGx[Number(j)][0].value;
+					}
 
 					for (k = 0; k < complexes.length; k++) {
 						complex = complexes[k];
@@ -233,8 +257,8 @@ export class ImageBlockDrawEngine {
 								imageBitmap.height,
 								Math.round((gx - startGx) * gInPw),
 								Math.round((gy - startGy) * gInPh),
-								gInPw * gridImageBlock.gSizeW,
-								gInPh * gridImageBlock.gSizeH,
+								gInPw * gridImageBlock.gSizeW + 2, // Make sure we fill the grid
+								gInPh * gridImageBlock.gSizeH + 2, // Make sure we fill the grid
 							);
 						} else {
 							ctx.drawImage(imageBitmap, Math.round((gx - startGx) * gInPw), Math.round((gy - startGy) * gInPh));
@@ -248,8 +272,13 @@ export class ImageBlockDrawEngine {
 						ImageBlockDrawEngine.cacheBackground = canvas.transferToImageBitmap();
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-						// "Cut Out" viewport from foreground layer to make the under layers visible to the person
-						if (ImageBlockDrawEngine.foregroundViewerEnable) {
+						ImageBlockDrawEngine.cacheForeground = canvas.transferToImageBitmap();
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						ImageBlockDrawEngine.cachePrimary = canvas.transferToImageBitmap();
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+						if (ImageBlockDrawEngine.vanishingEnable) {
 							x = Math.round((camera.gx - startGx) * gInPw);
 							y = Math.round((camera.gy - startGy) * gInPh);
 
@@ -264,10 +293,7 @@ export class ImageBlockDrawEngine {
 							ctx.globalCompositeOperation = 'source-over'; // restore default setting
 						}
 
-						ImageBlockDrawEngine.cacheForeground = canvas.transferToImageBitmap();
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						ImageBlockDrawEngine.cachePrimary = canvas.transferToImageBitmap();
+						ImageBlockDrawEngine.cacheVanishing = canvas.transferToImageBitmap();
 						break;
 				}
 			}
@@ -282,6 +308,7 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxBackground.drawImage(ImageBlockDrawEngine.cacheBackground, 0, 0);
 		ImageBlockDrawEngine.ctxForeground.drawImage(ImageBlockDrawEngine.cacheForeground, 0, 0);
 		ImageBlockDrawEngine.ctxPrimary.drawImage(ImageBlockDrawEngine.cachePrimary, 0, 0);
+		ImageBlockDrawEngine.ctxVanishing.drawImage(ImageBlockDrawEngine.cacheVanishing, 0, 0);
 
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;
@@ -297,14 +324,13 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.mapActiveCamera = mapActive.camera;
 	}
 
-	public static setForegroundViewer(enable: boolean) {
-		ImageBlockDrawEngine.cacheZoom = -1;
-		ImageBlockDrawEngine.foregroundViewerEnable = enable;
-		MapDrawEngineBus.setForegroundViewer(ImageBlockDrawEngine.foregroundViewerEnable);
+	public static setVanishingEnable(vanishingEnable: boolean) {
+		ImageBlockDrawEngine.vanishingEnable = vanishingEnable;
+		MapDrawEngineBus.setVanishingEnable(vanishingEnable);
 	}
 
-	public static setForegroundViewerSettings(foregroundViewerPercentageOfViewport: number) {
-		ImageBlockDrawEngine.foregroundViewerPercentageOfViewport = foregroundViewerPercentageOfViewport;
-		MapDrawEngineBus.setForegroundViewerPercentageOfViewport(ImageBlockDrawEngine.foregroundViewerPercentageOfViewport);
+	public static setVanishingPercentageOfViewport(vanishingPercentageOfViewport: number) {
+		ImageBlockDrawEngine.vanishingPercentageOfViewport = vanishingPercentageOfViewport;
+		MapDrawEngineBus.setVanishingPercentageOfViewport(ImageBlockDrawEngine.vanishingPercentageOfViewport);
 	}
 }

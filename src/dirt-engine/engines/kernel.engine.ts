@@ -53,6 +53,7 @@ export class KernelEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (KernelEngine.initialized) {
 			console.error('KernelEngine > initialize: already initialized');
@@ -65,15 +66,16 @@ export class KernelEngine {
 		ctxOverlay.imageSmoothingEnabled = false;
 		ctxPrimary.imageSmoothingEnabled = false;
 		ctxUnderlay.imageSmoothingEnabled = false;
+		ctxVanishing.imageSmoothingEnabled = false;
 
-		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
-		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
+		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
 
 		// Extended
-		await CameraDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
-		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
-		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
-		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay);
+		await CameraDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
+		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
+		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
+		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
 	}
 
 	private static tmpH: any;
@@ -254,7 +256,7 @@ export class KernelEngine {
 	 */
 	public static async draw(draw: VideoBusInputCmdGameModeEditDraw): Promise<void> {
 		GridDrawEngine.setEnable(draw.grid);
-		ImageBlockDrawEngine.setForegroundViewer(draw.foregroundViewer);
+		ImageBlockDrawEngine.setVanishingEnable(draw.vanishingEnable);
 	}
 
 	public static async historyUpdate(mapActive: MapActive): Promise<void> {
@@ -382,7 +384,7 @@ export class KernelEngine {
 		DrawEditEngine.mapVisible = settings.mapVisible;
 
 		// Extended
-		ImageBlockDrawEngine.setForegroundViewerSettings(settings.foregroundViewerPercentageOfViewport);
+		ImageBlockDrawEngine.setVanishingPercentageOfViewport(settings.vanishingPercentageOfViewport);
 		LightingEngine.setDarknessMax(settings.darknessMax);
 		MapDrawEngine.resolution = settings.resolution;
 		MapDrawEngineBus.setDarknessMax(settings.darknessMax);

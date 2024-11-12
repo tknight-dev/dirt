@@ -94,6 +94,7 @@ export class LightingEngine {
 			processor(grid.imageBlocksBackground.hashes);
 			processor(grid.imageBlocksForeground.hashes);
 			processor(grid.imageBlocksPrimary.hashes);
+			processor(grid.imageBlocksVanishing.hashes);
 		}
 
 		return Object.keys(assetIds);
@@ -244,8 +245,8 @@ export class LightingEngine {
 				id = assetImageIds[i];
 				cacheInstance = LightingEngine.cache[id];
 
-				canvas.height = cacheInstance.gHeight * gInPh + 2;
-				canvas.width = cacheInstance.gWidth * gInPw + 2;
+				canvas.height = cacheInstance.gHeight * gInPh + 2; // Make sure we fill the grid
+				canvas.width = cacheInstance.gWidth * gInPw + 2; // Make sure we fill the grid
 
 				/*
 				 * Lit algorithm

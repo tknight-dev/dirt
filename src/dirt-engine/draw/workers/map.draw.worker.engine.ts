@@ -63,8 +63,6 @@ class MapDrawWorkerEngine {
 	private static camera: MapDrawBusInputPlayloadCamera;
 	private static ctx: OffscreenCanvasRenderingContext2D;
 	private static ctxTmp: OffscreenCanvasRenderingContext2D;
-	private static foregroundViewerEnable: boolean;
-	private static foregroundViewerPercentageOfViewport: number;
 	private static gridActiveId: string;
 	private static grids: { [key: string]: Grid };
 	private static gridConfigs: { [key: string]: GridConfig };
@@ -72,11 +70,14 @@ class MapDrawWorkerEngine {
 	private static initialized: boolean;
 	private static mapVisible: boolean;
 	private static self: Window & typeof globalThis;
+	private static vanishingEnable: boolean;
+	private static vanishingPercentageOfViewport: number;
 	private static width: number;
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[] = [
-		VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
 		VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
-		VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
+		VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
+		VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // After Foreground
+		VideoBusInputCmdGameModeEditApplyZ.VANISHING,
 	];
 
 	public static async initialize(self: Window & typeof globalThis, data: MapDrawBusInputPlayloadInitial): Promise<void> {
@@ -131,9 +132,9 @@ class MapDrawWorkerEngine {
 	public static inputSetSettings(data: MapDrawBusInputPlayloadSettings): void {
 		//console.log('MapDrawWorkerEngine > inputSetSettings', data);
 		LightingEngine.setDarknessMax(data.darknessMax * 0.3, <Camera>MapDrawWorkerEngine.camera);
-		MapDrawWorkerEngine.foregroundViewerEnable = data.foregroundViewerEnable;
-		MapDrawWorkerEngine.foregroundViewerPercentageOfViewport = data.foregroundViewerPercentageOfViewport;
 		MapDrawWorkerEngine.mapVisible = data.mapVisible;
+		MapDrawWorkerEngine.vanishingEnable = data.vanishingEnable;
+		MapDrawWorkerEngine.vanishingPercentageOfViewport = data.vanishingPercentageOfViewport;
 	}
 
 	public static inputSetTimeForced(data: MapDrawBusInputPlayloadTimeForced): void {
@@ -177,10 +178,9 @@ class MapDrawWorkerEngine {
 				extended: boolean,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
-				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
-				foregroundViewerEnable: boolean = MapDrawWorkerEngine.foregroundViewerEnable,
-				foregroundViewerPercentageOfViewport: number = MapDrawWorkerEngine.foregroundViewerPercentageOfViewport,
+				extendedHashPrimary: { [key: number]: null } = {},
+				extendedHashVanishing: { [key: number]: null } = {},
 				getAssetImageLit: any = LightingEngine.getAssetImageLit,
 				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
 				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
@@ -213,12 +213,15 @@ class MapDrawWorkerEngine {
 				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
 				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
 				scratch: number,
+				vanishingEnable: boolean = MapDrawWorkerEngine.vanishingEnable,
+				vanishingPercentageOfViewport: number = MapDrawWorkerEngine.vanishingPercentageOfViewport,
 				x: number,
 				y: number,
 				z: VideoBusInputCmdGameModeEditApplyZ,
 				zBitmapBackground: ImageBitmap = canvas.transferToImageBitmap(),
 				zBitmapForeground: ImageBitmap = canvas.transferToImageBitmap(),
 				zBitmapPrimary: ImageBitmap = canvas.transferToImageBitmap(),
+				zBitmapVanishing: ImageBitmap = canvas.transferToImageBitmap(),
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = MapDrawWorkerEngine.zGroup;
 
 			// Config
@@ -235,7 +238,7 @@ class MapDrawWorkerEngine {
 			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
 			gHeightMaxEff = gHeightMax * resolutionMultiple;
 			gWidthMaxEff = gWidthMax * resolutionMultiple;
-			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple);
+			radius = Math.round((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple);
 			radius2 = radius * 2;
 
 			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
@@ -256,6 +259,10 @@ class MapDrawWorkerEngine {
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 								extendedHash = extendedHashPrimary;
 								imageBlocks = grid.imageBlocksPrimary;
+								break;
+							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+								extendedHash = extendedHashVanishing;
+								imageBlocks = grid.imageBlocksVanishing;
 								break;
 						}
 						imageBlockHashes = imageBlocks.hashes;
@@ -358,8 +365,13 @@ class MapDrawWorkerEngine {
 								zBitmapBackground = canvasTmp.transferToImageBitmap();
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-								// "Cut Out" viewport from foreground layer to make the under layers visible to the person
-								if (foregroundViewerEnable) {
+								zBitmapForeground = canvasTmp.transferToImageBitmap();
+								break;
+							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+								zBitmapPrimary = canvasTmp.transferToImageBitmap();
+								break;
+							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+								if (vanishingEnable) {
 									x = Math.round((camera.gx - gWidth) * resolutionMultiple);
 									y = Math.round((camera.gy - gHeight) * resolutionMultiple);
 
@@ -373,10 +385,8 @@ class MapDrawWorkerEngine {
 									ctxTmp.fillRect(x - radius, y - radius, radius2, radius2);
 									ctxTmp.globalCompositeOperation = 'source-over'; // restore default setting
 								}
-								zBitmapForeground = canvasTmp.transferToImageBitmap();
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-								zBitmapPrimary = canvasTmp.transferToImageBitmap();
+
+								zBitmapVanishing = canvasTmp.transferToImageBitmap();
 								break;
 						}
 					}
@@ -385,6 +395,7 @@ class MapDrawWorkerEngine {
 					ctxTmp.drawImage(zBitmapBackground, 0, 0);
 					ctxTmp.drawImage(zBitmapPrimary, 0, 0);
 					ctxTmp.drawImage(zBitmapForeground, 0, 0);
+					ctxTmp.drawImage(zBitmapVanishing, 0, 0);
 
 					if (canvasTmpGw > canvasWidth) {
 						// Resize to correct size (good)

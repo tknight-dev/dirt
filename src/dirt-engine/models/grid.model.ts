@@ -14,6 +14,7 @@ export interface Grid {
 	imageBlocksBackground: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
 	imageBlocksForeground: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
 	imageBlocksPrimary: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
+	imageBlocksVanishing: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
 	lights: GridBlockTable<GridLight>; // (gx,gy), Precision 3
 }
 

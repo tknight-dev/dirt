@@ -1882,8 +1882,8 @@ export class DomUI {
 			}
 
 			DomUI.uiEditDraw = {
-				foregroundViewer: true,
 				grid: true,
+				vanishingEnable: true,
 			};
 
 			DomUI.domElements['feed-fitted'].addEventListener('mousemove', DomUI.editCursorMove);
@@ -2122,7 +2122,7 @@ export class DomUI {
 		DomUI.domElements['feed-overflow-streams'] = domFeedOverflowStreams;
 
 		let streamName: string = '';
-		for (let i = 0; i < 5; i++) {
+		for (let i = 0; i < 6; i++) {
 			// Stream
 			domFeedOverflowStreamsStream = document.createElement('div');
 
@@ -2143,6 +2143,10 @@ export class DomUI {
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 4:
+					streamName = 'vanishing';
+					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
+					break;
+				case 5:
 					streamName = 'overlay';
 					break;
 			}
@@ -2218,8 +2222,8 @@ export class DomUI {
 			copyButton: HTMLElement,
 			detailsContextMenu: HTMLElement,
 			feedFitted: HTMLElement = DomUI.domElements['feed-fitted'],
-			foregroundViewer: HTMLElement,
-			foregroundViewerButton: HTMLElement,
+			vanishing: HTMLElement,
+			vanishingButton: HTMLElement,
 			fps: HTMLElement,
 			grid: HTMLElement,
 			gridButton: HTMLElement,
@@ -2289,7 +2293,8 @@ export class DomUI {
 			zBackground: HTMLElement,
 			zForeground: HTMLElement,
 			zGlobal: HTMLElement,
-			zPrimary: HTMLElement;
+			zPrimary: HTMLElement,
+			zVanishing: HTMLElement;
 
 		/*
 		 * Application cursor (first)
@@ -3063,7 +3068,10 @@ export class DomUI {
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+			if (
+				DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND ||
+				DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.VANISHING
+			) {
 				zPrimary.click();
 			}
 		};
@@ -3132,6 +3140,7 @@ export class DomUI {
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
@@ -3149,8 +3158,8 @@ export class DomUI {
 			}
 
 			// Draw Options
-			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -3160,6 +3169,7 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.remove('active');
+			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-background'] = zBackground;
 		DomUI.domElementsUIEdit['z-background'] = zBackground;
@@ -3182,6 +3192,7 @@ export class DomUI {
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.75';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
@@ -3197,8 +3208,8 @@ export class DomUI {
 			DomUI.editCursor();
 
 			// Draw Options
-			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -3208,6 +3219,7 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.add('active');
+			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-foreground'] = zPrimary;
 		DomUI.domElementsUIEdit['z-primary'] = zPrimary;
@@ -3230,6 +3242,7 @@ export class DomUI {
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
@@ -3247,8 +3260,8 @@ export class DomUI {
 			}
 
 			// Draw Options
-			DomUI.uiEditDraw.foregroundViewer = false;
 			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -3258,10 +3271,63 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.add('active');
 			zPrimary.classList.remove('active');
+			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-foreground'] = zForeground;
 		DomUI.domElementsUIEdit['z-foreground'] = zForeground;
 		z.appendChild(zForeground);
+
+		zVanishing = document.createElement('div');
+		zVanishing.className = 'button vanishing';
+		zVanishing.innerText = 'V';
+		zVanishing.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.VANISHING) {
+				return;
+			}
+			// Display Applications
+			copy.style.display = 'flex';
+			inspect.style.display = 'flex';
+			palette.style.display = 'flex';
+			view.style.display = 'flex';
+
+			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '1';
+
+			// Hide application
+			DomUI.domElementsUIEdit['application'].style.display = 'none';
+			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
+
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+				// Remove application cursor
+				DomUI.uiEditCursorReady = false;
+				feedFitted.classList.remove('dirt-engine-cursor-pencil');
+				feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+				feedFitted.classList.remove('dirt-engine-cursor-fill');
+				feedFitted.classList.remove('dirt-engine-cursor-eraser');
+				feedFitted.classList.remove('dirt-engine-cursor-stamp');
+				DomUI.editCursor();
+			}
+
+			// Draw Options
+			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.vanishingEnable = false;
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditDrawNull(true);
+			VideoEngineBus.outputGameModeEditTimeForced(true);
+
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.VANISHING;
+			zBackground.classList.remove('active');
+			zGlobal.classList.remove('active');
+			zForeground.classList.remove('active');
+			zPrimary.classList.remove('active');
+			zVanishing.classList.add('active');
+		};
+		DomUI.domElements['feed-fitted-ui-z-vanishing'] = zVanishing;
+		DomUI.domElementsUIEdit['z-vanishing'] = zVanishing;
+		z.appendChild(zVanishing);
 
 		zGlobal = document.createElement('div');
 		zGlobal.className = 'button global';
@@ -3282,6 +3348,7 @@ export class DomUI {
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '1';
 
 			// Remove application cursor
 			DomUI.uiEditCursorReady = false;
@@ -3295,8 +3362,8 @@ export class DomUI {
 			DomUI.editCursor();
 
 			// Draw Options
-			DomUI.uiEditDraw.foregroundViewer = true;
 			DomUI.uiEditDraw.grid = false;
+			DomUI.uiEditDraw.vanishingEnable = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditDrawNull(false);
 			VideoEngineBus.outputGameModeEditTimeForced(false);
@@ -3308,6 +3375,7 @@ export class DomUI {
 			zGlobal.classList.add('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.remove('active');
+			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-global'] = zGlobal;
 		DomUI.domElementsUIEdit['z-global'] = zGlobal;

@@ -30,6 +30,7 @@ export class GridDrawEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (GridDrawEngine.initialized) {
 			console.error('GridDrawEngine > initialize: already initialized');

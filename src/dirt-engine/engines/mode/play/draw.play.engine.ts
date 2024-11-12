@@ -12,6 +12,7 @@ export class DrawPlayEngine {
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
+	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	public static fpsVisible: boolean;
 	private static mapActive: MapActive;
@@ -24,6 +25,7 @@ export class DrawPlayEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (DrawPlayEngine.initialized) {
 			console.error('DrawPlayEngine > initialize: already initialized');
@@ -37,6 +39,7 @@ export class DrawPlayEngine {
 		DrawPlayEngine.ctxOverlay = ctxOverlay;
 		DrawPlayEngine.ctxPrimary = ctxPrimary;
 		DrawPlayEngine.ctxUnderlay = ctxUnderlay;
+		DrawPlayEngine.ctxVanishing = ctxVanishing;
 	}
 
 	public static start(): void {

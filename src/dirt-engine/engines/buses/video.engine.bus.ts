@@ -58,6 +58,7 @@ export class VideoEngineBus {
 	private static canvasOverlay: HTMLCanvasElement;
 	private static canvasPrimary: HTMLCanvasElement;
 	private static canvasUnderlay: HTMLCanvasElement;
+	private static canvasVanishing: HTMLCanvasElement;
 	private static complete: boolean;
 	private static initialized: boolean;
 	private static mapInteration: HTMLElement;
@@ -76,6 +77,7 @@ export class VideoEngineBus {
 		canvasOverlay: HTMLCanvasElement,
 		canvasPrimary: HTMLCanvasElement,
 		canvasUnderlay: HTMLCanvasElement,
+		canvasVanishing: HTMLCanvasElement,
 		mapInteration: HTMLElement,
 		settings: VideoBusInputCmdSettings,
 	): Promise<void> {
@@ -90,6 +92,7 @@ export class VideoEngineBus {
 			canvasOffscreenPrimary: OffscreenCanvas = canvasPrimary.transferControlToOffscreen(),
 			canvasOffscreenForeground: OffscreenCanvas = canvasForeground.transferControlToOffscreen(),
 			canvasOffscreenOverlay: OffscreenCanvas = canvasOverlay.transferControlToOffscreen(),
+			canvasOffscreenVanishing: OffscreenCanvas = canvasVanishing.transferControlToOffscreen(),
 			videoBusInputCmdInit: VideoBusInputCmdInit,
 			videoBusInputCmdResize: VideoBusInputCmdResize,
 			videoBusPayload: VideoBusPayload;
@@ -100,6 +103,7 @@ export class VideoEngineBus {
 		VideoEngineBus.canvasOverlay = canvasOverlay;
 		VideoEngineBus.canvasPrimary = canvasPrimary;
 		VideoEngineBus.canvasUnderlay = canvasUnderlay;
+		VideoEngineBus.canvasVanishing = canvasVanishing;
 		VideoEngineBus.mapInteration = mapInteration;
 		VideoEngineBus.streams = streams;
 
@@ -137,6 +141,7 @@ export class VideoEngineBus {
 					canvasOffscreenOverlay: canvasOffscreenOverlay,
 					canvasOffscreenPrimary: canvasOffscreenPrimary,
 					canvasOffscreenUnderlay: canvasOffscreenUnderlay,
+					canvasOffscreenVanishing: canvasOffscreenVanishing,
 				},
 				videoBusInputCmdResize,
 				settings,
@@ -151,6 +156,7 @@ export class VideoEngineBus {
 				canvasOffscreenOverlay,
 				canvasOffscreenPrimary,
 				canvasOffscreenUnderlay,
+				canvasOffscreenVanishing,
 			]);
 			VideoEngineBus.complete = true;
 		} else {

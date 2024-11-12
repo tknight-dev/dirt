@@ -15,6 +15,7 @@ export class DrawEditEngine {
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
+	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
@@ -26,6 +27,7 @@ export class DrawEditEngine {
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (DrawEditEngine.initialized) {
 			console.error('DrawEditEngine > initialize: already initialized');
@@ -39,6 +41,7 @@ export class DrawEditEngine {
 		DrawEditEngine.ctxOverlay = ctxOverlay;
 		DrawEditEngine.ctxPrimary = ctxPrimary;
 		DrawEditEngine.ctxUnderlay = ctxUnderlay;
+		DrawEditEngine.ctxVanishing = ctxVanishing;
 	}
 
 	public static start(): void {
@@ -56,6 +59,7 @@ export class DrawEditEngine {
 		DrawEditEngine.ctxForeground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxPrimary.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxOverlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawEditEngine.ctxVanishing.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 		// Draw
 		ImageBlockDrawEngine.start();

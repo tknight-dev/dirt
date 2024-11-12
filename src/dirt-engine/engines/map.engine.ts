@@ -27,6 +27,7 @@ export class MapEngine {
 				imageBlocksBackground: <any>{},
 				imageBlocksForeground: <any>{},
 				imageBlocksPrimary: <any>{},
+				imageBlocksVanishing: <any>{},
 				lights: <any>{},
 			},
 			gridConfig: GridConfig = {
@@ -72,8 +73,10 @@ export class MapEngine {
 			console.error('MapEngine > loadFromFile: not initialized');
 		}
 		let gridActiveId: string = 'initial',
+			grid: Grid,
 			gridConfig: GridConfig,
 			gridConfigs: { [key: string]: GridConfig } = map.gridConfigs,
+			grids: { [key: string]: Grid } = map.grids,
 			mapActive: MapActive = Object.assign(map, {
 				clockTicker: 0,
 				clockSpeedRelativeToEarth: map.clockSpeedRelativeToEarth,
@@ -95,6 +98,23 @@ export class MapEngine {
 		mapActive.hourOfDay = Math.round(mapActive.hourOfDay);
 
 		// Grids
+		for (let i in grids) {
+			grid = grids[i];
+
+			grid.audioBlocks = grid.audioBlocks || {};
+			grid.audioTagTriggersEffect = grid.audioTagTriggersEffect || {};
+			grid.audioTagTriggersMusic = grid.audioTagTriggersMusic || {};
+			grid.audioTagTriggersMusicFade = grid.audioTagTriggersMusicFade || {};
+			grid.audioTagTriggersMusicPause = grid.audioTagTriggersMusicPause || {};
+			grid.audioTagTriggersMusicUnpause = grid.audioTagTriggersMusicUnpause || {};
+			grid.imageBlocksBackground = grid.imageBlocksBackground || {};
+			grid.imageBlocksForeground = grid.imageBlocksForeground || {};
+			grid.imageBlocksPrimary = grid.imageBlocksPrimary || {};
+			grid.imageBlocksVanishing = grid.imageBlocksVanishing || {};
+			grid.lights = grid.lights || {};
+		}
+
+		// Grids Configs
 		for (let i in gridConfigs) {
 			gridConfig = gridConfigs[i];
 

@@ -11,11 +11,11 @@ import { MapDrawBusInputCmd, MapDrawBusInputPlayload, MapDrawBusInputPlayloadAss
 export class MapDrawEngineBus {
 	private static callbackBitmap: (image: ImageBitmap) => void;
 	private static darknessMax: number = 0.7;
-	private static foregroundViewerEnable: boolean = true;
-	private static foregroundViewerPercentageOfViewport: number;
 	private static initialized: boolean;
 	private static mapVisible: boolean;
 	private static timeForced: boolean;
+	private static vanishingEnable: boolean;
+	private static vanishingPercentageOfViewport: number;
 	private static worker: Worker;
 
 	public static async initialize(): Promise<void> {
@@ -103,9 +103,9 @@ export class MapDrawEngineBus {
 			cmd: MapDrawBusInputCmd.SET_SETTINGS,
 			data: {
 				darknessMax: MapDrawEngineBus.darknessMax,
-				foregroundViewerEnable: MapDrawEngineBus.foregroundViewerEnable,
-				foregroundViewerPercentageOfViewport: MapDrawEngineBus.foregroundViewerPercentageOfViewport,
 				mapVisible: MapDrawEngineBus.mapVisible,
+				vanishingEnable: MapDrawEngineBus.vanishingEnable,
+				vanishingPercentageOfViewport: MapDrawEngineBus.vanishingPercentageOfViewport,
 			},
 		});
 	}
@@ -128,13 +128,13 @@ export class MapDrawEngineBus {
 		MapDrawEngineBus.outputSettings();
 	}
 
-	public static setForegroundViewer(enable: boolean) {
-		MapDrawEngineBus.foregroundViewerEnable = enable;
+	public static setVanishingEnable(vanishingEnable: boolean) {
+		MapDrawEngineBus.vanishingEnable = vanishingEnable;
 		MapDrawEngineBus.outputSettings();
 	}
 
-	public static setForegroundViewerPercentageOfViewport(foregroundViewerPercentageOfViewport: number) {
-		MapDrawEngineBus.foregroundViewerPercentageOfViewport = foregroundViewerPercentageOfViewport;
+	public static setVanishingPercentageOfViewport(vanishingPercentageOfViewport: number) {
+		MapDrawEngineBus.vanishingPercentageOfViewport = vanishingPercentageOfViewport;
 		MapDrawEngineBus.outputSettings();
 	}
 
