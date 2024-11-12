@@ -1,3 +1,5 @@
+import { AssetEngine } from '../../engines/asset.engine';
+import { AssetImage } from '../../models/asset.model';
 import { Camera } from '../../models/camera.model';
 import { Grid, GridConfig, GridBlockTable, GridBlockTableComplex, GridImageBlock } from '../../models/grid.model';
 import { LightingEngine } from '../../engines/lighting.engine';
@@ -8,6 +10,7 @@ import {
 	MapDrawBusInputPlayloadCamera,
 	MapDrawBusInputPlayloadGridActive,
 	MapDrawBusInputPlayloadGrids,
+	MapDrawBusInputPlayloadInitial,
 	MapDrawBusInputPlayloadResolution,
 	MapDrawBusInputPlayloadSettings,
 	MapDrawBusInputPlayloadTimeForced,
@@ -24,7 +27,7 @@ self.onmessage = (event: MessageEvent) => {
 
 	switch (payload.cmd) {
 		case MapDrawBusInputCmd.INITIALIZE:
-			MapDrawWorkerEngine.initialize(self);
+			MapDrawWorkerEngine.initialize(self, <MapDrawBusInputPlayloadInitial>payload.data);
 			break;
 		case MapDrawBusInputCmd.SET_ASSETS:
 			MapDrawWorkerEngine.inputSetAssets(<MapDrawBusInputPlayloadAssets>payload.data);
@@ -51,6 +54,7 @@ self.onmessage = (event: MessageEvent) => {
 };
 
 class MapDrawWorkerEngine {
+	private static assetImages: { [key: string]: AssetImage };
 	private static busy: boolean;
 	private static canvas: OffscreenCanvas;
 	private static canvasTmp: OffscreenCanvas;
@@ -75,13 +79,13 @@ class MapDrawWorkerEngine {
 		VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
 	];
 
-	public static async initialize(self: Window & typeof globalThis): Promise<void> {
+	public static async initialize(self: Window & typeof globalThis, data: MapDrawBusInputPlayloadInitial): Promise<void> {
 		if (MapDrawWorkerEngine.initialized) {
 			console.error('MapDrawWorkerEngine > initialize: already initialized');
 			return;
 		}
 		MapDrawWorkerEngine.initialized = true;
-		MapDrawWorkerEngine.self = self;
+		(MapDrawWorkerEngine.assetImages = data.assetImages), (MapDrawWorkerEngine.self = self);
 
 		await LightingEngine.initialize(true);
 
@@ -155,6 +159,7 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.busy = true;
 		try {
 			let assetId: string,
+				assetImage: AssetImage,
 				camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
 				canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
 				canvasHeight: number = MapDrawWorkerEngine.height,
@@ -169,6 +174,11 @@ class MapDrawWorkerEngine {
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
+				extended: boolean,
+				extendedHash: { [key: number]: null },
+				extendedHashBackground: { [key: number]: null } = {},
+				extendedHashPrimary: { [key: number]: null } = {},
+				extendedHashForeground: { [key: number]: null } = {},
 				foregroundViewerEnable: boolean = MapDrawWorkerEngine.foregroundViewerEnable,
 				foregroundViewerPercentageOfViewport: number = MapDrawWorkerEngine.foregroundViewerPercentageOfViewport,
 				getAssetImageLit: any = LightingEngine.getAssetImageLit,
@@ -177,12 +187,15 @@ class MapDrawWorkerEngine {
 				gradient: CanvasGradient,
 				grid: Grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId],
 				gridConfig: GridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId],
+				gridImageBlock: GridImageBlock,
 				gHeight: number,
 				gHeightMax: number = gridConfig.gHeight,
 				gHeightMaxEff: number,
 				gWidth: number,
 				gWidthMax: number = gridConfig.gWidth,
 				gWidthMaxEff: number,
+				gx: number,
+				gy: number,
 				gyMin: number,
 				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
 				i: string,
@@ -193,9 +206,10 @@ class MapDrawWorkerEngine {
 				j: string,
 				k: number,
 				outside: boolean = gridConfig.outside,
+				oversized: boolean,
 				radius: number,
 				radius2: number,
-				qualityMultiple: number = 4,
+				resolutionMultiple: number = 4,
 				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
 				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
 				scratch: number,
@@ -210,18 +224,18 @@ class MapDrawWorkerEngine {
 			// Config
 			canvas.height = canvasHeight;
 			canvas.width = canvasWidth;
-			canvasTmp.height = canvasTmpGh * qualityMultiple;
-			canvasTmp.width = canvasTmpGw * qualityMultiple;
+			canvasTmp.height = canvasTmpGh * resolutionMultiple;
+			canvasTmp.width = canvasTmpGw * resolutionMultiple;
 			ctx.imageSmoothingEnabled = false;
 			ctxTmp.imageSmoothingEnabled = false;
 
 			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
 
-			canvasTmpGhEff = canvasTmpGh * qualityMultiple;
-			canvasTmpGwEff = canvasTmpGw * qualityMultiple;
-			gHeightMaxEff = gHeightMax * qualityMultiple;
-			gWidthMaxEff = gWidthMax * qualityMultiple;
-			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * qualityMultiple);
+			canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
+			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
+			gHeightMaxEff = gHeightMax * resolutionMultiple;
+			gWidthMaxEff = gWidthMax * resolutionMultiple;
+			radius = Math.round((((camera.viewportGh / 2) * foregroundViewerPercentageOfViewport) / camera.zoom) * resolutionMultiple);
 			radius2 = radius * 2;
 
 			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
@@ -232,12 +246,15 @@ class MapDrawWorkerEngine {
 						z = zGroup[i];
 						switch (z) {
 							case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+								extendedHash = extendedHashBackground;
 								imageBlocks = grid.imageBlocksBackground;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+								extendedHash = extendedHashForeground;
 								imageBlocks = grid.imageBlocksForeground;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+								extendedHash = extendedHashPrimary;
 								imageBlocks = grid.imageBlocksPrimary;
 								break;
 						}
@@ -261,24 +278,76 @@ class MapDrawWorkerEngine {
 								complex = complexes[k];
 								assetId = imageBlockHashes[complex.hash].assetId;
 
-								if (assetId !== 'null' && assetId !== 'null2') {
-									if (outside) {
-										scratch = <number>complex.gy - gyMin;
+								// Null check
+								if (assetId === 'null' || assetId === 'null2') {
+									continue;
+								}
 
-										if (scratch > 2) {
-											imageBitmaps = getAssetImageUnlit(assetId);
-											imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
-										} else {
-											imageBitmap = getAssetImageLit(assetId);
-										}
-									} else {
-										imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
+								// Extended check
+								gridImageBlock = imageBlockHashes[complex.hash];
+								if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
+									if (gridImageBlock.extends) {
+										// extention block
+										gridImageBlock = imageBlockHashes[gridImageBlock.extends];
+										assetId = gridImageBlock.assetId;
 									}
 
+									if (extendedHash[gridImageBlock.hash] === null) {
+										// Skip block as its hash parent's image has already drawn over it
+										continue;
+									} else {
+										// Draw large block
+										extended = true;
+										extendedHash[gridImageBlock.hash] = null;
+										gx = <number>gridImageBlock.gx;
+										gy = <number>gridImageBlock.gy;
+									}
+								} else {
+									extended = false;
+									gx = <number>complex.gx;
+									gy = <number>complex.gy;
+								}
+
+								// Grab global illumination images if outside
+								if (outside) {
+									scratch = gy - gyMin;
+
+									if (scratch > 2) {
+										imageBitmaps = getAssetImageUnlit(assetId);
+										imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
+									} else {
+										imageBitmap = getAssetImageLit(assetId);
+									}
+								} else {
+									imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
+								}
+
+								assetImage = MapDrawWorkerEngine.assetImages[assetId];
+								if ((assetImage.gHeight || 1) !== 1 || (assetImage.gWidth || 1) !== 1) {
+									oversized = true;
+								} else {
+									oversized = false;
+								}
+
+								// Use draw resize overload for image blocks larger than 1x1
+								if (extended || oversized) {
+									//console.log(gx, gWidth, gx - gWidth, (gx - gWidth) * resolutionMultiple);
 									ctxTmp.drawImage(
 										imageBitmap,
-										Math.round((<any>complex.gx - gWidth) * qualityMultiple),
-										Math.round((<any>complex.gy - gHeight) * qualityMultiple),
+										0,
+										0,
+										imageBitmap.width,
+										imageBitmap.height,
+										Math.round((gx - gWidth) * resolutionMultiple),
+										Math.round((gy - gHeight) * resolutionMultiple),
+										resolutionMultiple * gridImageBlock.gSizeW,
+										resolutionMultiple * gridImageBlock.gSizeH,
+									);
+								} else {
+									ctxTmp.drawImage(
+										imageBitmap,
+										Math.round((gx - gWidth) * resolutionMultiple),
+										Math.round((gy - gHeight) * resolutionMultiple),
 									);
 								}
 							}
@@ -291,8 +360,8 @@ class MapDrawWorkerEngine {
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 								// "Cut Out" viewport from foreground layer to make the under layers visible to the person
 								if (foregroundViewerEnable) {
-									x = Math.round((camera.gx - gWidth) * qualityMultiple);
-									y = Math.round((camera.gy - gHeight) * qualityMultiple);
+									x = Math.round((camera.gx - gWidth) * resolutionMultiple);
+									y = Math.round((camera.gy - gHeight) * resolutionMultiple);
 
 									gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
 									gradient.addColorStop(0, 'white');

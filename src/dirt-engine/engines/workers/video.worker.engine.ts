@@ -286,7 +286,7 @@ class VideoWorkerEngine {
 
 	public static inputGameSave(save: VideoBusInputCmdGameSave): void {
 		if (KernelEngine.isModeEdit()) {
-			VideoWorkerEngine.outputMapSave(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
+			VideoWorkerEngine.outputMapSave(MapEditEngine.getMapActiveCloneNormalized());
 		} else {
 			console.log('save current game state', save);
 		}
@@ -314,19 +314,17 @@ class VideoWorkerEngine {
 		console.log('VideoBusWorker > gameUnpause', unpause);
 	}
 
-	public static async inputMapLoad(VideoBusInputCmdMapLoad: VideoBusInputCmdMapLoad): Promise<void> {
+	public static async inputMapLoad(videoBusInputCmdMapLoad: VideoBusInputCmdMapLoad): Promise<void> {
 		let map: Map,
 			mapActive: MapActive,
 			status: boolean = true;
 
-		//let maps: { [key: string]: AssetMap } = VideoWorkerEngine.assetManifestMaster.maps
-
 		try {
-			map = UtilEngine.mapDecode(VideoBusInputCmdMapLoad.data);
+			map = UtilEngine.mapDecode(await AssetEngine.unzip(videoBusInputCmdMapLoad.data));
 
 			if (map) {
 				mapActive = MapEngine.loadFromFile(map);
-				await MapEditEngine.load(mapActive); // Also starts the
+				await MapEditEngine.load(mapActive); // Also starts Kernel
 			} else {
 				status = false;
 			}
@@ -344,15 +342,15 @@ class VideoWorkerEngine {
 		]);
 	}
 
-	public static async inputMapLoadById(VideoBusInputCmdMapLoadById: VideoBusInputCmdMapLoadById): Promise<void> {
+	public static async inputMapLoadById(videoBusInputCmdMapLoadById: VideoBusInputCmdMapLoadById): Promise<void> {
 		let mapActive: MapActive | undefined, mapAsset: AssetMap;
 
 		try {
-			if (!VideoBusInputCmdMapLoadById.id) {
+			if (!videoBusInputCmdMapLoadById.id) {
 				mapActive = MapEngine.default();
 			} else {
-				mapAsset = VideoWorkerEngine.assetManifestMaster.maps[VideoBusInputCmdMapLoadById.id];
-				mapActive = MapEngine.load(mapAsset);
+				mapAsset = VideoWorkerEngine.assetManifestMaster.maps[videoBusInputCmdMapLoadById.id];
+				mapActive = await MapEngine.load(mapAsset);
 			}
 
 			if (mapActive) {

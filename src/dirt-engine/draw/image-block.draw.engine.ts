@@ -1,3 +1,4 @@
+import { AssetImage } from '../models/asset.model';
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
 import { Grid, GridBlockTable, GridBlockTableComplex, GridConfig, GridImageBlock } from '../models/grid.model';
@@ -5,6 +6,7 @@ import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model.bus';
+import { AssetEngine } from '../engines/asset.engine';
 
 /**
  * Leverage global lighting thread to create 24 darkened/lightened images to represent the day cycle
@@ -18,6 +20,7 @@ interface ZGroup {
 }
 
 export class ImageBlockDrawEngine {
+	private static assetImages: { [key: string]: AssetImage };
 	private static cacheBackground: ImageBitmap;
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
@@ -51,6 +54,7 @@ export class ImageBlockDrawEngine {
 			console.error('ImageBlockDrawEngine > initialize: already initialized');
 			return;
 		}
+		ImageBlockDrawEngine.assetImages = AssetEngine.getAssetManifestMaster().images;
 		ImageBlockDrawEngine.initialized = true;
 		ImageBlockDrawEngine.ctxBackground = ctxBackground;
 		ImageBlockDrawEngine.ctxForeground = ctxForeground;
@@ -81,11 +85,17 @@ export class ImageBlockDrawEngine {
 		) {
 			// Draw cache
 			let assetId: string,
+				assetImage: AssetImage,
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
+				extended: boolean,
+				extendedHash: { [key: number]: null },
+				extendedHashBackground: { [key: number]: null } = {},
+				extendedHashPrimary: { [key: number]: null } = {},
+				extendedHashForeground: { [key: number]: null } = {},
 				getAssetImageLit: any = LightingEngine.getAssetImageLit,
 				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
 				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
@@ -94,6 +104,9 @@ export class ImageBlockDrawEngine {
 				gradient: CanvasGradient,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
 				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
+				gridImageBlock: GridImageBlock,
+				gx: number,
+				gy: number,
 				gyMin: number,
 				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
 				imageBitmap: ImageBitmap,
@@ -103,6 +116,7 @@ export class ImageBlockDrawEngine {
 				j: string,
 				k: number,
 				outside: boolean = ImageBlockDrawEngine.mapActive.gridConfigActive.outside,
+				oversized: boolean,
 				radius: number,
 				radius2: number,
 				scratch: number,
@@ -129,12 +143,15 @@ export class ImageBlockDrawEngine {
 				z = zGroup[i];
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+						extendedHash = extendedHashBackground;
 						imageBlocks = grid.imageBlocksBackground;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+						extendedHash = extendedHashForeground;
 						imageBlocks = grid.imageBlocksForeground;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						extendedHash = extendedHashPrimary;
 						imageBlocks = grid.imageBlocksPrimary;
 						break;
 				}
@@ -155,12 +172,39 @@ export class ImageBlockDrawEngine {
 						complex = complexes[k];
 						assetId = imageBlockHashes[complex.hash].assetId;
 
+						// Null check
 						if (!ImageBlockDrawEngine.drawNull && (assetId === 'null' || assetId === 'null2')) {
 							continue;
 						}
 
+						// Extended check
+						gridImageBlock = imageBlockHashes[complex.hash];
+						if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
+							if (gridImageBlock.extends) {
+								// extention block
+								gridImageBlock = imageBlockHashes[gridImageBlock.extends];
+								assetId = gridImageBlock.assetId;
+							}
+
+							if (extendedHash[gridImageBlock.hash] === null) {
+								// Skip block as its hash parent's image has already drawn over it
+								continue;
+							} else {
+								// Draw large block
+								extended = true;
+								extendedHash[gridImageBlock.hash] = null;
+								gx = <number>gridImageBlock.gx;
+								gy = <number>gridImageBlock.gy;
+							}
+						} else {
+							extended = false;
+							gx = <number>complex.gx;
+							gy = <number>complex.gy;
+						}
+
+						// Grab global illumination images if outside
 						if (outside) {
-							scratch = <number>complex.gy - gyMin;
+							scratch = gy - gyMin;
 
 							if (scratch > 2) {
 								imageBitmaps = getAssetImageUnlit(assetId);
@@ -172,11 +216,29 @@ export class ImageBlockDrawEngine {
 							imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
 						}
 
-						ctx.drawImage(
-							imageBitmap,
-							Math.round((<any>complex.gx - startGx) * gInPw),
-							Math.round((<any>complex.gy - startGy) * gInPh),
-						);
+						assetImage = ImageBlockDrawEngine.assetImages[assetId];
+						if ((assetImage.gHeight || 1) !== 1 || (assetImage.gWidth || 1) !== 1) {
+							oversized = true;
+						} else {
+							oversized = false;
+						}
+
+						// Use draw resize overload for image blocks larger than 1x1
+						if (extended || oversized) {
+							ctx.drawImage(
+								imageBitmap,
+								0,
+								0,
+								imageBitmap.width,
+								imageBitmap.height,
+								Math.round((gx - startGx) * gInPw),
+								Math.round((gy - startGy) * gInPh),
+								gInPw * gridImageBlock.gSizeW,
+								gInPh * gridImageBlock.gSizeH,
+							);
+						} else {
+							ctx.drawImage(imageBitmap, Math.round((gx - startGx) * gInPw), Math.round((gy - startGy) * gInPh));
+						}
 					}
 				}
 

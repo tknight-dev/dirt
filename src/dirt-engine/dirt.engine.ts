@@ -6,11 +6,14 @@ import { AudioModulation } from './models/audio-modulation.model';
 import { DomUI } from './ui/dom.ui';
 import { FullscreenEngine } from './engines/fullscreen.engine';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engines/keyboard.engine';
+import { Map } from './models/map.model';
 import { MapEditEngine } from './engines/map-edit.engine';
+import { MapEngine } from './engines/map.engine';
 import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
 import { Orientation, OrientationEngine } from './engines/orientation.engine';
 import { ResizeEngine } from './engines/resize.engine';
 import { TouchAction, TouchCmd, TouchEngine } from './engines/touch.engine';
+import { UtilEngine } from './engines/util.engine';
 import { VideoBusInputCmdGamePauseReason, VideoBusInputCmdSettings } from './engines/buses/video.model.bus';
 import { VideoEngineBus } from './engines/buses/video.engine.bus';
 import { VisibilityEngine } from './engines/visibility.engine';
@@ -91,6 +94,7 @@ export class DirtEngine extends DomUI {
 		// Extended initializations
 		await FullscreenEngine.initialize();
 		await KeyboardEngine.initialize();
+		await MapEngine.initialize();
 		await MapEditEngine.initialize(true);
 		await MouseEngine.initialize(DirtEngine.domElements['feed-fitted']);
 		await OrientationEngine.initialize();
@@ -292,15 +296,20 @@ export class DirtEngine extends DomUI {
 			DirtEngine.draggingLoading = true;
 
 			// Load file
-			reader.onload = (event: any) => {
+			reader.onload = async (event: any) => {
+				// Load map file into video thread
 				VideoEngineBus.outputMapLoad(event.target.result);
+
+				// Load map file into ui thread
+				let map: Map = UtilEngine.mapDecode(await AssetEngine.unzip(event.target.result));
+				await MapEditEngine.load(MapEngine.loadFromFile(map));
 
 				// Reset UI
 				DirtEngine.dragging = false;
 				DirtEngine.draggingLoading = false;
 				DirtEngine.domElements['file'].style.display = 'none';
 			};
-			reader.readAsText(event.dataTransfer.files[0]);
+			reader.readAsArrayBuffer(event.dataTransfer.files[0]);
 		};
 		DirtEngine.domElements['viewer-b'].ondragleave = (event: any) => {
 			if (DirtEngine.dragging) {
@@ -319,9 +328,9 @@ export class DirtEngine extends DomUI {
 		VideoEngineBus.setCallbackMapLoadStatus((status: boolean) => {
 			DirtEngine.statusFlash(status);
 		});
-		VideoEngineBus.setCallbackMapSave((data: string, name: string) => {
+		VideoEngineBus.setCallbackMapSave(async (data: string, name: string) => {
 			let download: HTMLElement = DirtEngine.domElements['download'];
-			download.setAttribute('href', 'data:application/octet-stream;base64,' + btoa(data));
+			download.setAttribute('href', 'data:application/octet-stream;base64,' + btoa(await AssetEngine.zip(data, name)));
 			download.setAttribute('download', name + '.map');
 			download.click();
 

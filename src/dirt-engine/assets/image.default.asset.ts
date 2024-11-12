@@ -189,6 +189,66 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.LOGO,
 	},
+	{
+		id: 'TREE1',
+		gHeight: 2,
+		gWidth: 2,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/tree1_32_32.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/tree1_64_64.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/tree1_128_128.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
+	},
+	{
+		id: 'TREE2',
+		gHeight: 2,
+		gWidth: 2,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/tree2_32_32.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/tree2_64_64.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/tree2_128_128.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK,
+	},
 ];
 
 export { dirtEngineDefaultImageManifest };

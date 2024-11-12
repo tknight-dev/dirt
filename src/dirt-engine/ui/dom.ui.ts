@@ -797,6 +797,8 @@ export class DomUI {
 				assetIdWalkedOnAudioEffect: undefined,
 				damageable: undefined,
 				destructible: undefined,
+				gSizeH: 1,
+				gSizeW: 1,
 				objectType: GridObjectType.IMAGE_BLOCK,
 				passthrough: undefined,
 				strengthToDamangeInN: undefined,
@@ -933,6 +935,46 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
+		// GSizeH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size H';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeH = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeH;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeW
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size W';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeW = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeW;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// Damageable
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
@@ -968,20 +1010,22 @@ export class DomUI {
 		}
 
 		// Passthrough
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Passthrough';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.checked = applicationProperties.passthrough;
-		input.oninput = (event: any) => {
-			applicationProperties.passthrough = Boolean(event.target.checked);
-		};
-		input.type = 'checkbox';
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Passthrough';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.checked = applicationProperties.passthrough;
+			input.oninput = (event: any) => {
+				applicationProperties.passthrough = Boolean(event.target.checked);
+			};
+			input.type = 'checkbox';
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
 
 		// strengthToDamangeInN
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
@@ -1716,6 +1760,7 @@ export class DomUI {
 			if (mapActive) {
 				MapEditEngine.load(mapActive);
 
+				DomUI.domElementsUIEdit['time'].innerText = mapActive.hourOfDayEff + ':00';
 				DomUI.uiEditCursorGInPh = Math.round((mapActive.camera.gInPh / window.devicePixelRatio) * 1000) / 1000;
 				DomUI.uiEditCursorGInPw = Math.round((mapActive.camera.gInPw / window.devicePixelRatio) * 1000) / 1000;
 				DomUI.editCursor();
@@ -1746,13 +1791,7 @@ export class DomUI {
 
 			div.innerText = String(fps);
 		});
-		let test: boolean = true;
 		VideoEngineBus.setCallbackMapHourOfDayEff((hourOfDayEff: number) => {
-			if (test) {
-				// This makes the clock work.. idk why.. something about thread syncing?
-				console.log('DomUI > hourOfDay:', hourOfDayEff);
-				test = false;
-			}
 			DomUI.domElementsUIEdit['time'].innerText = hourOfDayEff + ':00';
 		});
 		VideoEngineBus.setCallbackRumble((durationInMs: number, enable: boolean, intensity: number) => {

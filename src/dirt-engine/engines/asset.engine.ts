@@ -1,4 +1,4 @@
-import * as JSZip from 'JSZip';
+import * as JSZip from 'jszip';
 import { dirtEngineDefaultAudioManifest } from '../assets/audio.default.asset';
 import { dirtEngineDefaultImageManifest } from '../assets/image.default.asset';
 import { dirtEngineDefaultMapManifest } from '../assets/map.default.asset';
@@ -350,6 +350,39 @@ export class AssetEngine {
 		}
 
 		return true;
+	}
+
+	/**
+	 * @param data base64
+	 * @return base64
+	 */
+	public static zip(data: string, filename: string): Promise<string> {
+		return new JSZip.default().file(filename, data).generateAsync({
+			compression: 'DEFLATE',
+			compressionOptions: {
+				level: 9,
+			},
+			type: 'string',
+		});
+	}
+
+	/**
+	 * @param dataZipped base64
+	 * @param filename if undefined the first file in the zip will be used
+	 * @return base64
+	 */
+	public static async unzip(dataZipped: string, filename?: string): Promise<string> {
+		let buffer: ArrayBuffer,
+			zip: JSZip = <JSZip>await JSZip.loadAsync(dataZipped);
+
+		if (!filename) {
+			Object.keys(zip.files).forEach(function (fn: string) {
+				filename = fn;
+			});
+		}
+		buffer = await (<JSZip.JSZipObject>zip.file(<string>filename)).async('arraybuffer');
+
+		return new Uint8Array(buffer).reduce((acc, i) => (acc += String.fromCharCode.apply(null, [i])), '');
 	}
 
 	public static getAsset(filename: string): AssetCache | undefined {

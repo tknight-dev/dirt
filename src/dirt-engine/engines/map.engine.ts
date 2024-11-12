@@ -112,14 +112,14 @@ export class MapEngine {
 		return mapActive;
 	}
 
-	public static load(assetMap: AssetMap): MapActive | undefined {
+	public static async load(assetMap: AssetMap): Promise<MapActive | undefined> {
 		if (!MapEngine.initialized) {
 			console.error('MapEngine > load: not initialized');
 		}
 		let asset: AssetCache | undefined = AssetEngine.getAsset(assetMap.src);
 
 		if (asset) {
-			return MapEngine.loadFromFile(UtilEngine.mapDecode(asset.data));
+			return MapEngine.loadFromFile(UtilEngine.mapDecode(await AssetEngine.unzip(asset.data)));
 		} else {
 			console.error("MapEngine > load: assetMap '" + assetMap.id + "' failed to load");
 			return undefined;

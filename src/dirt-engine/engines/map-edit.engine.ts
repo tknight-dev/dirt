@@ -33,6 +33,7 @@ import {
 } from '../engines/buses/video.model.bus';
 import { UtilEngine } from './util.engine';
 import { LightingCacheInstance, LightingEngine } from './lighting.engine';
+import { MapDrawEngine } from '../draw/map.draw.engine';
 
 /**
  * Mainted by UI and Video threads for map editing. Allows for full object restores, and minimizes bus communication.
@@ -113,9 +114,13 @@ export class MapEditEngine {
 	}
 
 	private static applyErase(apply: VideoBusInputCmdGameModeEditApplyErase): void {
-		let gHashes: number[] = apply.gHashes,
+		let gCoordinate: GridCoordinate,
+			gHashes: number[] = apply.gHashes,
 			grid: Grid,
+			gridObject: GridObject,
 			imageBlocks: GridBlockTable<GridImageBlock>,
+			x: number,
+			y: number,
 			z: VideoBusInputCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
@@ -136,7 +141,24 @@ export class MapEditEngine {
 		// Apply
 		for (let i = 0; i < gHashes.length; i++) {
 			if (imageBlocks.hashes) {
-				delete imageBlocks.hashes[gHashes[i]];
+				gridObject = imageBlocks.hashes[gHashes[i]];
+
+				// Maybe it was already deleted as part of a larger group
+				if (gridObject !== undefined) {
+					// Snap to parent hash (top left) to delete all associated hashes
+					if (gridObject.extends) {
+						gridObject = imageBlocks.hashes[gridObject.extends];
+					}
+
+					gCoordinate = UtilEngine.gridHashFrom(gridObject.hash);
+
+					// Delete blocks
+					for (x = 0; x < gridObject.gSizeW; x++) {
+						for (y = 0; y < gridObject.gSizeH; y++) {
+							delete imageBlocks.hashes[UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y)];
+						}
+					}
+				}
 			}
 		}
 
@@ -151,9 +173,13 @@ export class MapEditEngine {
 		let gCoordinate: GridCoordinate,
 			gHash: number,
 			gHashes: number[] = apply.gHashes,
+			gHashesOverwritten: number[],
 			grid: Grid,
+			imageBlock: GridImageBlock,
 			imageBlocks: GridBlockTable<GridImageBlock>,
 			properties: any = JSON.parse(JSON.stringify(apply)),
+			x: number,
+			y: number,
 			z: VideoBusInputCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
@@ -182,12 +208,46 @@ export class MapEditEngine {
 		// Apply
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
-
 			gCoordinate = UtilEngine.gridHashFrom(gHash);
+
+			// Overwrite, delete all blocks associated with
+			if (properties.gSizeH !== 1 || properties.gSizeW !== 1) {
+				gHashesOverwritten = new Array();
+
+				for (x = 0; x < properties.gSizeW; x++) {
+					for (y = 0; y < properties.gSizeH; y++) {
+						gHashesOverwritten.push(UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y));
+					}
+				}
+
+				MapEditEngine.applyErase(<any>{
+					gHashes: gHashesOverwritten,
+					z: z,
+				});
+			}
+
+			// Origin block
 			properties.hash = gHash;
 			properties.gx = gCoordinate.gx;
 			properties.gy = gCoordinate.gy;
 			imageBlocks.hashes[gHash] = JSON.parse(JSON.stringify(properties));
+
+			// Extended blocks
+			for (x = 0; x < properties.gSizeW; x++) {
+				for (y = 0; y < properties.gSizeH; y++) {
+					if (x === 0 && y === 0) {
+						// origin block
+						continue;
+					}
+					imageBlocks.hashes[UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y)] = <any>{
+						extends: gHash,
+						gx: gCoordinate.gx + x,
+						gy: gCoordinate.gy + y,
+						passthrough: properties.passthrough,
+						type: properties.type,
+					};
+				}
+			}
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
@@ -285,11 +345,9 @@ export class MapEditEngine {
 	}
 
 	private static historyAdd(): void {
-		if (!MapEditEngine.modeUI) {
-			MapEditEngine.mapHistoryUndo.pushEnd(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
-		} else {
-			MapEditEngine.mapHistoryUndo.pushEnd(JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI)));
-		}
+		let mapActiveClone: MapActive = MapEditEngine.getMapActiveCloneNormalized();
+		MapEditEngine.mapHistoryUndo.pushEnd(mapActiveClone);
+
 		MapEditEngine.mapHistoryRedo.clear();
 
 		if (MapEditEngine.mapHistoryUndo.getLength() > MapEditEngine.mapHistoryLength) {
@@ -329,6 +387,10 @@ export class MapEditEngine {
 			return;
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryUndo.popEnd();
+
+		// Fix cloning links
+		mapActive.gridActive = mapActive.grids[mapActive.gridActiveId];
+		mapActive.gridConfigActive = mapActive.gridConfigs[mapActive.gridActiveId];
 
 		if (!MapEditEngine.modeUI) {
 			MapEditEngine.mapHistoryRedo.pushEnd(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
@@ -486,10 +548,14 @@ export class MapEditEngine {
 	): VideoBusInputCmdGameModeEditApplyImageBlock {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlock = <VideoBusInputCmdGameModeEditApplyImageBlock>properties;
 
+		delete data.extends; // calculated field only
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			// Clean
 			if (data.passthrough) {
-				data.assetId = 'null2';
+				if (data.assetId === 'null') {
+					data.assetId = 'null2';
+				}
+
 				delete data.assetIdDamagedImage;
 				delete data.assetIdDamangedWalkedOnAudioEffect;
 				delete data.damageable;
@@ -527,10 +593,14 @@ export class MapEditEngine {
 			delete data.viscocity;
 		}
 
-		// Set Defaults
+		// Set base configs outside of the properties object
 		data.gHashes = gHashes;
-		data.gSizeH = 1;
-		data.gSizeW = 1;
+
+		if (data.assetId === 'null' || data.assetId === 'null2') {
+			data.gSizeH = 1;
+			data.gSizeW = 1;
+		}
+
 		data.z = z;
 
 		return data;
@@ -612,6 +682,20 @@ export class MapEditEngine {
 		}
 	}
 
+	public static getMapActiveCloneNormalized(): MapActive {
+		let mapActiveClone: MapActive;
+
+		if (MapEditEngine.modeUI) {
+			mapActiveClone = JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI));
+		} else {
+			mapActiveClone = JSON.parse(JSON.stringify(KernelEngine.getMapActive()));
+		}
+
+		delete (<any>mapActiveClone).gridActive;
+		delete (<any>mapActiveClone).gridConfigActive;
+		return mapActiveClone;
+	}
+
 	public static getGridActive(): Grid {
 		return MapEditEngine.mapActiveUI.gridActive;
 	}
@@ -625,7 +709,7 @@ export class MapEditEngine {
 		view: VideoBusInputCmdGameModeEditApplyView,
 		z: VideoBusInputCmdGameModeEditApplyZ,
 	): GridObject[] {
-		let mapActive: MapActive;
+		let gridImageBlock: GridImageBlock, imageBlockHashes: { [key: number]: GridImageBlock }, mapActive: MapActive;
 
 		if (!MapEditEngine.modeUI) {
 			mapActive = KernelEngine.getMapActive();
@@ -638,13 +722,26 @@ export class MapEditEngine {
 				break;
 			case VideoBusInputCmdGameModeEditApplyView.IMAGE:
 				if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
-					return [mapActive.gridActive.imageBlocksBackground.hashes[gHash]];
+					imageBlockHashes = mapActive.gridActive.imageBlocksBackground.hashes;
 				} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
-					return [mapActive.gridActive.imageBlocksForeground.hashes[gHash]];
+					imageBlockHashes = mapActive.gridActive.imageBlocksForeground.hashes;
 				} else {
-					return [mapActive.gridActive.imageBlocksPrimary.hashes[gHash]];
+					imageBlockHashes = mapActive.gridActive.imageBlocksPrimary.hashes;
 				}
-				break;
+
+				if (!imageBlockHashes) {
+					return [];
+				}
+
+				gridImageBlock = imageBlockHashes[gHash];
+
+				if (!gridImageBlock) {
+					return [];
+				} else if (gridImageBlock.extends) {
+					gridImageBlock = imageBlockHashes[gridImageBlock.extends];
+				}
+
+				return [gridImageBlock];
 			case VideoBusInputCmdGameModeEditApplyView.LIGHT:
 				break;
 		}

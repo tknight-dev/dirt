@@ -82,7 +82,9 @@ export class LightingEngine {
 			grids: { [key: string]: Grid } = LightingEngine.mapActive.grids,
 			processor = (imageBlocks: { [key: number]: GridImageBlock }) => {
 				for (let i in imageBlocks) {
-					assetIds[imageBlocks[i].assetId] = null;
+					if (!imageBlocks[i].extends) {
+						assetIds[imageBlocks[i].assetId] = null;
+					}
 				}
 			};
 

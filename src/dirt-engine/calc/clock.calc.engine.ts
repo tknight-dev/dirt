@@ -34,7 +34,6 @@ export class ClockCalcEngine {
 			});
 		} else if (minute !== mapActive.minuteOfHourEff) {
 			mapActive.minuteOfHourEff = minute;
-
 			setTimeout(() => {
 				ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 			});

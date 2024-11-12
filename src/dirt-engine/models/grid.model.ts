@@ -97,7 +97,6 @@ export interface GridImageBlock extends GridObject {
 	assetIdWalkedOnAudioEffect?: string; // fallback is no audio
 	damageable?: boolean;
 	destructible?: boolean;
-	hash: number;
 	passthrough?: boolean;
 	strengthToDamangeInN?: number; // newtons of force required to destroy
 	strengthToDestroyInN?: number; // newtons of force required to destroy
@@ -114,7 +113,6 @@ export interface GridLight extends GridCoordinate {
 	color: number; // hexadecimal
 	destructible: boolean;
 	gRadius: number;
-	hash: number;
 	nightOnly: boolean;
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 	type: GridLightType;
@@ -131,8 +129,10 @@ export enum GridLightType {
 }
 
 export interface GridObject extends GridCoordinate {
+	extends?: number; // reference parent hash (g height/width > 1) [top left most]
 	gSizeH: number; // refers to number of grid squares the object takes up
 	gSizeW: number; // refers to number of grid squares the object takes up
+	hash: number;
 	objectType: GridObjectType;
 	weight: number; // kg
 }

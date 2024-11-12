@@ -1,3 +1,4 @@
+import { AssetImage } from '../../models/asset.model';
 import { Grid, GridConfig } from '../../models/grid.model';
 
 /**
@@ -22,6 +23,7 @@ export interface MapDrawBusInputPlayload {
 		| MapDrawBusInputPlayloadCamera
 		| MapDrawBusInputPlayloadGridActive
 		| MapDrawBusInputPlayloadGrids
+		| MapDrawBusInputPlayloadInitial
 		| MapDrawBusInputPlayloadResolution
 		| MapDrawBusInputPlayloadSettings
 		| MapDrawBusInputPlayloadTimeForced;
@@ -55,6 +57,10 @@ export interface MapDrawBusInputPlayloadGridActive {
 export interface MapDrawBusInputPlayloadGrids {
 	grids: { [key: string]: Grid };
 	gridConfigs: { [key: string]: GridConfig };
+}
+
+export interface MapDrawBusInputPlayloadInitial {
+	assetImages: { [key: string]: AssetImage };
 }
 
 export interface MapDrawBusInputPlayloadResolution {

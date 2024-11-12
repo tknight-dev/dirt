@@ -1,3 +1,4 @@
+import { AssetEngine } from '../../engines/asset.engine';
 import { Camera } from '../../models/camera.model';
 import { Grid, GridConfig } from '../../models/grid.model';
 import { MapDrawEngine } from '../map.draw.engine';
@@ -28,7 +29,9 @@ export class MapDrawEngineBus {
 
 		MapDrawEngineBus.worker.postMessage({
 			cmd: MapDrawBusInputCmd.INITIALIZE,
-			data: undefined,
+			data: {
+				assetImages: AssetEngine.getAssetManifestMaster().images,
+			},
 		});
 	}
 
