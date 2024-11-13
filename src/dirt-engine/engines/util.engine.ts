@@ -11,6 +11,54 @@ export class UtilEngine {
 	private static initialized: boolean;
 	public static readonly renderOverflowP: number = 20; // Sync with "dirt.scss -> $dirt-engine-feed-overflow-p"
 	public static renderOverflowPEff: number = UtilEngine.renderOverflowP; // Changes with the DPI of the screen
+	private static timeoutCount: number = 0;
+	private static timeouts: { [key: number]: ReturnType<typeof setTimeout> } = {};
+
+	/**
+	 * @param count is the returned number from UtilEngine.setInterval()
+	 */
+	public static clearInterval(count: number): void {
+		clearTimeout(UtilEngine.timeouts[count]);
+		delete UtilEngine.timeouts[count];
+	}
+
+	/**
+	 * Interval that offsets the drift (setInterval and setTimeout use optimistic timing [drifting clocks])
+	 *
+	 * @return use the number with UtilEngine.clearInterval() to stop this interval
+	 */
+	public static setInterval(method: () => void, intervalInMs?: number): number {
+		intervalInMs = Math.max(0, Math.min(2000000000, intervalInMs || 0));
+		let count: number = UtilEngine.timeoutCount++,
+			delta: number,
+			deltaAvg: number,
+			history: number[],
+			historyIndex: number = 0,
+			now: number,
+			then: number = performance.now(),
+			trigger: () => void = () => {
+				// Fire associated method
+				now = performance.now();
+				method();
+
+				// Adjust for drift
+				delta = now - then - intervalInMs;
+				then = now;
+				if (history) {
+					history[historyIndex] = delta;
+					historyIndex = (historyIndex + 1) % 5;
+				} else {
+					history = [delta, delta, delta, delta, delta];
+				}
+				deltaAvg = Math.round((history.reduce((a, b) => a + b) / 5 + intervalInMs) / 2);
+
+				// Next interval
+				UtilEngine.timeouts[count] = setTimeout(trigger, intervalInMs - deltaAvg);
+			};
+
+		UtilEngine.timeouts[count] = setTimeout(trigger, intervalInMs);
+		return count;
+	}
 
 	public static async initialize(): Promise<void> {
 		if (UtilEngine.initialized) {

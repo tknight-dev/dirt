@@ -96,9 +96,9 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.ctxTmp = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvasTmp.getContext('2d');
 
 		// Draw interval
-		setInterval(() => {
+		UtilEngine.setInterval(() => {
 			MapDrawWorkerEngine._draw();
-		}, 750);
+		}, 1000);
 	}
 
 	public static inputSetAssets(data: MapDrawBusInputPlayloadAssets): void {
