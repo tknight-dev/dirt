@@ -76,10 +76,16 @@ export class MapDrawEngineBus {
 	}
 
 	public static outputGrids(grids: { [key: string]: Grid }, gridConfigs: { [key: string]: GridConfig }): void {
+		let gridsOptimized: { [key: string]: string } = {};
+
+		for (let i in grids) {
+			gridsOptimized[i] = grids[i].toJSON();
+		}
+
 		MapDrawEngineBus.worker.postMessage({
 			cmd: MapDrawBusInputCmd.SET_GRIDS,
 			data: {
-				grids: grids,
+				grids: gridsOptimized,
 				gridConfigs: gridConfigs,
 			},
 		});

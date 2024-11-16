@@ -17,20 +17,30 @@ export class MapEngine {
 			console.error('MapEngine > default: not initialized');
 		}
 		let gridWidth: number = 50,
-			grid: Grid = {
+			grid: Grid = new Grid({
 				audioBlocks: <any>{},
-				audioTagTriggersEffect: <any>{},
-				audioTagTriggersMusic: <any>{},
-				audioTagTriggersMusicFade: <any>{},
-				audioTagTriggersMusicPause: <any>{},
-				audioTagTriggersMusicUnpause: <any>{},
-				imageBlocksBackground: <any>{},
-				imageBlocksForeground: <any>{},
-				imageBlocksPrimary: <any>{},
-				imageBlocksVanishing: <any>{},
+				audioTagTriggers: <any>{},
+				id: 'initial', // protectedId
+				imageBlocksBackgroundFoliage: <any>{},
+				imageBlocksBackgroundLiquid: <any>{},
+				imageBlocksBackgroundReference: <any>{},
+				imageBlocksBackgroundSolid: <any>{},
+				imageBlocksForegroundFoliage: <any>{},
+				imageBlocksForegroundLiquid: <any>{},
+				imageBlocksForegroundReference: <any>{},
+				imageBlocksForegroundSolid: <any>{},
+				imageBlocksPrimaryFoliage: <any>{},
+				imageBlocksPrimaryLiquid: <any>{},
+				imageBlocksPrimaryReference: <any>{},
+				imageBlocksPrimarySolid: <any>{},
+				imageBlocksVanishingFoliage: <any>{},
+				imageBlocksVanishingLiquid: <any>{},
+				imageBlocksVanishingReference: <any>{},
+				imageBlocksVanishingSolid: <any>{},
 				lights: <any>{},
-			},
+			}),
 			gridConfig: GridConfig = {
+				gHashPrecision: 0, // calculated
 				gHeight: 0, // calculated
 				gHorizon: 0, // calculated
 				gWidth: gridWidth,
@@ -88,6 +98,10 @@ export class MapEngine {
 				minuteOfHourEff: 0,
 			});
 
+		// Make sure the initial grid id is matching
+		grids[gridActiveId].id = gridActiveId;
+		gridConfigs[gridActiveId].id = gridActiveId;
+
 		// Camera
 		mapActive.camera.zoom = mapActive.gridConfigActive.zoomDefault;
 		mapActive.camera.viewportGw = Math.round(mapActive.camera.viewportGw);
@@ -100,18 +114,6 @@ export class MapEngine {
 		// Grids
 		for (let i in grids) {
 			grid = grids[i];
-
-			grid.audioBlocks = grid.audioBlocks || {};
-			grid.audioTagTriggersEffect = grid.audioTagTriggersEffect || {};
-			grid.audioTagTriggersMusic = grid.audioTagTriggersMusic || {};
-			grid.audioTagTriggersMusicFade = grid.audioTagTriggersMusicFade || {};
-			grid.audioTagTriggersMusicPause = grid.audioTagTriggersMusicPause || {};
-			grid.audioTagTriggersMusicUnpause = grid.audioTagTriggersMusicUnpause || {};
-			grid.imageBlocksBackground = grid.imageBlocksBackground || {};
-			grid.imageBlocksForeground = grid.imageBlocksForeground || {};
-			grid.imageBlocksPrimary = grid.imageBlocksPrimary || {};
-			grid.imageBlocksVanishing = grid.imageBlocksVanishing || {};
-			grid.lights = grid.lights || {};
 		}
 
 		// Grids Configs
@@ -119,8 +121,10 @@ export class MapEngine {
 			gridConfig = gridConfigs[i];
 
 			gridConfig.gWidth = Math.round(gridConfig.gWidth);
-			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 
+			// Depends on width
+			gridConfig.gHashPrecision = UtilEngine.getGridHashPrecisionMax(gridConfig.gWidth);
+			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 			gridConfig.gHorizon = Math.round(gridConfig.gHeight / 2);
 
 			gridConfig.lightIntensityGlobal = Math.round(gridConfig.lightIntensityGlobal * 1000) / 1000;

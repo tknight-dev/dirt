@@ -10,6 +10,7 @@ import { GridDrawEngine } from '../draw/grid.draw.engine';
 import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
 import { KeyAction, KeyCommon } from './keyboard.engine';
 import { LightingEngine } from './lighting.engine';
+import { LightingCalcEngineBus } from '../calc/buses/lighting.calc.engine.bus';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
@@ -283,10 +284,38 @@ export class KernelEngine {
 		KernelEngine.updateGridActive(mapActive.gridActiveId);
 	}
 
+	public static pause(): void {
+		if (!KernelEngine.initialized) {
+			console.error('KernelEngine > pause: not initialized');
+			return;
+		} else if (!KernelEngine.status) {
+			console.error('KernelEngine > pause: not running');
+			return;
+		} else if (KernelEngine.paused) {
+			console.error('KernelEngine > pause: already paused');
+			return;
+		}
+		KernelEngine.paused = true;
+	}
+
 	private static resetMapActive(): void {
 		KernelEngine.mapActive.clockTicker = 0;
 		KernelEngine.mapActive.durationInMS = 0;
 		KernelEngine.mapActive.hourOfDayEff = KernelEngine.mapActive.hourOfDay;
+	}
+
+	public static resume(): void {
+		if (!KernelEngine.initialized) {
+			console.error('KernelEngine > resume: not initialized');
+			return;
+		} else if (!KernelEngine.status) {
+			console.error('KernelEngine > resume: not running');
+			return;
+		} else if (!KernelEngine.paused) {
+			console.error('KernelEngine > resume: not paused');
+			return;
+		}
+		KernelEngine.paused = false;
 	}
 
 	public static async start(mapActive: MapActive): Promise<void> {
@@ -344,7 +373,6 @@ export class KernelEngine {
 
 		if (KernelEngine.mapActive) {
 			CameraEngine.dimensions(height, width);
-			LightingEngine.updateZoom(undefined, true);
 		}
 	}
 
@@ -362,6 +390,7 @@ export class KernelEngine {
 
 	public static updateGridActive(id: string): void {
 		MapDrawEngineBus.outputGridActive(id);
+		LightingCalcEngineBus.outputGridActive(id);
 	}
 
 	/*
@@ -370,6 +399,7 @@ export class KernelEngine {
 	public static updateMap(): void {
 		ImageBlockDrawEngine.cacheReset();
 		MapDrawEngineBus.outputGrids(KernelEngine.getMapActive().grids, KernelEngine.getMapActive().gridConfigs);
+		LightingCalcEngineBus.outputGrids(KernelEngine.getMapActive().grids, KernelEngine.getMapActive().gridConfigs);
 	}
 
 	public static updateSettings(settings: VideoBusInputCmdSettings): void {
@@ -412,6 +442,10 @@ export class KernelEngine {
 
 	public static isModeEdit(): boolean {
 		return KernelEngine.modeEdit;
+	}
+
+	public static isPaused(): boolean {
+		return KernelEngine.paused;
 	}
 
 	public static isRunning(): boolean {

@@ -1,12 +1,10 @@
 import { AssetDeclarations, AssetImageSrcQuality } from '../../models/asset.model';
 import {
 	GridAudioBlock,
-	GridAudioTriggerEffect,
-	GridAudioTriggerMusic,
-	GridAudioTriggerMusicFade,
-	GridAudioTriggerMusicPause,
-	GridAudioTriggerMusicUnpause,
-	GridImageBlock,
+	GridAudioTrigger,
+	GridImageBlockFoliage,
+	GridImageBlockLiquid,
+	GridImageBlockSolid,
 	GridLight,
 } from '../../models/grid.model';
 import { KeyAction } from '../keyboard.engine';
@@ -27,7 +25,6 @@ export enum VideoBusInputCmd {
 	GAME_MODE_EDIT_APPLY,
 	GAME_MODE_EDIT_APPLY_GROUP,
 	GAME_MODE_EDIT_DRAW,
-	GAME_MODE_EDIT_DRAW_NULL,
 	GAME_MODE_EDIT_REDO,
 	GAME_MODE_EDIT_SETTINGS,
 	GAME_MODE_EDIT_TIME_FORCED,
@@ -85,37 +82,38 @@ export interface VideoBusInputCmdGameModeEditApply {
 
 export interface VideoBusInputCmdGameModeEditApplyAudioBlock extends GridAudioBlock, VideoBusInputCmdGameModeEditApply {}
 
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerEffect extends GridAudioTriggerEffect, VideoBusInputCmdGameModeEditApply {}
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusic extends GridAudioTriggerMusic, VideoBusInputCmdGameModeEditApply {}
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade
-	extends GridAudioTriggerMusicFade,
-		VideoBusInputCmdGameModeEditApply {}
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause
-	extends GridAudioTriggerMusicPause,
-		VideoBusInputCmdGameModeEditApply {}
-export interface VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause
-	extends GridAudioTriggerMusicUnpause,
-		VideoBusInputCmdGameModeEditApply {}
+export interface VideoBusInputCmdGameModeEditApplyAudioTrigger extends GridAudioTrigger, VideoBusInputCmdGameModeEditApply {}
 
 export interface VideoBusInputCmdGameModeEditApplyErase extends VideoBusInputCmdGameModeEditApply {
+	type: VideoBusInputCmdGameModeEditApplyType;
 	z: VideoBusInputCmdGameModeEditApplyZ;
 }
 
-export interface VideoBusInputCmdGameModeEditApplyImageBlock extends GridImageBlock, VideoBusInputCmdGameModeEditApply {
+export interface VideoBusInputCmdGameModeEditApplyImageBlock extends VideoBusInputCmdGameModeEditApply {
 	z: VideoBusInputCmdGameModeEditApplyZ;
 }
+
+export interface VideoBusInputCmdGameModeEditApplyImageBlockFoliage
+	extends GridImageBlockFoliage,
+		VideoBusInputCmdGameModeEditApplyImageBlock {}
+
+export interface VideoBusInputCmdGameModeEditApplyImageBlockLiquid
+	extends GridImageBlockLiquid,
+		VideoBusInputCmdGameModeEditApplyImageBlock {}
+
+export interface VideoBusInputCmdGameModeEditApplyImageBlockSolid
+	extends GridImageBlockSolid,
+		VideoBusInputCmdGameModeEditApplyImageBlock {}
 
 export interface VideoBusInputCmdGameModeEditApplyLight extends GridLight, VideoBusInputCmdGameModeEditApply {}
 
 export enum VideoBusInputCmdGameModeEditApplyType {
 	AUDIO_BLOCK,
-	AUDIO_TRIGGER_EFFECT,
-	AUDIO_TRIGGER_MUSIC,
-	AUDIO_TRIGGER_MUSIC_FADE,
-	AUDIO_TRIGGER_MUSIC_PAUSE,
-	AUDIO_TRIGGER_MUSIC_UNPAUSE,
+	AUDIO_TRIGGER,
 	ERASE,
-	IMAGE_BLOCK,
+	IMAGE_BLOCK_FOLIAGE,
+	IMAGE_BLOCK_LIQUID,
+	IMAGE_BLOCK_SOLID,
 	LIGHT,
 }
 

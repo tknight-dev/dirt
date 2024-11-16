@@ -1,7 +1,7 @@
 import { AssetImage } from '../models/asset.model';
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
-import { Grid, GridBlockTable, GridBlockTableComplex, GridConfig, GridImageBlock } from '../models/grid.model';
+import { Grid, GridBlockTable, GridBlockTableComplex, GridImageBlockReference, GridConfig, GridImageBlock } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
@@ -9,8 +9,6 @@ import { VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model
 import { AssetEngine } from '../engines/asset.engine';
 
 /**
- * Leverage global lighting thread to create 24 darkened/lightened images to represent the day cycle
- *
  * @author tknight-dev
  */
 
@@ -77,34 +75,39 @@ export class ImageBlockDrawEngine {
 	}
 
 	public static start(): void {
-		let camera: Camera = ImageBlockDrawEngine.mapActiveCamera;
+		let camera: Camera = ImageBlockDrawEngine.mapActiveCamera,
+			hourPreciseOfDayEff: number = LightingEngine.getHourPreciseOfDayEff();
 		//let start: number = performance.now();
 
-		ImageBlockDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(camera.gx, camera.gy);
-		ImageBlockDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(camera.windowPw, camera.windowPh);
+		ImageBlockDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
+			camera.gx,
+			camera.gy,
+			ImageBlockDrawEngine.mapActive.gridConfigActive.gHashPrecision,
+		);
+		ImageBlockDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(
+			camera.windowPw,
+			camera.windowPh,
+			ImageBlockDrawEngine.mapActive.gridConfigActive.gHashPrecision,
+		);
 		if (
 			ImageBlockDrawEngine.cacheHashG !== ImageBlockDrawEngine.cacheHashCheckG ||
 			ImageBlockDrawEngine.cacheHashP !== ImageBlockDrawEngine.cacheHashCheckP ||
-			ImageBlockDrawEngine.cacheHourPreciseCheck !== LightingEngine.getHourPreciseOfDayEff() ||
+			ImageBlockDrawEngine.cacheHourPreciseCheck !== hourPreciseOfDayEff ||
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
 			let assetId: string,
-				assetImage: AssetImage,
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
-				extended: boolean,
+				drawGx: number,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
-				getAssetImageLit: any = LightingEngine.getAssetImageLit,
-				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
-				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
 				gradient: CanvasGradient,
@@ -113,20 +116,13 @@ export class ImageBlockDrawEngine {
 				gridImageBlock: GridImageBlock,
 				gx: number,
 				gy: number,
-				gyMin: number,
-				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
-				hashesGyByGxForeground: { [key: number]: GridBlockTableComplex[] } = {},
 				imageBitmap: ImageBitmap,
-				imageBitmaps: ImageBitmap[],
-				imageBlocks: GridBlockTable<GridImageBlock>,
-				imageBlockHashes: { [key: number]: GridImageBlock },
 				j: string,
 				k: number,
-				outside: boolean = ImageBlockDrawEngine.mapActive.gridConfigActive.outside,
-				oversized: boolean,
 				radius: number,
 				radius2: number,
-				scratch: number,
+				reference: GridBlockTable<GridImageBlockReference>,
+				referenceHashes: { [key: number]: GridImageBlockReference },
 				startGx: number = camera.viewportGx,
 				startGy: number = camera.viewportGy,
 				stopGx: number = startGx + camera.viewportGwEff,
@@ -151,62 +147,45 @@ export class ImageBlockDrawEngine {
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
 						extendedHash = extendedHashBackground;
-						imageBlocks = grid.imageBlocksBackground;
+						reference = grid.imageBlocksBackgroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 						extendedHash = extendedHashForeground;
-						imageBlocks = grid.imageBlocksForeground;
+						reference = grid.imageBlocksForegroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 						extendedHash = extendedHashPrimary;
-						imageBlocks = grid.imageBlocksPrimary;
+						reference = grid.imageBlocksPrimaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						extendedHash = extendedHashVanishing;
-						imageBlocks = grid.imageBlocksVanishing;
+						reference = grid.imageBlocksVanishingReference;
 						break;
 				}
-				imageBlockHashes = imageBlocks.hashes;
+				referenceHashes = reference.hashes;
 
 				// Prepare
 				ctx.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 				// Applicable hashes
-				complexesByGx = UtilEngine.gridBlockTableSliceHashes(imageBlocks, startGx, startGy, stopGx, stopGy);
-				hashesGyByGx = <any>imageBlocks.hashesGyByGx;
-
-				if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
-					hashesGyByGxForeground = hashesGyByGx;
-				}
+				complexesByGx = UtilEngine.gridBlockTableSliceHashes(reference, startGx, startGy, stopGx, stopGy);
 
 				for (j in complexesByGx) {
 					complexes = complexesByGx[j];
-
-					if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-						if (hashesGyByGxForeground[Number(j)] !== undefined) {
-							gyMin = hashesGyByGxForeground[Number(j)][0].value;
-						} else {
-							gyMin = Infinity;
-						}
-					} else {
-						gyMin = hashesGyByGx[Number(j)][0].value;
-					}
+					gx = Number(j);
+					drawGx = Math.round((gx - startGx) * gInPw);
 
 					for (k = 0; k < complexes.length; k++) {
 						complex = complexes[k];
-						assetId = imageBlockHashes[complex.hash].assetId;
-
-						// Null check
-						if (!ImageBlockDrawEngine.drawNull && (assetId === 'null' || assetId === 'null2')) {
-							continue;
-						}
+						gridImageBlock = referenceHashes[complex.hash].block;
+						assetId = gridImageBlock.assetId;
 
 						// Extended check
-						gridImageBlock = imageBlockHashes[complex.hash];
+						gridImageBlock = referenceHashes[complex.hash].block;
 						if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
 							if (gridImageBlock.extends) {
 								// extention block
-								gridImageBlock = imageBlockHashes[gridImageBlock.extends];
+								gridImageBlock = referenceHashes[gridImageBlock.extends].block;
 								assetId = gridImageBlock.assetId;
 							}
 
@@ -215,54 +194,36 @@ export class ImageBlockDrawEngine {
 								continue;
 							} else {
 								// Draw large block
-								extended = true;
 								extendedHash[gridImageBlock.hash] = null;
-								gx = <number>gridImageBlock.gx;
+
+								if (gx !== <number>gridImageBlock.gx) {
+									gx = <number>gridImageBlock.gx;
+									drawGx = Math.round((gx - startGx) * gInPw);
+								}
 								gy = <number>gridImageBlock.gy;
 							}
 						} else {
-							extended = false;
-							gx = <number>complex.gx;
+							if (gx !== <number>gridImageBlock.gx) {
+								gx = <number>complex.gx;
+								drawGx = Math.round((gx - startGx) * gInPw);
+							}
 							gy = <number>complex.gy;
 						}
 
 						// Grab global illumination images if outside
-						if (outside) {
-							scratch = gy - gyMin;
+						imageBitmap = LightingEngine.getCacheInstance(assetId).image;
 
-							if (scratch > 2) {
-								imageBitmaps = getAssetImageUnlit(assetId);
-								imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
-							} else {
-								imageBitmap = getAssetImageLit(assetId);
-							}
-						} else {
-							imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
-						}
-
-						assetImage = ImageBlockDrawEngine.assetImages[assetId];
-						if ((assetImage.gHeight || 1) !== 1 || (assetImage.gWidth || 1) !== 1) {
-							oversized = true;
-						} else {
-							oversized = false;
-						}
-
-						// Use draw resize overload for image blocks larger than 1x1
-						if (extended || oversized) {
-							ctx.drawImage(
-								imageBitmap,
-								0,
-								0,
-								imageBitmap.width,
-								imageBitmap.height,
-								Math.round((gx - startGx) * gInPw),
-								Math.round((gy - startGy) * gInPh),
-								gInPw * gridImageBlock.gSizeW + 2, // Make sure we fill the grid
-								gInPh * gridImageBlock.gSizeH + 2, // Make sure we fill the grid
-							);
-						} else {
-							ctx.drawImage(imageBitmap, Math.round((gx - startGx) * gInPw), Math.round((gy - startGy) * gInPh));
-						}
+						ctx.drawImage(
+							imageBitmap,
+							0,
+							0,
+							imageBitmap.width,
+							imageBitmap.height,
+							drawGx,
+							Math.round((gy - startGy) * gInPh),
+							gInPw * gridImageBlock.gSizeW + 1, // Make sure we fill the grid
+							gInPh * gridImageBlock.gSizeH + 1, // Make sure we fill the grid
+						);
 					}
 				}
 
@@ -301,7 +262,7 @@ export class ImageBlockDrawEngine {
 			// Cache it
 			ImageBlockDrawEngine.cacheHashG = ImageBlockDrawEngine.cacheHashCheckG;
 			ImageBlockDrawEngine.cacheHashP = ImageBlockDrawEngine.cacheHashCheckP;
-			ImageBlockDrawEngine.cacheHourPreciseCheck = LightingEngine.getHourPreciseOfDayEff();
+			ImageBlockDrawEngine.cacheHourPreciseCheck = hourPreciseOfDayEff;
 			ImageBlockDrawEngine.cacheZoom = camera.zoom;
 		}
 
@@ -313,10 +274,6 @@ export class ImageBlockDrawEngine {
 		// MapDrawEngine.count++;
 		// MapDrawEngine.sum += performance.now() - start;
 		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
-	}
-
-	public static setDrawNull(drawNull: boolean) {
-		ImageBlockDrawEngine.drawNull = drawNull;
 	}
 
 	public static setMapActive(mapActive: MapActive) {

@@ -7,8 +7,9 @@ import {
 	GridConfig,
 	GridCoordinate,
 	GridImageBlock,
-	GridImageBlockType,
+	GridImageBlockReference,
 	GridObject,
+	GridObjectType,
 } from '../models/grid.model';
 import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
@@ -18,13 +19,12 @@ import { TouchAction } from './touch.engine';
 import {
 	VideoBusInputCmdGameModeEditApply,
 	VideoBusInputCmdGameModeEditApplyAudioBlock,
-	VideoBusInputCmdGameModeEditApplyAudioTriggerEffect,
-	VideoBusInputCmdGameModeEditApplyAudioTriggerMusic,
-	VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade,
-	VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause,
-	VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause,
+	VideoBusInputCmdGameModeEditApplyAudioTrigger,
 	VideoBusInputCmdGameModeEditApplyErase,
 	VideoBusInputCmdGameModeEditApplyImageBlock,
+	VideoBusInputCmdGameModeEditApplyImageBlockFoliage,
+	VideoBusInputCmdGameModeEditApplyImageBlockLiquid,
+	VideoBusInputCmdGameModeEditApplyImageBlockSolid,
 	VideoBusInputCmdGameModeEditApplyLight,
 	VideoBusInputCmdGameModeEditApplyType,
 	VideoBusInputCmdGameModeEditApplyView,
@@ -33,7 +33,6 @@ import {
 } from '../engines/buses/video.model.bus';
 import { UtilEngine } from './util.engine';
 import { LightingCacheInstance, LightingEngine } from './lighting.engine';
-import { MapDrawEngine } from '../draw/map.draw.engine';
 
 /**
  * Mainted by UI and Video threads for map editing. Allows for full object restores, and minimizes bus communication.
@@ -43,8 +42,8 @@ import { MapDrawEngine } from '../draw/map.draw.engine';
 
 export class MapEditEngine {
 	public static applyGroup: boolean;
-	public static readonly gHeightMax: number = 36301;
-	public static readonly gWidthMax: number = 0xffff - 1000;
+	public static readonly gHeightMax: number = 18431; // 0xffff
+	public static readonly gWidthMax: number = 32767; // 0xffff
 	private static initialized: boolean;
 	private static mapActiveUI: MapActive;
 	private static mapHistoryLength: number = 50;
@@ -62,25 +61,15 @@ export class MapEditEngine {
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
 				MapEditEngine.applyAudioBlock(<VideoBusInputCmdGameModeEditApplyAudioBlock>apply);
 				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT:
-				MapEditEngine.applyAudioTriggerEffect(<VideoBusInputCmdGameModeEditApplyAudioTriggerEffect>apply);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC:
-				MapEditEngine.applyAudioTriggerMusic(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusic>apply);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE:
-				MapEditEngine.applyAudioTriggerMusicFade(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade>apply);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
-				MapEditEngine.applyAudioTriggerMusicPause(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause>apply);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
-				MapEditEngine.applyAudioTriggerMusicUnpause(<VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause>apply);
+			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER:
+				MapEditEngine.applyAudioTrigger(<VideoBusInputCmdGameModeEditApplyAudioTrigger>apply);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.ERASE:
 				MapEditEngine.applyErase(<VideoBusInputCmdGameModeEditApplyErase>apply);
 				break;
-			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK:
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
 				MapEditEngine.applyImageBlock(<VideoBusInputCmdGameModeEditApplyImageBlock>apply);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.LIGHT:
@@ -93,78 +82,111 @@ export class MapEditEngine {
 		console.warn('MapEditEngine > applyAudioArea: not yet implemented');
 	}
 
-	private static applyAudioTriggerEffect(apply: VideoBusInputCmdGameModeEditApplyAudioTriggerEffect): void {
-		console.warn('MapEditEngine > applyAudioTriggerEffect: not yet implemented');
-	}
-
-	private static applyAudioTriggerMusic(apply: VideoBusInputCmdGameModeEditApplyAudioTriggerMusic): void {
-		console.warn('MapEditEngine > applyAudioTriggerMusic: not yet implemented');
-	}
-
-	private static applyAudioTriggerMusicFade(apply: VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade): void {
-		console.warn('MapEditEngine > applyAudioTriggerMusicFade: not yet implemented');
-	}
-
-	private static applyAudioTriggerMusicPause(apply: VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause): void {
-		console.warn('MapEditEngine > applyAudioTriggerMusicPause: not yet implemented');
-	}
-
-	private static applyAudioTriggerMusicUnpause(apply: VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause): void {
-		console.warn('MapEditEngine > applyAudioTriggerMusicUnpause: not yet implemented');
+	private static applyAudioTrigger(apply: VideoBusInputCmdGameModeEditApplyAudioTrigger): void {
+		console.warn('MapEditEngine > applyAudioTrigger: not yet implemented');
 	}
 
 	private static applyErase(apply: VideoBusInputCmdGameModeEditApplyErase): void {
-		let gCoordinate: GridCoordinate,
+		let blocks: GridBlockTable<GridObject> = <any>{},
+			blockHashes: { [key: number]: GridObject } = {},
+			gCoordinate: GridCoordinate,
+			gHash: number,
 			gHashes: number[] = apply.gHashes,
+			gHashPrecision: number,
 			grid: Grid,
+			gridConfig: GridConfig,
 			gridObject: GridObject,
-			imageBlocks: GridBlockTable<GridImageBlock>,
+			mapActive: MapActive,
+			reference: GridBlockTable<GridImageBlockReference> = {
+				hashes: {},
+			},
+			referenceHashes: { [key: number]: GridImageBlockReference } = reference.hashes,
+			referenceMode: boolean = false,
 			x: number,
-			y: number,
-			z: VideoBusInputCmdGameModeEditApplyZ = apply.z;
+			y: number;
 
 		if (!MapEditEngine.modeUI) {
-			grid = KernelEngine.getMapActive().gridActive;
+			mapActive = KernelEngine.getMapActive();
 		} else {
-			grid = MapEditEngine.mapActiveUI.gridActive;
+			mapActive = MapEditEngine.mapActiveUI;
 		}
+		grid = mapActive.gridActive;
+		gridConfig = mapActive.gridConfigActive;
+		gHashPrecision = gridConfig.gHashPrecision;
 
-		// Select object
-		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
-			imageBlocks = grid.imageBlocksBackground;
-		} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
-			imageBlocks = grid.imageBlocksForeground;
-		} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-			imageBlocks = grid.imageBlocksPrimary;
-		} else {
-			imageBlocks = grid.imageBlocksVanishing;
+		switch (apply.type) {
+			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
+				blocks = grid.audioBlocks;
+				blockHashes = blocks.hashes;
+				break;
+			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER:
+				blocks = grid.audioTagTriggers;
+				blockHashes = blocks.hashes;
+				break;
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+				referenceMode = true;
+				switch (apply.z) {
+					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+						reference = grid.imageBlocksBackgroundReference;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+						reference = grid.imageBlocksForegroundReference;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						reference = grid.imageBlocksPrimaryReference;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+						reference = grid.imageBlocksVanishingReference;
+						break;
+				}
+				referenceHashes = reference.hashes;
+				break;
+			case VideoBusInputCmdGameModeEditApplyType.LIGHT:
+				blocks = grid.lights;
+				blockHashes = blocks.hashes;
+				break;
 		}
 
 		// Apply
 		for (let i = 0; i < gHashes.length; i++) {
-			if (imageBlocks.hashes) {
-				gridObject = imageBlocks.hashes[gHashes[i]];
+			gridObject = referenceMode ? (referenceHashes[gHashes[i]] || {}).block : blockHashes[gHashes[i]];
 
-				// Maybe it was already deleted as part of a larger group
-				if (gridObject !== undefined) {
-					// Snap to parent hash (top left) to delete all associated hashes
-					if (gridObject.extends) {
-						gridObject = imageBlocks.hashes[gridObject.extends];
-					}
+			// Maybe it was already deleted as part of a larger group
+			if (gridObject !== undefined) {
+				if (referenceMode) {
+					blockHashes = referenceHashes[gHashes[i]].blocks;
+				}
 
-					gCoordinate = UtilEngine.gridHashFrom(gridObject.hash);
+				// Snap to parent hash (top left) to delete all associated hashes
+				if (gridObject.extends) {
+					gridObject = referenceMode ? referenceHashes[gridObject.extends].block : blockHashes[gridObject.extends];
+				}
 
-					// Delete blocks
-					for (x = 0; x < gridObject.gSizeW; x++) {
-						for (y = 0; y < gridObject.gSizeH; y++) {
-							delete imageBlocks.hashes[UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y)];
+				gCoordinate = UtilEngine.gridHashFrom(gridObject.hash, gHashPrecision);
+
+				// Delete blocks
+				for (x = 0; x < gridObject.gSizeW; x++) {
+					for (y = 0; y < gridObject.gSizeH; y++) {
+						gHash = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y, gHashPrecision);
+
+						if (referenceMode) {
+							delete blockHashes[gHash];
+							delete reference.hashes[gHash];
+						} else {
+							delete blockHashes[gHash];
 						}
 					}
 				}
 			}
 		}
 
-		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
+		if (referenceMode) {
+			MapEditEngine.gridBlockTableInflateInstance(reference, gHashPrecision);
+		} else {
+			MapEditEngine.gridBlockTableInflateInstance(blocks, gHashPrecision);
+		}
 
 		if (!MapEditEngine.modeUI) {
 			KernelEngine.updateMap();
@@ -172,68 +194,155 @@ export class MapEditEngine {
 	}
 
 	private static applyImageBlock(apply: VideoBusInputCmdGameModeEditApplyImageBlock): void {
-		let gCoordinate: GridCoordinate,
+		let blocks: { [key: number]: GridImageBlock } = {},
+			gCoordinate: GridCoordinate,
 			gHash: number,
+			gHashEff: number,
 			gHashes: number[] = apply.gHashes,
 			gHashesOverwritten: number[],
+			gHashPrecision: number,
 			grid: Grid,
-			imageBlocks: GridBlockTable<GridImageBlock>,
+			gridConfig: GridConfig,
+			mapActive: MapActive,
+			objectType: GridObjectType,
 			properties: any = JSON.parse(JSON.stringify(apply)),
+			reference: GridBlockTable<GridImageBlockReference> = {
+				hashes: {},
+			},
+			referenceHashes: { [key: number]: GridImageBlockReference },
 			x: number,
 			y: number,
 			z: VideoBusInputCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
-			grid = KernelEngine.getMapActive().gridActive;
+			mapActive = KernelEngine.getMapActive();
 		} else {
-			grid = MapEditEngine.mapActiveUI.gridActive;
+			mapActive = MapEditEngine.mapActiveUI;
+		}
+		grid = mapActive.gridActive;
+		gridConfig = mapActive.gridConfigActive;
+		gHashPrecision = gridConfig.gHashPrecision;
+
+		switch (apply.z) {
+			case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+				reference = grid.imageBlocksBackgroundReference;
+				switch (apply.applyType) {
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+						blocks = grid.imageBlocksBackgroundFoliage;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+						blocks = grid.imageBlocksBackgroundLiquid;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+						blocks = grid.imageBlocksBackgroundSolid;
+						break;
+				}
+				break;
+			case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+				reference = grid.imageBlocksForegroundReference;
+				switch (apply.applyType) {
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+						blocks = grid.imageBlocksForegroundFoliage;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+						blocks = grid.imageBlocksForegroundLiquid;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+						blocks = grid.imageBlocksForegroundSolid;
+						break;
+				}
+				break;
+			case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+				reference = grid.imageBlocksPrimaryReference;
+				switch (apply.applyType) {
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+						blocks = grid.imageBlocksPrimaryFoliage;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+						blocks = grid.imageBlocksPrimaryLiquid;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+						blocks = grid.imageBlocksPrimarySolid;
+						break;
+				}
+				break;
+			case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+				reference = grid.imageBlocksVanishingReference;
+				switch (apply.applyType) {
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+						blocks = grid.imageBlocksVanishingFoliage;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+						blocks = grid.imageBlocksVanishingLiquid;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+						blocks = grid.imageBlocksVanishingSolid;
+						break;
+				}
+				break;
 		}
 
 		// Select object
-		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
-			imageBlocks = grid.imageBlocksBackground;
-		} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
-			imageBlocks = grid.imageBlocksForeground;
-		} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-			imageBlocks = grid.imageBlocksPrimary;
-		} else {
-			imageBlocks = grid.imageBlocksVanishing;
+		if (reference.hashes === undefined) {
+			reference.hashes = <any>new Object();
 		}
-
-		if (imageBlocks.hashes === undefined) {
-			imageBlocks.hashes = <any>new Object();
-		}
+		referenceHashes = reference.hashes;
 
 		// Clean
-		delete (<any>properties).gHashes;
-		delete (<any>properties).z;
+		delete properties.applyType;
+		delete properties.gHashes;
+		delete properties.z;
 
 		// Apply
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
-			gCoordinate = UtilEngine.gridHashFrom(gHash);
+			gCoordinate = UtilEngine.gridHashFrom(gHash, gHashPrecision);
 
 			// Overwrite, delete all blocks associated with
-			if (properties.gSizeH !== 1 || properties.gSizeW !== 1) {
+			if (properties.gSizeH === 1 && properties.gSizeW === 1) {
+				if (referenceHashes[gHash]) {
+					MapEditEngine.applyErase(<any>{
+						gHashes: [gHash],
+						type: apply.applyType,
+						z: z,
+					});
+				}
+			} else {
 				gHashesOverwritten = new Array();
 
 				for (x = 0; x < properties.gSizeW; x++) {
 					for (y = 0; y < properties.gSizeH; y++) {
-						gHashesOverwritten.push(UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y));
+						gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y, gHashPrecision);
+
+						if (referenceHashes[gHashEff]) {
+							gHashesOverwritten.push(gHashEff);
+						}
 					}
 				}
 
-				MapEditEngine.applyErase(<any>{
-					gHashes: gHashesOverwritten,
-					z: z,
-				});
+				if (gHashesOverwritten.length) {
+					MapEditEngine.applyErase(<any>{
+						gHashes: gHashesOverwritten,
+						type: apply.applyType,
+						z: z,
+					});
+				}
 			}
 
 			// Origin block
 			properties.hash = gHash;
 			properties.gx = gCoordinate.gx;
 			properties.gy = gCoordinate.gy;
-			imageBlocks.hashes[gHash] = JSON.parse(JSON.stringify(properties));
+
+			blocks[gHash] = JSON.parse(JSON.stringify(properties));
+
+			objectType = properties.objectType;
+			referenceHashes[gHash] = <any>{
+				block: blocks[gHash],
+				blocks: blocks,
+				hash: gHash,
+				objectType: objectType,
+			};
 
 			// Extended blocks
 			for (x = 0; x < properties.gSizeW; x++) {
@@ -242,28 +351,36 @@ export class MapEditEngine {
 						// origin block
 						continue;
 					}
-					imageBlocks.hashes[UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y)] = <any>{
+					gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y, gHashPrecision);
+					blocks[gHashEff] = <any>{
 						extends: gHash,
 						gx: gCoordinate.gx + x,
 						gy: gCoordinate.gy + y,
-						passthrough: properties.passthrough,
-						type: properties.type,
+						objectType: objectType,
+					};
+					reference.hashes[gHashEff] = <any>{
+						block: blocks[gHashEff],
+						blocks: blocks,
+						hash: gHashEff,
+						objectType: objectType,
 					};
 				}
 			}
 		}
 
-		MapEditEngine.gridBlockTableInflateInstance(imageBlocks);
+		MapEditEngine.gridBlockTableInflateInstance(reference, gHashPrecision);
 
 		if (!MapEditEngine.modeUI) {
-			let assetUpdate: { [key: string]: LightingCacheInstance } = {};
+			let assetId: string = (<any>apply).assetId,
+				assetIdDamaged: string = (<any>apply).assetIdDamaged,
+				assetUpdate: { [key: string]: LightingCacheInstance } = {};
 
-			LightingEngine.cacheAdd(apply.assetId);
-			assetUpdate[apply.assetId] = LightingEngine.getCacheInstance(apply.assetId);
+			LightingEngine.cacheAdd(assetId);
+			assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
 
-			if (apply.assetIdDamagedImage) {
-				LightingEngine.cacheAdd(apply.assetIdDamagedImage);
-				assetUpdate[apply.assetIdDamagedImage] = LightingEngine.getCacheInstance(apply.assetIdDamagedImage);
+			if (assetIdDamaged) {
+				LightingEngine.cacheAdd(assetIdDamaged);
+				assetUpdate[assetIdDamaged] = LightingEngine.getCacheInstance(assetIdDamaged);
 			}
 
 			MapDrawEngineBus.outputAssets(assetUpdate);
@@ -274,15 +391,14 @@ export class MapEditEngine {
 	public static gridBlockTableDeflate(map: MapActive): MapActive {
 		Object.values(map.grids).forEach((grid: Grid) => {
 			MapEditEngine.gridBlockTableDeflateInstance(grid.audioBlocks);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggersEffect);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggersMusic);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggersMusicFade);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggersMusicPause);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggersMusicUnpause);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksBackground);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksForeground);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksPrimary);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.imageBlocksVanishing);
+			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggers);
+
+			delete (<any>grid).imageBlocksBackgroundReference;
+			delete (<any>grid).imageBlocksForegroundReference;
+			delete (<any>grid).imageBlocksPrimaryReference;
+			delete (<any>grid).imageBlocksVanishingReference;
+
+			MapEditEngine.gridBlockTableDeflateInstance(grid.lights);
 		});
 		return map;
 	}
@@ -293,22 +409,66 @@ export class MapEditEngine {
 	}
 
 	public static gridBlockTableInflate(map: MapActive): MapActive {
+		let gHashPrecision: number, reference: { [key: number]: GridImageBlockReference };
+
+		// Clean
+		for (let i in map.grids) {
+			map.grids[i] = new Grid(map.grids[i]);
+		}
+
+		// Prepare
+		map.gridActive = map.grids[map.gridActiveId];
+		map.gridConfigActive = map.gridConfigs[map.gridActiveId];
+
 		Object.values(map.grids).forEach((grid: Grid) => {
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioBlocks);
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggersEffect);
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggersMusic);
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggersMusicFade);
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggersMusicPause);
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggersMusicUnpause);
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksBackground);
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksForeground);
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksPrimary);
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishing);
+			gHashPrecision = map.gridConfigs[grid.id].gHashPrecision;
+
+			// LightingCalcWorkerEngine filters these out
+			grid.audioBlocks && MapEditEngine.gridBlockTableInflateInstance(grid.audioBlocks, gHashPrecision);
+			grid.audioTagTriggers && MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggers, gHashPrecision);
+
+			reference = <any>new Object();
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundFoliage, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundLiquid, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundSolid, reference);
+			grid.imageBlocksBackgroundReference = {
+				hashes: reference,
+			};
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksBackgroundReference, gHashPrecision);
+
+			reference = <any>new Object();
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksForegroundFoliage, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksForegroundLiquid, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksForegroundSolid, reference);
+			grid.imageBlocksForegroundReference = {
+				hashes: reference,
+			};
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksForegroundReference, gHashPrecision);
+
+			reference = <any>new Object();
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksPrimaryFoliage, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksPrimaryLiquid, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksPrimarySolid, reference);
+			grid.imageBlocksPrimaryReference = {
+				hashes: reference,
+			};
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksPrimaryReference, gHashPrecision);
+
+			reference = <any>new Object();
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksVanishingFoliage, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksVanishingLiquid, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksVanishingSolid, reference);
+			grid.imageBlocksVanishingReference = {
+				hashes: reference,
+			};
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishingReference, gHashPrecision);
+
+			MapEditEngine.gridBlockTableInflateInstance(grid.lights, gHashPrecision);
 		});
 		return map;
 	}
 
-	private static gridBlockTableInflateInstance(gridBlockTable: GridBlockTable<any>): void {
+	public static gridBlockTableInflateInstance(gridBlockTable: GridBlockTable<any>, gHashPrecision: number): void {
 		let gCoordinate: GridCoordinate,
 			gx: number[],
 			hash: number,
@@ -317,7 +477,7 @@ export class MapEditEngine {
 
 		for (let i in hashes) {
 			hash = Number(hashes[i]);
-			gCoordinate = UtilEngine.gridHashFrom(Number(hash));
+			gCoordinate = UtilEngine.gridHashFrom(Number(hash), gHashPrecision);
 
 			if (hashesGyByGx[gCoordinate.gx] === undefined) {
 				hashesGyByGx[gCoordinate.gx] = [
@@ -343,6 +503,20 @@ export class MapEditEngine {
 
 		gridBlockTable.gx = gx;
 		gridBlockTable.hashesGyByGx = hashesGyByGx;
+	}
+
+	private static gridBlockTableInflateReference(
+		blocks: { [key: number]: GridImageBlock },
+		reference: { [key: number]: GridImageBlockReference },
+	): void {
+		for (let i in blocks) {
+			reference[i] = <any>{
+				block: blocks[i],
+				blocks: blocks,
+				hash: Number(i),
+				type: blocks[i].objectType,
+			};
+		}
 	}
 
 	private static applyLight(apply: VideoBusInputCmdGameModeEditApplyLight): void {
@@ -371,6 +545,12 @@ export class MapEditEngine {
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryRedo.popEnd();
 
+		// Rebuild references
+		for (let i in mapActive.grids) {
+			mapActive.grids[i] = JSON.parse(<any>mapActive.grids[i]);
+		}
+		mapActive = MapEditEngine.gridBlockTableInflate(mapActive);
+
 		if (!MapEditEngine.modeUI) {
 			MapEditEngine.mapHistoryUndo.pushEnd(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
 			KernelEngine.historyUpdate(mapActive);
@@ -393,9 +573,11 @@ export class MapEditEngine {
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryUndo.popEnd();
 
-		// Fix cloning links
-		mapActive.gridActive = mapActive.grids[mapActive.gridActiveId];
-		mapActive.gridConfigActive = mapActive.gridConfigs[mapActive.gridActiveId];
+		// Rebuild references
+		for (let i in mapActive.grids) {
+			mapActive.grids[i] = JSON.parse(<any>mapActive.grids[i]);
+		}
+		mapActive = MapEditEngine.gridBlockTableInflate(mapActive);
 
 		if (!MapEditEngine.modeUI) {
 			MapEditEngine.mapHistoryRedo.pushEnd(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
@@ -418,6 +600,9 @@ export class MapEditEngine {
 	}
 
 	public static async load(mapActive: MapActive): Promise<void> {
+		MapEditEngine.gridBlockTableInflate(mapActive);
+
+		// Apply
 		if (!MapEditEngine.modeUI) {
 			// Restart the kernel with the new map
 			if (KernelEngine.isRunning()) {
@@ -451,6 +636,7 @@ export class MapEditEngine {
 		properties: VideoBusInputCmdGameModeEditApply,
 		type: VideoBusInputCmdGameModeEditApplyType,
 		z: VideoBusInputCmdGameModeEditApplyZ,
+		eraseType?: VideoBusInputCmdGameModeEditApplyType,
 	): VideoBusInputCmdGameModeEditApply | undefined {
 		let apply: VideoBusInputCmdGameModeEditApply;
 
@@ -460,29 +646,24 @@ export class MapEditEngine {
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
 				apply = MapEditEngine.uiApplyAudioBlock(gHashes, properties, z);
 				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT:
+			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER:
 				apply = MapEditEngine.uiApplyAudioTriggerEffect(gHashes, properties, z);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC:
-				apply = MapEditEngine.uiApplyAudioTriggerMusic(gHashes, properties, z);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE:
-				apply = MapEditEngine.uiApplyAudioTriggerMusicFade(gHashes, properties, z);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE:
-				apply = MapEditEngine.uiApplyAudioTriggerMusicPause(gHashes, properties, z);
-				break;
-			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE:
-				apply = MapEditEngine.uiApplyAudioTriggerMusicUnpause(gHashes, properties, z);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.ERASE:
 				apply = <VideoBusInputCmdGameModeEditApplyErase>{
 					gHashes: gHashes,
+					type: eraseType,
 					z: z,
 				};
 				break;
-			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK:
-				apply = MapEditEngine.uiApplyImageBlock(gHashes, properties, z);
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+				apply = MapEditEngine.uiApplyImageBlockFoliage(gHashes, properties, z);
+				break;
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+				apply = MapEditEngine.uiApplyImageBlockLiquid(gHashes, properties, z);
+				break;
+			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+				apply = MapEditEngine.uiApplyImageBlockSolid(gHashes, properties, z);
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.LIGHT:
 				apply = MapEditEngine.uiApplyLight(gHashes, properties, z);
@@ -510,102 +691,101 @@ export class MapEditEngine {
 		gHashes: number[],
 		properties: VideoBusInputCmdGameModeEditApply,
 		z: VideoBusInputCmdGameModeEditApplyZ,
-	): VideoBusInputCmdGameModeEditApplyAudioTriggerEffect {
+	): VideoBusInputCmdGameModeEditApplyAudioTrigger {
 		return <any>{};
 	}
 
-	private static uiApplyAudioTriggerMusic(
+	private static uiApplyImageBlockFoliage(
 		gHashes: number[],
 		properties: VideoBusInputCmdGameModeEditApply,
 		z: VideoBusInputCmdGameModeEditApplyZ,
-	): VideoBusInputCmdGameModeEditApplyAudioTriggerMusic {
-		return <any>{};
-	}
-
-	private static uiApplyAudioTriggerMusicFade(
-		gHashes: number[],
-		properties: VideoBusInputCmdGameModeEditApply,
-		z: VideoBusInputCmdGameModeEditApplyZ,
-	): VideoBusInputCmdGameModeEditApplyAudioTriggerMusicFade {
-		return <any>{};
-	}
-
-	private static uiApplyAudioTriggerMusicPause(
-		gHashes: number[],
-		properties: VideoBusInputCmdGameModeEditApply,
-		z: VideoBusInputCmdGameModeEditApplyZ,
-	): VideoBusInputCmdGameModeEditApplyAudioTriggerMusicPause {
-		return <any>{};
-	}
-
-	private static uiApplyAudioTriggerMusicUnpause(
-		gHashes: number[],
-		properties: VideoBusInputCmdGameModeEditApply,
-		z: VideoBusInputCmdGameModeEditApplyZ,
-	): VideoBusInputCmdGameModeEditApplyAudioTriggerMusicUnpause {
-		return <any>{};
-	}
-
-	private static uiApplyImageBlock(
-		gHashes: number[],
-		properties: VideoBusInputCmdGameModeEditApply,
-		z: VideoBusInputCmdGameModeEditApplyZ,
-	): VideoBusInputCmdGameModeEditApplyImageBlock {
-		let data: VideoBusInputCmdGameModeEditApplyImageBlock = <VideoBusInputCmdGameModeEditApplyImageBlock>properties;
+	): VideoBusInputCmdGameModeEditApplyImageBlockFoliage {
+		let data: VideoBusInputCmdGameModeEditApplyImageBlockFoliage = <VideoBusInputCmdGameModeEditApplyImageBlockFoliage>properties;
 
 		delete data.extends; // calculated field only
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-			// Clean
-			if (data.passthrough) {
-				if (data.assetId === 'null') {
-					data.assetId = 'null2';
-				}
-
-				delete data.assetIdDamagedImage;
-				delete data.assetIdDamangedWalkedOnAudioEffect;
-				delete data.damageable;
-				delete data.destructible;
-				delete data.strengthToDamangeInN;
-				delete data.strengthToDestroyInN;
-
-				data.type === GridImageBlockType.SOLID;
-			} else if (data.assetId === 'null2') {
-				data.assetId = 'null';
-			}
-
 			if (!data.damageable) {
-				delete data.assetIdDamagedImage;
-				delete data.assetIdDamangedWalkedOnAudioEffect;
+				delete data.assetIdDamaged;
+				delete data.damageable;
 				delete data.strengthToDamangeInN;
 			}
 
 			if (!data.destructible) {
+				delete data.destructible;
 				delete data.strengthToDestroyInN;
-			}
-
-			if (data.type === GridImageBlockType.SOLID) {
-				delete data.viscocity;
 			}
 		} else {
 			// These cannot apply to background and foreground z's
-			delete data.assetIdDamagedImage;
-			delete data.assetIdDamangedWalkedOnAudioEffect;
-			delete data.assetIdWalkedOnAudioEffect;
+			delete data.assetIdDamaged;
 			delete data.damageable;
-			delete data.destructible;
 			delete data.strengthToDamangeInN;
+			delete data.destructible;
 			delete data.strengthToDestroyInN;
-			delete data.viscocity;
+		}
+
+		// Set base configs outside of the properties object
+		data.objectType = GridObjectType.IMAGE_BLOCK_FOLIAGE;
+		data.gHashes = gHashes;
+		data.z = z;
+
+		return data;
+	}
+
+	private static uiApplyImageBlockLiquid(
+		gHashes: number[],
+		properties: VideoBusInputCmdGameModeEditApply,
+		z: VideoBusInputCmdGameModeEditApplyZ,
+	): VideoBusInputCmdGameModeEditApplyImageBlockLiquid {
+		let data: VideoBusInputCmdGameModeEditApplyImageBlockLiquid = <VideoBusInputCmdGameModeEditApplyImageBlockLiquid>properties;
+
+		if (z !== VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			delete data.assetIdAudioEffectSwim;
+			delete data.assetIdAudioEffectTread;
 		}
 
 		// Set base configs outside of the properties object
 		data.gHashes = gHashes;
+		data.objectType = GridObjectType.IMAGE_BLOCK_LIQUID;
+		data.z = z;
 
-		if (data.assetId === 'null' || data.assetId === 'null2') {
-			data.gSizeH = 1;
-			data.gSizeW = 1;
+		return data;
+	}
+
+	private static uiApplyImageBlockSolid(
+		gHashes: number[],
+		properties: VideoBusInputCmdGameModeEditApply,
+		z: VideoBusInputCmdGameModeEditApplyZ,
+	): VideoBusInputCmdGameModeEditApplyImageBlockSolid {
+		let data: VideoBusInputCmdGameModeEditApplyImageBlockSolid = <VideoBusInputCmdGameModeEditApplyImageBlockSolid>properties;
+
+		delete data.extends; // calculated field only
+		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			// Clean
+			if (!data.damageable) {
+				delete data.assetIdDamaged;
+				delete data.assetIdAudioEffectWalkedOnDamaged;
+				delete data.damageable;
+				delete data.strengthToDamangeInN;
+			}
+
+			if (!data.destructible) {
+				delete data.destructible;
+				delete data.strengthToDestroyInN;
+			}
+		} else {
+			// These cannot apply to background and foreground z's
+			delete data.assetIdDamaged;
+			delete data.assetIdAudioEffectWalkedOn;
+			delete data.assetIdAudioEffectWalkedOnDamaged;
+			delete data.damageable;
+			delete data.destructible;
+			delete data.strengthToDamangeInN;
+			delete data.strengthToDestroyInN;
 		}
 
+		// Set base configs outside of the properties object
+		data.gHashes = gHashes;
+		data.objectType = GridObjectType.IMAGE_BLOCK_SOLID;
 		data.z = z;
 
 		return data;
@@ -624,6 +804,7 @@ export class MapEditEngine {
 	 */
 	public static uiRelXYToGBlockHash(action: MouseAction | TouchAction): number {
 		let camera: Camera = MapEditEngine.mapActiveUI.camera,
+			gHashPrecision: number = MapEditEngine.mapActiveUI.gridConfigActive.gHashPrecision,
 			position: any;
 
 		if ((<TouchAction>action).positions) {
@@ -639,6 +820,7 @@ export class MapEditEngine {
 			Math.floor(
 				(camera.viewportPy + camera.viewportPh * position.yRel) / camera.gInPh / window.devicePixelRatio + camera.viewportGy,
 			),
+			gHashPrecision,
 		);
 	}
 
@@ -688,7 +870,7 @@ export class MapEditEngine {
 	}
 
 	public static getMapActiveCloneNormalized(): MapActive {
-		let mapActiveClone: MapActive;
+		let grid: Grid, mapActiveClone: MapActive;
 
 		if (MapEditEngine.modeUI) {
 			mapActiveClone = JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI));
@@ -698,6 +880,7 @@ export class MapEditEngine {
 
 		delete (<any>mapActiveClone).gridActive;
 		delete (<any>mapActiveClone).gridConfigActive;
+
 		return mapActiveClone;
 	}
 
@@ -714,7 +897,7 @@ export class MapEditEngine {
 		view: VideoBusInputCmdGameModeEditApplyView,
 		z: VideoBusInputCmdGameModeEditApplyZ,
 	): GridObject[] {
-		let gridImageBlock: GridImageBlock, imageBlockHashes: { [key: number]: GridImageBlock }, mapActive: MapActive;
+		let reference: GridBlockTable<GridImageBlockReference>, mapActive: MapActive;
 
 		if (!MapEditEngine.modeUI) {
 			mapActive = KernelEngine.getMapActive();
@@ -727,28 +910,26 @@ export class MapEditEngine {
 				break;
 			case VideoBusInputCmdGameModeEditApplyView.IMAGE:
 				if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
-					imageBlockHashes = mapActive.gridActive.imageBlocksBackground.hashes;
+					reference = mapActive.gridActive.imageBlocksBackgroundReference;
 				} else if (z === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
-					imageBlockHashes = mapActive.gridActive.imageBlocksForeground.hashes;
+					reference = mapActive.gridActive.imageBlocksForegroundReference;
 				} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-					imageBlockHashes = mapActive.gridActive.imageBlocksPrimary.hashes;
+					reference = mapActive.gridActive.imageBlocksPrimaryReference;
 				} else {
-					imageBlockHashes = mapActive.gridActive.imageBlocksVanishing.hashes;
+					reference = mapActive.gridActive.imageBlocksVanishingReference;
 				}
 
-				if (!imageBlockHashes) {
+				console.log('mapActive.gridActive.imageBlocksBackgroundReference', mapActive.gridActive.imageBlocksBackgroundReference);
+
+				if (reference.hashes[gHash]) {
+					if (reference.hashes[gHash].block.extends) {
+						return [reference.hashes[reference.hashes[gHash].block.extends].block];
+					} else {
+						return [reference.hashes[gHash].block];
+					}
+				} else {
 					return [];
 				}
-
-				gridImageBlock = imageBlockHashes[gHash];
-
-				if (!gridImageBlock) {
-					return [];
-				} else if (gridImageBlock.extends) {
-					gridImageBlock = imageBlockHashes[gridImageBlock.extends];
-				}
-
-				return [gridImageBlock];
 			case VideoBusInputCmdGameModeEditApplyView.LIGHT:
 				break;
 		}

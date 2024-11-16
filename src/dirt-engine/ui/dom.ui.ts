@@ -13,16 +13,14 @@ import { AudioEngine } from '../engines/audio.engine';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import {
-	Grid,
 	GridConfig,
-	GridAudioBlock,
 	GridAudioTriggerTripType,
-	GridImageBlockType,
+	GridAudioTriggerType,
 	GridCoordinate,
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
-import { Map, MapActive, MapConfig } from '../models/map.model';
+import { MapActive, MapConfig } from '../models/map.model';
 import { MapEditEngine } from '../engines/map-edit.engine';
 import { MouseAction, MouseEngine } from '../engines/mouse.engine';
 import { TouchAction } from '../engines/touch.engine';
@@ -225,14 +223,19 @@ export class DomUI {
 		};
 	}
 
-	private static detailsModalAudioTagEffectTrigger(): void {
+	private static detailsModalAudioTrigger(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
 			valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
+			valuesType: GridAudioTriggerType[] = <any>Object.values(GridAudioTriggerType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				assetId: valuesAudio[0].id,
-				objectType: GridObjectType.AUDIO_TRIGGER_EFFECT,
+				fadeDurationInMs: 100,
+				fadeTo: 0,
+				objectType: GridObjectType.AUDIO_TRIGGER,
 				oneshot: true,
+				tagId: '',
 				trip: GridAudioTriggerTripType.CONTACT,
+				type: GridAudioTriggerType.EFFECT,
 				volumePercentage: 1,
 			},
 			input: HTMLInputElement,
@@ -272,6 +275,44 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
+		// Fade Duration In MS
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Fade Duration In Ms';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.max = '10000';
+		input.min = '100';
+		input.oninput = (event: any) => {
+			applicationProperties.fadeDurationInMs = Number(event.target.value);
+		};
+		input.step = '10';
+		input.type = 'range';
+		input.value = applicationProperties.fadeDurationInMs;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Fade To
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Fade To Volume';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.max = '1';
+		input.min = '0';
+		input.oninput = (event: any) => {
+			applicationProperties.fadeTo = Number(event.target.value);
+		};
+		input.step = '.1';
+		input.type = 'range';
+		input.value = applicationProperties.fadeTo;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// Oneshot
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -284,6 +325,24 @@ export class DomUI {
 			applicationProperties.oneshot = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// TagId
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Tag Id';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.oninput = (event: any) => {
+			let string: string = String(event.target.value).replaceAll(/[\W]/g, '').trim();
+			input.value = string;
+			applicationProperties.tagId = string;
+		};
+		input.type = 'text';
+		input.value = applicationProperties.tagId;
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -348,464 +407,27 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_EFFECT;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
 		};
 	}
 
-	private static detailsModalAudioTagMusicTrigger(): void {
-		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.MUSIC),
-			valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
-			applicationProperties: any = {
-				assetId: valuesAudio[0].id,
-				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC,
-				oneshot: true,
-				tagId: UtilEngine.randomAlphaNumeric(5),
-				trip: GridAudioTriggerTripType.CONTACT,
-				volumePercentage: 1,
-			},
-			input: HTMLInputElement,
-			playing: boolean,
-			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
-			td: HTMLElement,
-			tr: HTMLElement;
-
-		t.textContent = '';
-
-		// Asset
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Asset';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = valuesAudio[0].id;
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				true,
-				false,
-				false,
-				valuesAudio.map((v) => {
-					return {
-						name: v.id,
-						type: v.type,
-						value: v.id,
-					};
-				}),
-				(assetId: string) => {
-					event.target.innerText = assetId;
-					applicationProperties.assetId = assetId;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Oneshot
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Oneshot';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.checked = applicationProperties.oneshot;
-		input.oninput = (event: any) => {
-			applicationProperties.oneshot = Boolean(event.target.checked);
-		};
-		input.type = 'checkbox';
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// TagId
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Tag Id';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.oninput = (event: any) => {
-			let string: string = String(event.target.value).replaceAll(/[\W]/g, '').trim();
-			input.value = string;
-			applicationProperties.tagId = string;
-		};
-		input.type = 'text';
-		input.value = applicationProperties.tagId;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Trip
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Trip';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridAudioTriggerTripType[valuesTrip[0]];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				valuesTrip.map((v) => {
-					return {
-						name: GridAudioTriggerTripType[<any>v],
-						value: v,
-					};
-				}),
-				(trip: string) => {
-					event.target.innerText = GridAudioTriggerTripType[<any>trip];
-					applicationProperties.trip = trip;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Volume Percentage
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Volume Percentage';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '1';
-		input.min = '.1';
-		input.oninput = (event: any) => {
-			// Update volume
-			applicationProperties.volumePercentage = Number(event.target.value);
-
-			// Play sample at volume
-			if (playing) {
-				AudioEngine.setVolumeAsset(applicationProperties.assetId, applicationProperties.volumePercentage);
-			} else {
-				AudioEngine.play(applicationProperties.assetId, 0, applicationProperties.volumePercentage);
-				playing = true;
-			}
-		};
-		input.onmouseout = (event: any) => {
-			if (playing) {
-				AudioEngine.pause(applicationProperties.assetId);
-				playing = false;
-			}
-		};
-		input.step = '.1';
-		input.type = 'range';
-		input.value = applicationProperties.volumePercentage;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Show the cancel/apply buttons
-		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Music';
-
-		// Apply
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
-			// Values
-			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC;
-
-			// Graphics
-			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
-		};
-	}
-
-	private static detailsModalAudioTagMusicFadeTrigger(): void {
-		let valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
-			applicationProperties: any = {
-				fadeDurationInMs: 1000,
-				fadeTo: 0.5,
-				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_FADE,
-				tagId: '', // TODO validation logic
-				trip: GridAudioTriggerTripType.CONTACT,
-			},
-			input: HTMLInputElement,
-			playing: boolean,
-			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
-			td: HTMLElement,
-			tr: HTMLElement;
-
-		t.textContent = '';
-
-		// Fade Duration In MS
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Fade Duration In Ms';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '10000';
-		input.min = '100';
-		input.oninput = (event: any) => {
-			applicationProperties.fadeDurationInMs = Number(event.target.value);
-		};
-		input.step = '10';
-		input.type = 'range';
-		input.value = applicationProperties.fadeDurationInMs;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Fade To
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Fade To Volume';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '1';
-		input.min = '0';
-		input.oninput = (event: any) => {
-			applicationProperties.fadeTo = Number(event.target.value);
-		};
-		input.step = '.1';
-		input.type = 'range';
-		input.value = applicationProperties.fadeTo;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// TagId
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Tag Id';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.oninput = (event: any) => {
-			let string: string = String(event.target.value).replaceAll(/[\W]/g, '').trim();
-			input.value = string;
-			applicationProperties.tagId = string;
-		};
-		input.type = 'text';
-		input.value = applicationProperties.tagId;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Trip
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Trip';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridAudioTriggerTripType[valuesTrip[0]];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				valuesTrip.map((v) => {
-					return {
-						name: GridAudioTriggerTripType[<any>v],
-						value: v,
-					};
-				}),
-				(trip: string) => {
-					event.target.innerText = GridAudioTriggerTripType[<any>trip];
-					applicationProperties.trip = trip;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Show the cancel/apply buttons
-		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Fade Music';
-
-		// Apply
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
-			// Values
-			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_FADE;
-
-			// Graphics
-			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
-		};
-	}
-
-	private static detailsModalAudioTagMusicPauseTrigger(): void {
-		let valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
-			applicationProperties: any = {
-				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_PAUSE,
-				tagId: '', // TODO validation logic
-				trip: GridAudioTriggerTripType.CONTACT,
-			},
-			input: HTMLInputElement,
-			playing: boolean,
-			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
-			td: HTMLElement,
-			tr: HTMLElement;
-
-		t.textContent = '';
-
-		// TagId
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Tag Id';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.oninput = (event: any) => {
-			let string: string = String(event.target.value).replaceAll(/[\W]/g, '').trim();
-			input.value = string;
-			applicationProperties.tagId = string;
-		};
-		input.type = 'text';
-		input.value = applicationProperties.tagId;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Trip
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Trip';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridAudioTriggerTripType[valuesTrip[0]];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				valuesTrip.map((v) => {
-					return {
-						name: GridAudioTriggerTripType[<any>v],
-						value: v,
-					};
-				}),
-				(trip: string) => {
-					event.target.innerText = GridAudioTriggerTripType[<any>trip];
-					applicationProperties.trip = trip;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Show the cancel/apply buttons
-		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Pause Music';
-
-		// Apply
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
-			// Values
-			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_PAUSE;
-
-			// Graphics
-			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
-		};
-	}
-
-	private static detailsModalAudioTagMusicUnpauseTrigger(): void {
-		let valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
-			applicationProperties: any = {
-				objectType: GridObjectType.AUDIO_TRIGGER_MUSIC_UNPAUSE,
-				tagId: '', // TODO validation logic
-				trip: GridAudioTriggerTripType.CONTACT,
-			},
-			input: HTMLInputElement,
-			playing: boolean,
-			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
-			td: HTMLElement,
-			tr: HTMLElement;
-
-		t.textContent = '';
-
-		// TagId
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Tag Id';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.oninput = (event: any) => {
-			let string: string = String(event.target.value).replaceAll(/[\W]/g, '').trim();
-			input.value = string;
-			applicationProperties.tagId = string;
-		};
-		input.type = 'text';
-		input.value = applicationProperties.tagId;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Trip
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Trip';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridAudioTriggerTripType[valuesTrip[0]];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				valuesTrip.map((v) => {
-					return {
-						name: GridAudioTriggerTripType[<any>v],
-						value: v,
-					};
-				}),
-				(trip: string) => {
-					event.target.innerText = GridAudioTriggerTripType[<any>trip];
-					applicationProperties.trip = trip;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Show the cancel/apply buttons
-		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Unpause Music';
-
-		// Apply
-		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
-			// Values
-			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER_MUSIC_UNPAUSE;
-
-			// Graphics
-			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
-		};
-	}
-
-	private static detailsModalImageBlock(): void {
+	private static detailsModalImageBlockFoliage(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
-			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter((v) => v.type === AssetImageType.GRID_BLOCK),
-			valuesTypes: GridImageBlockType[] = <any>Object.values(GridImageBlockType).filter((v) => typeof v !== 'string'),
+			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
+				(v) => v.type === AssetImageType.GRID_BLOCK_FOLIAGE,
+			),
 			applicationProperties: any = {
 				assetId: valuesImage[0].id,
 				assetIdDamagedImage: undefined,
-				assetIdDamangedWalkedOnAudioEffect: undefined,
-				assetIdWalkedOnAudioEffect: undefined,
 				damageable: undefined,
 				destructible: undefined,
 				gSizeH: 1,
 				gSizeW: 1,
-				objectType: GridObjectType.IMAGE_BLOCK,
-				passthrough: undefined,
-				strengthToDamangeInN: undefined,
-				strengthToDestroyInN: undefined,
-				type: GridImageBlockType.SOLID,
-				viscocity: undefined,
-				weight: undefined,
+				strengthToDamangeInN: undefined, // newtons of force required to destroy
+				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
 			input: HTMLInputElement,
 			playing: boolean,
@@ -877,7 +499,7 @@ export class DomUI {
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
-			td.innerText = 'Asset Damaged Walked On Audio Effect';
+			td.innerText = 'Asset Audio Effect Walked On Damaged';
 			tr.appendChild(td);
 			td = document.createElement('td');
 			td.className = 'button right-arrow';
@@ -896,7 +518,7 @@ export class DomUI {
 					}),
 					(assetId: string) => {
 						event.target.innerText = assetId || 'None';
-						applicationProperties.assetIdDamangedWalkedOnAudioEffect = assetId;
+						applicationProperties.assetIdamagedWalkedOnAudioEffect = assetId;
 					},
 				);
 			};
@@ -908,7 +530,7 @@ export class DomUI {
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
-			td.innerText = 'Asset Walked On Audio Effect';
+			td.innerText = 'Asset Audio Effect Walked On';
 			tr.appendChild(td);
 			td = document.createElement('td');
 			td.className = 'button right-arrow';
@@ -1009,17 +631,458 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// Passthrough
+		// strengthToDamangeInN
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
-			td.innerText = 'Passthrough';
+			td.innerText = 'Strength to Damange In N';
 			tr.appendChild(td);
 			td = document.createElement('td');
 			input = document.createElement('input');
-			input.checked = applicationProperties.passthrough;
+			input.max = '10000';
+			input.min = '1';
 			input.oninput = (event: any) => {
-				applicationProperties.passthrough = Boolean(event.target.checked);
+				applicationProperties.strengthToDamangeInN = Number(event.target.value);
+			};
+			input.step = '1';
+			input.type = 'range';
+			input.value = applicationProperties.strengthToDamangeInN;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// strengthToDestroyInN
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Strength to Destroy In N';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '10000';
+			input.min = '1';
+			input.oninput = (event: any) => {
+				applicationProperties.strengthToDestroyInN = Number(event.target.value);
+			};
+			input.step = '1';
+			input.type = 'range';
+			input.value = applicationProperties.strengthToDestroyInN;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// Show the cancel/apply buttons
+		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block';
+
+		// Apply
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
+			// Values
+			DomUI.uiEditApplicationProperties = applicationProperties;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE;
+
+			// Graphics
+			DomUI.detailsModalPostClickGraphics('mode-menu-image');
+		};
+	}
+
+	private static detailsModalImageBlockLiquid(): void {
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
+				(v) => v.type === AssetImageType.GRID_BLOCK_LIQUID,
+			),
+			applicationProperties: any = {
+				assetId: valuesImage[0].id,
+				assetIdAudioEffectSwim: undefined,
+				assetIdAudioEffectTread: undefined,
+				gSizeW: 1,
+				viscocity: 1,
+			},
+			input: HTMLInputElement,
+			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
+			td: HTMLElement,
+			tr: HTMLElement;
+
+		t.textContent = '';
+
+		// Asset
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = valuesImage[0].id;
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				true,
+				false,
+				valuesImage.map((v) => {
+					return {
+						name: v.id,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId;
+					applicationProperties.assetId = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset - Swim
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Swim';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				true,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectSwim = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset - Tread
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Tread';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				true,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectTread = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size H';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeH = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeH;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeW
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size W';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeW = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeW;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Viscocity
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Viscocity';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '1';
+			input.min = '.1';
+			input.oninput = (event: any) => {
+				applicationProperties.viscocity = Number(event.target.value);
+			};
+			input.step = '.1';
+			input.type = 'range';
+			input.value = applicationProperties.viscocity;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// Show the cancel/apply buttons
+		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block';
+
+		// Apply
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
+			// Values
+			DomUI.uiEditApplicationProperties = applicationProperties;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID;
+
+			// Graphics
+			DomUI.detailsModalPostClickGraphics('mode-menu-image');
+		};
+	}
+
+	private static detailsModalImageBlockSolid(): void {
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
+				(v) => v.type === AssetImageType.GRID_BLOCK_SOLID,
+			),
+			applicationProperties: any = {
+				assetId: valuesImage[0].id,
+				assetIdDamaged: undefined,
+				assetIdAudioEffectWalkedOn: undefined,
+				assetIdAudioEffectWalkedOnDamaged: undefined,
+				damageable: undefined,
+				destructible: undefined,
+				gSizeH: 1,
+				gSizeW: 1,
+				strengthToDamangeInN: undefined, // newtons of force required to destroy
+				strengthToDestroyInN: undefined, // newtons of force required to destroy
+			},
+			input: HTMLInputElement,
+			playing: boolean,
+			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
+			td: HTMLElement,
+			tr: HTMLElement;
+
+		t.textContent = '';
+
+		// Asset
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = valuesImage[0].id;
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				true,
+				false,
+				valuesImage.map((v) => {
+					return {
+						name: v.id,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId;
+					applicationProperties.assetId = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset - Damaged
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Asset Damaged';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.className = 'button right-arrow';
+			td.innerText = 'NONE';
+			td.onclick = (event: any) => {
+				DomUI.detailsModalSelector(
+					false,
+					true,
+					true,
+					valuesImage.map((v) => {
+						return {
+							name: v.id,
+							value: v.id,
+						};
+					}),
+					(assetId: string) => {
+						event.target.innerText = assetId || 'None';
+						applicationProperties.assetIdDamaged = assetId;
+					},
+				);
+			};
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// Asset - Damaged Walked On
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Asset Audio Effect Walked On Damaged';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.className = 'button right-arrow';
+			td.innerText = 'NONE';
+			td.onclick = (event: any) => {
+				DomUI.detailsModalSelector(
+					true,
+					true,
+					true,
+					valuesAudio.map((v) => {
+						return {
+							name: v.id,
+							type: v.type,
+							value: v.id,
+						};
+					}),
+					(assetId: string) => {
+						event.target.innerText = assetId || 'None';
+						applicationProperties.assetIdAudioEffectWalkedOnDamaged = assetId;
+					},
+				);
+			};
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// Asset - Walked On
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Asset Audio Effect Walked On';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.className = 'button right-arrow';
+			td.innerText = 'NONE';
+			td.onclick = (event: any) => {
+				DomUI.detailsModalSelector(
+					true,
+					true,
+					true,
+					valuesAudio.map((v) => {
+						return {
+							name: v.id,
+							type: v.type,
+							value: v.id,
+						};
+					}),
+					(assetId: string) => {
+						event.target.innerText = assetId || 'None';
+						applicationProperties.assetIdAudioEffectWalkedOn = assetId;
+					},
+				);
+			};
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// GSizeH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size H';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeH = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeH;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeW
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size W';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeW = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeW;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Damageable
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Damageable';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.checked = applicationProperties.damageable;
+			input.oninput = (event: any) => {
+				applicationProperties.damageable = Boolean(event.target.checked);
+			};
+			input.type = 'checkbox';
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+
+			// Destructible
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Destructible';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.checked = applicationProperties.destructible;
+			input.oninput = (event: any) => {
+				applicationProperties.destructible = Boolean(event.target.checked);
 			};
 			input.type = 'checkbox';
 			td.appendChild(input);
@@ -1069,76 +1132,6 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// Type
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Type';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridImageBlockType[applicationProperties.type];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				valuesTypes.map((v) => {
-					return {
-						name: GridImageBlockType[<any>v],
-						value: v,
-					};
-				}),
-				(trip: string) => {
-					event.target.innerText = GridImageBlockType[<any>trip];
-					applicationProperties.trip = trip;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Viscocity
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			td.innerText = 'Viscocity';
-			tr.appendChild(td);
-			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '1';
-			input.min = '.1';
-			input.oninput = (event: any) => {
-				applicationProperties.viscocity = Number(event.target.value);
-			};
-			input.step = '.1';
-			input.type = 'range';
-			input.value = applicationProperties.viscocity;
-			td.appendChild(input);
-			tr.appendChild(td);
-			t.appendChild(tr);
-		}
-
-		// Weight In Kg
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-			tr = document.createElement('tr');
-			td = document.createElement('td');
-			td.innerText = 'Weight In Kg';
-			tr.appendChild(td);
-			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '100';
-			input.min = '1';
-			input.oninput = (event: any) => {
-				applicationProperties.weight = Number(event.target.value);
-			};
-			input.step = '1';
-			input.type = 'range';
-			input.value = applicationProperties.weight;
-			td.appendChild(input);
-			tr.appendChild(td);
-			t.appendChild(tr);
-		}
-
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
@@ -1148,7 +1141,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-image');
@@ -1420,10 +1413,8 @@ export class DomUI {
 		}
 		DomUI.uiEditMouseCmdCollectionActive = true;
 
-		setTimeout(() => {
-			VideoEngineBus.outputGameModeEditApplyGroup(true);
-			MapEditEngine.setApplyGroup(true);
-		});
+		VideoEngineBus.outputGameModeEditApplyGroup(true);
+		MapEditEngine.setApplyGroup(true);
 
 		let hash: number = MapEditEngine.uiRelXYToGBlockHash(action);
 		DomUI.uiEditMouseCmdCollection.pushEnd(hash);
@@ -1459,23 +1450,42 @@ export class DomUI {
 		for (let i in gridObjects) {
 			let gridObject = JSON.parse(JSON.stringify(gridObjects[i]));
 
-			// console.log('gridObject', gridObject);
-
-			if (gridObject.objectType) {
-				gridObject.objectType = GridObjectType[gridObject.objectType];
-			}
-
 			tr = document.createElement('tr');
 
 			td = document.createElement('td');
 			if (copy) {
 				td.className = 'clickable';
 			}
+
+			gridObject.objectType = GridObjectType[gridObject.objectType]; // ObjectType toString
 			td.innerText = JSON.stringify(gridObject, null, 2);
+			gridObject.objectType = GridObjectType[gridObject.objectType]; // ObjectType toNumber
 			td.onclick = () => {
 				if (copy) {
 					DomUI.uiEditApplicationProperties = gridObject;
-					DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK;
+
+					switch (gridObject.objectType) {
+						case GridObjectType.AUDIO_BLOCK:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK;
+							break;
+						case GridObjectType.AUDIO_TRIGGER:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER;
+							break;
+						case GridObjectType.IMAGE_BLOCK_FOLIAGE:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE;
+							break;
+						case GridObjectType.IMAGE_BLOCK_LIQUID:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID;
+							break;
+						case GridObjectType.IMAGE_BLOCK_SOLID:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID;
+							break;
+						case GridObjectType.LIGHT:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.LIGHT;
+							break;
+						default:
+							console.log('?????', gridObject.objectType);
+					}
 
 					// Show cursor config buttons
 					DomUI.domElementsUIEdit['application'].style.display = 'flex';
@@ -1487,13 +1497,11 @@ export class DomUI {
 						case ApplicationType.BRUSH:
 							DomUI.domElementsUIEdit['application-type-menu-brush'].click();
 							break;
-						case ApplicationType.ERASER:
-							DomUI.domElementsUIEdit['application-type-menu-eraser'].click();
-							break;
 						case ApplicationType.FILL:
 							DomUI.domElementsUIEdit['application-type-menu-fill'].click();
 							break;
 						default:
+						case ApplicationType.ERASER:
 						case ApplicationType.PENCIL:
 							DomUI.domElementsUIEdit['application-type-menu-pencil'].click();
 							break;
@@ -1502,10 +1510,6 @@ export class DomUI {
 					// Done
 					DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
 					DomUI.domElementsUIEdit['copy'].classList.remove('active');
-
-					if (DomUI.uiEditApplicationType === ApplicationType.ERASER) {
-						DomUI.domElementsUIEdit['application-type-menu-pencil'].click();
-					}
 
 					MouseEngine.setSuspendWheel(false);
 				}
@@ -1566,6 +1570,7 @@ export class DomUI {
 							? VideoBusInputCmdGameModeEditApplyType.ERASE
 							: DomUI.uiEditApplyType,
 						z,
+						DomUI.uiEditApplyType,
 					); // Auto-applies to map
 
 					if (payload) {
@@ -1606,7 +1611,7 @@ export class DomUI {
 				/*
 				 * This brush was probably the hardest thing to solve in the entire project
 				 */
-				coordinate = UtilEngine.gridHashFrom(hash);
+				coordinate = UtilEngine.gridHashFrom(hash, gridConfig.gHashPrecision);
 				jEff = Math.max(0, coordinate.gy - brushSize);
 
 				// Bottom Left
@@ -1616,6 +1621,7 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx - brushSize + x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy + y)),
+							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1632,6 +1638,7 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx + x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy + y + 1)),
+							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1648,6 +1655,7 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx - brushSize + x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy - brushSize + y)),
+							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1664,6 +1672,7 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx + brushSize - x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy - brushSize + y)),
+							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1679,14 +1688,14 @@ export class DomUI {
 						gHashes.push(hash);
 					}
 				} else {
-					coordinate = UtilEngine.gridHashFrom(hash);
+					coordinate = UtilEngine.gridHashFrom(hash, gridConfig.gHashPrecision);
 					brushSizeEffX = Math.min(gridConfig.gWidth, coordinate.gx + brushSize);
 					brushSizeEffY = Math.min(gridConfig.gHeight, coordinate.gy + brushSize);
 					jEff = Math.max(0, coordinate.gy - (brushSize - 1));
 
 					for (x = Math.max(0, coordinate.gx - (brushSize - 1)); x < brushSizeEffX; x++) {
 						for (y = jEff; y < brushSizeEffY; y++) {
-							hash = UtilEngine.gridHashTo(x, y);
+							hash = UtilEngine.gridHashTo(x, y, gridConfig.gHashPrecision);
 							if (effected[hash] === undefined) {
 								effected[hash] = null;
 								gHashes.push(hash);
@@ -1933,6 +1942,8 @@ export class DomUI {
 			domFeed: HTMLElement,
 			domFeedFitted: HTMLElement,
 			domFeedFittedOutline: HTMLElement,
+			domFeedFittedPause: HTMLElement,
+			domFeedFittedPauseContent: HTMLElement,
 			domFeedFittedTitle: HTMLElement,
 			domFeedFittedTitleContent: HTMLElement,
 			domFeedFittedTitleContentLogoCompany: HTMLElement,
@@ -2073,6 +2084,20 @@ export class DomUI {
 		domFeedFittedOutline.className = 'outline';
 		domFeedFitted.appendChild(domFeedFittedOutline);
 		DomUI.domElements['feed-fitted-outline'] = domFeedFittedOutline;
+
+		/*
+		 * Feed: Fitted - Pause
+		 */
+		domFeedFittedPause = document.createElement('div');
+		domFeedFittedPause.className = 'pause';
+		DomUI.domElements['feed-fitted-pause'] = domFeedFittedPause;
+		domFeedFitted.appendChild(domFeedFittedPause);
+
+		domFeedFittedPauseContent = document.createElement('div');
+		domFeedFittedPauseContent.className = 'content';
+		domFeedFittedPauseContent.innerText = 'paused';
+		DomUI.domElements['feed-fitted-pause-content'] = domFeedFittedPauseContent;
+		domFeedFittedPause.appendChild(domFeedFittedPauseContent);
 
 		/*
 		 * Feed: Fitted - Title
@@ -2736,66 +2761,14 @@ export class DomUI {
 				tr.appendChild(td);
 				t.appendChild(tr);
 
-				// Table: Audio Tag Effect Trigger
+				// Table: Audio Trigger
 				tr = document.createElement('tr');
 				td = document.createElement('td');
 				paletteModalContentBodyButton = document.createElement('div');
 				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Audio Tag Effect Trigger';
+				paletteModalContentBodyButton.innerText = 'Audio Trigger';
 				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalAudioTagEffectTrigger();
-				};
-				td.appendChild(paletteModalContentBodyButton);
-				tr.appendChild(td);
-				t.appendChild(tr);
-
-				// Table: Audio Tag Music Trigger
-				tr = document.createElement('tr');
-				td = document.createElement('td');
-				paletteModalContentBodyButton = document.createElement('div');
-				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Audio Tag Music Trigger';
-				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalAudioTagMusicTrigger();
-				};
-				td.appendChild(paletteModalContentBodyButton);
-				tr.appendChild(td);
-				t.appendChild(tr);
-
-				// Table: Audio Tag Music Fade Trigger
-				tr = document.createElement('tr');
-				td = document.createElement('td');
-				paletteModalContentBodyButton = document.createElement('div');
-				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Audio Tag Music Fade Trigger';
-				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalAudioTagMusicFadeTrigger();
-				};
-				td.appendChild(paletteModalContentBodyButton);
-				tr.appendChild(td);
-				t.appendChild(tr);
-
-				// Table: Audio Tag Music Pause Trigger
-				tr = document.createElement('tr');
-				td = document.createElement('td');
-				paletteModalContentBodyButton = document.createElement('div');
-				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Audio Tag Music Pause Trigger';
-				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalAudioTagMusicPauseTrigger();
-				};
-				td.appendChild(paletteModalContentBodyButton);
-				tr.appendChild(td);
-				t.appendChild(tr);
-
-				// Table: Audio Tag Music Unpause Trigger
-				tr = document.createElement('tr');
-				td = document.createElement('td');
-				paletteModalContentBodyButton = document.createElement('div');
-				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Audio Tag Music Unpause Trigger';
-				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalAudioTagMusicUnpauseTrigger();
+					DomUI.detailsModalAudioTrigger();
 				};
 				td.appendChild(paletteModalContentBodyButton);
 				tr.appendChild(td);
@@ -2803,14 +2776,40 @@ export class DomUI {
 			}
 
 			if (DomUI.uiEditView === VideoBusInputCmdGameModeEditApplyView.IMAGE) {
-				// Table: Image Block
+				// Table: Image Block Foliage
 				tr = document.createElement('tr');
 				td = document.createElement('td');
 				paletteModalContentBodyButton = document.createElement('div');
 				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Image Block';
+				paletteModalContentBodyButton.innerText = 'Image Block Foliage';
 				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalImageBlock();
+					DomUI.detailsModalImageBlockFoliage();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
+
+				// Table: Image Block Liquid
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Image Block Liquid';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalImageBlockLiquid();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
+
+				// Table: Image Block Liquid
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Image Block Solid';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalImageBlockSolid();
 				};
 				td.appendChild(paletteModalContentBodyButton);
 				tr.appendChild(td);
@@ -3161,7 +3160,6 @@ export class DomUI {
 			DomUI.uiEditDraw.grid = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.BACKGROUND;
@@ -3211,7 +3209,6 @@ export class DomUI {
 			DomUI.uiEditDraw.grid = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.PRIMARY;
@@ -3263,7 +3260,6 @@ export class DomUI {
 			DomUI.uiEditDraw.grid = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.FOREGROUND;
@@ -3315,7 +3311,6 @@ export class DomUI {
 			DomUI.uiEditDraw.grid = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoEngineBus.outputGameModeEditDrawNull(true);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.VANISHING;
@@ -3365,7 +3360,6 @@ export class DomUI {
 			DomUI.uiEditDraw.grid = false;
 			DomUI.uiEditDraw.vanishingEnable = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
-			VideoEngineBus.outputGameModeEditDrawNull(false);
 			VideoEngineBus.outputGameModeEditTimeForced(false);
 
 			DomUI.uiEditZ = undefined;

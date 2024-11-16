@@ -55,7 +55,7 @@ export interface MapDrawBusInputPlayloadGridActive {
 }
 
 export interface MapDrawBusInputPlayloadGrids {
-	grids: { [key: string]: Grid };
+	grids: { [key: string]: string };
 	gridConfigs: { [key: string]: GridConfig };
 }
 

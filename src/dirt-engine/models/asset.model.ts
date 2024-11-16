@@ -35,8 +35,8 @@ export interface AssetDeclarations {
 }
 
 export interface AssetImage extends Asset {
-	gHeight?: number;
-	gWidth?: number;
+	gHeight: number;
+	gWidth: number;
 	srcs: AssetImageSrc[]; // requires atleast one, missing qualitys will load from a smaller quality, smallest first
 	type: AssetImageType;
 }
@@ -54,8 +54,11 @@ export enum AssetImageSrcQuality {
 }
 
 export enum AssetImageType {
-	GRID_BLOCK,
+	GRID_BLOCK_FOLIAGE,
+	GRID_BLOCK_LIQUID,
+	GRID_BLOCK_SOLID,
 	LOGO,
+	NULL,
 }
 
 export interface AssetManifest {

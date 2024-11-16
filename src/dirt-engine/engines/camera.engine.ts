@@ -110,10 +110,9 @@ export class CameraEngine {
 			camera.viewportGy = Math.max(0, Math.min(gHeight - viewportGhEff, Math.round((camera.gy - viewportGhEff / 2) * 1000) / 1000));
 
 			// Done
-			zoomUpdated && LightingEngine.updateZoom();
 			setTimeout(() => {
 				MapDrawEngineBus.outputCamera(camera);
-				CameraEngine.callback(camera);
+				CameraEngine.callback(camera); // Goes to UI thread
 			});
 			CameraEngine.loopPositionGx = camera.gx;
 			CameraEngine.loopPositionGy = camera.gy;

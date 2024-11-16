@@ -6,6 +6,7 @@ import { CameraEngine } from '../camera.engine';
 import { ImageBlockDrawEngine } from '../../draw/image-block.draw.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
+import { LightingCalcEngineBus } from '../../calc/buses/lighting.calc.engine.bus';
 import { LightingEngine } from '../lighting.engine';
 import { Map, MapActive, MapConfig } from '../../models/map.model';
 import { MapDrawEngine } from '../../draw/map.draw.engine';
@@ -55,9 +56,6 @@ self.onmessage = (event: MessageEvent) => {
 			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT_DRAW:
 			VideoWorkerEngine.inputGameModeEditDraw(<VideoBusInputCmdGameModeEditDraw>videoBusPayload.data);
-			break;
-		case VideoBusInputCmd.GAME_MODE_EDIT_DRAW_NULL:
-			VideoWorkerEngine.inputGameModeEditDrawNull(<boolean>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT_REDO:
 			VideoWorkerEngine.inputGameModeEditRedo();
@@ -133,7 +131,7 @@ class VideoWorkerEngine {
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoBusInputCmdInit): Promise<void> {
 		if (VideoWorkerEngine.initialized) {
-			console.error('Video > initialize: already initialized');
+			console.error('VideoWorkerEngine > initialize: already initialized');
 			return;
 		}
 		VideoWorkerEngine.initialized = true;
@@ -179,6 +177,7 @@ class VideoWorkerEngine {
 			VideoWorkerEngine.outputEditCameraUpdate(camera);
 		});
 		ClockCalcEngine.setCallbackHourOfDay((hourOfDayEff: number) => {
+			LightingCalcEngineBus.outputHourOfDayEff(hourOfDayEff);
 			VideoWorkerEngine.outputHourOfDayEff(hourOfDayEff);
 		});
 		KernelEngine.setCallbackFPS((fps: number) => {
@@ -234,16 +233,6 @@ class VideoWorkerEngine {
 		]);
 	}
 
-	public static inputGameModeEditDrawNull(drawNull: boolean): void {
-		ImageBlockDrawEngine.setDrawNull(drawNull);
-		VideoWorkerEngine.post([
-			{
-				cmd: VideoBusOutputCmd.EDIT_COMPLETE,
-				data: null,
-			},
-		]);
-	}
-
 	public static inputGameModeEditRedo(): void {
 		MapEditEngine.historyRedo();
 		VideoWorkerEngine.post([
@@ -286,7 +275,11 @@ class VideoWorkerEngine {
 	}
 
 	public static inputGamePause(pause: VideoBusInputCmdGamePause): void {
-		//console.log('VideoBusWorker > gamePause', pause);
+		if (pause.reason === VideoBusInputCmdGamePauseReason.FULLSCREEN || pause.reason === VideoBusInputCmdGamePauseReason.VISIBILITY) {
+			if (!KernelEngine.isPaused() && KernelEngine.isRunning()) {
+				KernelEngine.pause();
+			}
+		}
 	}
 
 	public static inputGameSave(save: VideoBusInputCmdGameSave): void {
@@ -316,7 +309,9 @@ class VideoWorkerEngine {
 	}
 
 	public static inputGameUnpause(unpause: VideoBusInputCmdGameUnpause): void {
-		console.log('VideoBusWorker > gameUnpause', unpause);
+		if (KernelEngine.isPaused() && KernelEngine.isRunning()) {
+			KernelEngine.resume();
+		}
 	}
 
 	public static async inputMapLoad(videoBusInputCmdMapLoad: VideoBusInputCmdMapLoad): Promise<void> {

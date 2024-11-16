@@ -1,8 +1,10 @@
 import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetImage, AssetImageSrcQuality } from '../models/asset.model';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
-import { Grid, GridImageBlock } from '../models/grid.model';
+import { Grid, GridImageBlockReference } from '../models/grid.model';
 import { Camera } from '../models/camera.model';
+import { LightingCalcEngineBus } from '../calc/buses/lighting.calc.engine.bus';
+import { LightingCalcBusOutputDecompressed } from '../calc/buses/lighting.calc.engine.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MapDrawBusInputPlayloadAsset } from '../draw/buses/map.draw.model.bus';
@@ -26,8 +28,9 @@ export class LightingEngine {
 	private static cacheZoomedValue: number;
 	private static darknessMax: number;
 	private static darknessMaxNew: boolean;
-	private static initialized: boolean;
 	private static hourPreciseOfDayEff: number = 0;
+	private static initialized: boolean;
+	private static lightingByHashByGrid: { [key: string]: { [key: number]: LightingCalcBusOutputDecompressed } } = {};
 	private static mapActive: MapActive;
 	private static quality: AssetImageSrcQuality;
 	private static timeForced: boolean;
@@ -80,10 +83,10 @@ export class LightingEngine {
 		let assetIds: { [key: string]: null } = {},
 			grid: Grid,
 			grids: { [key: string]: Grid } = LightingEngine.mapActive.grids,
-			processor = (imageBlocks: { [key: number]: GridImageBlock }) => {
-				for (let i in imageBlocks) {
-					if (!imageBlocks[i].extends) {
-						assetIds[imageBlocks[i].assetId] = null;
+			processor = (imageBlockReferences: { [key: number]: GridImageBlockReference }) => {
+				for (let i in imageBlockReferences) {
+					if (!imageBlockReferences[i].block.extends) {
+						assetIds[imageBlockReferences[i].block.assetId] = null;
 					}
 				}
 			};
@@ -91,10 +94,10 @@ export class LightingEngine {
 		for (let i in grids) {
 			grid = grids[i];
 
-			processor(grid.imageBlocksBackground.hashes);
-			processor(grid.imageBlocksForeground.hashes);
-			processor(grid.imageBlocksPrimary.hashes);
-			processor(grid.imageBlocksVanishing.hashes);
+			processor(grid.imageBlocksBackgroundReference.hashes);
+			processor(grid.imageBlocksForegroundReference.hashes);
+			processor(grid.imageBlocksPrimaryReference.hashes);
+			processor(grid.imageBlocksVanishingReference.hashes);
 		}
 
 		return Object.keys(assetIds);
@@ -104,7 +107,6 @@ export class LightingEngine {
 		if (!LightingEngine.cache[assetImageId]) {
 			// Build the cache(s)
 			LightingEngine.buildBinaries([assetImageId]);
-			LightingEngine.updateZoom(assetImageId);
 
 			setTimeout(() => {
 				MapDrawEngineBus.outputAssets(<{ [key: string]: MapDrawBusInputPlayloadAsset }>LightingEngine.cache);
@@ -121,7 +123,6 @@ export class LightingEngine {
 
 		// Build the cache(s)
 		LightingEngine.buildBinaries();
-		LightingEngine.updateZoom(undefined, true);
 
 		setTimeout(() => {
 			MapDrawEngineBus.outputAssets(<{ [key: string]: MapDrawBusInputPlayloadAsset }>LightingEngine.cache);
@@ -130,10 +131,6 @@ export class LightingEngine {
 
 	public static cacheWorkerImport(assets: { [key: string]: MapDrawBusInputPlayloadAsset }, camera?: Camera) {
 		LightingEngine.cache = Object.assign(LightingEngine.cache || {}, assets);
-
-		if (camera) {
-			LightingEngine.updateZoom(undefined, true, camera);
-		}
 	}
 
 	public static async initialize(worker?: boolean): Promise<void> {
@@ -142,15 +139,21 @@ export class LightingEngine {
 			return;
 		}
 		LightingEngine.initialized = true;
+		LightingCalcEngineBus.initialize();
+		LightingCalcEngineBus.setCallback((lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => {
+			// for(let i in lightingByHash) {
+			// 	LightingEngine.lightingByHash[i] = lightingByHash[i];
+			// }
+		});
 
 		if (worker !== true) {
 			ClockCalcEngine.setCallbackMinuteOfDay((hourOfDayEff: number, minuteOfDayEff: number) => {
 				if (minuteOfDayEff % 5 == 0) {
 					// Only update very 5min in game
 					LightingEngine.hourPreciseOfDayEff = hourOfDayEff + Math.round((minuteOfDayEff / 60) * 100) / 100;
-					LightingEngine.updateLighting(undefined, LightingEngine.darknessMaxNew);
 
 					if (LightingEngine.darknessMaxNew) {
+						LightingEngine.draw();
 						LightingEngine.darknessMaxNew = false;
 					}
 				}
@@ -158,184 +161,130 @@ export class LightingEngine {
 		}
 	}
 
+	private static draw(): void {}
+
 	private static updateLighting(assetImageId?: string, zoomChanged?: boolean, camera?: Camera): void {
-		let assetImageIds: string[],
-			cacheInstance: LightingCacheInstance,
-			canvas: OffscreenCanvas,
-			ctx: OffscreenCanvasRenderingContext2D,
-			darkness: string,
-			darknessMax: number = LightingEngine.darknessMax,
-			gInPh: number,
-			gInPw: number,
-			hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff,
-			id: string,
-			imageBitmaps: ImageBitmap[],
-			j: number,
-			k: number,
-			litAlgApplied: boolean = false,
-			litAlgDarknessEvening: string | undefined,
-			litAlgDarknessMorning: string | undefined,
-			litAlgDarknessNight: string | undefined,
-			litAlgGolden: string | undefined,
-			unlitLength: number = LightingEngine.cacheZoomedUnlitLength,
-			scratch: number,
-			scratch2: number;
-
-		if (!camera) {
-			if (LightingEngine.mapActive === undefined) {
-				return;
-			}
-			camera = LightingEngine.mapActive.camera;
-		}
-		gInPh = camera.gInPh;
-		gInPw = camera.gInPw;
-
-		if (LightingEngine.timeForced) {
-			hourPreciseOfDayEff = 12;
-		}
-
-		/*
-		 * Lit algorithm: config
-		 */
-		if (hourPreciseOfDayEff < 4 || hourPreciseOfDayEff > 23) {
-			// 11pm > time < 4am
-			litAlgApplied = true;
-			litAlgDarknessNight = 'brightness(' + (1 - darknessMax) + ')';
-		} else if (hourPreciseOfDayEff < 10) {
-			// 10pm
-			scratch = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
-
-			litAlgApplied = true;
-			litAlgDarknessMorning = 'brightness(' + (1 - scratch) + ')';
-		} else if (hourPreciseOfDayEff > 18) {
-			// 6pm
-			scratch = Math.min(darknessMax, Math.round(((hourPreciseOfDayEff - 18) / 6) * 1000) / 1000);
-
-			litAlgApplied = true;
-			litAlgDarknessEvening = 'brightness(' + (1 - scratch) + ')';
-		}
-
-		if ((hourPreciseOfDayEff > 7 && hourPreciseOfDayEff < 8) || (hourPreciseOfDayEff > 18 && hourPreciseOfDayEff < 19)) {
-			scratch = hourPreciseOfDayEff - Math.floor(hourPreciseOfDayEff);
-			scratch2 = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
-
-			if (scratch >= 0.5) {
-				scratch = 0.5 - (scratch - 0.5);
-			}
-
-			litAlgApplied = true;
-			if (hourPreciseOfDayEff < 8) {
-				litAlgGolden = 'brightness(' + (1 - scratch2) + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
-			} else {
-				litAlgGolden =
-					'brightness(' + Math.round(scratch * 250 + 1000) / 1000 + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
-			}
-		}
-
-		/*
-		 * Apply
-		 */
-		if (litAlgApplied || zoomChanged) {
-			assetImageIds = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache);
-			canvas = new OffscreenCanvas(0, 0);
-			ctx = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d');
-			darkness = 'rgba(0,0,0,' + Math.round((darknessMax / (unlitLength * 1.75)) * 1000) / 1000 + ')';
-
-			for (let i in assetImageIds) {
-				id = assetImageIds[i];
-				cacheInstance = LightingEngine.cache[id];
-
-				canvas.height = cacheInstance.gHeight * gInPh + 2; // Make sure we fill the grid
-				canvas.width = cacheInstance.gWidth * gInPw + 2; // Make sure we fill the grid
-
-				/*
-				 * Lit algorithm
-				 */
-				if (litAlgGolden) {
-					ctx.filter = litAlgGolden;
-				} else if (litAlgDarknessNight) {
-					ctx.filter = litAlgDarknessNight;
-				} else if (litAlgDarknessMorning) {
-					ctx.filter = litAlgDarknessMorning;
-				} else if (litAlgDarknessEvening) {
-					ctx.filter = litAlgDarknessEvening;
-				} else {
-					ctx.filter = 'none';
-				}
-
-				ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
-				LightingEngine.cacheZoomedLit[id] = canvas.transferToImageBitmap();
-
-				/*
-				 * Unlit algorithm (shades of darkness only)
-				 */
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				imageBitmaps = new Array(unlitLength);
-
-				if (litAlgGolden) {
-					ctx.filter = litAlgGolden;
-				} else if (litAlgDarknessNight) {
-					ctx.filter = litAlgDarknessNight;
-				} else if (litAlgDarknessMorning) {
-					ctx.filter = litAlgDarknessMorning;
-				} else if (litAlgDarknessEvening) {
-					ctx.filter = litAlgDarknessEvening;
-				} else {
-					ctx.filter = 'none';
-				}
-
-				for (j = 0; j < unlitLength; j++) {
-					ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
-
-					// Make it darker
-					ctx.fillStyle = darkness;
-
-					for (k = 0; k < j * 2 + 1; k++) {
-						ctx.fillRect(0, 0, canvas.width, canvas.height);
-					}
-
-					imageBitmaps[j] = canvas.transferToImageBitmap();
-				}
-
-				LightingEngine.cacheZoomedUnlit[id] = imageBitmaps;
-			}
-		}
-	}
-
-	public static updateZoom(assetImageId?: string, force?: boolean, camera?: Camera): void {
-		if (!camera) {
-			if (LightingEngine.mapActive === undefined) {
-				return;
-			}
-			camera = LightingEngine.mapActive.camera;
-		}
-		let zoom: number = camera.zoom;
-
-		/**
-		 * gInPh/gInPw +2 to fix the rounding issue
-		 */
-		if (assetImageId || LightingEngine.cacheZoomedValue !== zoom || force) {
-			let assetImageIds: string[] = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache),
-				cacheInstance: LightingCacheInstance,
-				canvas: OffscreenCanvas = new OffscreenCanvas(0, 0),
-				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
-				gInPh: number = camera.gInPh,
-				gInPw: number = camera.gInPw,
-				id: string;
-
-			for (let i in assetImageIds) {
-				id = assetImageIds[i];
-				cacheInstance = LightingEngine.cache[id];
-
-				canvas.height = cacheInstance.gHeight * gInPh + 2;
-				canvas.width = cacheInstance.gWidth * gInPw + 2;
-				ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
-				LightingEngine.cacheZoomed[id] = canvas.transferToImageBitmap();
-			}
-
-			LightingEngine.cacheZoomedValue = zoom;
-			LightingEngine.updateLighting(assetImageId, true, camera);
-		}
+		// let assetImageIds: string[],
+		// 	cacheInstance: LightingCacheInstance,
+		// 	canvas: OffscreenCanvas,
+		// 	ctx: OffscreenCanvasRenderingContext2D,
+		// 	darkness: string,
+		// 	darknessMax: number = LightingEngine.darknessMax,
+		// 	gInPh: number,
+		// 	gInPw: number,
+		// 	hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff,
+		// 	id: string,
+		// 	imageBitmaps: ImageBitmap[],
+		// 	j: number,
+		// 	k: number,
+		// 	litAlgApplied: boolean = false,
+		// 	litAlgDarknessEvening: string | undefined,
+		// 	litAlgDarknessMorning: string | undefined,
+		// 	litAlgDarknessNight: string | undefined,
+		// 	litAlgGolden: string | undefined,
+		// 	unlitLength: number = LightingEngine.cacheZoomedUnlitLength,
+		// 	scratch: number,
+		// 	scratch2: number;
+		// if (!camera) {
+		// 	if (LightingEngine.mapActive === undefined) {
+		// 		return;
+		// 	}
+		// 	camera = LightingEngine.mapActive.camera;
+		// }
+		// gInPh = camera.gInPh;
+		// gInPw = camera.gInPw;
+		// if (LightingEngine.timeForced) {
+		// 	hourPreciseOfDayEff = 12;
+		// }
+		// /*
+		//  * Lit algorithm: config
+		//  */
+		// if (hourPreciseOfDayEff < 4 || hourPreciseOfDayEff > 23) {
+		// 	// 11pm > time < 4am
+		// 	litAlgApplied = true;
+		// 	litAlgDarknessNight = 'brightness(' + (1 - darknessMax) + ')';
+		// } else if (hourPreciseOfDayEff < 10) {
+		// 	// 10pm
+		// 	scratch = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
+		// 	litAlgApplied = true;
+		// 	litAlgDarknessMorning = 'brightness(' + (1 - scratch) + ')';
+		// } else if (hourPreciseOfDayEff > 18) {
+		// 	// 6pm
+		// 	scratch = Math.min(darknessMax, Math.round(((hourPreciseOfDayEff - 18) / 6) * 1000) / 1000);
+		// 	litAlgApplied = true;
+		// 	litAlgDarknessEvening = 'brightness(' + (1 - scratch) + ')';
+		// }
+		// if ((hourPreciseOfDayEff > 7 && hourPreciseOfDayEff < 8) || (hourPreciseOfDayEff > 18 && hourPreciseOfDayEff < 19)) {
+		// 	scratch = hourPreciseOfDayEff - Math.floor(hourPreciseOfDayEff);
+		// 	scratch2 = Math.min(darknessMax, Math.round(((6 - (hourPreciseOfDayEff - 4)) / 6) * 1000) / 1000);
+		// 	if (scratch >= 0.5) {
+		// 		scratch = 0.5 - (scratch - 0.5);
+		// 	}
+		// 	litAlgApplied = true;
+		// 	if (hourPreciseOfDayEff < 8) {
+		// 		litAlgGolden = 'brightness(' + (1 - scratch2) + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
+		// 	} else {
+		// 		litAlgGolden =
+		// 			'brightness(' + Math.round(scratch * 250 + 1000) / 1000 + ') saturate(' + Math.round(scratch * 500 + 1000) / 1000 + ')';
+		// 	}
+		// }
+		// /*
+		//  * Apply
+		//  */
+		// if (litAlgApplied || zoomChanged) {
+		// 	assetImageIds = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache);
+		// 	canvas = new OffscreenCanvas(0, 0);
+		// 	ctx = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d');
+		// 	darkness = 'rgba(0,0,0,' + Math.round((darknessMax / (unlitLength * 1.75)) * 1000) / 1000 + ')';
+		// 	for (let i in assetImageIds) {
+		// 		id = assetImageIds[i];
+		// 		cacheInstance = LightingEngine.cache[id];
+		// 		canvas.height = cacheInstance.gHeight * gInPh + 2; // Make sure we fill the grid
+		// 		canvas.width = cacheInstance.gWidth * gInPw + 2; // Make sure we fill the grid
+		// 		/*
+		// 		 * Lit algorithm
+		// 		 */
+		// 		if (litAlgGolden) {
+		// 			ctx.filter = litAlgGolden;
+		// 		} else if (litAlgDarknessNight) {
+		// 			ctx.filter = litAlgDarknessNight;
+		// 		} else if (litAlgDarknessMorning) {
+		// 			ctx.filter = litAlgDarknessMorning;
+		// 		} else if (litAlgDarknessEvening) {
+		// 			ctx.filter = litAlgDarknessEvening;
+		// 		} else {
+		// 			ctx.filter = 'none';
+		// 		}
+		// 		ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
+		// 		LightingEngine.cacheZoomedLit[id] = canvas.transferToImageBitmap();
+		// 		/*
+		// 		 * Unlit algorithm (shades of darkness only)
+		// 		 */
+		// 		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		// 		imageBitmaps = new Array(unlitLength);
+		// 		if (litAlgGolden) {
+		// 			ctx.filter = litAlgGolden;
+		// 		} else if (litAlgDarknessNight) {
+		// 			ctx.filter = litAlgDarknessNight;
+		// 		} else if (litAlgDarknessMorning) {
+		// 			ctx.filter = litAlgDarknessMorning;
+		// 		} else if (litAlgDarknessEvening) {
+		// 			ctx.filter = litAlgDarknessEvening;
+		// 		} else {
+		// 			ctx.filter = 'none';
+		// 		}
+		// 		for (j = 0; j < unlitLength; j++) {
+		// 			ctx.drawImage(cacheInstance.image, 0, 0, canvas.width, canvas.height);
+		// 			// Make it darker
+		// 			ctx.fillStyle = darkness;
+		// 			for (k = 0; k < j * 2 + 1; k++) {
+		// 				ctx.fillRect(0, 0, canvas.width, canvas.height);
+		// 			}
+		// 			imageBitmaps[j] = canvas.transferToImageBitmap();
+		// 		}
+		// 		LightingEngine.cacheZoomedUnlit[id] = imageBitmaps;
+		// 	}
+		// }
 	}
 
 	/**
@@ -370,6 +319,8 @@ export class LightingEngine {
 	public static setMapActive(mapActive: MapActive) {
 		LightingEngine.hourPreciseOfDayEff = mapActive.hourOfDay;
 		LightingEngine.mapActive = mapActive;
+
+		LightingCalcEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
 	}
 
 	public static setResolution(quality: AssetImageSrcQuality) {

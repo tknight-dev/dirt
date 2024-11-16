@@ -1,8 +1,10 @@
 import { AssetEngine } from '../../engines/asset.engine';
 import { AssetImage } from '../../models/asset.model';
 import { Camera } from '../../models/camera.model';
-import { Grid, GridConfig, GridBlockTable, GridBlockTableComplex, GridImageBlock } from '../../models/grid.model';
+import { Grid, GridConfig, GridBlockTable, GridBlockTableComplex, GridImageBlock, GridImageBlockReference } from '../../models/grid.model';
 import { LightingEngine } from '../../engines/lighting.engine';
+import { MapActive } from '../../models/map.model';
+import { MapEditEngine } from '../../engines/map-edit.engine';
 import {
 	MapDrawBusInputCmd,
 	MapDrawBusInputPlayload,
@@ -109,7 +111,6 @@ class MapDrawWorkerEngine {
 	public static inputSetCamera(data: MapDrawBusInputPlayloadCamera): void {
 		// console.log('MapDrawWorkerEngine > inputSetCamera', data);
 		MapDrawWorkerEngine.camera = data;
-		LightingEngine.updateZoom(undefined, true, <Camera>data);
 	}
 
 	public static inputSetGridActive(data: MapDrawBusInputPlayloadGridActive): void {
@@ -119,8 +120,18 @@ class MapDrawWorkerEngine {
 
 	public static inputSetGrids(data: MapDrawBusInputPlayloadGrids): void {
 		// console.log('MapDrawWorkerEngine > inputSetGrids', data);
-		MapDrawWorkerEngine.grids = data.grids;
-		MapDrawWorkerEngine.gridConfigs = data.gridConfigs;
+		let grids: { [key: string]: Grid } = {};
+
+		for (let i in data.grids) {
+			grids[i] = JSON.parse(data.grids[i]);
+		}
+
+		let mapActive: MapActive = MapEditEngine.gridBlockTableInflate(<MapActive>{
+			gridConfigs: data.gridConfigs,
+			grids: grids,
+		});
+		MapDrawWorkerEngine.grids = mapActive.grids;
+		MapDrawWorkerEngine.gridConfigs = mapActive.gridConfigs;
 	}
 
 	public static inputSetResolution(data: MapDrawBusInputPlayloadResolution): void {
@@ -160,7 +171,6 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.busy = true;
 		try {
 			let assetId: string,
-				assetImage: AssetImage,
 				camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
 				canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
 				canvasHeight: number = MapDrawWorkerEngine.height,
@@ -175,15 +185,12 @@ class MapDrawWorkerEngine {
 				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
-				extended: boolean,
+				drawGx: number,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
-				getAssetImageLit: any = LightingEngine.getAssetImageLit,
-				getAssetImageUnlit: any = LightingEngine.getAssetImageUnlit,
-				getAssetImageUnlitMax: any = LightingEngine.cacheZoomedUnlitLength - 1,
 				gradient: CanvasGradient,
 				grid: Grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId],
 				gridConfig: GridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId],
@@ -196,23 +203,17 @@ class MapDrawWorkerEngine {
 				gWidthMaxEff: number,
 				gx: number,
 				gy: number,
-				gyMin: number,
-				hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
 				i: string,
 				imageBitmap: ImageBitmap,
-				imageBitmaps: ImageBitmap[],
-				imageBlocks: GridBlockTable<GridImageBlock>,
-				imageBlockHashes: { [key: number]: GridImageBlock },
 				j: string,
 				k: number,
-				outside: boolean = gridConfig.outside,
-				oversized: boolean,
 				radius: number,
 				radius2: number,
+				reference: GridBlockTable<GridImageBlockReference>,
+				referenceHashes: { [key: number]: GridImageBlockReference },
 				resolutionMultiple: number = 4,
 				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
 				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
-				scratch: number,
 				vanishingEnable: boolean = MapDrawWorkerEngine.vanishingEnable,
 				vanishingPercentageOfViewport: number = MapDrawWorkerEngine.vanishingPercentageOfViewport,
 				x: number,
@@ -230,9 +231,8 @@ class MapDrawWorkerEngine {
 			canvasTmp.height = canvasTmpGh * resolutionMultiple;
 			canvasTmp.width = canvasTmpGw * resolutionMultiple;
 			ctx.imageSmoothingEnabled = false;
-			ctxTmp.imageSmoothingEnabled = false;
-
 			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
+			ctxTmp.imageSmoothingEnabled = false;
 
 			canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
 			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
@@ -243,59 +243,56 @@ class MapDrawWorkerEngine {
 
 			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
 				for (gHeight = 0; gHeight < gHeightMax; gHeight += canvasTmpGh) {
-					ctxTmp.clearRect(0, 0, canvasTmpGw, canvasTmpGh);
-
 					for (i in zGroup) {
 						z = zGroup[i];
 						switch (z) {
 							case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
 								extendedHash = extendedHashBackground;
-								imageBlocks = grid.imageBlocksBackground;
+								reference = grid.imageBlocksBackgroundReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 								extendedHash = extendedHashForeground;
-								imageBlocks = grid.imageBlocksForeground;
+								reference = grid.imageBlocksForegroundReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 								extendedHash = extendedHashPrimary;
-								imageBlocks = grid.imageBlocksPrimary;
+								reference = grid.imageBlocksPrimaryReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 								extendedHash = extendedHashVanishing;
-								imageBlocks = grid.imageBlocksVanishing;
+								reference = grid.imageBlocksVanishingReference;
 								break;
 						}
-						imageBlockHashes = imageBlocks.hashes;
+						referenceHashes = reference.hashes;
+
+						// Prepare
+						ctxTmp.clearRect(0, 0, canvasTmpGw, canvasTmpGh);
 
 						// Applicable hashes
 						complexesByGx = UtilEngine.gridBlockTableSliceHashes(
-							imageBlocks,
+							reference,
 							gWidth,
 							gHeight,
 							gWidth + canvasTmpGw,
 							gHeight + canvasTmpGh,
 						);
-						hashesGyByGx = <any>imageBlocks.hashesGyByGx;
 
 						for (j in complexesByGx) {
 							complexes = complexesByGx[j];
-							gyMin = hashesGyByGx[Number(j)][0].value;
+							gx = Number(j);
+							drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 
 							for (k = 0; k < complexes.length; k++) {
 								complex = complexes[k];
-								assetId = imageBlockHashes[complex.hash].assetId;
-
-								// Null check
-								if (assetId === 'null' || assetId === 'null2') {
-									continue;
-								}
+								gridImageBlock = referenceHashes[complex.hash].block;
+								assetId = gridImageBlock.assetId;
 
 								// Extended check
-								gridImageBlock = imageBlockHashes[complex.hash];
+								gridImageBlock = referenceHashes[complex.hash].block;
 								if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
 									if (gridImageBlock.extends) {
 										// extention block
-										gridImageBlock = imageBlockHashes[gridImageBlock.extends];
+										gridImageBlock = referenceHashes[gridImageBlock.extends].block;
 										assetId = gridImageBlock.assetId;
 									}
 
@@ -304,59 +301,35 @@ class MapDrawWorkerEngine {
 										continue;
 									} else {
 										// Draw large block
-										extended = true;
 										extendedHash[gridImageBlock.hash] = null;
-										gx = <number>gridImageBlock.gx;
+										if (gx !== <number>gridImageBlock.gx) {
+											gx = <number>gridImageBlock.gx;
+											drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+										}
 										gy = <number>gridImageBlock.gy;
 									}
 								} else {
-									extended = false;
-									gx = <number>complex.gx;
+									if (gx !== <number>gridImageBlock.gx) {
+										gx = <number>gridImageBlock.gx;
+										drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+									}
 									gy = <number>complex.gy;
 								}
 
 								// Grab global illumination images if outside
-								if (outside) {
-									scratch = gy - gyMin;
+								imageBitmap = LightingEngine.getCacheInstance(assetId).image;
 
-									if (scratch > 2) {
-										imageBitmaps = getAssetImageUnlit(assetId);
-										imageBitmap = imageBitmaps[Math.min(scratch - 3, getAssetImageUnlitMax)];
-									} else {
-										imageBitmap = getAssetImageLit(assetId);
-									}
-								} else {
-									imageBitmap = getAssetImageUnlit(assetId)[getAssetImageUnlitMax];
-								}
-
-								assetImage = MapDrawWorkerEngine.assetImages[assetId];
-								if ((assetImage.gHeight || 1) !== 1 || (assetImage.gWidth || 1) !== 1) {
-									oversized = true;
-								} else {
-									oversized = false;
-								}
-
-								// Use draw resize overload for image blocks larger than 1x1
-								if (extended || oversized) {
-									//console.log(gx, gWidth, gx - gWidth, (gx - gWidth) * resolutionMultiple);
-									ctxTmp.drawImage(
-										imageBitmap,
-										0,
-										0,
-										imageBitmap.width,
-										imageBitmap.height,
-										Math.round((gx - gWidth) * resolutionMultiple),
-										Math.round((gy - gHeight) * resolutionMultiple),
-										resolutionMultiple * gridImageBlock.gSizeW,
-										resolutionMultiple * gridImageBlock.gSizeH,
-									);
-								} else {
-									ctxTmp.drawImage(
-										imageBitmap,
-										Math.round((gx - gWidth) * resolutionMultiple),
-										Math.round((gy - gHeight) * resolutionMultiple),
-									);
-								}
+								ctxTmp.drawImage(
+									imageBitmap,
+									0,
+									0,
+									imageBitmap.width,
+									imageBitmap.height,
+									drawGx,
+									Math.round((gy - gHeight) * resolutionMultiple),
+									resolutionMultiple * gridImageBlock.gSizeW,
+									resolutionMultiple * gridImageBlock.gSizeH,
+								);
 							}
 						}
 

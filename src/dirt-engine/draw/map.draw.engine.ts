@@ -28,7 +28,6 @@ export class MapDrawEngine {
 	private static mapImage: ImageBitmap;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
-	private static mapActiveGridConfig: GridConfig;
 	public static resolution: null | number;
 	public static scaler: number;
 	public static devicePixelRatio: number;
@@ -50,7 +49,7 @@ export class MapDrawEngine {
 		}
 		MapDrawEngine.initialized = true;
 		MapDrawEngine.ctxOverlay = ctxOverlay;
-		MapDrawEngineBus.initialize();
+		await MapDrawEngineBus.initialize();
 		MapDrawEngineBus.setCallbackBitmap((imageBitmap: ImageBitmap) => {
 			MapDrawEngine.mapImage = imageBitmap;
 			MapDrawEngine.cacheBackgroundHashP = -1;
@@ -73,8 +72,8 @@ export class MapDrawEngine {
 		yRel = (py - MapDrawEngine.backgroundPy) / MapDrawEngine.backgroundPh;
 
 		CameraEngine.moveG(
-			Math.round(MapDrawEngine.mapActiveGridConfig.gWidth * xRel * 1000) / 1000,
-			Math.round(MapDrawEngine.mapActiveGridConfig.gHeight * yRel * 1000) / 1000,
+			Math.round(MapDrawEngine.mapActive.gridConfigActive.gWidth * xRel * 1000) / 1000,
+			Math.round(MapDrawEngine.mapActive.gridConfigActive.gHeight * yRel * 1000) / 1000,
 		);
 	}
 
@@ -133,19 +132,19 @@ export class MapDrawEngine {
 		 * Camera Lines
 		 */
 		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
-			MapDrawEngine.mapActiveCamera.viewportGx,
-			MapDrawEngine.mapActiveCamera.viewportGy,
+			camera.viewportGx,
+			camera.viewportGy,
+			MapDrawEngine.mapActive.gridConfigActive.gHashPrecision,
 		);
 		if (
 			MapDrawEngine.cacheHashCheckG !== MapDrawEngine.cacheCameraLinesHashG ||
 			MapDrawEngine.cacheHashCheckP !== MapDrawEngine.cacheCameraLinesHashP ||
-			MapDrawEngine.cacheZoom !== MapDrawEngine.mapActiveCamera.zoom
+			MapDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw from scratch
 			let cacheCanvas: OffscreenCanvas,
 				ctx: OffscreenCanvasRenderingContext2D,
-				mapActive: MapActive = MapDrawEngine.mapActive,
-				gridConfig: GridConfig = MapDrawEngine.mapActiveGridConfig,
+				gridConfig: GridConfig = MapDrawEngine.mapActive.gridConfigActive,
 				gh: number = gridConfig.gHeight,
 				gw: number = gridConfig.gWidth,
 				ghRelScaled: number,
@@ -267,7 +266,6 @@ export class MapDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		MapDrawEngine.mapActive = mapActive;
 		MapDrawEngine.mapActiveCamera = mapActive.camera;
-		MapDrawEngine.mapActiveGridConfig = mapActive.gridConfigActive;
 
 		MapDrawEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
 	}

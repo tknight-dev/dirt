@@ -23,20 +23,16 @@ export class ClockCalcEngine {
 
 		minute = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
 
-		if (minute === 60) {
+		if (minute >= 60) {
 			mapActive.clockTicker = 0;
 			mapActive.hourOfDayEff = (mapActive.hourOfDayEff + 1) % 24;
-			mapActive.minuteOfHourEff = 0;
+			mapActive.minuteOfHourEff = minute % 60; // if triggered on minute 61 start the next hour on minute 1
 
-			setTimeout(() => {
-				ClockCalcEngine.callbackHourOfDay(mapActive.hourOfDayEff);
-				ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
-			});
+			ClockCalcEngine.callbackHourOfDay(mapActive.hourOfDayEff);
+			ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 		} else if (minute !== mapActive.minuteOfHourEff) {
 			mapActive.minuteOfHourEff = minute;
-			setTimeout(() => {
-				ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
-			});
+			ClockCalcEngine.callbackMinuteOfDay(mapActive.hourOfDayEff, mapActive.minuteOfHourEff);
 		}
 	}
 

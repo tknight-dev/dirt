@@ -1,6 +1,15 @@
 import { Coordinate } from '../models/px.model';
-import { GridCoordinate, GridBlockTable, GridBlockTableComplex } from '../models/grid.model';
+import {
+	Grid,
+	GridCoordinate,
+	GridBlockTable,
+	GridImageBlock,
+	GridObject,
+	GridImageBlockReference,
+	GridBlockTableComplex,
+} from '../models/grid.model';
 import { Map } from '../models/map.model';
+import { VideoBusInputCmdGameModeEditApplyType, VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
@@ -76,20 +85,63 @@ export class UtilEngine {
 	}
 
 	/**
-	 * Grid hashes are 32bit with a max precision of 3
+	 * Grid hashes are 32bit with a max precision of 3, min 0
 	 */
-	public static gridHashFrom(hash: number): GridCoordinate {
-		return {
-			gx: ((hash >> 16) & 0xffff) / 1000,
-			gy: (hash & 0xffff) / 1000,
-		};
+	public static gridHashFrom(hash: number, precision: number): GridCoordinate {
+		switch (precision) {
+			case 3:
+				return {
+					gx: ((hash >> 16) & 0xffff) / 1000,
+					gy: (hash & 0xffff) / 1000,
+				};
+			case 2:
+				return {
+					gx: ((hash >> 16) & 0xffff) / 100,
+					gy: (hash & 0xffff) / 100,
+				};
+			case 1:
+				return {
+					gx: ((hash >> 16) & 0xffff) / 10,
+					gy: (hash & 0xffff) / 10,
+				};
+			case 0:
+			default:
+				return {
+					gx: (hash >> 16) & 0xffff,
+					gy: hash & 0xffff,
+				};
+		}
 	}
 
 	/**
-	 * Grid hashes are 32bit with a max precision of 3
+	 * Grid hashes are 32bit with a max precision of 3, min 0
 	 */
-	public static gridHashTo(gx: number, gy: number): number {
-		return ((Math.round(gx * 1000) & 0xffff) << 16) | (Math.round(gy * 1000) & 0xffff);
+	public static gridHashTo(gx: number, gy: number, precision: number): number {
+		switch (precision) {
+			case 3:
+				return (((gx * 1000) & 0xffff) << 16) | ((gy * 1000) & 0xffff);
+			case 2:
+				return (((gx * 100) & 0xffff) << 16) | ((gy * 100) & 0xffff);
+			case 1:
+				return (((gx * 10) & 0xffff) << 16) | ((gy * 10) & 0xffff);
+			case 0:
+			default:
+				return ((gx & 0xffff) << 16) | (gy & 0xffff);
+		}
+	}
+
+	public static gridLightingHashTo(gx: number, gy: number, precision: number): number {
+		switch (precision) {
+			case 3:
+				return (((gx * 1000) & 0xffff) << 16) | ((gy * 1000) & 0xffff);
+			case 2:
+				return (((gx * 100) & 0xffff) << 16) | ((gy * 100) & 0xffff);
+			case 1:
+				return (((gx * 10) & 0xffff) << 16) | ((gy * 10) & 0xffff);
+			case 0:
+			default:
+				return ((gx & 0xffff) << 16) | (gy & 0xffff);
+		}
 	}
 
 	/**
@@ -213,5 +265,20 @@ export class UtilEngine {
 	): number {
 		let value: number = ((input - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin;
 		return round ? Math.round(value) : value;
+	}
+
+	public static getGridHashPrecisionMax(gWidth: number): number {
+		if (gWidth > 0x1999) {
+			// 6553
+			return 0;
+		} else if (gWidth > 0x28f) {
+			// 655
+			return 1;
+		} else if (gWidth > 0x41) {
+			//65
+			return 2;
+		} else {
+			return 3;
+		}
 	}
 }

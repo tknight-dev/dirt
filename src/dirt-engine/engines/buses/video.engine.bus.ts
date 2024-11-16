@@ -110,17 +110,6 @@ export class VideoEngineBus {
 		// Config
 		VideoEngineBus.resolution = settings.resolution;
 		ResizeEngine.setCallback(VideoEngineBus.resized);
-		VisibilityEngine.setCallback((visible: boolean) => {
-			if (!visible) {
-				VideoEngineBus.outputGamePause({
-					reason: VideoBusInputCmdGamePauseReason.VISIBILITY,
-				});
-			} else {
-				setTimeout(() => {
-					VideoEngineBus.resized(false, true);
-				});
-			}
-		});
 
 		// Spawn Video thread
 		if (window.Worker) {
@@ -335,13 +324,6 @@ export class VideoEngineBus {
 		});
 	}
 
-	public static outputGameModeEditDrawNull(drawNull: boolean): void {
-		VideoEngineBus.worker.postMessage({
-			cmd: VideoBusInputCmd.GAME_MODE_EDIT_DRAW_NULL,
-			data: drawNull,
-		});
-	}
-
 	public static outputGameModeEditRedo(): void {
 		VideoEngineBus.worker.postMessage({
 			cmd: VideoBusInputCmd.GAME_MODE_EDIT_REDO,
@@ -454,7 +436,7 @@ export class VideoEngineBus {
 		});
 	}
 
-	private static resized(disablePost?: boolean, force?: boolean): VideoBusInputCmdResize {
+	public static resized(disablePost?: boolean, force?: boolean): VideoBusInputCmdResize {
 		let data: VideoBusInputCmdResize,
 			devicePixelRatio: number = Math.round(window.devicePixelRatio * 1000) / 1000,
 			devicePixelRatioEff: number = Math.round((1 / window.devicePixelRatio) * 1000) / 1000,

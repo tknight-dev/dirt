@@ -80,7 +80,11 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cacheGInP = CameraDrawEngine.cacheGInPCheck;
 		}
 
-		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(camera.gx, camera.gy);
+		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(
+			camera.gx,
+			camera.gy,
+			CameraDrawEngine.mapActive.gridConfigActive.gHashPrecision,
+		);
 		CameraDrawEngine.cachePositionHashCheckP = UtilEngine.pixelHashTo(camera.windowPw, camera.windowPh);
 		if (
 			CameraDrawEngine.cachePositionHashG !== CameraDrawEngine.cachePositionHashCheckG ||

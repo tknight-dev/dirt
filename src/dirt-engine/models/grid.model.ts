@@ -4,18 +4,66 @@
  * @author tknight-dev
  */
 
-export interface Grid {
+export class Grid {
 	audioBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
-	audioTagTriggersEffect: GridBlockTable<GridAudioTriggerEffect>; // (gx,gy), Precision 3
-	audioTagTriggersMusic: GridBlockTable<GridAudioTriggerMusic>; // (gx,gy), Precision 3
-	audioTagTriggersMusicFade: GridBlockTable<GridAudioTriggerMusicFade>; // (gx,gy), Precision 3
-	audioTagTriggersMusicPause: GridBlockTable<GridAudioTriggerMusicPause>; // (gx,gy), Precision 3
-	audioTagTriggersMusicUnpause: GridBlockTable<GridAudioTriggerMusicUnpause>; // (gx,gy), Precision 3
-	imageBlocksBackground: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
-	imageBlocksForeground: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
-	imageBlocksPrimary: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
-	imageBlocksVanishing: GridBlockTable<GridImageBlock>; // (gx,gy), Precision 0
+	audioTagTriggers: GridBlockTable<GridAudioTrigger>; // (gx,gy), Precision 3
+	id: string;
+	imageBlocksBackgroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksBackgroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksBackgroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksBackgroundSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksForegroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksForegroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksForegroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksForegroundSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksPrimaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksPrimaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksPrimaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksPrimarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksVanishingFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksVanishingLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksVanishingReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksVanishingSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	lights: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+
+	constructor(data: any) {
+		this.audioBlocks = data.audioBlocks;
+		this.audioTagTriggers = data.audioTagTriggers;
+		(this.id = data.id), (this.imageBlocksBackgroundFoliage = data.imageBlocksBackgroundFoliage);
+		this.imageBlocksBackgroundLiquid = data.imageBlocksBackgroundLiquid;
+		this.imageBlocksBackgroundSolid = data.imageBlocksBackgroundSolid;
+		this.imageBlocksForegroundFoliage = data.imageBlocksForegroundFoliage;
+		this.imageBlocksForegroundLiquid = data.imageBlocksForegroundLiquid;
+		this.imageBlocksForegroundSolid = data.imageBlocksForegroundSolid;
+		this.imageBlocksPrimaryFoliage = data.imageBlocksPrimaryFoliage;
+		this.imageBlocksPrimaryLiquid = data.imageBlocksPrimaryLiquid;
+		this.imageBlocksPrimarySolid = data.imageBlocksPrimarySolid;
+		this.imageBlocksVanishingFoliage = data.imageBlocksVanishingFoliage;
+		this.imageBlocksVanishingLiquid = data.imageBlocksVanishingLiquid;
+		this.imageBlocksVanishingSolid = data.imageBlocksVanishingSolid;
+		this.lights = data.lights;
+	}
+
+	toJSON(): string {
+		return JSON.stringify({
+			audioBlocks: this.audioBlocks,
+			audioTagTriggers: this.audioTagTriggers,
+			id: this.id,
+			imageBlocksBackgroundFoliage: this.imageBlocksBackgroundFoliage,
+			imageBlocksBackgroundLiquid: this.imageBlocksBackgroundLiquid,
+			imageBlocksBackgroundSolid: this.imageBlocksBackgroundSolid,
+			imageBlocksForegroundFoliage: this.imageBlocksForegroundFoliage,
+			imageBlocksForegroundLiquid: this.imageBlocksForegroundLiquid,
+			imageBlocksForegroundSolid: this.imageBlocksForegroundSolid,
+			imageBlocksPrimaryFoliage: this.imageBlocksPrimaryFoliage,
+			imageBlocksPrimaryLiquid: this.imageBlocksPrimaryLiquid,
+			imageBlocksPrimarySolid: this.imageBlocksPrimarySolid,
+			imageBlocksVanishingFoliage: this.imageBlocksVanishingFoliage,
+			imageBlocksVanishingLiquid: this.imageBlocksVanishingLiquid,
+			imageBlocksVanishingSolid: this.imageBlocksVanishingSolid,
+			lights: this.lights,
+		});
+	}
 }
 
 export interface GridBlockTable<T> {
@@ -32,10 +80,11 @@ export interface GridBlockTableComplex {
 }
 
 export interface GridConfig {
+	gHashPrecision: number; // Between 0-3 use UtilEngine to determine based on gWidth
 	gHeight: number; // calculated, Precision 0
 	gHorizon: number; // Precision 0
 	gWidth: number; // Precision 0
-	id: string;
+	id: string; // Matches associate grid.id
 	lightIntensityGlobal: number; // 1.000 is default (Precision 3)
 	outside: boolean; // defaulted by MapEngine
 	startGxCamera: number; // Precision 3
@@ -54,35 +103,43 @@ export interface GridAudioBlock extends GridObject {
 	modulationId: string;
 }
 
-export interface GridAudioTriggerEffect extends GridObject {
+export interface GridAudioTrigger extends GridObject {
+	trip: GridAudioTriggerTripType;
+	type: GridAudioTriggerType;
+}
+
+export interface GridAudioTriggerEffect extends GridAudioTrigger {
 	assetId: string;
 	oneshot: boolean; // true and the trigger fires everytime it's tripped
-	trip: GridAudioTriggerTripType;
 	volumePercentage: number; // between 0 and 1 with a precision of 3
 }
 
-export interface GridAudioTriggerMusic extends GridObject {
+export interface GridAudioTriggerMusic extends GridAudioTrigger {
 	assetId: string;
 	tagId: string;
-	trip: GridAudioTriggerTripType;
 	volumePercentage: number; // between 0 and 1 with a precision of 3
 }
 
-export interface GridAudioTriggerMusicFade extends GridObject {
+export interface GridAudioTriggerMusicFade extends GridAudioTrigger {
 	fadeDurationInMs: number; // between 0 and 1 with a precision of 3
 	fadeTo: number; // between 0 and 1 with a precision of 3
 	tagId: string;
-	trip: GridAudioTriggerTripType;
 }
 
-export interface GridAudioTriggerMusicPause extends GridObject {
+export interface GridAudioTriggerMusicPause extends GridAudioTrigger {
 	tagId: string;
-	trip: GridAudioTriggerTripType;
 }
 
-export interface GridAudioTriggerMusicUnpause extends GridObject {
+export interface GridAudioTriggerMusicUnpause extends GridAudioTrigger {
 	tagId: string;
-	trip: GridAudioTriggerTripType;
+}
+
+export enum GridAudioTriggerType {
+	EFFECT,
+	MUSIC,
+	MUSIC_FADE,
+	MUSIC_PAUSE,
+	MUSIC_UNPAUSE,
 }
 
 export enum GridAudioTriggerTripType {
@@ -93,28 +150,46 @@ export enum GridAudioTriggerTripType {
 
 export interface GridImageBlock extends GridObject {
 	assetId: string;
-	assetIdDamagedImage?: string; // replaces assetId on damage
-	assetIdDamangedWalkedOnAudioEffect?: string; // replaces assetIdWalkedOnAudioEffect on damage
-	assetIdWalkedOnAudioEffect?: string; // fallback is no audio
+}
+
+export interface GridImageBlockFoliage extends GridImageBlock {
+	assetIdDamaged?: string; // replaces assetId on damage
 	damageable?: boolean;
 	destructible?: boolean;
-	passthrough?: boolean;
+	extends?: number;
 	strengthToDamangeInN?: number; // newtons of force required to destroy
 	strengthToDestroyInN?: number; // newtons of force required to destroy
-	type: GridImageBlockType;
-	viscocity?: number; // how thick the liquid is
 }
 
-export enum GridImageBlockType {
-	LIQUID,
-	SOLID,
+export interface GridImageBlockLiquid extends GridImageBlock {
+	assetIdAudioEffectSwim?: string; // fallback is no audio
+	assetIdAudioEffectTread?: string; // fallback is no audio
+	viscocity: number; // how thick the liquid is
 }
 
-export interface GridLight extends GridCoordinate {
-	color: number; // hexadecimal
-	destructible: boolean;
+export interface GridImageBlockReference {
+	block: GridImageBlock;
+	blocks: { [key: number]: GridImageBlock };
+	hash: number;
+	hashesGyByGx: { [key: number]: number[] };
+	objectType: GridObjectType;
+}
+
+export interface GridImageBlockSolid extends GridImageBlock {
+	assetIdDamaged?: string; // replaces assetId on damage
+	assetIdAudioEffectWalkedOn?: string; // fallback is no audio
+	assetIdAudioEffectWalkedOnDamaged?: string; // replaces assetIdAudioEffectWalkedOn on damage
+	damageable?: boolean;
+	destructible?: boolean;
+	extends?: number;
+	strengthToDamangeInN?: number; // newtons of force required to destroy
+	strengthToDestroyInN?: number; // newtons of force required to destroy
+}
+
+export interface GridLight extends GridObject {
+	destructible?: boolean;
 	gRadius: number;
-	nightOnly: boolean;
+	nightOnly?: boolean;
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 	type: GridLightType;
 }
@@ -147,11 +222,9 @@ export interface GridObjectActive extends GridObject {
 
 export enum GridObjectType {
 	AUDIO_BLOCK,
-	AUDIO_TRIGGER_EFFECT,
-	AUDIO_TRIGGER_MUSIC,
-	AUDIO_TRIGGER_MUSIC_FADE,
-	AUDIO_TRIGGER_MUSIC_PAUSE,
-	AUDIO_TRIGGER_MUSIC_UNPAUSE,
-	IMAGE_BLOCK,
+	AUDIO_TRIGGER,
+	IMAGE_BLOCK_FOLIAGE,
+	IMAGE_BLOCK_LIQUID,
+	IMAGE_BLOCK_SOLID,
 	LIGHT,
 }

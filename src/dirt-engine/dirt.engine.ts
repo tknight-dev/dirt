@@ -193,6 +193,24 @@ export class DirtEngine extends DomUI {
 			DirtEngine.domElements['feed-fitted-title'].style.display = 'none';
 		}, 500);
 
+		// Visibility
+		VisibilityEngine.setCallback((visible: boolean) => {
+			if (!visible) {
+				DomUI.domElements['feed-fitted-pause-content'].onclick = () => {
+					DomUI.domElements['feed-fitted-pause'].style.display = 'none';
+					VideoEngineBus.outputGameUnpause({});
+				};
+				DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
+				VideoEngineBus.outputGamePause({
+					reason: VideoBusInputCmdGamePauseReason.VISIBILITY,
+				});
+			} else {
+				setTimeout(() => {
+					VideoEngineBus.resized(false, true);
+				});
+			}
+		});
+
 		// Done
 		setTimeout(() => {
 			DirtEngine.gameStarted = true;

@@ -171,6 +171,7 @@ $dirt-engine-old-tv-background: #162fd8;
 					}
 
 					.outline,
+					.pause,
 					.title,
 					.title {
 						bottom: 0;
@@ -178,6 +179,21 @@ $dirt-engine-old-tv-background: #162fd8;
 						position: absolute;
 						right: 0;
 						top: 0;
+					}
+
+					.pause {
+						align-items: center;
+						background-color: rgba(0, 0, 0, 0.25);
+						display: none;
+						justify-content: center;
+						z-index: 1;
+
+						.content {
+							background-color: black;
+							border: 1px solid white;
+							height: 200px;
+							width: 200px;
+						}
 					}
 
 					.title {
