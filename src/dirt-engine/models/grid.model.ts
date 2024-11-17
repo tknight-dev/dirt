@@ -29,7 +29,8 @@ export class Grid {
 	constructor(data: any) {
 		this.audioBlocks = data.audioBlocks;
 		this.audioTagTriggers = data.audioTagTriggers;
-		(this.id = data.id), (this.imageBlocksBackgroundFoliage = data.imageBlocksBackgroundFoliage);
+		this.id = data.id;
+		this.imageBlocksBackgroundFoliage = data.imageBlocksBackgroundFoliage;
 		this.imageBlocksBackgroundLiquid = data.imageBlocksBackgroundLiquid;
 		this.imageBlocksBackgroundSolid = data.imageBlocksBackgroundSolid;
 		this.imageBlocksForegroundFoliage = data.imageBlocksForegroundFoliage;
@@ -80,7 +81,6 @@ export interface GridBlockTableComplex {
 }
 
 export interface GridConfig {
-	gHashPrecision: number; // Between 0-3 use UtilEngine to determine based on gWidth
 	gHeight: number; // calculated, Precision 0
 	gHorizon: number; // Precision 0
 	gWidth: number; // Precision 0

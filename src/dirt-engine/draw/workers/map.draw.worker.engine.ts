@@ -142,7 +142,7 @@ class MapDrawWorkerEngine {
 
 	public static inputSetSettings(data: MapDrawBusInputPlayloadSettings): void {
 		//console.log('MapDrawWorkerEngine > inputSetSettings', data);
-		LightingEngine.setDarknessMax(data.darknessMax * 0.3, <Camera>MapDrawWorkerEngine.camera);
+		LightingEngine.setDarknessMax(data.darknessMax * 0.3);
 		MapDrawWorkerEngine.mapVisible = data.mapVisible;
 		MapDrawWorkerEngine.vanishingEnable = data.vanishingEnable;
 		MapDrawWorkerEngine.vanishingPercentageOfViewport = data.vanishingPercentageOfViewport;
@@ -150,7 +150,7 @@ class MapDrawWorkerEngine {
 
 	public static inputSetTimeForced(data: MapDrawBusInputPlayloadTimeForced): void {
 		//console.log('MapDrawWorkerEngine > inputSetTimeForced', data);
-		LightingEngine.setTimeForced(data.forced, <Camera>MapDrawWorkerEngine.camera);
+		LightingEngine.setTimeForced(data.forced);
 	}
 
 	protected static outputBitmap(image: ImageBitmap): void {

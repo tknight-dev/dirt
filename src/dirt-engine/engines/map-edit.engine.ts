@@ -42,11 +42,11 @@ import { LightingCacheInstance, LightingEngine } from './lighting.engine';
 
 export class MapEditEngine {
 	public static applyGroup: boolean;
-	public static readonly gHeightMax: number = 18431; // 0xffff
-	public static readonly gWidthMax: number = 32767; // 0xffff
+	public static readonly gHeightMax: number = 135; // 0xff (8bits)
+	public static readonly gWidthMax: number = 240; // 0xff (8bits)
 	private static initialized: boolean;
 	private static mapActiveUI: MapActive;
-	private static mapHistoryLength: number = 50;
+	private static mapHistoryLength: number = 10;
 	private static mapHistoryRedo: DoubleLinkedList<MapActive> = new DoubleLinkedList<MapActive>();
 	private static mapHistoryUndo: DoubleLinkedList<MapActive> = new DoubleLinkedList<MapActive>();
 	private static modeUI: boolean; // indicates thread context
@@ -92,9 +92,7 @@ export class MapEditEngine {
 			gCoordinate: GridCoordinate,
 			gHash: number,
 			gHashes: number[] = apply.gHashes,
-			gHashPrecision: number,
 			grid: Grid,
-			gridConfig: GridConfig,
 			gridObject: GridObject,
 			mapActive: MapActive,
 			reference: GridBlockTable<GridImageBlockReference> = {
@@ -111,8 +109,6 @@ export class MapEditEngine {
 			mapActive = MapEditEngine.mapActiveUI;
 		}
 		grid = mapActive.gridActive;
-		gridConfig = mapActive.gridConfigActive;
-		gHashPrecision = gridConfig.gHashPrecision;
 
 		switch (apply.type) {
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
@@ -164,12 +160,12 @@ export class MapEditEngine {
 					gridObject = referenceMode ? referenceHashes[gridObject.extends].block : blockHashes[gridObject.extends];
 				}
 
-				gCoordinate = UtilEngine.gridHashFrom(gridObject.hash, gHashPrecision);
+				gCoordinate = UtilEngine.gridHashFrom(gridObject.hash);
 
 				// Delete blocks
 				for (x = 0; x < gridObject.gSizeW; x++) {
 					for (y = 0; y < gridObject.gSizeH; y++) {
-						gHash = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y, gHashPrecision);
+						gHash = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
 
 						if (referenceMode) {
 							delete blockHashes[gHash];
@@ -183,9 +179,9 @@ export class MapEditEngine {
 		}
 
 		if (referenceMode) {
-			MapEditEngine.gridBlockTableInflateInstance(reference, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(reference);
 		} else {
-			MapEditEngine.gridBlockTableInflateInstance(blocks, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(blocks);
 		}
 
 		if (!MapEditEngine.modeUI) {
@@ -200,9 +196,7 @@ export class MapEditEngine {
 			gHashEff: number,
 			gHashes: number[] = apply.gHashes,
 			gHashesOverwritten: number[],
-			gHashPrecision: number,
 			grid: Grid,
-			gridConfig: GridConfig,
 			mapActive: MapActive,
 			objectType: GridObjectType,
 			properties: any = JSON.parse(JSON.stringify(apply)),
@@ -220,8 +214,6 @@ export class MapEditEngine {
 			mapActive = MapEditEngine.mapActiveUI;
 		}
 		grid = mapActive.gridActive;
-		gridConfig = mapActive.gridConfigActive;
-		gHashPrecision = gridConfig.gHashPrecision;
 
 		switch (apply.z) {
 			case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
@@ -296,7 +288,7 @@ export class MapEditEngine {
 		// Apply
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
-			gCoordinate = UtilEngine.gridHashFrom(gHash, gHashPrecision);
+			gCoordinate = UtilEngine.gridHashFrom(gHash);
 
 			// Overwrite, delete all blocks associated with
 			if (properties.gSizeH === 1 && properties.gSizeW === 1) {
@@ -312,7 +304,7 @@ export class MapEditEngine {
 
 				for (x = 0; x < properties.gSizeW; x++) {
 					for (y = 0; y < properties.gSizeH; y++) {
-						gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y, gHashPrecision);
+						gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
 
 						if (referenceHashes[gHashEff]) {
 							gHashesOverwritten.push(gHashEff);
@@ -351,7 +343,7 @@ export class MapEditEngine {
 						// origin block
 						continue;
 					}
-					gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y, gHashPrecision);
+					gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
 					blocks[gHashEff] = <any>{
 						extends: gHash,
 						gx: gCoordinate.gx + x,
@@ -368,7 +360,7 @@ export class MapEditEngine {
 			}
 		}
 
-		MapEditEngine.gridBlockTableInflateInstance(reference, gHashPrecision);
+		MapEditEngine.gridBlockTableInflateInstance(reference);
 
 		if (!MapEditEngine.modeUI) {
 			let assetId: string = (<any>apply).assetId,
@@ -390,15 +382,15 @@ export class MapEditEngine {
 
 	public static gridBlockTableDeflate(map: MapActive): MapActive {
 		Object.values(map.grids).forEach((grid: Grid) => {
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioBlocks);
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggers);
+			MapEditEngine.gridBlockTableDeflateInstance(grid.audioBlocks || {});
+			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggers || {});
 
 			delete (<any>grid).imageBlocksBackgroundReference;
 			delete (<any>grid).imageBlocksForegroundReference;
 			delete (<any>grid).imageBlocksPrimaryReference;
 			delete (<any>grid).imageBlocksVanishingReference;
 
-			MapEditEngine.gridBlockTableDeflateInstance(grid.lights);
+			MapEditEngine.gridBlockTableDeflateInstance(grid.lights || {});
 		});
 		return map;
 	}
@@ -409,7 +401,7 @@ export class MapEditEngine {
 	}
 
 	public static gridBlockTableInflate(map: MapActive): MapActive {
-		let gHashPrecision: number, reference: { [key: number]: GridImageBlockReference };
+		let reference: { [key: number]: GridImageBlockReference };
 
 		// Clean
 		for (let i in map.grids) {
@@ -421,11 +413,9 @@ export class MapEditEngine {
 		map.gridConfigActive = map.gridConfigs[map.gridActiveId];
 
 		Object.values(map.grids).forEach((grid: Grid) => {
-			gHashPrecision = map.gridConfigs[grid.id].gHashPrecision;
-
 			// LightingCalcWorkerEngine filters these out
-			grid.audioBlocks && MapEditEngine.gridBlockTableInflateInstance(grid.audioBlocks, gHashPrecision);
-			grid.audioTagTriggers && MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggers, gHashPrecision);
+			grid.audioBlocks && MapEditEngine.gridBlockTableInflateInstance(grid.audioBlocks);
+			grid.audioTagTriggers && MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggers);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundFoliage, reference);
@@ -434,7 +424,7 @@ export class MapEditEngine {
 			grid.imageBlocksBackgroundReference = {
 				hashes: reference,
 			};
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksBackgroundReference, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksBackgroundReference);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksForegroundFoliage, reference);
@@ -443,7 +433,7 @@ export class MapEditEngine {
 			grid.imageBlocksForegroundReference = {
 				hashes: reference,
 			};
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksForegroundReference, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksForegroundReference);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksPrimaryFoliage, reference);
@@ -452,7 +442,7 @@ export class MapEditEngine {
 			grid.imageBlocksPrimaryReference = {
 				hashes: reference,
 			};
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksPrimaryReference, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksPrimaryReference);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksVanishingFoliage, reference);
@@ -461,14 +451,14 @@ export class MapEditEngine {
 			grid.imageBlocksVanishingReference = {
 				hashes: reference,
 			};
-			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishingReference, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishingReference);
 
-			MapEditEngine.gridBlockTableInflateInstance(grid.lights, gHashPrecision);
+			MapEditEngine.gridBlockTableInflateInstance(grid.lights);
 		});
 		return map;
 	}
 
-	public static gridBlockTableInflateInstance(gridBlockTable: GridBlockTable<any>, gHashPrecision: number): void {
+	public static gridBlockTableInflateInstance(gridBlockTable: GridBlockTable<any>): void {
 		let gCoordinate: GridCoordinate,
 			gx: number[],
 			hash: number,
@@ -477,7 +467,7 @@ export class MapEditEngine {
 
 		for (let i in hashes) {
 			hash = Number(hashes[i]);
-			gCoordinate = UtilEngine.gridHashFrom(Number(hash), gHashPrecision);
+			gCoordinate = UtilEngine.gridHashFrom(Number(hash));
 
 			if (hashesGyByGx[gCoordinate.gx] === undefined) {
 				hashesGyByGx[gCoordinate.gx] = [
@@ -804,7 +794,6 @@ export class MapEditEngine {
 	 */
 	public static uiRelXYToGBlockHash(action: MouseAction | TouchAction): number {
 		let camera: Camera = MapEditEngine.mapActiveUI.camera,
-			gHashPrecision: number = MapEditEngine.mapActiveUI.gridConfigActive.gHashPrecision,
 			position: any;
 
 		if ((<TouchAction>action).positions) {
@@ -820,7 +809,6 @@ export class MapEditEngine {
 			Math.floor(
 				(camera.viewportPy + camera.viewportPh * position.yRel) / camera.gInPh / window.devicePixelRatio + camera.viewportGy,
 			),
-			gHashPrecision,
 		);
 	}
 
@@ -918,8 +906,6 @@ export class MapEditEngine {
 				} else {
 					reference = mapActive.gridActive.imageBlocksVanishingReference;
 				}
-
-				console.log('mapActive.gridActive.imageBlocksBackgroundReference', mapActive.gridActive.imageBlocksBackgroundReference);
 
 				if (reference.hashes[gHash]) {
 					if (reference.hashes[gHash].block.extends) {

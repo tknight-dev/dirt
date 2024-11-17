@@ -1,7 +1,7 @@
 import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetMap } from '../models/asset.model';
 import { Grid, GridConfig } from '../models/grid.model';
-import { Map, MapActive, MapConfig } from '../models/map.model';
+import { Map, MapActive } from '../models/map.model';
 import { UtilEngine } from './util.engine';
 import { MapEditEngine } from './map-edit.engine';
 
@@ -40,7 +40,6 @@ export class MapEngine {
 				lights: <any>{},
 			}),
 			gridConfig: GridConfig = {
-				gHashPrecision: 0, // calculated
 				gHeight: 0, // calculated
 				gHorizon: 0, // calculated
 				gWidth: gridWidth,
@@ -98,10 +97,6 @@ export class MapEngine {
 				minuteOfHourEff: 0,
 			});
 
-		// Make sure the initial grid id is matching
-		grids[gridActiveId].id = gridActiveId;
-		gridConfigs[gridActiveId].id = gridActiveId;
-
 		// Camera
 		mapActive.camera.zoom = mapActive.gridConfigActive.zoomDefault;
 		mapActive.camera.viewportGw = Math.round(mapActive.camera.viewportGw);
@@ -112,8 +107,10 @@ export class MapEngine {
 		mapActive.hourOfDay = Math.round(mapActive.hourOfDay);
 
 		// Grids
-		for (let i in grids) {
-			grid = grids[i];
+		if (typeof grids['initial'] === 'string') {
+			for (let i in grids) {
+				grids[i] = new Grid(JSON.parse(<any>grids[i]));
+			}
 		}
 
 		// Grids Configs
@@ -123,12 +120,15 @@ export class MapEngine {
 			gridConfig.gWidth = Math.round(gridConfig.gWidth);
 
 			// Depends on width
-			gridConfig.gHashPrecision = UtilEngine.getGridHashPrecisionMax(gridConfig.gWidth);
 			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 			gridConfig.gHorizon = Math.round(gridConfig.gHeight / 2);
 
 			gridConfig.lightIntensityGlobal = Math.round(gridConfig.lightIntensityGlobal * 1000) / 1000;
 		}
+
+		// Make sure the initial grid id is matching
+		grids[gridActiveId].id = gridActiveId;
+		gridConfigs[gridActiveId].id = gridActiveId;
 
 		// Inflate lookup tables
 		MapEditEngine.gridBlockTableInflate(mapActive);

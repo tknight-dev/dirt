@@ -7,7 +7,7 @@ import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.mo
  */
 
 export class LightingCalcEngineBus {
-	private static callback: (lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => void;
+	private static callback: (gridId: number, lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => void;
 	private static initialized: boolean;
 	private static worker: Worker;
 
@@ -28,14 +28,15 @@ export class LightingCalcEngineBus {
 
 	private static input(): void {
 		LightingCalcEngineBus.worker.onmessage = (event: MessageEvent) => {
-			let compressed: number[] = event.data,
+			let data = JSON.parse(event.data),
+				compressed: number[] = data.payload,
 				decompressed: { [key: number]: LightingCalcBusOutputDecompressed } = {},
 				scratch: number;
 
 			for (let i in compressed) {
-				scratch = (compressed[i] >> 32) & 0xfff;
+				scratch = (compressed[i] >> 16) & 0xfff;
 
-				decompressed[compressed[i] & 0xffffffff] = {
+				decompressed[compressed[i] & 0xffff] = {
 					backgroundBrightness: scratch & 0x7,
 					backgroundBrightnessOutside: (scratch >> 3) & 0x7,
 					groupBrightness: (scratch >> 6) & 0x7,
@@ -43,7 +44,7 @@ export class LightingCalcEngineBus {
 				};
 			}
 
-			LightingCalcEngineBus.callback(decompressed);
+			LightingCalcEngineBus.callback(data.gridId, decompressed);
 		};
 	}
 
@@ -96,7 +97,9 @@ export class LightingCalcEngineBus {
 		});
 	}
 
-	public static setCallback(callback: (lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => void): void {
+	public static setCallback(
+		callback: (gridId: number, lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => void,
+	): void {
 		LightingCalcEngineBus.callback = callback;
 	}
 }

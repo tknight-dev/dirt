@@ -10,8 +10,10 @@ import { UtilEngine } from '../engines/util.engine';
 
 export class GridDrawEngine {
 	private static cache: ImageBitmap;
-	private static cacheHashG: number;
-	private static cacheHashP: number;
+	private static cacheHashGx: number;
+	private static cacheHashGy: number;
+	private static cacheHashPh: number;
+	private static cacheHashPw: number;
 	private static cacheHashCheckG: number;
 	private static cacheHashCheckP: number;
 	private static cacheModeEdit: boolean;
@@ -41,33 +43,28 @@ export class GridDrawEngine {
 	}
 
 	public static cacheReset(): void {
-		GridDrawEngine.cacheHashG = -1;
-		GridDrawEngine.cacheHashP = -1;
+		GridDrawEngine.cacheHashGx = -1;
+		GridDrawEngine.cacheHashGy = -1;
+		GridDrawEngine.cacheHashPh = -1;
+		GridDrawEngine.cacheHashPw = -1;
 		GridDrawEngine.cacheZoom = -1;
 	}
 
 	public static start(): void {
 		//let start: number = performance.now();
 
+		let camera: Camera = GridDrawEngine.mapActiveCamera;
+
 		if (GridDrawEngine.enable) {
-			GridDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
-				GridDrawEngine.mapActiveCamera.gx,
-				GridDrawEngine.mapActiveCamera.gy,
-				GridDrawEngine.mapActive.gridConfigActive.gHashPrecision,
-			);
-			GridDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(
-				GridDrawEngine.mapActiveCamera.windowPw,
-				GridDrawEngine.mapActiveCamera.windowPh,
-				GridDrawEngine.mapActive.gridConfigActive.gHashPrecision,
-			);
 			if (
-				GridDrawEngine.cacheHashCheckG !== GridDrawEngine.cacheHashG ||
-				GridDrawEngine.cacheHashCheckP !== GridDrawEngine.cacheHashP ||
-				GridDrawEngine.cacheZoom !== GridDrawEngine.mapActiveCamera.zoom
+				GridDrawEngine.cacheHashGx !== camera.gx ||
+				GridDrawEngine.cacheHashGy !== camera.gy ||
+				GridDrawEngine.cacheHashPh !== camera.windowPh ||
+				GridDrawEngine.cacheHashPw !== camera.windowPw ||
+				GridDrawEngine.cacheZoom !== camera.zoom
 			) {
 				// Draw from scratch
 				let cacheCanvas: OffscreenCanvas,
-					camera: Camera = GridDrawEngine.mapActiveCamera,
 					ctx: OffscreenCanvasRenderingContext2D,
 					gEff: number,
 					gInPh: number = camera.gInPh,
@@ -112,8 +109,10 @@ export class GridDrawEngine {
 
 				// Cache it
 				GridDrawEngine.cache = cacheCanvas.transferToImageBitmap();
-				GridDrawEngine.cacheHashG = GridDrawEngine.cacheHashCheckG;
-				GridDrawEngine.cacheHashP = GridDrawEngine.cacheHashCheckP;
+				GridDrawEngine.cacheHashGx = camera.gx;
+				GridDrawEngine.cacheHashGy = camera.gy;
+				GridDrawEngine.cacheHashPh = windowPh;
+				GridDrawEngine.cacheHashPw = windowPw;
 				GridDrawEngine.cacheZoom = camera.zoom;
 			}
 

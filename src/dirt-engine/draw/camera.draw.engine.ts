@@ -12,9 +12,9 @@ export class CameraDrawEngine {
 	private static cacheGInP: number;
 	private static cacheGInPCheck: number;
 	private static cachePositionHashG: number;
-	private static cachePositionHashP: number;
+	private static cachePositionHashPw: number;
+	private static cachePositionHashPh: number;
 	private static cachePositionHashCheckG: number;
-	private static cachePositionHashCheckP: number;
 	private static cachePositionPx: number;
 	private static cachePositionPy: number;
 	private static cacheZoom: number;
@@ -50,7 +50,8 @@ export class CameraDrawEngine {
 		CameraDrawEngine.cachePositionPx = -1;
 		CameraDrawEngine.cachePositionPy = -1;
 		CameraDrawEngine.cachePositionHashG = -1;
-		CameraDrawEngine.cachePositionHashP = -1;
+		CameraDrawEngine.cachePositionHashPw = -1;
+		CameraDrawEngine.cachePositionHashPh = -1;
 		CameraDrawEngine.cacheZoom = -1;
 	}
 
@@ -63,7 +64,7 @@ export class CameraDrawEngine {
 		if (!CameraDrawEngine.cache || CameraDrawEngine.cacheGInP !== CameraDrawEngine.cacheGInPCheck) {
 			// Draw from scratch
 			sizeEff = Math.round((camera.gInPh / 4) * 1000) / 1000;
-			let cacheCanvas: OffscreenCanvas = new OffscreenCanvas(sizeEff * 2, sizeEff * 2),
+			let cacheCanvas: OffscreenCanvas = new OffscreenCanvas(Math.max(1, sizeEff * 2), Math.max(1, sizeEff * 2)),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 			ctx.imageSmoothingEnabled = false;
 
@@ -80,15 +81,11 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cacheGInP = CameraDrawEngine.cacheGInPCheck;
 		}
 
-		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(
-			camera.gx,
-			camera.gy,
-			CameraDrawEngine.mapActive.gridConfigActive.gHashPrecision,
-		);
-		CameraDrawEngine.cachePositionHashCheckP = UtilEngine.pixelHashTo(camera.windowPw, camera.windowPh);
+		CameraDrawEngine.cachePositionHashCheckG = UtilEngine.gridHashTo(camera.gx, camera.gy);
 		if (
 			CameraDrawEngine.cachePositionHashG !== CameraDrawEngine.cachePositionHashCheckG ||
-			CameraDrawEngine.cachePositionHashP !== CameraDrawEngine.cachePositionHashCheckP ||
+			CameraDrawEngine.cachePositionHashPh !== camera.windowPh ||
+			CameraDrawEngine.cachePositionHashPw !== camera.windowPw ||
 			CameraDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Calc from scratch
@@ -124,7 +121,8 @@ export class CameraDrawEngine {
 			CameraDrawEngine.cachePositionPy -= sizeEff; // Offset to circle center
 
 			CameraDrawEngine.cachePositionHashG = CameraDrawEngine.cachePositionHashCheckG;
-			CameraDrawEngine.cachePositionHashP = CameraDrawEngine.cachePositionHashCheckP;
+			CameraDrawEngine.cachePositionHashPh = camera.windowPh;
+			CameraDrawEngine.cachePositionHashPw = camera.windowPw;
 			CameraDrawEngine.cacheZoom = camera.zoom;
 		}
 

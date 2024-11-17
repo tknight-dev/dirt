@@ -16,12 +16,14 @@ export class MapDrawEngine {
 	private static backgroundPx: number;
 	private static backgroundPy: number;
 	private static cacheBackground: ImageBitmap;
-	private static cacheBackgroundHashP: number;
+	private static cacheBackgroundHashPh: number;
+	private static cacheBackgroundHashPw: number;
 	private static cacheCameraLines: ImageBitmap;
-	private static cacheCameraLinesHashG: number;
-	private static cacheCameraLinesHashP: number;
+	private static cacheCameraLinesHashGx: number;
+	private static cacheCameraLinesHashGy: number;
+	private static cacheCameraLinesHashPh: number;
+	private static cacheCameraLinesHashPw: number;
 	private static cacheHashCheckG: number;
-	private static cacheHashCheckP: number;
 	private static cacheZoom: number;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
@@ -52,14 +54,18 @@ export class MapDrawEngine {
 		await MapDrawEngineBus.initialize();
 		MapDrawEngineBus.setCallbackBitmap((imageBitmap: ImageBitmap) => {
 			MapDrawEngine.mapImage = imageBitmap;
-			MapDrawEngine.cacheBackgroundHashP = -1;
+			MapDrawEngine.cacheBackgroundHashPh = -1;
+			MapDrawEngine.cacheBackgroundHashPw = -1;
 		});
 	}
 
 	public static cacheReset(): void {
-		MapDrawEngine.cacheBackgroundHashP = -1;
-		MapDrawEngine.cacheCameraLinesHashG = -1;
-		MapDrawEngine.cacheCameraLinesHashP = -1;
+		MapDrawEngine.cacheBackgroundHashPh = -1;
+		MapDrawEngine.cacheBackgroundHashPw = -1;
+		MapDrawEngine.cacheCameraLinesHashGx = -1;
+		MapDrawEngine.cacheCameraLinesHashGy = -1;
+		MapDrawEngine.cacheCameraLinesHashPh = -1;
+		MapDrawEngine.cacheCameraLinesHashPw = -1;
 		MapDrawEngine.cacheZoom = -1;
 	}
 
@@ -93,8 +99,7 @@ export class MapDrawEngine {
 		/*
 		 * Background
 		 */
-		MapDrawEngine.cacheHashCheckP = UtilEngine.pixelHashTo(camera.windowPw, camera.windowPh);
-		if (MapDrawEngine.cacheBackgroundHashP !== MapDrawEngine.cacheHashCheckP) {
+		if (MapDrawEngine.cacheBackgroundHashPh !== camera.windowPh || MapDrawEngine.cacheBackgroundHashPw !== camera.windowPw) {
 			MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
 
 			// Draw from scratch
@@ -123,7 +128,8 @@ export class MapDrawEngine {
 
 			// Cache it
 			MapDrawEngine.cacheBackground = cacheCanvas.transferToImageBitmap();
-			MapDrawEngine.cacheBackgroundHashP = MapDrawEngine.cacheHashCheckP;
+			MapDrawEngine.cacheBackgroundHashPh = camera.windowPh;
+			MapDrawEngine.cacheBackgroundHashPw = camera.windowPw;
 		}
 		// Draw from cache
 		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
@@ -131,14 +137,12 @@ export class MapDrawEngine {
 		/*
 		 * Camera Lines
 		 */
-		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
-			camera.viewportGx,
-			camera.viewportGy,
-			MapDrawEngine.mapActive.gridConfigActive.gHashPrecision,
-		);
+		MapDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(camera.viewportGx, camera.viewportGy);
 		if (
-			MapDrawEngine.cacheHashCheckG !== MapDrawEngine.cacheCameraLinesHashG ||
-			MapDrawEngine.cacheHashCheckP !== MapDrawEngine.cacheCameraLinesHashP ||
+			MapDrawEngine.cacheCameraLinesHashGx !== camera.gx ||
+			MapDrawEngine.cacheCameraLinesHashGy !== camera.gy ||
+			MapDrawEngine.cacheCameraLinesHashPh !== camera.windowPh ||
+			MapDrawEngine.cacheCameraLinesHashPw !== camera.windowPw ||
 			MapDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw from scratch
@@ -235,8 +239,10 @@ export class MapDrawEngine {
 
 			// Cache it
 			MapDrawEngine.cacheCameraLines = cacheCanvas.transferToImageBitmap();
-			MapDrawEngine.cacheCameraLinesHashG = MapDrawEngine.cacheHashCheckG;
-			MapDrawEngine.cacheCameraLinesHashP = MapDrawEngine.cacheHashCheckP;
+			MapDrawEngine.cacheCameraLinesHashGx = camera.gx;
+			MapDrawEngine.cacheCameraLinesHashGy = camera.gy;
+			MapDrawEngine.cacheCameraLinesHashPh = camera.windowPh;
+			MapDrawEngine.cacheCameraLinesHashPw = camera.windowPw;
 			MapDrawEngine.cacheZoom = camera.zoom;
 		}
 		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);

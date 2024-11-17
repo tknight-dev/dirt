@@ -1,5 +1,6 @@
 import { AssetImage } from '../models/asset.model';
 import { Camera } from '../models/camera.model';
+import { LightingCalcBusOutputDecompressed } from '../calc/buses/lighting.calc.engine.model';
 import { LightingEngine } from '../engines/lighting.engine';
 import { Grid, GridBlockTable, GridBlockTableComplex, GridImageBlockReference, GridConfig, GridImageBlock } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
@@ -23,10 +24,10 @@ export class ImageBlockDrawEngine {
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
 	private static cacheVanishing: ImageBitmap;
-	private static cacheHashG: number;
-	private static cacheHashP: number;
-	private static cacheHashCheckG: number;
-	private static cacheHashCheckP: number;
+	private static cacheHashGx: number;
+	private static cacheHashGy: number;
+	private static cacheHashPh: number;
+	private static cacheHashPw: number;
 	private static cacheHourPreciseCheck: number;
 	private static cacheZoom: number;
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
@@ -79,19 +80,11 @@ export class ImageBlockDrawEngine {
 			hourPreciseOfDayEff: number = LightingEngine.getHourPreciseOfDayEff();
 		//let start: number = performance.now();
 
-		ImageBlockDrawEngine.cacheHashCheckG = UtilEngine.gridHashTo(
-			camera.gx,
-			camera.gy,
-			ImageBlockDrawEngine.mapActive.gridConfigActive.gHashPrecision,
-		);
-		ImageBlockDrawEngine.cacheHashCheckP = UtilEngine.gridHashTo(
-			camera.windowPw,
-			camera.windowPh,
-			ImageBlockDrawEngine.mapActive.gridConfigActive.gHashPrecision,
-		);
 		if (
-			ImageBlockDrawEngine.cacheHashG !== ImageBlockDrawEngine.cacheHashCheckG ||
-			ImageBlockDrawEngine.cacheHashP !== ImageBlockDrawEngine.cacheHashCheckP ||
+			ImageBlockDrawEngine.cacheHashGx !== camera.gx ||
+			ImageBlockDrawEngine.cacheHashGy !== camera.gy ||
+			ImageBlockDrawEngine.cacheHashPh !== camera.windowPh ||
+			ImageBlockDrawEngine.cacheHashPw !== camera.windowPw ||
 			ImageBlockDrawEngine.cacheHourPreciseCheck !== hourPreciseOfDayEff ||
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
@@ -108,6 +101,7 @@ export class ImageBlockDrawEngine {
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
+				getCacheLit = LightingEngine.getCacheLit,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
 				gradient: CanvasGradient,
@@ -119,6 +113,7 @@ export class ImageBlockDrawEngine {
 				imageBitmap: ImageBitmap,
 				j: string,
 				k: number,
+				outside: boolean = gridConfig.outside,
 				radius: number,
 				radius2: number,
 				reference: GridBlockTable<GridImageBlockReference>,
@@ -164,9 +159,6 @@ export class ImageBlockDrawEngine {
 				}
 				referenceHashes = reference.hashes;
 
-				// Prepare
-				ctx.clearRect(0, 0, camera.windowPw, camera.windowPh);
-
 				// Applicable hashes
 				complexesByGx = UtilEngine.gridBlockTableSliceHashes(reference, startGx, startGy, stopGx, stopGy);
 
@@ -210,8 +202,8 @@ export class ImageBlockDrawEngine {
 							gy = <number>complex.gy;
 						}
 
-						// Grab global illumination images if outside
-						imageBitmap = LightingEngine.getCacheInstance(assetId).image;
+						// Get pre-rendered asset variation based on hash
+						imageBitmap = getCacheLit(assetId, grid.id, gridImageBlock.hash, outside, z);
 
 						ctx.drawImage(
 							imageBitmap,
@@ -260,8 +252,10 @@ export class ImageBlockDrawEngine {
 			}
 
 			// Cache it
-			ImageBlockDrawEngine.cacheHashG = ImageBlockDrawEngine.cacheHashCheckG;
-			ImageBlockDrawEngine.cacheHashP = ImageBlockDrawEngine.cacheHashCheckP;
+			ImageBlockDrawEngine.cacheHashGx = camera.gx;
+			ImageBlockDrawEngine.cacheHashGy = camera.gy;
+			ImageBlockDrawEngine.cacheHashPh = camera.windowPh;
+			ImageBlockDrawEngine.cacheHashPw = camera.windowPw;
 			ImageBlockDrawEngine.cacheHourPreciseCheck = hourPreciseOfDayEff;
 			ImageBlockDrawEngine.cacheZoom = camera.zoom;
 		}

@@ -1,9 +1,9 @@
 import { AssetCollection, AssetImageSrcQuality, AssetManifestMaster, AssetMap } from '../../models/asset.model';
 import { AssetEngine } from '../asset.engine';
 import { ClockCalcEngine } from '../../calc/clock.calc.engine';
+import { Grid } from '../../models/grid.model';
 import { Camera } from '../../models/camera.model';
 import { CameraEngine } from '../camera.engine';
-import { ImageBlockDrawEngine } from '../../draw/image-block.draw.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
 import { LightingCalcEngineBus } from '../../calc/buses/lighting.calc.engine.bus';
@@ -323,6 +323,10 @@ class VideoWorkerEngine {
 			map = UtilEngine.mapDecode(await AssetEngine.unzip(videoBusInputCmdMapLoad.data));
 
 			if (map) {
+				for (let i in map.grids) {
+					map.grids[i] = new Grid(JSON.parse(<any>map.grids[i]));
+				}
+
 				mapActive = MapEngine.loadFromFile(map);
 				await MapEditEngine.load(mapActive); // Also starts Kernel
 			} else {

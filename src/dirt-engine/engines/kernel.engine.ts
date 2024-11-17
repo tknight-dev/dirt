@@ -280,8 +280,10 @@ export class KernelEngine {
 		LightingEngine.setMapActive(mapActive);
 		MapDrawEngine.setMapActive(mapActive);
 
+		// Extended
 		KernelEngine.cacheResets(false);
 		KernelEngine.updateGridActive(mapActive.gridActiveId);
+		LightingCalcEngineBus.outputHourOfDayEff(KernelEngine.mapActive.hourOfDay);
 	}
 
 	public static pause(): void {
@@ -299,9 +301,13 @@ export class KernelEngine {
 	}
 
 	private static resetMapActive(): void {
+		// Primary
 		KernelEngine.mapActive.clockTicker = 0;
 		KernelEngine.mapActive.durationInMS = 0;
 		KernelEngine.mapActive.hourOfDayEff = KernelEngine.mapActive.hourOfDay;
+
+		// Extended
+		LightingCalcEngineBus.outputHourOfDayEff(KernelEngine.mapActive.hourOfDay);
 	}
 
 	public static resume(): void {

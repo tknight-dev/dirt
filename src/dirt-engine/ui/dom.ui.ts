@@ -1611,7 +1611,7 @@ export class DomUI {
 				/*
 				 * This brush was probably the hardest thing to solve in the entire project
 				 */
-				coordinate = UtilEngine.gridHashFrom(hash, gridConfig.gHashPrecision);
+				coordinate = UtilEngine.gridHashFrom(hash);
 				jEff = Math.max(0, coordinate.gy - brushSize);
 
 				// Bottom Left
@@ -1621,7 +1621,6 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx - brushSize + x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy + y)),
-							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1638,7 +1637,6 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx + x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy + y + 1)),
-							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1655,7 +1653,6 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx - brushSize + x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy - brushSize + y)),
-							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1672,7 +1669,6 @@ export class DomUI {
 						hash = UtilEngine.gridHashTo(
 							Math.max(0, Math.min(gridConfig.gWidth, coordinate.gx + brushSize - x)),
 							Math.max(0, Math.min(gridConfig.gHeight, coordinate.gy - brushSize + y)),
-							gridConfig.gHashPrecision,
 						);
 						if (effected[hash] === undefined) {
 							effected[hash] = null;
@@ -1688,14 +1684,14 @@ export class DomUI {
 						gHashes.push(hash);
 					}
 				} else {
-					coordinate = UtilEngine.gridHashFrom(hash, gridConfig.gHashPrecision);
+					coordinate = UtilEngine.gridHashFrom(hash);
 					brushSizeEffX = Math.min(gridConfig.gWidth, coordinate.gx + brushSize);
 					brushSizeEffY = Math.min(gridConfig.gHeight, coordinate.gy + brushSize);
 					jEff = Math.max(0, coordinate.gy - (brushSize - 1));
 
 					for (x = Math.max(0, coordinate.gx - (brushSize - 1)); x < brushSizeEffX; x++) {
 						for (y = jEff; y < brushSizeEffY; y++) {
-							hash = UtilEngine.gridHashTo(x, y, gridConfig.gHashPrecision);
+							hash = UtilEngine.gridHashTo(x, y);
 							if (effected[hash] === undefined) {
 								effected[hash] = null;
 								gHashes.push(hash);

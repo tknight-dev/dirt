@@ -1,8 +1,9 @@
 // Imports
-import { AssetCollection, AssetDeclarations, AssetImageSrcQuality, AssetManifestMaster } from './models/asset.model';
+import { AssetCollection, AssetDeclarations } from './models/asset.model';
 import { AssetCache, AssetEngine } from './engines/asset.engine';
 import { AudioEngine } from './engines/audio.engine';
 import { AudioModulation } from './models/audio-modulation.model';
+import { Grid } from './models/grid.model';
 import { DomUI } from './ui/dom.ui';
 import { FullscreenEngine } from './engines/fullscreen.engine';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engines/keyboard.engine';
@@ -321,6 +322,9 @@ export class DirtEngine extends DomUI {
 
 				// Load map file into ui thread
 				let map: Map = UtilEngine.mapDecode(await AssetEngine.unzip(event.target.result));
+				for (let i in map.grids) {
+					map.grids[i] = new Grid(JSON.parse(<any>map.grids[i]));
+				}
 				await MapEditEngine.load(MapEngine.loadFromFile(map));
 
 				// Reset UI
