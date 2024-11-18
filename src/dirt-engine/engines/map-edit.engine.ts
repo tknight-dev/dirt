@@ -112,11 +112,11 @@ export class MapEditEngine {
 
 		switch (apply.type) {
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
-				blocks = grid.audioBlocks;
+				blocks = grid.audioPrimaryBlocks;
 				blockHashes = blocks.hashes;
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER:
-				blocks = grid.audioTagTriggers;
+				blocks = grid.audioPrimaryTagTriggers;
 				blockHashes = blocks.hashes;
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
@@ -140,7 +140,14 @@ export class MapEditEngine {
 				referenceHashes = reference.hashes;
 				break;
 			case VideoBusInputCmdGameModeEditApplyType.LIGHT:
-				blocks = grid.lights;
+				switch (apply.z) {
+					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+						blocks = grid.lightsForeground;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						blocks = grid.lightsPrimary;
+						break;
+				}
 				blockHashes = blocks.hashes;
 				break;
 		}
@@ -382,15 +389,16 @@ export class MapEditEngine {
 
 	public static gridBlockTableDeflate(map: MapActive): MapActive {
 		Object.values(map.grids).forEach((grid: Grid) => {
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioBlocks || {});
-			MapEditEngine.gridBlockTableDeflateInstance(grid.audioTagTriggers || {});
+			MapEditEngine.gridBlockTableDeflateInstance(grid.audioPrimaryBlocks || {});
+			MapEditEngine.gridBlockTableDeflateInstance(grid.audioPrimaryTagTriggers || {});
 
 			delete (<any>grid).imageBlocksBackgroundReference;
 			delete (<any>grid).imageBlocksForegroundReference;
 			delete (<any>grid).imageBlocksPrimaryReference;
 			delete (<any>grid).imageBlocksVanishingReference;
 
-			MapEditEngine.gridBlockTableDeflateInstance(grid.lights || {});
+			MapEditEngine.gridBlockTableDeflateInstance(grid.lightsForeground || {});
+			MapEditEngine.gridBlockTableDeflateInstance(grid.lightsPrimary || {});
 		});
 		return map;
 	}
@@ -414,8 +422,8 @@ export class MapEditEngine {
 
 		Object.values(map.grids).forEach((grid: Grid) => {
 			// LightingCalcWorkerEngine filters these out
-			grid.audioBlocks && MapEditEngine.gridBlockTableInflateInstance(grid.audioBlocks);
-			grid.audioTagTriggers && MapEditEngine.gridBlockTableInflateInstance(grid.audioTagTriggers);
+			grid.audioPrimaryBlocks && MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks);
+			grid.audioPrimaryTagTriggers && MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryTagTriggers);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundFoliage, reference);
@@ -453,7 +461,8 @@ export class MapEditEngine {
 			};
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishingReference);
 
-			MapEditEngine.gridBlockTableInflateInstance(grid.lights);
+			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground);
+			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary);
 		});
 		return map;
 	}
@@ -786,7 +795,26 @@ export class MapEditEngine {
 		properties: VideoBusInputCmdGameModeEditApply,
 		z: VideoBusInputCmdGameModeEditApplyZ,
 	): VideoBusInputCmdGameModeEditApplyLight {
-		return <any>{};
+		let data: VideoBusInputCmdGameModeEditApplyLight = <VideoBusInputCmdGameModeEditApplyLight>properties;
+
+		delete data.extends; // calculated field only
+		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			// Clean
+			if (!data.destructible) {
+				delete data.destructible;
+				delete data.strengthToDestroyInN;
+			}
+		} else {
+			// These cannot apply to foreground and vanishing z's
+			delete data.destructible;
+			delete data.strengthToDestroyInN;
+		}
+
+		// Set base configs outside of the properties object
+		data.gHashes = gHashes;
+		data.objectType = GridObjectType.IMAGE_BLOCK_SOLID;
+
+		return data;
 	}
 
 	/**

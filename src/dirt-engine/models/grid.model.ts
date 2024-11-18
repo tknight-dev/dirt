@@ -5,8 +5,8 @@
  */
 
 export class Grid {
-	audioBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
-	audioTagTriggers: GridBlockTable<GridAudioTrigger>; // (gx,gy), Precision 3
+	audioPrimaryBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
+	audioPrimaryTagTriggers: GridBlockTable<GridAudioTrigger>; // (gx,gy), Precision 3
 	id: string;
 	imageBlocksBackgroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
 	imageBlocksBackgroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
@@ -24,11 +24,12 @@ export class Grid {
 	imageBlocksVanishingLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksVanishingReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
 	imageBlocksVanishingSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
-	lights: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+	lightsForeground: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+	lightsPrimary: GridBlockTable<GridLight>; // (gx,gy), Precision 3
 
 	constructor(data: any) {
-		this.audioBlocks = data.audioBlocks;
-		this.audioTagTriggers = data.audioTagTriggers;
+		this.audioPrimaryBlocks = data.audioPrimaryBlocks;
+		this.audioPrimaryTagTriggers = data.audioPrimaryTagTriggers;
 		this.id = data.id;
 		this.imageBlocksBackgroundFoliage = data.imageBlocksBackgroundFoliage;
 		this.imageBlocksBackgroundLiquid = data.imageBlocksBackgroundLiquid;
@@ -42,13 +43,14 @@ export class Grid {
 		this.imageBlocksVanishingFoliage = data.imageBlocksVanishingFoliage;
 		this.imageBlocksVanishingLiquid = data.imageBlocksVanishingLiquid;
 		this.imageBlocksVanishingSolid = data.imageBlocksVanishingSolid;
-		this.lights = data.lights;
+		this.lightsForeground = data.lightsForeground;
+		this.lightsPrimary = data.lightsPrimary;
 	}
 
 	toJSON(): string {
 		return JSON.stringify({
-			audioBlocks: this.audioBlocks,
-			audioTagTriggers: this.audioTagTriggers,
+			audioPrimaryBlocks: this.audioPrimaryBlocks,
+			audioPrimaryTagTriggers: this.audioPrimaryTagTriggers,
 			id: this.id,
 			imageBlocksBackgroundFoliage: this.imageBlocksBackgroundFoliage,
 			imageBlocksBackgroundLiquid: this.imageBlocksBackgroundLiquid,
@@ -62,7 +64,8 @@ export class Grid {
 			imageBlocksVanishingFoliage: this.imageBlocksVanishingFoliage,
 			imageBlocksVanishingLiquid: this.imageBlocksVanishingLiquid,
 			imageBlocksVanishingSolid: this.imageBlocksVanishingSolid,
-			lights: this.lights,
+			lightsForeground: this.lightsForeground,
+			lightsPrimary: this.lightsPrimary,
 		});
 	}
 }
@@ -162,6 +165,7 @@ export interface GridImageBlockFoliage extends GridImageBlock {
 }
 
 export interface GridImageBlockLiquid extends GridImageBlock {
+	assetIdAudioEffectAmbient?: string;
 	assetIdAudioEffectSwim?: string; // fallback is no audio
 	assetIdAudioEffectTread?: string; // fallback is no audio
 	viscocity: number; // how thick the liquid is
@@ -187,6 +191,7 @@ export interface GridImageBlockSolid extends GridImageBlock {
 }
 
 export interface GridLight extends GridObject {
+	assetIdAudioEffectAmbient?: string;
 	destructible?: boolean;
 	gRadius: number;
 	nightOnly?: boolean;

@@ -105,7 +105,9 @@ export interface VideoBusInputCmdGameModeEditApplyImageBlockSolid
 	extends GridImageBlockSolid,
 		VideoBusInputCmdGameModeEditApplyImageBlock {}
 
-export interface VideoBusInputCmdGameModeEditApplyLight extends GridLight, VideoBusInputCmdGameModeEditApply {}
+export interface VideoBusInputCmdGameModeEditApplyLight extends GridLight, VideoBusInputCmdGameModeEditApply {
+	z: VideoBusInputCmdGameModeEditApplyZ;
+}
 
 export enum VideoBusInputCmdGameModeEditApplyType {
 	AUDIO_BLOCK,

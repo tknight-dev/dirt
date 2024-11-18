@@ -484,6 +484,7 @@ export class VideoEngineBus {
 		VideoEngineBus.canvasForeground.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasOverlay.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasPrimary.style.transform = 'scale(' + scaler + ')';
+		VideoEngineBus.canvasVanishing.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasUnderlay.style.transform = 'scale(' + scaler + ')';
 
 		// Transform the map interaction to the correct starting place

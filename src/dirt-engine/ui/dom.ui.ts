@@ -17,6 +17,7 @@ import {
 	GridAudioTriggerTripType,
 	GridAudioTriggerType,
 	GridCoordinate,
+	GridLightType,
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
@@ -226,7 +227,6 @@ export class DomUI {
 	private static detailsModalAudioTrigger(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
 			valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
-			valuesType: GridAudioTriggerType[] = <any>Object.values(GridAudioTriggerType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
 				assetId: valuesAudio[0].id,
 				fadeDurationInMs: 100,
@@ -507,7 +507,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
-					true,
+					false,
 					true,
 					valuesAudio.map((v) => {
 						return {
@@ -538,7 +538,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
-					true,
+					false,
 					true,
 					valuesAudio.map((v) => {
 						return {
@@ -696,6 +696,7 @@ export class DomUI {
 			),
 			applicationProperties: any = {
 				assetId: valuesImage[0].id,
+				assetIdAudioEffectAmbient: undefined,
 				assetIdAudioEffectSwim: undefined,
 				assetIdAudioEffectTread: undefined,
 				gSizeW: 1,
@@ -736,6 +737,35 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
+		// Asset - Ambient
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Ambient';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				false,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectAmbient = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// Asset - Swim
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -747,7 +777,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
-				true,
+				false,
 				true,
 				valuesAudio.map((v) => {
 					return {
@@ -776,7 +806,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
-				true,
+				false,
 				true,
 				valuesAudio.map((v) => {
 					return {
@@ -966,7 +996,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
-					true,
+					false,
 					true,
 					valuesAudio.map((v) => {
 						return {
@@ -997,7 +1027,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
-					true,
+					false,
 					true,
 					valuesAudio.map((v) => {
 						return {
@@ -1149,20 +1179,227 @@ export class DomUI {
 	}
 
 	private static detailsModalLight(): void {
-		let t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'];
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter((v) => v.type === AssetImageType.GRID_LIGHT),
+			valuesType: GridLightType[] = <any>Object.values(GridLightType).filter((v) => typeof v === 'number'),
+			applicationProperties: any = {
+				assetId: valuesImage[0].id,
+				assetIdAudioEffectAmbient: undefined,
+				destructible: undefined,
+				gRadius: 1,
+				gSizeH: 1,
+				gSizeW: 1,
+				nightOnly: undefined,
+				strengthToDestroyInN: undefined, // newtons of force required to destroy
+				type: GridLightType.OMNI,
+			},
+			input: HTMLInputElement,
+			playing: boolean,
+			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
+			td: HTMLElement,
+			tr: HTMLElement;
 
 		t.textContent = '';
-		console.log('detailsModalLight');
 
-		//objectType: GridObjectType.LIGHT,
+		// Asset
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = valuesImage[0].id;
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				true,
+				false,
+				valuesImage.map((v) => {
+					return {
+						name: v.id,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId;
+					applicationProperties.assetId = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
 
-		// color: number; // hexadecimal
-		// destructible: boolean;
-		// gRadius: number;
-		// hash: number;
-		// nightOnly: boolean;
-		// strengthToDestroyInN: number | undefined; // newtons of force required to destroy
-		// type: GridLightType;
+		// Asset - Ambient
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Ambient';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				false,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectAmbient = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Destructible
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Destructible';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.checked = applicationProperties.destructible;
+			input.oninput = (event: any) => {
+				applicationProperties.destructible = Boolean(event.target.checked);
+			};
+			input.type = 'checkbox';
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// gRadius
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Radius';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gRadius = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gRadius;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size H';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeH = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeH;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeW
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size W';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeW = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeW;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// NightOnly
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Destructible';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nightOnly;
+		input.oninput = (event: any) => {
+			applicationProperties.nightOnly = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// strengthToDestroyInN
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			tr = document.createElement('tr');
+			td = document.createElement('td');
+			td.innerText = 'Strength to Destroy In N';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			input = document.createElement('input');
+			input.max = '10000';
+			input.min = '1';
+			input.oninput = (event: any) => {
+				applicationProperties.strengthToDestroyInN = Number(event.target.value);
+			};
+			input.step = '1';
+			input.type = 'range';
+			input.value = applicationProperties.strengthToDestroyInN;
+			td.appendChild(input);
+			tr.appendChild(td);
+			t.appendChild(tr);
+		}
+
+		// Type
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Type';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = GridLightType[applicationProperties.type];
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				false,
+				false,
+				valuesType.map((v) => {
+					return {
+						name: GridLightType[v],
+						value: v,
+					};
+				}),
+				(type: string) => {
+					event.target.innerText = type ? GridLightType[<any>type] : 'None';
+					applicationProperties.type = type;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
@@ -1196,13 +1433,11 @@ export class DomUI {
 			case ApplicationType.BRUSH:
 				DomUI.domElementsUIEdit['application-type-menu-brush'].click();
 				break;
-			case ApplicationType.ERASER:
-				DomUI.domElementsUIEdit['application-type-menu-eraser'].click();
-				break;
 			case ApplicationType.FILL:
 				DomUI.domElementsUIEdit['application-type-menu-fill'].click();
 				break;
 			default:
+			case ApplicationType.ERASER:
 			case ApplicationType.PENCIL:
 				DomUI.domElementsUIEdit['application-type-menu-pencil'].click();
 				break;
@@ -2994,6 +3229,7 @@ export class DomUI {
 			zBackground.classList.add('disabled');
 			zForeground.classList.add('disabled');
 			zPrimary.classList.remove('disabled');
+			zVanishing.classList.add('disabled');
 
 			view.classList.add('overlay-text');
 			view.classList.add('audio');
@@ -3025,6 +3261,7 @@ export class DomUI {
 			zBackground.classList.remove('disabled');
 			zForeground.classList.remove('disabled');
 			zPrimary.classList.remove('disabled');
+			zVanishing.classList.remove('disabled');
 
 			view.classList.add('overlay-text');
 			view.classList.remove('audio');
@@ -3052,6 +3289,7 @@ export class DomUI {
 			zBackground.classList.add('disabled');
 			zForeground.classList.remove('disabled');
 			zPrimary.classList.remove('disabled');
+			zVanishing.classList.add('disabled');
 
 			view.classList.add('overlay-text');
 			view.classList.remove('audio');

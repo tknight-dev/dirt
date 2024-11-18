@@ -116,6 +116,66 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 	{
+		id: 'LANTERN1',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/lantern1_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/lantern1_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/lantern1_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_LIGHT,
+	},
+	{
+		id: 'LANTERN2',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/lantern2_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/lantern2_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/lantern2_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_LIGHT,
+	},
+	{
 		gHeight: 1,
 		gWidth: 1,
 		id: 'NULL1',

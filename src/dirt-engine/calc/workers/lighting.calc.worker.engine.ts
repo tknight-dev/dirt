@@ -249,19 +249,30 @@ class LightingCalcWorkerEngine {
 
 				for (gxString in complexesByGxNoFoliage) {
 					complexes = complexesByGxNoFoliage[gxString];
+					gy = complexes[0].value;
 
 					for (k = 0; k < complexes.length; k++) {
-						if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY && hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
+						if (hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
 							// Brightest part of day
 							if (skip) {
 								// Skip the first to allow for a smoother transition to full brightness
-								brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
+								brightnessOutsideByHash[complexes[k].hash] = Math.max(
+									0,
+									hourOfDayEffOutsideModifier - (complexes[k].value - gy),
+								);
 								skip = false;
 							} else {
-								brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - Math.max(k - 1));
+								brightnessOutsideByHash[complexes[k].hash] = Math.max(
+									0,
+									hourOfDayEffOutsideModifier - Math.max(0, complexes[k].value - gy - 1),
+								);
 							}
 						} else {
-							brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
+							// complexes[k].value - gy, shadows depend on distance from first, not consecutive blocks
+							brightnessOutsideByHash[complexes[k].hash] = Math.max(
+								0,
+								hourOfDayEffOutsideModifier - (complexes[k].value - gy),
+							);
 						}
 					}
 				}
@@ -302,8 +313,10 @@ class LightingCalcWorkerEngine {
 							 * Light Foliage
 							 */
 							if (k === 0) {
+								if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
+									brightnessOutsideByHash[gridImageBlockFoliage.hash] = Math.max(0, hourOfDayEffOutsideModifier);
+								}
 							}
-							//brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
 
 							if (gyEff > gHeight) {
 								// Shadow below map, some goof put a tree on the bottom of the map
@@ -369,7 +382,7 @@ class LightingCalcWorkerEngine {
 
 							for (; gxEff < gSizeW; gxEff++) {
 								// Is there something blocking the sun above the foliage on this gx column?
-								if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
+								if (!complexesByGxNoFoliage[gxEff] || complexesByGxNoFoliage[gxEff][0].value >= gy) {
 									// Hash is ground below foliage
 									hash = UtilEngine.gridHashTo(gxEff, gyEff);
 

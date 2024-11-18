@@ -18,8 +18,8 @@ export class MapEngine {
 		}
 		let gridWidth: number = 50,
 			grid: Grid = new Grid({
-				audioBlocks: <any>{},
-				audioTagTriggers: <any>{},
+				audioPrimaryBlocks: <any>{},
+				audioPrimaryTagTriggers: <any>{},
 				id: 'initial', // protectedId
 				imageBlocksBackgroundFoliage: <any>{},
 				imageBlocksBackgroundLiquid: <any>{},
@@ -37,7 +37,8 @@ export class MapEngine {
 				imageBlocksVanishingLiquid: <any>{},
 				imageBlocksVanishingReference: <any>{},
 				imageBlocksVanishingSolid: <any>{},
-				lights: <any>{},
+				lightsForeground: <any>{},
+				lightsPrimary: <any>{},
 			}),
 			gridConfig: GridConfig = {
 				gHeight: 0, // calculated
