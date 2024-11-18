@@ -145,10 +145,10 @@ export class LightingEngine {
 			canvas: OffscreenCanvas = new OffscreenCanvas(0, 0),
 			ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 			darknessMax: number = LightingEngine.darknessMax,
+			grayscale: string,
 			imageOriginal: ImageBitmap,
 			j: number,
 			scale = UtilEngine.scale,
-			sepia: string,
 			value: number;
 
 		for (let i in assetIds) {
@@ -162,11 +162,11 @@ export class LightingEngine {
 				canvas.width = imageOriginal.width;
 			}
 
+			/*
+			 * Outside Day
+			 */
 			for (j = 0; j < 7; j++) {
-				/*
-				 * Outside Day
-				 */
-				value = Math.round(scale(j, 6, 0, 1, 1 - darknessMax) * 1000) / 1000;
+				value = Math.round(scale(j, 7, 0, 1, 1 - darknessMax) * 1000) / 1000;
 				brightness = 'brightness(' + value + ')';
 
 				ctx.filter = brightness;
@@ -174,21 +174,21 @@ export class LightingEngine {
 				cacheOutsideDayInstance[j] = canvas.transferToImageBitmap();
 			}
 
-			for (j = 0; j < 4; j++) {
-				/*
-				 * Outside Night
-				 */
-				value = Math.round(scale(j, 5, 0, 0.5, 1 - darknessMax) * 1000) / 1000;
+			/*
+			 * Outside Night
+			 */
+			for (j = 0; j < 5; j++) {
+				value = Math.round(scale(j, 4, 0, 0.5, 1 - darknessMax) * 1000) / 1000;
 				brightness = 'brightness(' + value + ')';
 
-				value = Math.round(scale(j, 5, 0, 0.4, 0) * 1000) / 1000;
-				sepia = 'grayscale(' + value + ')';
+				value = Math.round(scale(j, 4, 0, 0.6, 0.15) * 1000) / 1000;
+				grayscale = 'grayscale(' + value + ')';
 
-				ctx.filter = `${brightness} ${sepia}`;
+				ctx.filter = `${brightness} ${grayscale}`;
 				ctx.drawImage(imageOriginal, 0, 0);
 				ctx.filter = 'none';
 
-				value = Math.round(scale(j, 5, 0, 0.05, 0) * 1000) / 1000;
+				value = Math.round(scale(j, 4, 0, 0.09, 0) * 1000) / 1000;
 				ctx.globalCompositeOperation = 'source-atop';
 				ctx.fillStyle = 'rgba(47,132,199,' + value + ')'; // Moonlight
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -261,9 +261,9 @@ export class LightingEngine {
 		}
 
 		if (outside) {
-			let hourPreciseOfDayEff: number = Math.round(LightingEngine.hourPreciseOfDayEff);
+			let hourOfDayEff: number = Math.round(LightingEngine.hourPreciseOfDayEff);
 
-			if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
+			if (hourOfDayEff < 5 || hourOfDayEff > 22) {
 				// Night
 				if (brightness !== 0) {
 					return LightingEngine.cacheOutsideDay[assetImageId][Math.min(6, brightness)];

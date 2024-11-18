@@ -158,7 +158,7 @@ class LightingCalcWorkerEngine {
 			let brightnessByHash: { [key: number]: number } = {},
 				brightnessOutsideByHash: { [key: number]: number } = {},
 				brightnessOutsideDayMax: number = 6,
-				brightnessOutsideNightMax: number = 3,
+				brightnessOutsideNightMax: number = 4,
 				complexExtended: GridBlockTableComplexExtended,
 				complexes: GridBlockTableComplex[],
 				complexesExtended: GridBlockTableComplexExtended[],
@@ -166,15 +166,18 @@ class LightingCalcWorkerEngine {
 				first: boolean = LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId],
 				foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] } = {},
 				foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] = [],
+				foliageShadowValue: number,
 				grid: Grid = LightingCalcWorkerEngine.grids[LightingCalcWorkerEngine.gridActiveId],
 				gridConfig: GridConfig = LightingCalcWorkerEngine.gridConfigs[LightingCalcWorkerEngine.gridActiveId],
 				gridImageBlockFoliage: GridImageBlockFoliage,
-				gSizeH: number,
 				gSizeW: number,
+				gHeight: number = gridConfig.gHeight,
 				gWidth: number = gridConfig.gWidth,
 				gx: number,
+				gxEff: number,
 				gxString: string,
 				gy: number,
+				gyEff: number,
 				hash: number,
 				hashString: string,
 				hashesBackground: { [key: number]: number } = {},
@@ -188,6 +191,7 @@ class LightingCalcWorkerEngine {
 				hourOfDayEffOutsideModifier: number = hourOfDayEff % 12,
 				j: string,
 				k: number,
+				skip: boolean,
 				z: VideoBusInputCmdGameModeEditApplyZ,
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = LightingCalcWorkerEngine.zGroup;
 
@@ -213,6 +217,7 @@ class LightingCalcWorkerEngine {
 			} else {
 				// Dusk
 				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, hourOfDayEff - 23);
+				hourOfDayEffOutsideModifier++; // Bias toward brighter pre-twilight hours
 			}
 
 			for (let i in zGroup) {
@@ -240,12 +245,24 @@ class LightingCalcWorkerEngine {
 						break;
 				}
 				complexesByGxNoFoliage = <any>referenceNoFoliage.hashesGyByGx;
+				skip = true;
 
 				for (gxString in complexesByGxNoFoliage) {
 					complexes = complexesByGxNoFoliage[gxString];
 
 					for (k = 0; k < complexes.length; k++) {
-						brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
+						if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY && hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
+							// Brightest part of day
+							if (skip) {
+								// Skip the first to allow for a smoother transition to full brightness
+								brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
+								skip = false;
+							} else {
+								brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - Math.max(k - 1));
+							}
+						} else {
+							brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
+						}
 					}
 				}
 
@@ -275,49 +292,90 @@ class LightingCalcWorkerEngine {
 							complexExtended = complexesExtended[k];
 							gridImageBlockFoliage = complexExtended.blocks[complexExtended.hash];
 
+							foliageShadowValue = 1;
 							gx = Number(gxString);
 							gy = gridImageBlockFoliage.gy;
-
-							gSizeH = gridImageBlockFoliage.gSizeH + gy;
+							gyEff = gridImageBlockFoliage.gSizeW + gy;
 							gSizeW = gridImageBlockFoliage.gSizeW + gx;
 
-							// Extra shadow to the left
-							if (gx !== 0 && 15 < hourOfDayEff && hourOfDayEff < 19) {
-								// Is there something blocking the sun above the foliage on this gx column?
-								if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
-									// Hash is ground below foliage
-									hash = UtilEngine.gridHashTo(gx - 1, gSizeH);
+							/*
+							 * Light Foliage
+							 */
+							if (k === 0) {
+							}
+							//brightnessOutsideByHash[complexes[k].hash] = Math.max(0, hourOfDayEffOutsideModifier - k);
 
-									// Apply shadow
-									if (brightnessOutsideByHash[hash]) {
-										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutsideByHash[hash] - 1);
-									}
-								}
-							} else if (gSizeW + 1 <= gWidth && 6 < hourOfDayEff && hourOfDayEff < 10) {
-								// Extra shadow to the right
-
-								// Is there something blocking the sun above the foliage on this gx column?
-								if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
-									// Hash is ground below foliage
-									hash = UtilEngine.gridHashTo(gSizeW + 1, gSizeH);
-
-									// Apply shadow
-									if (brightnessOutsideByHash[hash]) {
-										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutsideByHash[hash] || 0 - 1);
-									}
-								}
+							if (gyEff > gHeight) {
+								// Shadow below map, some goof put a tree on the bottom of the map
+								continue;
 							}
 
-							// Iterate across foliage from origin
-							for (; gx < gSizeW; gx++) {
+							/*
+							 * Foliage Shadow
+							 */
+							// Shift shadow by time of day (sun rise is east/right)
+							if (15 < hourOfDayEff && hourOfDayEff < 23) {
+								if (hourOfDayEff > 17) {
+									// Long shadow, right
+									if (gx === gWidth) {
+										gxEff = gx;
+										gSizeW = gx + 1;
+									} else {
+										gSizeW += 2;
+										gxEff = gx + 1;
+									}
+									foliageShadowValue = 1;
+								} else {
+									// shadow, right
+									if (gx === gWidth) {
+										gxEff = gx;
+										gSizeW = gx + 1;
+									} else {
+										gSizeW++;
+										gxEff = gx + 1;
+									}
+									foliageShadowValue = 2;
+								}
+							} else if (4 < hourOfDayEff && hourOfDayEff < 10) {
+								if (hourOfDayEff < 8) {
+									// Long shadow, left
+									if (gx === 0) {
+										gxEff = gx;
+									} else {
+										gxEff = gx - 2;
+									}
+									gSizeW--;
+									foliageShadowValue = 1;
+								} else {
+									// shadow, left
+									if (gx === 0) {
+										gxEff = gx;
+									} else {
+										gxEff = gx - 1;
+									}
+									foliageShadowValue = 2;
+								}
+							} else {
+								// Shadow directly below
+								if (9 < hourOfDayEff && hourOfDayEff < 23) {
+									// Day
+									foliageShadowValue = 3;
+								} else {
+									// Night
+									foliageShadowValue = 1;
+								}
+								gxEff = gx;
+							}
+
+							for (; gxEff < gSizeW; gxEff++) {
 								// Is there something blocking the sun above the foliage on this gx column?
 								if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
 									// Hash is ground below foliage
-									hash = UtilEngine.gridHashTo(gx, gSizeH);
+									hash = UtilEngine.gridHashTo(gxEff, gyEff);
 
 									// Apply shadow
 									if (brightnessOutsideByHash[hash]) {
-										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutsideByHash[hash] - 2);
+										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutsideByHash[hash] - foliageShadowValue);
 									}
 								}
 							}
@@ -426,7 +484,7 @@ class LightingCalcWorkerEngine {
 				LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId] = false;
 			}
 		} catch (error: any) {
-			console.error('LightingCalcWorkerEngine > _calc: error', error);
+			//console.error('LightingCalcWorkerEngine > _calc: error', error);
 		}
 	}
 
