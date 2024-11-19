@@ -170,8 +170,7 @@ class MapDrawWorkerEngine {
 		}
 		MapDrawWorkerEngine.busy = true;
 		try {
-			let assetId: string,
-				camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
+			let camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
 				canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
 				canvasHeight: number = MapDrawWorkerEngine.height,
 				canvasTmp: OffscreenCanvas = MapDrawWorkerEngine.canvasTmp,
@@ -182,7 +181,6 @@ class MapDrawWorkerEngine {
 				canvasWidth: number = MapDrawWorkerEngine.width,
 				ctx: OffscreenCanvasRenderingContext2D = MapDrawWorkerEngine.ctx,
 				ctxTmp: OffscreenCanvasRenderingContext2D = MapDrawWorkerEngine.ctxTmp,
-				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				drawGx: number,
@@ -214,6 +212,8 @@ class MapDrawWorkerEngine {
 				resolutionMultiple: number = 4,
 				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
 				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
+				stopGx: number,
+				stopGy: number,
 				vanishingEnable: boolean = MapDrawWorkerEngine.vanishingEnable,
 				vanishingPercentageOfViewport: number = MapDrawWorkerEngine.vanishingPercentageOfViewport,
 				x: number,
@@ -267,33 +267,34 @@ class MapDrawWorkerEngine {
 
 						// Prepare
 						ctxTmp.clearRect(0, 0, canvasTmpGw, canvasTmpGh);
-
-						// Applicable hashes
-						complexesByGx = UtilEngine.gridBlockTableSliceHashes(
-							reference,
-							gWidth,
-							gHeight,
-							gWidth + canvasTmpGw,
-							gHeight + canvasTmpGh,
-						);
+						(stopGx = gWidth + canvasTmpGw),
+							(stopGy = gHeight + canvasTmpGh),
+							// Applicable hashes
+							(complexesByGx = <any>reference.hashesGyByGx);
 
 						for (j in complexesByGx) {
 							complexes = complexesByGx[j];
 							gx = Number(j);
+
+							if (gx < gWidth || gx > stopGx) {
+								continue;
+							}
+
 							drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 
 							for (k = 0; k < complexes.length; k++) {
-								complex = complexes[k];
-								gridImageBlock = referenceHashes[complex.hash].block;
-								assetId = gridImageBlock.assetId;
+								gridImageBlock = referenceHashes[complexes[k].hash].block;
+								gy = <number>gridImageBlock.gy;
+
+								if (gy < gHeight || gy > stopGy) {
+									continue;
+								}
 
 								// Extended check
-								gridImageBlock = referenceHashes[complex.hash].block;
 								if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
 									if (gridImageBlock.extends) {
 										// extention block
 										gridImageBlock = referenceHashes[gridImageBlock.extends].block;
-										assetId = gridImageBlock.assetId;
 									}
 
 									if (extendedHash[gridImageBlock.hash] === null) {
@@ -313,11 +314,10 @@ class MapDrawWorkerEngine {
 										gx = <number>gridImageBlock.gx;
 										drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 									}
-									gy = <number>complex.gy;
 								}
 
 								// Grab global illumination images if outside
-								imageBitmap = LightingEngine.getCacheInstance(assetId).image;
+								imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
 
 								ctxTmp.drawImage(
 									imageBitmap,

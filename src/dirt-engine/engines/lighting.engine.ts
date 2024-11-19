@@ -1,7 +1,7 @@
 import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetImage, AssetImageSrcQuality } from '../models/asset.model';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
-import { Grid, GridImageBlockReference, GridBlockTable } from '../models/grid.model';
+import { Grid, GridImageBlockReference, GridBlockTable, GridLight } from '../models/grid.model';
 import { Camera } from '../models/camera.model';
 import { LightingCalcEngineBus } from '../calc/buses/lighting.calc.engine.bus';
 import { LightingCalcBusOutputDecompressed } from '../calc/buses/lighting.calc.engine.model';
@@ -88,6 +88,11 @@ export class LightingEngine {
 						assetIds[imageBlockReferences[i].block.assetId] = null;
 					}
 				}
+			},
+			processorLights = (imageLights: { [key: number]: GridLight }) => {
+				for (let i in imageLights) {
+					assetIds[imageLights[i].assetId] = null;
+				}
 			};
 
 		for (let i in grids) {
@@ -97,6 +102,9 @@ export class LightingEngine {
 			processor(grid.imageBlocksForegroundReference.hashes);
 			processor(grid.imageBlocksPrimaryReference.hashes);
 			processor(grid.imageBlocksVanishingReference.hashes);
+
+			processorLights(grid.lightsForeground.hashes);
+			processorLights(grid.lightsPrimary.hashes);
 		}
 
 		return Object.keys(assetIds);
@@ -261,9 +269,9 @@ export class LightingEngine {
 		}
 
 		if (outside) {
-			let hourOfDayEff: number = Math.round(LightingEngine.hourPreciseOfDayEff);
+			let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
 
-			if (hourOfDayEff < 5 || hourOfDayEff > 22) {
+			if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
 				// Night
 				if (brightness !== 0) {
 					return LightingEngine.cacheOutsideDay[assetImageId][Math.min(6, brightness)];
@@ -327,6 +335,16 @@ export class LightingEngine {
 				groupBrightness: 0,
 				groupBrightnessOutside: 0,
 			};
+		}
+	}
+
+	public static isNight(): boolean {
+		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
+
+		if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 

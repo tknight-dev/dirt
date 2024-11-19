@@ -191,6 +191,7 @@ export interface GridImageBlockSolid extends GridImageBlock {
 }
 
 export interface GridLight extends GridObject {
+	assetId: string;
 	assetIdAudioEffectAmbient?: string;
 	destructible?: boolean;
 	gRadius: number;

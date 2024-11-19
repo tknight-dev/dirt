@@ -8,6 +8,7 @@ import {
 	GridCoordinate,
 	GridImageBlock,
 	GridImageBlockReference,
+	GridLight,
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
@@ -54,9 +55,6 @@ export class MapEditEngine {
 	public static uiLoaded: boolean;
 
 	public static apply(apply: VideoBusInputCmdGameModeEditApply): void {
-		// MapEditEngine.historyAdd();
-		// console.log('applyGroup', MapEditEngine.applyGroup);
-
 		switch (apply.applyType) {
 			case VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK:
 				MapEditEngine.applyAudioBlock(<VideoBusInputCmdGameModeEditApplyAudioBlock>apply);
@@ -387,6 +385,76 @@ export class MapEditEngine {
 		}
 	}
 
+	private static applyLight(apply: VideoBusInputCmdGameModeEditApplyLight): void {
+		let blockHashes: { [key: number]: GridLight },
+			blocks: GridBlockTable<GridLight>,
+			gCoordinate: GridCoordinate,
+			gHash: number,
+			gHashes: number[] = apply.gHashes,
+			mapActive: MapActive,
+			properties: any = JSON.parse(JSON.stringify(apply)),
+			z: VideoBusInputCmdGameModeEditApplyZ = apply.z;
+
+		if (!MapEditEngine.modeUI) {
+			mapActive = KernelEngine.getMapActive();
+		} else {
+			mapActive = MapEditEngine.mapActiveUI;
+		}
+
+		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			blocks = mapActive.gridActive.lightsPrimary;
+		} else {
+			blocks = mapActive.gridActive.lightsForeground;
+		}
+		blockHashes = blocks.hashes;
+
+		// Clean
+		delete properties.applyType;
+		delete properties.gHashes;
+		delete properties.z;
+
+		// Apply
+		for (let i = 0; i < gHashes.length; i++) {
+			gHash = gHashes[i];
+			gCoordinate = UtilEngine.gridHashFrom(gHash);
+
+			// Overwrite, delete all blocks associated with
+			if (blockHashes[gHash]) {
+				MapEditEngine.applyErase(<any>{
+					gHashes: [gHash],
+					type: apply.applyType,
+					z: z,
+				});
+			}
+
+			// Origin block
+			properties.hash = gHash;
+			properties.gx = gCoordinate.gx;
+			properties.gy = gCoordinate.gy;
+
+			blockHashes[gHash] = properties;
+		}
+
+		MapEditEngine.gridBlockTableInflateInstance(blocks);
+
+		if (!MapEditEngine.modeUI) {
+			let assetId: string = (<any>apply).assetId,
+				assetIdDamaged: string = (<any>apply).assetIdDamaged,
+				assetUpdate: { [key: string]: LightingCacheInstance } = {};
+
+			LightingEngine.cacheAdd(assetId);
+			assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+
+			if (assetIdDamaged) {
+				LightingEngine.cacheAdd(assetIdDamaged);
+				assetUpdate[assetIdDamaged] = LightingEngine.getCacheInstance(assetIdDamaged);
+			}
+
+			MapDrawEngineBus.outputAssets(assetUpdate);
+			KernelEngine.updateMap();
+		}
+	}
+
 	public static gridBlockTableDeflate(map: MapActive): MapActive {
 		Object.values(map.grids).forEach((grid: Grid) => {
 			MapEditEngine.gridBlockTableDeflateInstance(grid.audioPrimaryBlocks || {});
@@ -422,8 +490,8 @@ export class MapEditEngine {
 
 		Object.values(map.grids).forEach((grid: Grid) => {
 			// LightingCalcWorkerEngine filters these out
-			grid.audioPrimaryBlocks && MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks);
-			grid.audioPrimaryTagTriggers && MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryTagTriggers);
+			MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks || {});
+			MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryTagTriggers || {});
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundFoliage, reference);
@@ -461,8 +529,8 @@ export class MapEditEngine {
 			};
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishingReference);
 
-			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground);
-			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary);
+			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground || {});
+			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary || {});
 		});
 		return map;
 	}
@@ -471,8 +539,13 @@ export class MapEditEngine {
 		let gCoordinate: GridCoordinate,
 			gx: number[],
 			hash: number,
-			hashes: string[] = Object.keys(gridBlockTable.hashes || {}),
+			hashes: string[],
 			hashesGyByGx: { [key: number]: GridBlockTableComplex[] } = {};
+
+		if (!gridBlockTable.hashes) {
+			gridBlockTable.hashes = {};
+		}
+		hashes = Object.keys(gridBlockTable.hashes);
 
 		for (let i in hashes) {
 			hash = Number(hashes[i]);
@@ -516,10 +589,6 @@ export class MapEditEngine {
 				type: blocks[i].objectType,
 			};
 		}
-	}
-
-	private static applyLight(apply: VideoBusInputCmdGameModeEditApplyLight): void {
-		console.warn('MapEditEngine > applyLight: not yet implemented');
 	}
 
 	private static historyAdd(): void {
@@ -810,9 +879,19 @@ export class MapEditEngine {
 			delete data.strengthToDestroyInN;
 		}
 
+		if (!data.assetIdAudioEffectAmbient) {
+			delete data.assetIdAudioEffectAmbient;
+		}
+		if (!data.nightOnly) {
+			delete data.nightOnly;
+		}
+
 		// Set base configs outside of the properties object
 		data.gHashes = gHashes;
-		data.objectType = GridObjectType.IMAGE_BLOCK_SOLID;
+		data.gSizeH = 1;
+		data.gSizeW = 1;
+		data.objectType = GridObjectType.LIGHT;
+		data.z = z;
 
 		return data;
 	}
@@ -886,7 +965,7 @@ export class MapEditEngine {
 	}
 
 	public static getMapActiveCloneNormalized(): MapActive {
-		let grid: Grid, mapActiveClone: MapActive;
+		let mapActiveClone: MapActive;
 
 		if (MapEditEngine.modeUI) {
 			mapActiveClone = JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI));
@@ -913,7 +992,7 @@ export class MapEditEngine {
 		view: VideoBusInputCmdGameModeEditApplyView,
 		z: VideoBusInputCmdGameModeEditApplyZ,
 	): GridObject[] {
-		let reference: GridBlockTable<GridImageBlockReference>, mapActive: MapActive;
+		let blocks: GridBlockTable<GridObject>, reference: GridBlockTable<GridImageBlockReference>, mapActive: MapActive;
 
 		if (!MapEditEngine.modeUI) {
 			mapActive = KernelEngine.getMapActive();
@@ -945,7 +1024,17 @@ export class MapEditEngine {
 					return [];
 				}
 			case VideoBusInputCmdGameModeEditApplyView.LIGHT:
-				break;
+				if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+					blocks = mapActive.gridActive.lightsPrimary;
+				} else {
+					blocks = mapActive.gridActive.lightsForeground;
+				}
+
+				if (blocks.hashes[gHash]) {
+					return [blocks.hashes[gHash]];
+				} else {
+					return [];
+				}
 		}
 
 		return [];

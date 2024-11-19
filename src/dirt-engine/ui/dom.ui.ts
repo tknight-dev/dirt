@@ -1187,14 +1187,11 @@ export class DomUI {
 				assetIdAudioEffectAmbient: undefined,
 				destructible: undefined,
 				gRadius: 1,
-				gSizeH: 1,
-				gSizeW: 1,
 				nightOnly: undefined,
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 				type: GridLightType.OMNI,
 			},
 			input: HTMLInputElement,
-			playing: boolean,
 			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
 			td: HTMLElement,
 			tr: HTMLElement;
@@ -1296,50 +1293,10 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// GSizeH
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'G Size H';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeH = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = applicationProperties.gSizeH;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// GSizeW
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'G Size W';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeW = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = applicationProperties.gSizeW;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
 		// NightOnly
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Destructible';
+		td.innerText = 'Night Only';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
@@ -1409,7 +1366,7 @@ export class DomUI {
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
-			//DomUI.uiEditApplicationProperties = applicationProperties;
+			DomUI.uiEditApplicationProperties = applicationProperties;
 			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.LIGHT;
 
 			// Graphics
@@ -1719,7 +1676,7 @@ export class DomUI {
 							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.LIGHT;
 							break;
 						default:
-							console.log('?????', gridObject.objectType);
+							console.error('DomUI > editMouseDownSelectMenu: objectType???', gridObject.objectType);
 					}
 
 					// Show cursor config buttons
@@ -1773,10 +1730,8 @@ export class DomUI {
 
 	// Submit commands based on interval
 	private static editMouseProcessor(resolve: any): void {
-		let applyType: VideoBusInputCmdGameModeEditApplyType,
-			arrayPush: any = Array.prototype.push,
+		let arrayPush: any = Array.prototype.push,
 			collection: DoubleLinkedList<number> = DomUI.uiEditMouseCmdCollection,
-			coordinate: GridCoordinate,
 			gridConfig: GridConfig,
 			gHashes: number[],
 			hash: number,
@@ -3423,7 +3378,7 @@ export class DomUI {
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.75';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
@@ -3473,7 +3428,7 @@ export class DomUI {
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '.2';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';

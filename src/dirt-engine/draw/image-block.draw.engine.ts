@@ -1,8 +1,15 @@
 import { AssetImage } from '../models/asset.model';
 import { Camera } from '../models/camera.model';
-import { LightingCalcBusOutputDecompressed } from '../calc/buses/lighting.calc.engine.model';
 import { LightingEngine } from '../engines/lighting.engine';
-import { Grid, GridBlockTable, GridBlockTableComplex, GridImageBlockReference, GridConfig, GridImageBlock } from '../models/grid.model';
+import {
+	Grid,
+	GridBlockTable,
+	GridBlockTableComplex,
+	GridImageBlockReference,
+	GridConfig,
+	GridImageBlock,
+	GridLight,
+} from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
@@ -19,7 +26,7 @@ interface ZGroup {
 }
 
 export class ImageBlockDrawEngine {
-	private static assetImages: { [key: string]: AssetImage };
+	private static assetImages: { [key: string]: AssetImage }; // something about caching images and times by grid?
 	private static cacheBackground: ImageBitmap;
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
@@ -34,7 +41,6 @@ export class ImageBlockDrawEngine {
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
-	private static drawNull: boolean;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
@@ -65,8 +71,8 @@ export class ImageBlockDrawEngine {
 
 		ImageBlockDrawEngine.zGroup = [
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
+			VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
 			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
-			VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // After foreground
 			VideoBusInputCmdGameModeEditApplyZ.VANISHING,
 		];
 	}
@@ -89,10 +95,9 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
-			let assetId: string,
+			let lightHashes: { [key: number]: GridLight },
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
-				complex: GridBlockTableComplex,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				drawGx: number,
@@ -101,6 +106,7 @@ export class ImageBlockDrawEngine {
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
+				getCacheInstance = LightingEngine.getCacheInstance,
 				getCacheLit = LightingEngine.getCacheLit,
 				gInPh: number = camera.gInPh,
 				gInPw: number = camera.gInPw,
@@ -108,18 +114,23 @@ export class ImageBlockDrawEngine {
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
 				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
 				gridImageBlock: GridImageBlock,
+				gridLight: GridLight,
 				gx: number,
 				gy: number,
 				imageBitmap: ImageBitmap,
+				lights: GridBlockTable<GridLight> | undefined = undefined,
 				j: string,
 				k: number,
+				night: boolean = LightingEngine.isNight(),
 				outside: boolean = gridConfig.outside,
 				radius: number,
 				radius2: number,
 				reference: GridBlockTable<GridImageBlockReference>,
 				referenceHashes: { [key: number]: GridImageBlockReference },
 				startGx: number = camera.viewportGx,
+				startGxEff: number = startGx - 1,
 				startGy: number = camera.viewportGy,
+				startGyEff: number = startGy - 1,
 				stopGx: number = startGx + camera.viewportGwEff,
 				stopGy: number = startGy + camera.viewportGwEff,
 				x: number,
@@ -142,43 +153,54 @@ export class ImageBlockDrawEngine {
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
 						extendedHash = extendedHashBackground;
+						lights = undefined;
 						reference = grid.imageBlocksBackgroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 						extendedHash = extendedHashForeground;
+						lights = grid.lightsForeground;
 						reference = grid.imageBlocksForegroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 						extendedHash = extendedHashPrimary;
+						lights = grid.lightsPrimary;
 						reference = grid.imageBlocksPrimaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						extendedHash = extendedHashVanishing;
+						lights = undefined;
 						reference = grid.imageBlocksVanishingReference;
 						break;
 				}
 				referenceHashes = reference.hashes;
 
 				// Applicable hashes
-				complexesByGx = UtilEngine.gridBlockTableSliceHashes(reference, startGx, startGy, stopGx, stopGy);
+				complexesByGx = <any>reference.hashesGyByGx;
 
+				// Image blocks
 				for (j in complexesByGx) {
 					complexes = complexesByGx[j];
 					gx = Number(j);
+
+					if (gx < startGxEff || gx > stopGx) {
+						continue;
+					}
+
 					drawGx = Math.round((gx - startGx) * gInPw);
 
 					for (k = 0; k < complexes.length; k++) {
-						complex = complexes[k];
-						gridImageBlock = referenceHashes[complex.hash].block;
-						assetId = gridImageBlock.assetId;
+						gridImageBlock = referenceHashes[complexes[k].hash].block;
+						gy = <number>gridImageBlock.gy;
+
+						if (gy < startGyEff || gy > stopGy) {
+							continue;
+						}
 
 						// Extended check
-						gridImageBlock = referenceHashes[complex.hash].block;
 						if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
 							if (gridImageBlock.extends) {
 								// extention block
 								gridImageBlock = referenceHashes[gridImageBlock.extends].block;
-								assetId = gridImageBlock.assetId;
 							}
 
 							if (extendedHash[gridImageBlock.hash] === null) {
@@ -196,14 +218,13 @@ export class ImageBlockDrawEngine {
 							}
 						} else {
 							if (gx !== <number>gridImageBlock.gx) {
-								gx = <number>complex.gx;
+								gx = <number>gridImageBlock.gx;
 								drawGx = Math.round((gx - startGx) * gInPw);
 							}
-							gy = <number>complex.gy;
 						}
 
 						// Get pre-rendered asset variation based on hash
-						imageBitmap = getCacheLit(assetId, grid.id, gridImageBlock.hash, outside, z);
+						imageBitmap = getCacheLit(gridImageBlock.assetId, grid.id, gridImageBlock.hash, outside, z);
 
 						ctx.drawImage(
 							imageBitmap,
@@ -216,6 +237,51 @@ export class ImageBlockDrawEngine {
 							gInPw * gridImageBlock.gSizeW + 1, // Make sure we fill the grid
 							gInPh * gridImageBlock.gSizeH + 1, // Make sure we fill the grid
 						);
+					}
+				}
+
+				// Lights
+				if (lights && lights.hashesGyByGx) {
+					complexesByGx = lights.hashesGyByGx;
+					lightHashes = lights.hashes;
+
+					for (j in complexesByGx) {
+						complexes = complexesByGx[j];
+						gx = Number(j);
+
+						if (gx < startGx || gx > stopGx) {
+							continue;
+						}
+
+						drawGx = Math.round((gx - startGx) * gInPw);
+
+						for (k = 0; k < complexes.length; k++) {
+							gridLight = lightHashes[complexes[k].hash];
+							gy = <number>gridLight.gy;
+
+							if (gy < startGy || gy > stopGy) {
+								continue;
+							}
+
+							// Get pre-rendered asset variation based on hash
+							if (gridLight.nightOnly && !night) {
+								imageBitmap = getCacheLit(gridLight.assetId, grid.id, gridLight.hash, outside, z);
+							} else {
+								imageBitmap = getCacheInstance(gridLight.assetId).image;
+							}
+
+							ctx.drawImage(
+								imageBitmap,
+								0,
+								0,
+								imageBitmap.width,
+								imageBitmap.height,
+								drawGx,
+								Math.round((gy - startGy) * gInPh),
+								gInPw + 1, // Make sure we fill the grid
+								gInPh + 1, // Make sure we fill the grid
+							);
+						}
 					}
 				}
 

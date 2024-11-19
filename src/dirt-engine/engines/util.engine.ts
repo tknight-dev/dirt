@@ -92,69 +92,6 @@ export class UtilEngine {
 	}
 
 	/**
-	 * Grid hashes are 16bit
-	 */
-	public static gridBlockTableSliceHashes(
-		gridBlockTable: GridBlockTable<any>,
-		startGx: number,
-		startGy: number,
-		stopGx: number,
-		stopGy: number,
-	): { [key: number]: GridBlockTableComplex[] } {
-		let gx: number,
-			gxs: number[] = <number[]>gridBlockTable.gx,
-			gy: GridBlockTableComplex,
-			gyMinByGx: { [key: number]: number } = {},
-			gys: GridBlockTableComplex[],
-			hashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>gridBlockTable.hashesGyByGx,
-			hashesGyByGxSlice: { [key: number]: GridBlockTableComplex[] } = {},
-			j: string;
-
-		startGx--;
-		startGy--;
-		stopGx++;
-		stopGy++;
-		for (let i in gxs) {
-			gx = gxs[i];
-			gys = hashesGyByGx[gx];
-
-			// Slice g in the viewport
-			if (gx > startGx && gx < stopGx) {
-				for (j in gys) {
-					gy = gys[j];
-
-					// Detect the min y value for the LightingEngine effect
-					if (gyMinByGx[gx] === undefined || gy.value < gyMinByGx[gx]) {
-						gyMinByGx[gx] = gy.value;
-					}
-
-					if (gy.value > startGy && gy.value < stopGy) {
-						if (hashesGyByGxSlice[gx] === undefined) {
-							hashesGyByGxSlice[gx] = [
-								{
-									gx: gx,
-									gy: gy.value,
-									hash: gy.hash,
-									value: 0,
-								},
-							];
-						} else {
-							hashesGyByGxSlice[gx].push({
-								gx: gx,
-								gy: gy.value,
-								hash: gy.hash,
-								value: 0,
-							});
-						}
-					}
-				}
-			}
-		}
-
-		return hashesGyByGxSlice;
-	}
-
-	/**
 	 * From Base64
 	 */
 	public static mapDecode(map: string): Map {
