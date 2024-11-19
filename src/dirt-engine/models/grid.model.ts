@@ -88,7 +88,6 @@ export interface GridConfig {
 	gHorizon: number; // Precision 0
 	gWidth: number; // Precision 0
 	id: string; // Matches associate grid.id
-	lightIntensityGlobal: number; // 1.000 is default (Precision 3)
 	outside: boolean; // defaulted by MapEngine
 	startGxCamera: number; // Precision 3
 	startGyCamera: number; // Precision 3

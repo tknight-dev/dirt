@@ -1,4 +1,3 @@
-import { AssetImage } from '../models/asset.model';
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
 import {
@@ -12,9 +11,7 @@ import {
 } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
-import { UtilEngine } from '../engines/util.engine';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model.bus';
-import { AssetEngine } from '../engines/asset.engine';
 
 /**
  * @author tknight-dev
@@ -26,16 +23,17 @@ interface ZGroup {
 }
 
 export class ImageBlockDrawEngine {
-	private static assetImages: { [key: string]: AssetImage }; // something about caching images and times by grid?
 	private static cacheBackground: ImageBitmap;
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
 	private static cacheVanishing: ImageBitmap;
+	private static cacheGridId: string;
+	private static cacheImages: { [key: string]: ImageBitmap };
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
 	private static cacheHashPh: number;
 	private static cacheHashPw: number;
-	private static cacheHourPreciseCheck: number;
+	private static cacheHourPrecise: number;
 	private static cacheZoom: number;
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
@@ -47,8 +45,6 @@ export class ImageBlockDrawEngine {
 	private static vanishingEnable: boolean;
 	private static vanishingPercentageOfViewport: number;
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[];
-	// private static count: number = 0;
-	// private static sum: number = 0;
 
 	public static async initialize(
 		ctxBackground: OffscreenCanvasRenderingContext2D,
@@ -62,7 +58,6 @@ export class ImageBlockDrawEngine {
 			console.error('ImageBlockDrawEngine > initialize: already initialized');
 			return;
 		}
-		ImageBlockDrawEngine.assetImages = AssetEngine.getAssetManifestMaster().images;
 		ImageBlockDrawEngine.initialized = true;
 		ImageBlockDrawEngine.ctxBackground = ctxBackground;
 		ImageBlockDrawEngine.ctxForeground = ctxForeground;
@@ -84,18 +79,18 @@ export class ImageBlockDrawEngine {
 	public static start(): void {
 		let camera: Camera = ImageBlockDrawEngine.mapActiveCamera,
 			hourPreciseOfDayEff: number = LightingEngine.getHourPreciseOfDayEff();
-		//let start: number = performance.now();
 
 		if (
 			ImageBlockDrawEngine.cacheHashGx !== camera.gx ||
 			ImageBlockDrawEngine.cacheHashGy !== camera.gy ||
 			ImageBlockDrawEngine.cacheHashPh !== camera.windowPh ||
 			ImageBlockDrawEngine.cacheHashPw !== camera.windowPw ||
-			ImageBlockDrawEngine.cacheHourPreciseCheck !== hourPreciseOfDayEff ||
+			ImageBlockDrawEngine.cacheHourPrecise !== hourPreciseOfDayEff ||
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
 			let lightHashes: { [key: number]: GridLight },
+				cacheImages: { [key: string]: ImageBitmap } = ImageBlockDrawEngine.cacheImages,
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complexes: GridBlockTableComplex[],
@@ -120,7 +115,7 @@ export class ImageBlockDrawEngine {
 				imageBitmap: ImageBitmap,
 				lights: GridBlockTable<GridLight> | undefined = undefined,
 				j: string,
-				k: number,
+				k: string,
 				night: boolean = LightingEngine.isNight(),
 				outside: boolean = gridConfig.outside,
 				radius: number,
@@ -140,7 +135,7 @@ export class ImageBlockDrawEngine {
 
 			// Config
 			ctx.imageSmoothingEnabled = false;
-			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
+
 			radius = Math.round(((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom);
 			radius2 = radius * 2;
 
@@ -188,16 +183,15 @@ export class ImageBlockDrawEngine {
 
 					drawGx = Math.round((gx - startGx) * gInPw);
 
-					for (k = 0; k < complexes.length; k++) {
-						gridImageBlock = referenceHashes[complexes[k].hash].block;
-						gy = <number>gridImageBlock.gy;
-
+					for (k in complexes) {
+						gy = complexes[k].value;
 						if (gy < startGyEff || gy > stopGy) {
 							continue;
 						}
+						gridImageBlock = referenceHashes[complexes[k].hash].block;
 
 						// Extended check
-						if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
+						if (gridImageBlock.extends) {
 							if (gridImageBlock.extends) {
 								// extention block
 								gridImageBlock = referenceHashes[gridImageBlock.extends].block;
@@ -228,10 +222,6 @@ export class ImageBlockDrawEngine {
 
 						ctx.drawImage(
 							imageBitmap,
-							0,
-							0,
-							imageBitmap.width,
-							imageBitmap.height,
 							drawGx,
 							Math.round((gy - startGy) * gInPh),
 							gInPw * gridImageBlock.gSizeW + 1, // Make sure we fill the grid
@@ -255,7 +245,7 @@ export class ImageBlockDrawEngine {
 
 						drawGx = Math.round((gx - startGx) * gInPw);
 
-						for (k = 0; k < complexes.length; k++) {
+						for (k in complexes) {
 							gridLight = lightHashes[complexes[k].hash];
 							gy = <number>gridLight.gy;
 
@@ -272,10 +262,6 @@ export class ImageBlockDrawEngine {
 
 							ctx.drawImage(
 								imageBitmap,
-								0,
-								0,
-								imageBitmap.width,
-								imageBitmap.height,
 								drawGx,
 								Math.round((gy - startGy) * gInPh),
 								gInPw + 1, // Make sure we fill the grid
@@ -318,11 +304,12 @@ export class ImageBlockDrawEngine {
 			}
 
 			// Cache it
+			ImageBlockDrawEngine.cacheGridId = grid.id;
 			ImageBlockDrawEngine.cacheHashGx = camera.gx;
 			ImageBlockDrawEngine.cacheHashGy = camera.gy;
 			ImageBlockDrawEngine.cacheHashPh = camera.windowPh;
 			ImageBlockDrawEngine.cacheHashPw = camera.windowPw;
-			ImageBlockDrawEngine.cacheHourPreciseCheck = hourPreciseOfDayEff;
+			ImageBlockDrawEngine.cacheHourPrecise = hourPreciseOfDayEff;
 			ImageBlockDrawEngine.cacheZoom = camera.zoom;
 		}
 
@@ -330,10 +317,6 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxForeground.drawImage(ImageBlockDrawEngine.cacheForeground, 0, 0);
 		ImageBlockDrawEngine.ctxPrimary.drawImage(ImageBlockDrawEngine.cachePrimary, 0, 0);
 		ImageBlockDrawEngine.ctxVanishing.drawImage(ImageBlockDrawEngine.cacheVanishing, 0, 0);
-
-		// MapDrawEngine.count++;
-		// MapDrawEngine.sum += performance.now() - start;
-		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
 	}
 
 	public static setMapActive(mapActive: MapActive) {

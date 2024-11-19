@@ -45,7 +45,6 @@ export class MapEngine {
 				gHorizon: 0, // calculated
 				gWidth: gridWidth,
 				id: 'initial', // protectedId
-				lightIntensityGlobal: 1,
 				outside: true,
 				startGxCamera: Math.round(gridWidth / 2),
 				startGyCamera: Math.round((gridWidth * 9) / 32),
@@ -123,8 +122,6 @@ export class MapEngine {
 			// Depends on width
 			gridConfig.gHeight = Math.round((gridConfig.gWidth * 9) / 16);
 			gridConfig.gHorizon = Math.round(gridConfig.gHeight / 2);
-
-			gridConfig.lightIntensityGlobal = Math.round(gridConfig.lightIntensityGlobal * 1000) / 1000;
 		}
 
 		// Make sure the initial grid id is matching

@@ -421,7 +421,7 @@ export class KernelEngine {
 
 		// Extended
 		ImageBlockDrawEngine.setVanishingPercentageOfViewport(settings.vanishingPercentageOfViewport);
-		LightingEngine.setDarknessMax(settings.darknessMax);
+		LightingEngine.settings(settings.darknessMax, settings.gamma);
 		MapDrawEngine.resolution = settings.resolution;
 		MapDrawEngineBus.setDarknessMax(settings.darknessMax);
 		MapDrawEngineBus.setMapVisible(settings.mapVisible);

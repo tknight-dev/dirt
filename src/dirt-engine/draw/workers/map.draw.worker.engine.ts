@@ -142,7 +142,7 @@ class MapDrawWorkerEngine {
 
 	public static inputSetSettings(data: MapDrawBusInputPlayloadSettings): void {
 		//console.log('MapDrawWorkerEngine > inputSetSettings', data);
-		LightingEngine.setDarknessMax(data.darknessMax * 0.3);
+		LightingEngine.settings(data.darknessMax * 0.3, 0);
 		MapDrawWorkerEngine.mapVisible = data.mapVisible;
 		MapDrawWorkerEngine.vanishingEnable = data.vanishingEnable;
 		MapDrawWorkerEngine.vanishingPercentageOfViewport = data.vanishingPercentageOfViewport;
@@ -204,7 +204,7 @@ class MapDrawWorkerEngine {
 				i: string,
 				imageBitmap: ImageBitmap,
 				j: string,
-				k: number,
+				k: string,
 				radius: number,
 				radius2: number,
 				reference: GridBlockTable<GridImageBlockReference>,
@@ -231,7 +231,6 @@ class MapDrawWorkerEngine {
 			canvasTmp.height = canvasTmpGh * resolutionMultiple;
 			canvasTmp.width = canvasTmpGw * resolutionMultiple;
 			ctx.imageSmoothingEnabled = false;
-			ctx.filter = 'brightness(' + gridConfig.lightIntensityGlobal + ')';
 			ctxTmp.imageSmoothingEnabled = false;
 
 			canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
@@ -282,16 +281,15 @@ class MapDrawWorkerEngine {
 
 							drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 
-							for (k = 0; k < complexes.length; k++) {
-								gridImageBlock = referenceHashes[complexes[k].hash].block;
-								gy = <number>gridImageBlock.gy;
-
+							for (k in complexes) {
+								gy = complexes[k].value;
 								if (gy < gHeight || gy > stopGy) {
 									continue;
 								}
+								gridImageBlock = referenceHashes[complexes[k].hash].block;
 
 								// Extended check
-								if (gridImageBlock.extends || gridImageBlock.gSizeH !== 1 || gridImageBlock.gSizeW !== 1) {
+								if (gridImageBlock.extends) {
 									if (gridImageBlock.extends) {
 										// extention block
 										gridImageBlock = referenceHashes[gridImageBlock.extends].block;
@@ -321,10 +319,6 @@ class MapDrawWorkerEngine {
 
 								ctxTmp.drawImage(
 									imageBitmap,
-									0,
-									0,
-									imageBitmap.width,
-									imageBitmap.height,
 									drawGx,
 									Math.round((gy - gHeight) * resolutionMultiple),
 									resolutionMultiple * gridImageBlock.gSizeW,

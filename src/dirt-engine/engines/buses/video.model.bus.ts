@@ -161,6 +161,7 @@ export interface VideoBusInputCmdSettings {
 	darknessMax: number; // between 0 and 1, 1 is totally black, default is .8 (Precision 3)
 	fps: VideoBusInputCmdSettingsFPS;
 	fpsVisible: boolean;
+	gamma: number; // between -.5 and 1.5, default is 0 (Precision 3)
 	mapVisible: boolean;
 	quality: AssetImageSrcQuality;
 	resolution: null | 256 | 384 | 512 | 640 | 1280 | 1920; // null is native resolution

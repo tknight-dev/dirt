@@ -35,6 +35,7 @@ class Dirt {
 				darknessMax: 0.7,
 				fps: VideoBusInputCmdSettingsFPS._60,
 				fpsVisible: true,
+				gamma: 0,
 				mapVisible: true,
 				quality: AssetImageSrcQuality.HIGH,
 				resolution: null,

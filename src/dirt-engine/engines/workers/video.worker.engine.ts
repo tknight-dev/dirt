@@ -407,6 +407,7 @@ class VideoWorkerEngine {
 		console.log('VideoBusWorker > settings', settings);
 
 		settings.darknessMax = Math.round(Math.max(0, Math.min(1, settings.darknessMax)) * 1000) / 1000;
+		settings.gamma = Math.round(Math.max(-0.5, Math.min(1.5, settings.gamma)) * 1000) / 1000;
 		settings.vanishingPercentageOfViewport = Math.round(Math.max(0, Math.min(2, settings.vanishingPercentageOfViewport)) * 1000) / 1000;
 
 		KernelEngine.updateSettings(settings);

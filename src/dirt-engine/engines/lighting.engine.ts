@@ -26,7 +26,7 @@ export class LightingEngine {
 	private static cacheOutsideDay: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
 	private static cacheOutsideNight: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
 	private static darknessMax: number;
-	private static darknessMaxNew: boolean;
+	private static gamma: number;
 	private static hourPreciseOfDayEff: number = 0;
 	private static initialized: boolean;
 	private static lightingByHashByGrid: { [key: string]: { [key: number]: LightingCalcBusOutputDecompressed } } = {};
@@ -153,6 +153,7 @@ export class LightingEngine {
 			canvas: OffscreenCanvas = new OffscreenCanvas(0, 0),
 			ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 			darknessMax: number = LightingEngine.darknessMax,
+			gamma: number = LightingEngine.gamma,
 			grayscale: string,
 			imageOriginal: ImageBitmap,
 			j: number,
@@ -175,7 +176,7 @@ export class LightingEngine {
 			 */
 			for (j = 0; j < 7; j++) {
 				value = Math.round(scale(j, 7, 0, 1, 1 - darknessMax) * 1000) / 1000;
-				brightness = 'brightness(' + value + ')';
+				brightness = 'brightness(' + Math.max(0, value + gamma) + ')';
 
 				ctx.filter = brightness;
 				ctx.drawImage(imageOriginal, 0, 0);
@@ -187,7 +188,7 @@ export class LightingEngine {
 			 */
 			for (j = 0; j < 5; j++) {
 				value = Math.round(scale(j, 4, 0, 0.5, 1 - darknessMax) * 1000) / 1000;
-				brightness = 'brightness(' + value + ')';
+				brightness = 'brightness(' + Math.max(0, value + gamma) + ')';
 
 				value = Math.round(scale(j, 4, 0, 0.6, 0.15) * 1000) / 1000;
 				grayscale = 'grayscale(' + value + ')';
@@ -232,14 +233,15 @@ export class LightingEngine {
 				if (minuteOfDayEff % 5 == 0) {
 					// Only update very 5min in game
 					LightingEngine.hourPreciseOfDayEff = hourOfDayEff + Math.round((minuteOfDayEff / 60) * 100) / 100;
-
-					if (LightingEngine.darknessMaxNew) {
-						LightingEngine.draw();
-						LightingEngine.darknessMaxNew = false;
-					}
 				}
 			});
 		}
+	}
+
+	public static settings(darknessMax: number, gamma: number): void {
+		LightingEngine.darknessMax = darknessMax;
+		LightingEngine.gamma = gamma;
+		LightingEngine.draw();
 	}
 
 	public static getCacheInstance(assetImageId: string): LightingCacheInstance {
@@ -288,11 +290,6 @@ export class LightingEngine {
 			// Assume as dark as possible, unless lit by something other than the sun/moon
 			return LightingEngine.cacheOutsideDay[assetImageId][brightness];
 		}
-	}
-
-	public static setDarknessMax(darknessMax: number): void {
-		LightingEngine.darknessMax = darknessMax;
-		LightingEngine.darknessMaxNew = true;
 	}
 
 	public static getHourPreciseOfDayEff(): number {
