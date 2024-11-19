@@ -151,7 +151,7 @@ class MapDrawWorkerEngine {
 	}
 
 	protected static outputBitmap(image: ImageBitmap): void {
-		MapDrawWorkerEngine.self.postMessage(image);
+		(<any>MapDrawWorkerEngine.self).postMessage(image, [image]);
 	}
 
 	/**

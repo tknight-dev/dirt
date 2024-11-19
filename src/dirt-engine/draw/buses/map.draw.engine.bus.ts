@@ -13,7 +13,6 @@ export class MapDrawEngineBus {
 	private static darknessMax: number = 0.7;
 	private static initialized: boolean;
 	private static mapVisible: boolean;
-	private static timeForced: boolean;
 	private static vanishingEnable: boolean;
 	private static vanishingPercentageOfViewport: number;
 	private static worker: Worker;

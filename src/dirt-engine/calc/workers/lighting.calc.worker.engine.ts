@@ -145,12 +145,12 @@ class LightingCalcWorkerEngine {
 		return ((hashBrightnessGroup & 0x3f) << 6) | (hashBrightnessBackground & 0x3f);
 	}
 
-	public static output(payload: number[]): void {
+	public static output(payload: Uint32Array): void {
 		let data = {
 			gridId: LightingCalcWorkerEngine.gridActiveId,
 			payload: payload,
 		};
-		LightingCalcWorkerEngine.self.postMessage(JSON.stringify(data));
+		(<any>LightingCalcWorkerEngine.self).postMessage(data, [payload.buffer]);
 	}
 
 	private static _calc(): void {
@@ -184,7 +184,8 @@ class LightingCalcWorkerEngine {
 				hashesChangesBackground: { [key: number]: number } = {},
 				hashesChangesGroup: { [key: number]: number } = {},
 				hashesChangesFinal: { [key: number]: number } = {},
-				hashesChangesFinalOutput: number[] = [],
+				hashesChangesFinalOutputCount: number = 0,
+				hashesChangesFinalOutput: Uint32Array,
 				hashesGroup: { [key: number]: number } = {},
 				referenceNoFoliage: GridBlockTable<GridImageBlockReference> = <any>{},
 				hourOfDayEff: number = LightingCalcWorkerEngine.hourOfDayEff,
@@ -486,10 +487,26 @@ class LightingCalcWorkerEngine {
 					continue;
 				}
 
-				hashesChangesFinalOutput.push(LightingCalcWorkerEngine.hashMergeG(Number(hashString), hashesChangesFinal[hashString]));
+				hashesChangesFinalOutputCount++;
 			}
 
-			if (hashesChangesFinalOutput.length) {
+			// If data available create transferrable buffer
+			if (hashesChangesFinalOutputCount) {
+				hashesChangesFinalOutput = new Uint32Array(hashesChangesFinalOutputCount);
+
+				hashesChangesFinalOutputCount = 0;
+				for (hashString in hashesChangesFinal) {
+					if (first && hashesChangesFinal[hashString] === 0) {
+						continue;
+					}
+
+					hashesChangesFinalOutput[hashesChangesFinalOutputCount] = LightingCalcWorkerEngine.hashMergeG(
+						Number(hashString),
+						hashesChangesFinal[hashString],
+					);
+					hashesChangesFinalOutputCount++;
+				}
+
 				LightingCalcWorkerEngine.output(hashesChangesFinalOutput);
 			}
 			if (first) {

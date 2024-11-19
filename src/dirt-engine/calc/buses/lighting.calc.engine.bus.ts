@@ -28,8 +28,7 @@ export class LightingCalcEngineBus {
 
 	private static input(): void {
 		LightingCalcEngineBus.worker.onmessage = (event: MessageEvent) => {
-			let data = JSON.parse(event.data),
-				compressed: number[] = data.payload,
+			let compressed: Uint32Array = new Uint32Array(event.data.payload),
 				decompressed: { [key: number]: LightingCalcBusOutputDecompressed } = {},
 				scratch: number;
 
@@ -44,7 +43,7 @@ export class LightingCalcEngineBus {
 				};
 			}
 
-			LightingCalcEngineBus.callback(data.gridId, decompressed);
+			LightingCalcEngineBus.callback(event.data.gridId, decompressed);
 		};
 	}
 
