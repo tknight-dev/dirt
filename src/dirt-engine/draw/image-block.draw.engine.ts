@@ -27,8 +27,6 @@ export class ImageBlockDrawEngine {
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
 	private static cacheVanishing: ImageBitmap;
-	private static cacheGridId: string;
-	private static cacheImages: { [key: string]: ImageBitmap };
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
 	private static cacheHashPh: number;
@@ -90,7 +88,6 @@ export class ImageBlockDrawEngine {
 		) {
 			// Draw cache
 			let lightHashes: { [key: number]: GridLight },
-				cacheImages: { [key: string]: ImageBitmap } = ImageBlockDrawEngine.cacheImages,
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complexes: GridBlockTableComplex[],
@@ -116,7 +113,7 @@ export class ImageBlockDrawEngine {
 				lights: GridBlockTable<GridLight> | undefined = undefined,
 				j: string,
 				k: string,
-				night: boolean = LightingEngine.isNight(),
+				night: boolean = LightingEngine.isNight(3),
 				outside: boolean = gridConfig.outside,
 				radius: number,
 				radius2: number,
@@ -304,7 +301,6 @@ export class ImageBlockDrawEngine {
 			}
 
 			// Cache it
-			ImageBlockDrawEngine.cacheGridId = grid.id;
 			ImageBlockDrawEngine.cacheHashGx = camera.gx;
 			ImageBlockDrawEngine.cacheHashGy = camera.gy;
 			ImageBlockDrawEngine.cacheHashPh = camera.windowPh;

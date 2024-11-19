@@ -155,8 +155,9 @@ class LightingCalcWorkerEngine {
 
 	private static _calc(): void {
 		try {
-			let brightnessByHash: { [key: number]: number } = {},
-				brightnessOutsideByHash: { [key: number]: number } = {},
+			let brightnessByHash: { [key: number]: number },
+				brightnessOutside: number,
+				brightnessOutsideByHash: { [key: number]: number },
 				brightnessOutsideDayMax: number = 6,
 				brightnessOutsideNightMax: number = 4,
 				complexExtended: GridBlockTableComplexExtended,
@@ -164,9 +165,8 @@ class LightingCalcWorkerEngine {
 				complexesExtended: GridBlockTableComplexExtended[],
 				complexesByGxNoFoliage: { [key: number]: GridBlockTableComplex[] },
 				first: boolean = LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId],
-				foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] } = {},
-				foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] = [],
-				foliageShadowValue: number,
+				foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] },
+				foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] | undefined,
 				grid: Grid = LightingCalcWorkerEngine.grids[LightingCalcWorkerEngine.gridActiveId],
 				gridConfig: GridConfig = LightingCalcWorkerEngine.gridConfigs[LightingCalcWorkerEngine.gridActiveId],
 				gridImageBlockFoliage: GridImageBlockFoliage,
@@ -223,6 +223,8 @@ class LightingCalcWorkerEngine {
 
 			for (let i in zGroup) {
 				z = zGroup[i];
+				brightnessByHash = <{ [key: number]: number }>new Object();
+				brightnessOutsideByHash = <{ [key: number]: number }>new Object();
 
 				/*
 				 * Day/Night Illumination (foliage ignored)
@@ -281,17 +283,13 @@ class LightingCalcWorkerEngine {
 				/*
 				 * Day/Night Shadows for Foliage
 				 */
-				switch (z) {
-					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						foliageGyByGxAll = [LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksBackgroundFoliage)];
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						foliageGyByGxAll = [
-							LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksForegroundFoliage),
-							LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
-							LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksVanishingFoliage),
-						];
-						break;
+				if (foliageGyByGxAll === undefined) {
+					foliageGyByGxAll = [
+						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
+						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
+						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksForegroundFoliage),
+						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksVanishingFoliage),
+					];
 				}
 
 				for (j in foliageGyByGxAll) {
@@ -304,10 +302,14 @@ class LightingCalcWorkerEngine {
 							complexExtended = complexesExtended[k];
 							gridImageBlockFoliage = complexExtended.blocks[complexExtended.hash];
 
-							foliageShadowValue = 1;
-							gx = Number(gxString);
 							gy = gridImageBlockFoliage.gy;
-							gyEff = gridImageBlockFoliage.gSizeW + gy;
+							gyEff = gridImageBlockFoliage.gSizeH + gy;
+
+							if (gyEff > gHeight) {
+								// Shadow below map, some goof put a tree on the bottom of the map
+								continue;
+							}
+							gx = Number(gxString);
 							gSizeW = gridImageBlockFoliage.gSizeW + gx;
 
 							/*
@@ -319,36 +321,29 @@ class LightingCalcWorkerEngine {
 								}
 							}
 
-							if (gyEff > gHeight) {
-								// Shadow below map, some goof put a tree on the bottom of the map
-								continue;
-							}
-
 							/*
 							 * Foliage Shadow
 							 */
 							// Shift shadow by time of day (sun rise is east/right)
-							if (15 < hourOfDayEff && hourOfDayEff < 23) {
-								if (hourOfDayEff > 17) {
+							if (15 < hourOfDayEff && hourOfDayEff < 22) {
+								if (hourOfDayEff > 17 && hourOfDayEff !== 21) {
 									// Long shadow, right
 									if (gx === gWidth) {
 										gxEff = gx;
 										gSizeW = gx + 1;
 									} else {
-										gSizeW += 2;
 										gxEff = gx + 1;
+										gSizeW += 2;
 									}
-									foliageShadowValue = 1;
 								} else {
 									// shadow, right
 									if (gx === gWidth) {
 										gxEff = gx;
 										gSizeW = gx + 1;
 									} else {
+										gxEff = gx;
 										gSizeW++;
-										gxEff = gx + 1;
 									}
-									foliageShadowValue = 2;
 								}
 							} else if (4 < hourOfDayEff && hourOfDayEff < 10) {
 								if (hourOfDayEff < 8) {
@@ -359,7 +354,6 @@ class LightingCalcWorkerEngine {
 										gxEff = gx - 2;
 									}
 									gSizeW--;
-									foliageShadowValue = 1;
 								} else {
 									// shadow, left
 									if (gx === 0) {
@@ -367,17 +361,9 @@ class LightingCalcWorkerEngine {
 									} else {
 										gxEff = gx - 1;
 									}
-									foliageShadowValue = 2;
 								}
 							} else {
 								// Shadow directly below
-								if (9 < hourOfDayEff && hourOfDayEff < 23) {
-									// Day
-									foliageShadowValue = 3;
-								} else {
-									// Night
-									foliageShadowValue = 1;
-								}
 								gxEff = gx;
 							}
 
@@ -388,8 +374,13 @@ class LightingCalcWorkerEngine {
 									hash = UtilEngine.gridHashTo(gxEff, gyEff);
 
 									// Apply shadow
-									if (brightnessOutsideByHash[hash]) {
-										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutsideByHash[hash] - foliageShadowValue);
+									brightnessOutside = brightnessOutsideByHash[hash];
+									if (brightnessOutside === hourOfDayEffOutsideModifier) {
+										// Shadows are not additive (prevents multiple shadow overlaps)
+										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutside - 2);
+									} else if (brightnessOutside === hourOfDayEffOutsideModifier - 1) {
+										// Shadows are not additive (prevents multiple shadow overlaps)
+										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutside - 1);
 									}
 								}
 							}
@@ -426,12 +417,14 @@ class LightingCalcWorkerEngine {
 							}
 						}
 
+						// Change detection
 						for (hashString in hashesBackground) {
 							if (LightingCalcWorkerEngine.hashesBackground[hashString] !== hashesBackground[hashString]) {
 								LightingCalcWorkerEngine.hashesBackground[hashString] = hashesBackground[hashString];
 								hashesChangesBackground[hashString] = hashesBackground[hashString];
 							}
 						}
+
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 						// Merge hashes into single map
@@ -450,6 +443,7 @@ class LightingCalcWorkerEngine {
 							}
 						}
 
+						// Change detection
 						for (hashString in hashesGroup) {
 							if (LightingCalcWorkerEngine.hashesGroup[hashString] !== hashesGroup[hashString]) {
 								LightingCalcWorkerEngine.hashesGroup[hashString] = hashesGroup[hashString];
@@ -466,13 +460,13 @@ class LightingCalcWorkerEngine {
 			for (hashString in hashesChangesBackground) {
 				hashesChangesFinal[hashString] = LightingCalcWorkerEngine.hashStackBrightness(
 					hashesChangesBackground[hashString],
-					hashesChangesGroup[hashString] || 0,
+					LightingCalcWorkerEngine.hashesGroup[hashString] || 0,
 				);
 			}
 			for (hashString in hashesChangesGroup) {
 				if (hashesChangesFinal[hashString] === undefined) {
 					hashesChangesFinal[hashString] = LightingCalcWorkerEngine.hashStackBrightness(
-						hashesChangesBackground[hashString] || 0,
+						LightingCalcWorkerEngine.hashesBackground[hashString] || 0,
 						hashesChangesGroup[hashString],
 					);
 				}

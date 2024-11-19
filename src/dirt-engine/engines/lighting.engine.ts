@@ -335,10 +335,10 @@ export class LightingEngine {
 		}
 	}
 
-	public static isNight(): boolean {
+	public static isNight(extend: number = 0): boolean {
 		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
 
-		if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
+		if (hourPreciseOfDayEff - extend < 5 || hourPreciseOfDayEff > 22 - extend) {
 			return true;
 		} else {
 			return false;
