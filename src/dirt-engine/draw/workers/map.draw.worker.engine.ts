@@ -1,5 +1,3 @@
-import { AssetEngine } from '../../engines/asset.engine';
-import { AssetImage } from '../../models/asset.model';
 import { Camera } from '../../models/camera.model';
 import { Grid, GridConfig, GridBlockTable, GridBlockTableComplex, GridImageBlock, GridImageBlockReference } from '../../models/grid.model';
 import { LightingEngine } from '../../engines/lighting.engine';
@@ -56,7 +54,6 @@ self.onmessage = (event: MessageEvent) => {
 };
 
 class MapDrawWorkerEngine {
-	private static assetImages: { [key: string]: AssetImage };
 	private static busy: boolean;
 	private static canvas: OffscreenCanvas;
 	private static canvasTmp: OffscreenCanvas;
@@ -88,7 +85,7 @@ class MapDrawWorkerEngine {
 			return;
 		}
 		MapDrawWorkerEngine.initialized = true;
-		(MapDrawWorkerEngine.assetImages = data.assetImages), (MapDrawWorkerEngine.self = self);
+		MapDrawWorkerEngine.self = self;
 
 		await LightingEngine.initialize(true);
 
@@ -159,10 +156,6 @@ class MapDrawWorkerEngine {
 
 	/**
 	 * 1g = 1px
-	 *
-	 * grid gHeight max is 36301
-	 *
-	 * grid gWidth max is 64535
 	 */
 	private static _draw(): void {
 		if (MapDrawWorkerEngine.busy || !MapDrawWorkerEngine.mapVisible) {
