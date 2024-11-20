@@ -30,6 +30,8 @@ export class LightingEngine {
 	private static hourPreciseOfDayEff: number = 0;
 	private static initialized: boolean;
 	private static lightingByHashByGrid: { [key: string]: { [key: number]: LightingCalcBusOutputDecompressed } } = {};
+	private static lightingByHashByGridPrevious: { [key: string]: { [key: number]: LightingCalcBusOutputDecompressed } } | undefined;
+	private static lightingByHashByGridPreviousHour: number;
 	private static mapActive: MapActive;
 	private static quality: AssetImageSrcQuality;
 	private static timeForced: boolean;
@@ -186,18 +188,18 @@ export class LightingEngine {
 			/*
 			 * Outside Night
 			 */
-			for (j = 0; j < 5; j++) {
-				value = Math.round(scale(j, 4, 0, 0.5, 1 - darknessMax) * 1000) / 1000;
+			for (j = 0; j < 4; j++) {
+				value = Math.round(scale(j, 3, 0, 0.375, 1 - darknessMax) * 1000) / 1000;
 				brightness = 'brightness(' + Math.max(0, value + gamma) + ')';
 
-				value = Math.round(scale(j, 4, 0, 0.6, 0.15) * 1000) / 1000;
+				value = Math.round(scale(j, 3, 0, 0.45, 0.15) * 1000) / 1000;
 				grayscale = 'grayscale(' + value + ')';
 
 				ctx.filter = `${brightness} ${grayscale}`;
 				ctx.drawImage(imageOriginal, 0, 0);
 				ctx.filter = 'none';
 
-				value = Math.round(scale(j, 4, 0, 0.09, 0) * 1000) / 1000;
+				value = Math.round(scale(j, 3, 0, 0.065, 0) * 1000) / 1000;
 				ctx.globalCompositeOperation = 'source-atop';
 				ctx.fillStyle = 'rgba(47,132,199,' + value + ')'; // Moonlight
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -219,13 +221,30 @@ export class LightingEngine {
 		}
 		LightingEngine.initialized = true;
 		LightingCalcEngineBus.initialize();
-		LightingCalcEngineBus.setCallback((gridId: number, lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => {
-			let decompressed: { [key: number]: LightingCalcBusOutputDecompressed } = LightingEngine.lightingByHashByGrid[gridId];
+		LightingCalcEngineBus.setCallback(
+			(
+				gridId: number,
+				hourPreciseOfDayEff: number,
+				lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed },
+				lightingByHashLength: number,
+			) => {
+				let decompressed: { [key: number]: LightingCalcBusOutputDecompressed },
+					hourOfDayEff: number = Math.floor(hourPreciseOfDayEff);
 
-			for (let hash in lightingByHash) {
-				decompressed[hash] = lightingByHash[hash];
-			}
-		});
+				// Store the previous unique hour's lighting calculations
+				if (LightingEngine.lightingByHashByGridPreviousHour !== hourOfDayEff) {
+					LightingEngine.lightingByHashByGridPreviousHour = hourOfDayEff;
+					LightingEngine.lightingByHashByGridPrevious = structuredClone(LightingEngine.lightingByHashByGrid);
+				}
+
+				if (lightingByHashLength) {
+					decompressed = LightingEngine.lightingByHashByGrid[gridId];
+					for (let hash in lightingByHash) {
+						decompressed[hash] = lightingByHash[hash];
+					}
+				}
+			},
+		);
 
 		if (worker !== true) {
 			LightingEngine.draw();
@@ -233,6 +252,14 @@ export class LightingEngine {
 				if (minuteOfDayEff % 5 == 0) {
 					// Only update very 5min in game
 					LightingEngine.hourPreciseOfDayEff = hourOfDayEff + Math.round((minuteOfDayEff / 60) * 100) / 100;
+
+					// Prevent blending OLD calculations
+					if (LightingEngine.lightingByHashByGridPreviousHour < hourOfDayEff) {
+						LightingEngine.lightingByHashByGridPrevious = undefined;
+					} else if (hourOfDayEff === 0 && LightingEngine.lightingByHashByGridPreviousHour === 23) {
+						LightingEngine.lightingByHashByGridPrevious = undefined;
+					}
+					LightingCalcEngineBus.outputHourPreciseOfDayEff(LightingEngine.hourPreciseOfDayEff);
 				}
 			});
 		}
@@ -244,24 +271,42 @@ export class LightingEngine {
 		LightingEngine.draw();
 	}
 
+	public static getCacheBrightness(gridId: string, hash: number, z: VideoBusInputCmdGameModeEditApplyZ): number {
+		let decompressed: LightingCalcBusOutputDecompressed = LightingEngine.lightingByHashByGrid[gridId][hash] || {};
+
+		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+			return decompressed.backgroundBrightness || 0;
+		} else {
+			return decompressed.groupBrightness || 0;
+		}
+	}
+
 	public static getCacheInstance(assetImageId: string): LightingCacheInstance {
 		return LightingEngine.cache[assetImageId];
 	}
 
-	public static getCacheLit(
+	/**
+	 * @return ImageBitmap[] - [0]: current image, [1]: previous image
+	 */
+	public static getCacheLitOutside(
 		assetImageId: string,
 		gridId: string,
 		hash: number,
-		outside: boolean,
 		z: VideoBusInputCmdGameModeEditApplyZ,
-	): ImageBitmap {
+	): ImageBitmap[] {
+		let images: ImageBitmap[] = [];
 		if (LightingEngine.timeForced) {
-			return LightingEngine.cache[assetImageId].image;
+			images.push(LightingEngine.cache[assetImageId].image);
+			images.push(images[0]);
+			return images;
 		}
 		let decompressed: LightingCalcBusOutputDecompressed = LightingEngine.lightingByHashByGrid[gridId][hash] || {},
+			decompressedPrevious: LightingCalcBusOutputDecompressed,
 			brightness: number,
-			brightnessOutside: number;
+			brightnessOutside: number,
+			brightnessOutsidePrevious: number;
 
+		// Look up brightness
 		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
 			brightness = decompressed.backgroundBrightness || 0;
 			brightnessOutside = decompressed.backgroundBrightnessOutside || 0;
@@ -270,26 +315,48 @@ export class LightingEngine {
 			brightnessOutside = decompressed.groupBrightnessOutside || 0;
 		}
 
-		if (outside) {
-			let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
+		if (LightingEngine.lightingByHashByGridPrevious) {
+			decompressedPrevious = LightingEngine.lightingByHashByGridPrevious[gridId][hash] || {};
 
-			if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
-				// Night
-				if (brightness !== 0) {
-					return LightingEngine.cacheOutsideDay[assetImageId][Math.min(6, brightness)];
-				} else {
-					//console.log('N', Math.min(3, brightnessOutside));
-					return LightingEngine.cacheOutsideNight[assetImageId][Math.min(3, brightnessOutside)];
-				}
+			if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+				brightnessOutsidePrevious = decompressedPrevious.backgroundBrightnessOutside || 0;
 			} else {
-				// Day
-				//console.log('D', Math.min(6, brightnessOutside));
-				return LightingEngine.cacheOutsideDay[assetImageId][Math.min(6, brightnessOutside + brightness)];
+				brightnessOutsidePrevious = decompressedPrevious.groupBrightnessOutside || 0;
 			}
 		} else {
-			// Assume as dark as possible, unless lit by something other than the sun/moon
-			return LightingEngine.cacheOutsideDay[assetImageId][brightness];
+			brightnessOutsidePrevious = brightnessOutside;
+			decompressedPrevious = decompressed;
 		}
+
+		// Look up image by brightness
+		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
+		if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
+			// Night
+			if (brightness !== 0) {
+				// Lit
+				images.push(LightingEngine.cacheOutsideDay[assetImageId][brightness]);
+				images.push(images[0]);
+			} else {
+				// Unlit
+				images.push(LightingEngine.cacheOutsideNight[assetImageId][brightnessOutside]);
+				images.push(LightingEngine.cacheOutsideNight[assetImageId][brightnessOutsidePrevious]);
+			}
+		} else {
+			// Day
+			images.push(LightingEngine.cacheOutsideDay[assetImageId][Math.min(7, brightnessOutside + brightness)]);
+
+			if (LightingEngine.lightingByHashByGridPrevious) {
+				images.push(LightingEngine.cacheOutsideDay[assetImageId][Math.min(7, brightnessOutsidePrevious + brightness)]);
+			} else {
+				images.push(images[0]);
+			}
+		}
+
+		return images;
+	}
+
+	public static getCacheLitByBrightness(assetImageId: string, brightness: number = 0): ImageBitmap {
+		return LightingEngine.cacheOutsideDay[assetImageId][brightness];
 	}
 
 	public static getHourPreciseOfDayEff(): number {
@@ -307,6 +374,7 @@ export class LightingEngine {
 		// Inflate
 		let grid: Grid;
 		LightingEngine.lightingByHashByGrid = <any>new Object();
+		LightingEngine.lightingByHashByGridPrevious = undefined;
 		for (let id in mapActive.grids) {
 			grid = mapActive.grids[id];
 
@@ -317,6 +385,7 @@ export class LightingEngine {
 		}
 
 		LightingCalcEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
+		LightingCalcEngineBus.outputHourPreciseOfDayEff(mapActive.hourOfDayEff + mapActive.minuteOfHourEff);
 	}
 
 	private static setMapActiveInflate(gridId: string, reference: GridBlockTable<GridImageBlockReference>) {

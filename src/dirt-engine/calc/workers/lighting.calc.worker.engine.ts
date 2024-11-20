@@ -50,26 +50,24 @@ self.onmessage = (event: MessageEvent) => {
 		case LightingCalcBusInputCmd.SET_GRIDS:
 			LightingCalcWorkerEngine.inputGridSet(<LightingCalcBusInputPlayloadGrids>payload.data);
 			break;
-		case LightingCalcBusInputCmd.SET_HOUR_OF_DAY_EFF:
-			LightingCalcWorkerEngine.inputHourOfDayEff(<LightingCalcBusInputPlayloadHourOfDayEff>payload.data);
+		case LightingCalcBusInputCmd.SET_HOUR_PRECISE_OF_DAY_EFF:
+			LightingCalcWorkerEngine.inputHourPreciseOfDayEff(<LightingCalcBusInputPlayloadHourOfDayEff>payload.data);
 			break;
 	}
 };
 
 class LightingCalcWorkerEngine {
-	private static delta: number;
 	private static flashes: DoubleLinkedList<LightingCalcBusInputPlayloadFlash> = new DoubleLinkedList<LightingCalcBusInputPlayloadFlash>();
 	private static gridActiveId: string;
 	private static grids: { [key: string]: Grid };
 	private static gridConfigs: { [key: string]: GridConfig };
 	private static hashesBackground: { [key: number]: number } = {};
 	private static hashesGroup: { [key: number]: number } = {};
-	private static hourOfDayEff: number;
+	private static hourPreciseOfDayEff: number;
 	private static initialized: boolean;
 	private static firstByGridId: { [key: string]: boolean } = {};
 	private static now: number = performance.now();
 	private static self: Window & typeof globalThis;
-	private static then: number = performance.now();
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[] = [
 		VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
 		VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // Last
@@ -82,6 +80,10 @@ class LightingCalcWorkerEngine {
 		}
 		LightingCalcWorkerEngine.initialized = true;
 		LightingCalcWorkerEngine.self = self;
+
+		UtilEngine.setInterval(() => {
+			LightingCalcWorkerEngine._calc();
+		}, 10);
 	}
 
 	public static inputFlash(data: LightingCalcBusInputPlayloadFlash): void {
@@ -91,7 +93,7 @@ class LightingCalcWorkerEngine {
 
 	public static inputGridActive(data: LightingCalcBusInputPlayloadGridActive): void {
 		LightingCalcWorkerEngine.gridActiveId = data.id;
-		LightingCalcWorkerEngine._calc();
+		//LightingCalcWorkerEngine._calc();
 	}
 
 	public static inputGridSet(data: LightingCalcBusInputPlayloadGrids): void {
@@ -110,12 +112,12 @@ class LightingCalcWorkerEngine {
 		});
 		LightingCalcWorkerEngine.grids = mapActive.grids;
 		LightingCalcWorkerEngine.gridConfigs = mapActive.gridConfigs;
-		LightingCalcWorkerEngine._calc();
+		//LightingCalcWorkerEngine._calc();
 	}
 
-	public static inputHourOfDayEff(data: LightingCalcBusInputPlayloadHourOfDayEff): void {
-		LightingCalcWorkerEngine.hourOfDayEff = data.hourOfDayEff;
-		LightingCalcWorkerEngine._calc();
+	public static inputHourPreciseOfDayEff(data: LightingCalcBusInputPlayloadHourOfDayEff): void {
+		LightingCalcWorkerEngine.hourPreciseOfDayEff = data.hourPreciseOfDayEff;
+		//LightingCalcWorkerEngine._calc();
 	}
 
 	/**
@@ -145,9 +147,10 @@ class LightingCalcWorkerEngine {
 		return ((hashBrightnessGroup & 0x3f) << 6) | (hashBrightnessBackground & 0x3f);
 	}
 
-	public static output(payload: Uint32Array): void {
+	public static output(hourPreciseOfDayEff: number, payload: Uint32Array): void {
 		let data = {
 			gridId: LightingCalcWorkerEngine.gridActiveId,
+			hourPreciseOfDayEff: hourPreciseOfDayEff,
 			payload: payload,
 		};
 		(<any>LightingCalcWorkerEngine.self).postMessage(data, [payload.buffer]);
@@ -159,7 +162,7 @@ class LightingCalcWorkerEngine {
 				brightnessOutside: number,
 				brightnessOutsideByHash: { [key: number]: number },
 				brightnessOutsideDayMax: number = 6,
-				brightnessOutsideNightMax: number = 4,
+				brightnessOutsideNightMax: number = 3,
 				complexExtended: GridBlockTableComplexExtended,
 				complexes: GridBlockTableComplex[],
 				complexesExtended: GridBlockTableComplexExtended[],
@@ -188,7 +191,7 @@ class LightingCalcWorkerEngine {
 				hashesChangesFinalOutput: Uint32Array,
 				hashesGroup: { [key: number]: number } = {},
 				referenceNoFoliage: GridBlockTable<GridImageBlockReference> = <any>{},
-				hourOfDayEff: number = LightingCalcWorkerEngine.hourOfDayEff,
+				hourOfDayEff: number = Math.floor(LightingCalcWorkerEngine.hourPreciseOfDayEff) + 1, // +1 to offset previous hour image blending
 				hourOfDayEffOutsideModifier: number = hourOfDayEff % 12,
 				j: string,
 				k: number,
@@ -196,16 +199,12 @@ class LightingCalcWorkerEngine {
 				z: VideoBusInputCmdGameModeEditApplyZ,
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = LightingCalcWorkerEngine.zGroup;
 
-			if (!hourOfDayEff) {
-				return;
-			}
-
-			if (hourOfDayEff < 2) {
-				// Twilight
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 1 + hourOfDayEff);
-			} else if (hourOfDayEff < 5) {
+			if (hourOfDayEff === 1) {
 				// Small Hours
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 4 - hourOfDayEff);
+				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 2);
+			} else if (hourOfDayEff < 6) {
+				// Small Hours
+				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 5 - hourOfDayEff);
 			} else if (hourOfDayEff < 10) {
 				// Morning
 				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, hourOfDayEff - 4);
@@ -218,8 +217,10 @@ class LightingCalcWorkerEngine {
 			} else {
 				// Dusk
 				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, hourOfDayEff - 23);
-				hourOfDayEffOutsideModifier++; // Bias toward brighter pre-twilight hours
+				hourOfDayEffOutsideModifier++;
 			}
+
+			//console.log(hourOfDayEff, hourOfDayEffOutsideModifier);
 
 			for (let i in zGroup) {
 				z = zGroup[i];
@@ -485,9 +486,8 @@ class LightingCalcWorkerEngine {
 			}
 
 			// If data available create transferrable buffer
+			hashesChangesFinalOutput = new Uint32Array(hashesChangesFinalOutputCount);
 			if (hashesChangesFinalOutputCount) {
-				hashesChangesFinalOutput = new Uint32Array(hashesChangesFinalOutputCount);
-
 				hashesChangesFinalOutputCount = 0;
 				for (hashString in hashesChangesFinal) {
 					if (first && hashesChangesFinal[hashString] === 0) {
@@ -500,9 +500,10 @@ class LightingCalcWorkerEngine {
 					);
 					hashesChangesFinalOutputCount++;
 				}
-
-				LightingCalcWorkerEngine.output(hashesChangesFinalOutput);
 			}
+			// Report the original hour as the calc is for the next hour
+			// That way images blended with the previous hour are correctly representing the current hour
+			LightingCalcWorkerEngine.output(LightingCalcWorkerEngine.hourPreciseOfDayEff, hashesChangesFinalOutput);
 			if (first) {
 				// console.log('hashesChangesFinalOutput', hashesChangesFinalOutput);
 				LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId] = false;

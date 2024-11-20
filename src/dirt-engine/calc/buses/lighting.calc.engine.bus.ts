@@ -7,7 +7,12 @@ import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.mo
  */
 
 export class LightingCalcEngineBus {
-	private static callback: (gridId: number, lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => void;
+	private static callback: (
+		gridId: number,
+		hourPreciseOfDayEff: number,
+		lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed },
+		lightingByHashLength: number,
+	) => void;
 	private static initialized: boolean;
 	private static worker: Worker;
 
@@ -30,20 +35,23 @@ export class LightingCalcEngineBus {
 		LightingCalcEngineBus.worker.onmessage = (event: MessageEvent) => {
 			let compressed: Uint32Array = new Uint32Array(event.data.payload),
 				decompressed: { [key: number]: LightingCalcBusOutputDecompressed } = {},
+				hourPreciseOfDayEff: number = event.data.hourPreciseOfDayEff,
 				scratch: number;
 
-			for (let i in compressed) {
-				scratch = (compressed[i] >> 16) & 0xfff;
+			if (compressed.length) {
+				for (let i in compressed) {
+					scratch = (compressed[i] >> 16) & 0xfff;
 
-				decompressed[compressed[i] & 0xffff] = {
-					backgroundBrightness: scratch & 0x7,
-					backgroundBrightnessOutside: (scratch >> 3) & 0x7,
-					groupBrightness: (scratch >> 6) & 0x7,
-					groupBrightnessOutside: (scratch >> 9) & 0x7,
-				};
+					decompressed[compressed[i] & 0xffff] = {
+						backgroundBrightness: scratch & 0x7,
+						backgroundBrightnessOutside: (scratch >> 3) & 0x7,
+						groupBrightness: (scratch >> 6) & 0x7,
+						groupBrightnessOutside: (scratch >> 9) & 0x7,
+					};
+				}
 			}
 
-			LightingCalcEngineBus.callback(event.data.gridId, decompressed);
+			LightingCalcEngineBus.callback(event.data.gridId, hourPreciseOfDayEff, decompressed, compressed.length);
 		};
 	}
 
@@ -62,11 +70,11 @@ export class LightingCalcEngineBus {
 		});
 	}
 
-	public static outputHourOfDayEff(hourOfDayEff: number): void {
+	public static outputHourPreciseOfDayEff(hourPreciseOfDayEff: number): void {
 		LightingCalcEngineBus.worker.postMessage({
-			cmd: LightingCalcBusInputCmd.SET_HOUR_OF_DAY_EFF,
+			cmd: LightingCalcBusInputCmd.SET_HOUR_PRECISE_OF_DAY_EFF,
 			data: {
-				hourOfDayEff: hourOfDayEff,
+				hourPreciseOfDayEff: hourPreciseOfDayEff,
 			},
 		});
 	}
@@ -97,7 +105,12 @@ export class LightingCalcEngineBus {
 	}
 
 	public static setCallback(
-		callback: (gridId: number, lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed }) => void,
+		callback: (
+			gridId: number,
+			hourPreciseOfDayEff: number,
+			lightingByHash: { [key: number]: LightingCalcBusOutputDecompressed },
+			lightingByHashLength: number,
+		) => void,
 	): void {
 		LightingCalcEngineBus.callback = callback;
 	}

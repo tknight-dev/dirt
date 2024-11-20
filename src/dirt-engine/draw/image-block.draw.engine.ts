@@ -87,29 +87,39 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
-			let lightHashes: { [key: number]: GridLight },
+			let brightness: number,
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
 				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				drawGx: number,
+				drawGy: number,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
 				getCacheInstance = LightingEngine.getCacheInstance,
-				getCacheLit = LightingEngine.getCacheLit,
+				getCacheBrightness = LightingEngine.getCacheBrightness,
+				getCacheLitByBrightness = LightingEngine.getCacheLitByBrightness,
+				getCacheLitOutside = LightingEngine.getCacheLitOutside,
 				gInPh: number = camera.gInPh,
+				gInPhEff: number = 0,
 				gInPw: number = camera.gInPw,
+				gInPwEff: number = 0,
 				gradient: CanvasGradient,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
 				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
 				gridImageBlock: GridImageBlock,
 				gridLight: GridLight,
+				gSizeHPrevious: number = -1,
+				gSizeWPrevious: number = -1,
 				gx: number,
 				gy: number,
 				imageBitmap: ImageBitmap,
+				imageBitmaps: ImageBitmap[],
+				imageBitmapsBlend: number = LightingEngine.getHourPreciseOfDayEff(),
+				lightHashes: { [key: number]: GridLight },
 				lights: GridBlockTable<GridLight> | undefined = undefined,
 				j: string,
 				k: string,
@@ -132,6 +142,9 @@ export class ImageBlockDrawEngine {
 
 			// Config
 			ctx.imageSmoothingEnabled = false;
+
+			imageBitmapsBlend = Math.round((imageBitmapsBlend - Math.floor(imageBitmapsBlend)) * 1000) / 1000;
+			imageBitmapsBlend = Math.round((1 - imageBitmapsBlend) * 1000) / 1000;
 
 			radius = Math.round(((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom);
 			radius2 = radius * 2;
@@ -214,16 +227,41 @@ export class ImageBlockDrawEngine {
 							}
 						}
 
-						// Get pre-rendered asset variation based on hash
-						imageBitmap = getCacheLit(gridImageBlock.assetId, grid.id, gridImageBlock.hash, outside, z);
+						// Cache calculations
+						drawGy = Math.round((gy - startGy) * gInPh);
+						if (gSizeHPrevious !== gridImageBlock.gSizeH) {
+							gSizeHPrevious = gridImageBlock.gSizeH;
+							gInPhEff = gInPh * gSizeHPrevious + 1;
+						}
+						if (gSizeWPrevious !== gridImageBlock.gSizeW) {
+							gSizeWPrevious = gridImageBlock.gSizeW;
+							gInPwEff = gInPw * gSizeWPrevious + 1;
+						}
 
-						ctx.drawImage(
-							imageBitmap,
-							drawGx,
-							Math.round((gy - startGy) * gInPh),
-							gInPw * gridImageBlock.gSizeW + 1, // Make sure we fill the grid
-							gInPh * gridImageBlock.gSizeH + 1, // Make sure we fill the grid
-						);
+						if (outside) {
+							// Get pre-rendered asset variation based on hash
+							imageBitmaps = getCacheLitOutside(gridImageBlock.assetId, grid.id, gridImageBlock.hash, z);
+
+							// Draw current image
+							ctx.drawImage(imageBitmaps[0], drawGx, drawGy, gInPwEff, gInPhEff);
+
+							// If not the same image
+							if (imageBitmaps[0] !== imageBitmaps[1]) {
+								// Draw previous image (blended) [6:00 - 100%, 6:30 - 50%, 6:55 - 8%]
+								// Provides smooth shading transitions
+								ctx.globalAlpha = imageBitmapsBlend;
+								ctx.drawImage(imageBitmaps[1], drawGx, drawGy, gInPwEff, gInPhEff);
+							}
+
+							// Done
+							ctx.globalAlpha = 1;
+						} else {
+							// Get pre-rendered asset variation based on hash
+							brightness = getCacheBrightness(grid.id, gridImageBlock.hash, z);
+							imageBitmap = getCacheLitByBrightness(gridImageBlock.assetId, brightness);
+
+							ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+						}
 					}
 				}
 
@@ -231,6 +269,10 @@ export class ImageBlockDrawEngine {
 				if (lights && lights.hashesGyByGx) {
 					complexesByGx = lights.hashesGyByGx;
 					lightHashes = lights.hashes;
+
+					// Cache calculations
+					gInPhEff = gInPh + 1;
+					gInPwEff = gInPw + 1;
 
 					for (j in complexesByGx) {
 						complexes = complexesByGx[j];
@@ -249,21 +291,18 @@ export class ImageBlockDrawEngine {
 							if (gy < startGy || gy > stopGy) {
 								continue;
 							}
+							drawGy = Math.round((gy - startGy) * gInPh);
 
 							// Get pre-rendered asset variation based on hash
 							if (gridLight.nightOnly && !night) {
-								imageBitmap = getCacheLit(gridLight.assetId, grid.id, gridLight.hash, outside, z);
+								imageBitmaps = getCacheLitOutside(gridLight.assetId, grid.id, gridLight.hash, z);
+
+								ctx.drawImage(imageBitmaps[0], drawGx, drawGy, gInPwEff, gInPhEff);
 							} else {
 								imageBitmap = getCacheInstance(gridLight.assetId).image;
-							}
 
-							ctx.drawImage(
-								imageBitmap,
-								drawGx,
-								Math.round((gy - startGy) * gInPh),
-								gInPw + 1, // Make sure we fill the grid
-								gInPh + 1, // Make sure we fill the grid
-							);
+								ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+							}
 						}
 					}
 				}

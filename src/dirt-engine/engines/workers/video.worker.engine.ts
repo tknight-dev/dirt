@@ -177,7 +177,6 @@ class VideoWorkerEngine {
 			VideoWorkerEngine.outputEditCameraUpdate(camera);
 		});
 		ClockCalcEngine.setCallbackHourOfDay((hourOfDayEff: number) => {
-			LightingCalcEngineBus.outputHourOfDayEff(hourOfDayEff);
 			VideoWorkerEngine.outputHourOfDayEff(hourOfDayEff);
 		});
 		KernelEngine.setCallbackFPS((fps: number) => {

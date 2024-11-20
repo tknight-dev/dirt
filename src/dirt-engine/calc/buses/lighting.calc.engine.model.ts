@@ -1,4 +1,4 @@
-import { Grid, GridConfig } from '../../models/grid.model';
+import { GridConfig } from '../../models/grid.model';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.model.bus';
 
 /**
@@ -16,7 +16,7 @@ export enum LightingCalcBusInputCmd {
 	REMOVE_LIGHT,
 	SET_GRID_ACTIVE,
 	SET_GRIDS,
-	SET_HOUR_OF_DAY_EFF,
+	SET_HOUR_PRECISE_OF_DAY_EFF,
 }
 
 export interface LightingCalcBusInputPlayload {
@@ -50,7 +50,7 @@ export interface LightingCalcBusInputPlayloadGrids {
 }
 
 export interface LightingCalcBusInputPlayloadHourOfDayEff {
-	hourOfDayEff: number;
+	hourPreciseOfDayEff: number;
 }
 
 export interface LightingCalcBusOutputDecompressed {

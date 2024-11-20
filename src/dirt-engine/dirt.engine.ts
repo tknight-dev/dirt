@@ -269,6 +269,11 @@ export class DirtEngine extends DomUI {
 		FullscreenEngine.setCallback((state: boolean) => {
 			if (!state) {
 				if (VideoEngineBus.isGoComplete()) {
+					DomUI.domElements['feed-fitted-pause-content'].onclick = () => {
+						DomUI.domElements['feed-fitted-pause'].style.display = 'none';
+						VideoEngineBus.outputGameUnpause({});
+					};
+					DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
 					VideoEngineBus.outputGamePause({
 						reason: VideoBusInputCmdGamePauseReason.FULLSCREEN,
 					});
@@ -281,6 +286,11 @@ export class DirtEngine extends DomUI {
 		});
 		DirtEngine.domElements['fullscreen'].onclick = async (event: any) => {
 			if (VideoEngineBus.isGoComplete()) {
+				DomUI.domElements['feed-fitted-pause-content'].onclick = () => {
+					DomUI.domElements['feed-fitted-pause'].style.display = 'none';
+					VideoEngineBus.outputGameUnpause({});
+				};
+				DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
 				VideoEngineBus.outputGamePause({
 					reason: VideoBusInputCmdGamePauseReason.FULLSCREEN,
 				});
