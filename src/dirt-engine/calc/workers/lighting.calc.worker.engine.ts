@@ -7,7 +7,11 @@ import {
 	GridImageBlockReference,
 	GridImageBlockFoliage,
 	GridBlockTableComplex,
+	GridLight,
+	GridLightDirection,
+	GridLightType,
 	GridObjectType,
+	GridObject,
 } from '../../models/grid.model';
 import {
 	LightingCalcBusInputCmd,
@@ -31,7 +35,7 @@ import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.mo
  */
 
 interface GridBlockTableComplexExtended extends GridBlockTableComplex {
-	blocks: { [key: number]: GridImageBlockFoliage };
+	blocks: { [key: number]: GridObject };
 }
 
 self.onmessage = (event: MessageEvent) => {
@@ -190,14 +194,17 @@ class LightingCalcWorkerEngine {
 				hashesChangesFinalOutputCount: number = 0,
 				hashesChangesFinalOutput: Uint32Array,
 				hashesGroup: { [key: number]: number } = {},
-				referenceNoFoliage: GridBlockTable<GridImageBlockReference> = <any>{},
 				hourOfDayEff: number = Math.floor(LightingCalcWorkerEngine.hourPreciseOfDayEff) + 1, // +1 to offset previous hour image blending
 				hourOfDayEffOutsideModifier: number = hourOfDayEff % 12,
 				j: string,
 				k: number,
+				referenceNoFoliage: GridBlockTable<GridImageBlockReference> = <any>{},
 				skip: boolean,
 				z: VideoBusInputCmdGameModeEditApplyZ,
-				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = LightingCalcWorkerEngine.zGroup;
+				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = LightingCalcWorkerEngine.zGroup,
+				_calcProcessLights = LightingCalcWorkerEngine._calcProcessLights,
+				_calcProcessFoliage = LightingCalcWorkerEngine._calcProcessFoliage,
+				_calcProcessReferences = LightingCalcWorkerEngine._calcProcessReferences;
 
 			if (hourOfDayEff === 1) {
 				// Small Hours
@@ -232,13 +239,13 @@ class LightingCalcWorkerEngine {
 				 */
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						referenceNoFoliage = LightingCalcWorkerEngine._calcProcessReferences(
+						referenceNoFoliage = _calcProcessReferences(
 							[grid.imageBlocksBackgroundReference.hashes],
 							GridObjectType.IMAGE_BLOCK_FOLIAGE,
 						);
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						referenceNoFoliage = LightingCalcWorkerEngine._calcProcessReferences(
+						referenceNoFoliage = _calcProcessReferences(
 							[
 								grid.imageBlocksPrimaryReference.hashes,
 								grid.imageBlocksForegroundReference.hashes,
@@ -286,10 +293,10 @@ class LightingCalcWorkerEngine {
 				 */
 				if (foliageGyByGxAll === undefined) {
 					foliageGyByGxAll = [
-						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
-						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
-						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksForegroundFoliage),
-						LightingCalcWorkerEngine._calcProcessFoliage(grid.imageBlocksVanishingFoliage),
+						_calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
+						_calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
+						_calcProcessFoliage(grid.imageBlocksForegroundFoliage),
+						_calcProcessFoliage(grid.imageBlocksVanishingFoliage),
 					];
 				}
 
@@ -301,7 +308,7 @@ class LightingCalcWorkerEngine {
 
 						for (k = 0; k < complexesExtended.length; k++) {
 							complexExtended = complexesExtended[k];
-							gridImageBlockFoliage = complexExtended.blocks[complexExtended.hash];
+							gridImageBlockFoliage = <GridImageBlockFoliage>complexExtended.blocks[complexExtended.hash];
 
 							gy = gridImageBlockFoliage.gy;
 							gyEff = gridImageBlockFoliage.gSizeH + gy;
@@ -392,6 +399,30 @@ class LightingCalcWorkerEngine {
 				/**
 				 * Third pass: Points of light, current layer and layer below with smaller radius
 				 */
+				try {
+					switch (z) {
+						case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+							_calcProcessLights(
+								grid.lightsPrimary,
+								grid.imageBlocksPrimaryReference.hashes,
+								grid.imageBlocksPrimaryFoliage,
+								grid.imageBlocksBackgroundReference.hashes,
+								grid.imageBlocksBackgroundFoliage,
+							);
+							break;
+						case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+							_calcProcessLights(
+								grid.lightsForeground,
+								grid.imageBlocksForegroundReference.hashes,
+								grid.imageBlocksForegroundFoliage,
+								grid.imageBlocksPrimaryReference.hashes,
+								grid.imageBlocksPrimaryFoliage,
+							);
+							break;
+					}
+				} catch (error: any) {
+					console.error('_calcProcessLights', error);
+				}
 
 				/**
 				 * Fourth pass: Flash
@@ -512,6 +543,145 @@ class LightingCalcWorkerEngine {
 			//console.error('LightingCalcWorkerEngine > _calc: error', error);
 		}
 	}
+
+	/**
+	 * Sets hash brightnesses via light sources
+	 *
+	 * @param referenceZ1 directly impacted by lights
+	 * @param referenceZ2 indirectly impacted by lights (gRadius is halved)
+	 */
+	private static _calcProcessLights(
+		lightsBlockTable: GridBlockTable<GridLight>,
+		referenceZ1: { [key: number]: GridImageBlockReference },
+		referenceZ1Foliage: { [key: number]: GridImageBlockFoliage },
+		referenceZ2: { [key: number]: GridImageBlockReference },
+		referenceZ2Foliage: { [key: number]: GridImageBlockFoliage },
+	) {
+		let complex: GridBlockTableComplexExtended,
+			direction: GridLightDirection,
+			directions: GridLightDirection[],
+			gRadius: number,
+			gRadiusHalved: number,
+			gx: number,
+			gxString: string,
+			gy: number,
+			i: string,
+			j: string,
+			light: GridLight,
+			lights: { [key: number]: GridLight } = lightsBlockTable.hashes,
+			lightsGy: GridBlockTableComplexExtended[],
+			lightsGyByGx: { [key: number]: GridBlockTableComplexExtended[] } = <any>lightsBlockTable.hashesGyByGx,
+			_calcProcessLightsDown = LightingCalcWorkerEngine._calcProcessLightsDown,
+			_calcProcessLightsLeft = LightingCalcWorkerEngine._calcProcessLightsLeft,
+			_calcProcessLightsRight = LightingCalcWorkerEngine._calcProcessLightsRight,
+			_calcProcessLightsUp = LightingCalcWorkerEngine._calcProcessLightsUp;
+
+		for (gxString in lightsGyByGx) {
+			gx = Number(gxString);
+			lightsGy = lightsGyByGx[gxString];
+
+			for (i in lightsGy) {
+				complex = lightsGy[i];
+
+				// Config
+				light = lights[complex.hash];
+				gy = light.gy;
+
+				if (light.directionOmni) {
+					gRadius = <number>light.directionOmniGRadius;
+					_calcProcessLightsDown(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+					_calcProcessLightsLeft(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+					_calcProcessLightsRight(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+					_calcProcessLightsUp(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+
+					if (gRadius > 1) {
+						gRadiusHalved = Math.floor(gRadius / 2);
+						_calcProcessLightsDown(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+						_calcProcessLightsLeft(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+						_calcProcessLightsRight(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+						_calcProcessLightsUp(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+					}
+				} else {
+					directions = <any>light.directions;
+
+					for (j in directions) {
+						direction = directions[j];
+
+						gRadius = direction.gRadius;
+						switch (direction.type) {
+							case GridLightType.DOWN:
+								_calcProcessLightsDown(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								break;
+							case GridLightType.LEFT:
+								_calcProcessLightsDown(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								break;
+							case GridLightType.RIGHT:
+								_calcProcessLightsRight(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								break;
+							case GridLightType.UP:
+								_calcProcessLightsUp(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								break;
+						}
+
+						if (gRadius > 1) {
+							gRadiusHalved = Math.floor(gRadius / 2);
+							switch (direction.type) {
+								case GridLightType.DOWN:
+									_calcProcessLightsDown(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+									break;
+								case GridLightType.LEFT:
+									_calcProcessLightsLeft(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+									break;
+								case GridLightType.RIGHT:
+									_calcProcessLightsRight(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+									break;
+								case GridLightType.UP:
+									_calcProcessLightsUp(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
+									break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static test: boolean;
+	private static _calcProcessLightsDown(
+		gRadius: number,
+		gxCenter: number,
+		gyCenter: number,
+		referenceZ: { [key: number]: GridImageBlockReference },
+		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+	): void {
+		if (!LightingCalcWorkerEngine.test) {
+			LightingCalcWorkerEngine.test = true;
+		}
+	}
+
+	private static _calcProcessLightsLeft(
+		gRadius: number,
+		gxCenter: number,
+		gyCenter: number,
+		referenceZ: { [key: number]: GridImageBlockReference },
+		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+	): void {}
+
+	private static _calcProcessLightsRight(
+		gRadius: number,
+		gxCenter: number,
+		gyCenter: number,
+		referenceZ: { [key: number]: GridImageBlockReference },
+		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+	): void {}
+
+	private static _calcProcessLightsUp(
+		gRadius: number,
+		gxCenter: number,
+		gyCenter: number,
+		referenceZ: { [key: number]: GridImageBlockReference },
+		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+	): void {}
 
 	private static _calcProcessFoliage(a: { [key: number]: GridImageBlockFoliage }): { [key: number]: GridBlockTableComplexExtended[] } {
 		let gridCoordinate: GridCoordinate,

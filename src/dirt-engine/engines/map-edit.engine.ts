@@ -885,6 +885,19 @@ export class MapEditEngine {
 		if (!data.nightOnly) {
 			delete data.nightOnly;
 		}
+		if (data.directionOmni) {
+			delete data.directions;
+			data.directionOmniGRadius = Math.max(1, data.directionOmniGRadius || 0);
+		} else {
+			if (!data.directions || !data.directions.length) {
+				delete data.directions;
+				data.directionOmni = true;
+				data.directionOmniGRadius = Math.max(1, data.directionOmniGRadius || 0);
+			} else {
+				delete data.directionOmni;
+				delete data.directionOmniGRadius;
+			}
+		}
 
 		// Set base configs outside of the properties object
 		data.gHashes = gHashes;

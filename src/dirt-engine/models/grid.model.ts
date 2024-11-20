@@ -193,18 +193,21 @@ export interface GridLight extends GridObject {
 	assetId: string;
 	assetIdAudioEffectAmbient?: string;
 	destructible?: boolean;
-	gRadius: number;
+	directionOmni?: boolean;
+	directionOmniGRadius?: number;
+	directions?: GridLightDirection[];
 	nightOnly?: boolean;
 	strengthToDestroyInN?: number; // newtons of force required to destroy
+}
+
+export interface GridLightDirection {
+	gRadius: number;
 	type: GridLightType;
 }
 
 export enum GridLightType {
 	DOWN,
-	DOWN_UP,
 	LEFT,
-	LEFT_RIGHT,
-	OMNI,
 	RIGHT,
 	UP,
 }

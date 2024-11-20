@@ -1186,10 +1186,16 @@ export class DomUI {
 				assetId: valuesImage[0].id,
 				assetIdAudioEffectAmbient: undefined,
 				destructible: undefined,
-				gRadius: 1,
+				directionOmni: true,
+				directionOmniGRadius: 1,
+				directions: [
+					{
+						gRadius: 4,
+						type: GridLightType.DOWN,
+					},
+				],
 				nightOnly: undefined,
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
-				type: GridLightType.OMNI,
 			},
 			input: HTMLInputElement,
 			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
@@ -1273,10 +1279,26 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// gRadius
+		// Direction: Omni
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'G Radius';
+		td.innerText = 'Direction Omni';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.directionOmni;
+		input.oninput = (event: any) => {
+			applicationProperties.directionOmni = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Direction[0]: gRadius
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Direction Omni G Radius';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
@@ -1284,12 +1306,60 @@ export class DomUI {
 		input.max = '10';
 		input.min = '1';
 		input.oninput = (event: any) => {
-			applicationProperties.gRadius = Number(event.target.value);
+			applicationProperties.directionOmniGRadius = Number(event.target.value);
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gRadius;
+		input.value = applicationProperties.directionOmniGRadius;
 		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Direction[0]: gRadius
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Direction[0] G Radius';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.directions[0].gRadius = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.directions[0].gRadius;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Direction[0]: Type
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Direction[0] Type';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = GridLightType[applicationProperties.directions[0].type];
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				false,
+				false,
+				valuesType.map((v) => {
+					return {
+						name: GridLightType[v],
+						value: v,
+					};
+				}),
+				(type: string) => {
+					event.target.innerText = type ? GridLightType[<any>type] : 'None';
+					applicationProperties.directions[0].type = type;
+				},
+			);
+		};
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1329,32 +1399,6 @@ export class DomUI {
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
-
-		// Type
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Type';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridLightType[applicationProperties.type];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				valuesType.map((v) => {
-					return {
-						name: GridLightType[v],
-						value: v,
-					};
-				}),
-				(type: string) => {
-					event.target.innerText = type ? GridLightType[<any>type] : 'None';
-					applicationProperties.type = type;
-				},
-			);
-		};
 		tr.appendChild(td);
 		t.appendChild(tr);
 
