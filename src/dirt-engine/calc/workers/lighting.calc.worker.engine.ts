@@ -162,9 +162,12 @@ class LightingCalcWorkerEngine {
 
 	private static _calc(): void {
 		try {
-			let brightnessByHash: { [key: number]: number },
+			let brightnessByHashBackground: { [key: number]: number } = {},
+				brightnessByHashGroup: { [key: number]: number } = {},
 				brightnessOutside: number,
 				brightnessOutsideByHash: { [key: number]: number },
+				brightnessOutsideByHashBackground: { [key: number]: number } = {},
+				brightnessOutsideByHashGroup: { [key: number]: number } = {},
 				brightnessOutsideDayMax: number = 6,
 				brightnessOutsideNightMax: number = 3,
 				complexExtended: GridBlockTableComplexExtended,
@@ -198,6 +201,7 @@ class LightingCalcWorkerEngine {
 				hourOfDayEffOutsideModifier: number = hourOfDayEff % 12,
 				j: string,
 				k: number,
+				lightNight: boolean,
 				referenceNoFoliage: GridBlockTable<GridImageBlockReference> = <any>{},
 				skip: boolean,
 				z: VideoBusInputCmdGameModeEditApplyZ,
@@ -205,6 +209,12 @@ class LightingCalcWorkerEngine {
 				_calcProcessLights = LightingCalcWorkerEngine._calcProcessLights,
 				_calcProcessFoliage = LightingCalcWorkerEngine._calcProcessFoliage,
 				_calcProcessReferences = LightingCalcWorkerEngine._calcProcessReferences;
+
+			if (hourOfDayEff < 8 || hourOfDayEff > 19) {
+				lightNight = true;
+			} else {
+				lightNight = false;
+			}
 
 			if (hourOfDayEff === 1) {
 				// Small Hours
@@ -231,20 +241,21 @@ class LightingCalcWorkerEngine {
 
 			for (let i in zGroup) {
 				z = zGroup[i];
-				brightnessByHash = <{ [key: number]: number }>new Object();
-				brightnessOutsideByHash = <{ [key: number]: number }>new Object();
 
 				/*
 				 * Day/Night Illumination (foliage ignored)
 				 */
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+						brightnessOutsideByHash = brightnessOutsideByHashBackground;
 						referenceNoFoliage = _calcProcessReferences(
 							[grid.imageBlocksBackgroundReference.hashes],
 							GridObjectType.IMAGE_BLOCK_FOLIAGE,
 						);
 						break;
+					default:
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						brightnessOutsideByHash = brightnessOutsideByHashGroup;
 						referenceNoFoliage = _calcProcessReferences(
 							[
 								grid.imageBlocksPrimaryReference.hashes,
@@ -395,99 +406,71 @@ class LightingCalcWorkerEngine {
 						}
 					}
 				}
+			}
 
-				/**
-				 * Third pass: Points of light, current layer and layer below with smaller radius
-				 */
-				try {
-					switch (z) {
-						case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-							_calcProcessLights(
-								grid.lightsPrimary,
-								grid.imageBlocksPrimaryReference.hashes,
-								grid.imageBlocksPrimaryFoliage,
-								grid.imageBlocksBackgroundReference.hashes,
-								grid.imageBlocksBackgroundFoliage,
-							);
-							break;
-						case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-							_calcProcessLights(
-								grid.lightsForeground,
-								grid.imageBlocksForegroundReference.hashes,
-								grid.imageBlocksForegroundFoliage,
-								grid.imageBlocksPrimaryReference.hashes,
-								grid.imageBlocksPrimaryFoliage,
-							);
-							break;
-					}
-				} catch (error: any) {
-					console.error('_calcProcessLights', error);
+			/**
+			 * Third pass: Points of light, group layer and background layer with smaller radius
+			 */
+			_calcProcessLights(lightNight, grid.lightsPrimary, brightnessByHashBackground, brightnessByHashGroup);
+			_calcProcessLights(lightNight, grid.lightsForeground, brightnessByHashBackground, brightnessByHashGroup);
+
+			/**
+			 * Fourth pass: Flash
+			 */
+
+			/**
+			 * Merge and check for changes
+			 */
+			// Merge hashes into single map: background
+			for (hashString in brightnessByHashBackground) {
+				hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
+					Math.min(brightnessOutsideDayMax, brightnessByHashBackground[hashString]),
+					brightnessOutsideByHashBackground[hashString] || 0,
+				);
+			}
+			for (hashString in brightnessOutsideByHashBackground) {
+				if (hashesBackground[hashString] === undefined) {
+					hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
+						Math.min(brightnessOutsideDayMax, brightnessByHashBackground[hashString] || 0),
+						brightnessOutsideByHashBackground[hashString],
+					);
 				}
+			}
 
-				/**
-				 * Fourth pass: Flash
-				 */
+			// Change detection: background
+			for (hashString in hashesBackground) {
+				if (LightingCalcWorkerEngine.hashesBackground[hashString] !== hashesBackground[hashString]) {
+					LightingCalcWorkerEngine.hashesBackground[hashString] = hashesBackground[hashString];
+					hashesChangesBackground[hashString] = hashesBackground[hashString];
+				}
+			}
 
-				/**
-				 * Done
-				 */
-				switch (z) {
-					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						// Merge hashes into single map
-						for (hashString in brightnessByHash) {
-							hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
-								brightnessByHash[hashString],
-								brightnessOutsideByHash[hashString] || 0,
-							);
-						}
-						for (hashString in brightnessOutsideByHash) {
-							if (hashesBackground[hashString] === undefined) {
-								hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
-									brightnessByHash[hashString] || 0,
-									brightnessOutsideByHash[hashString],
-								);
-							}
-						}
+			// Merge hashes into single map: group
+			for (hashString in brightnessByHashGroup) {
+				hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
+					Math.min(brightnessOutsideDayMax, brightnessByHashGroup[hashString]),
+					brightnessOutsideByHashGroup[hashString] || 0,
+				);
+			}
+			for (hashString in brightnessOutsideByHashGroup) {
+				if (hashesGroup[hashString] === undefined) {
+					hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
+						Math.min(brightnessOutsideDayMax, brightnessByHashGroup[hashString] || 0),
+						brightnessOutsideByHashGroup[hashString],
+					);
+				}
+			}
 
-						// Change detection
-						for (hashString in hashesBackground) {
-							if (LightingCalcWorkerEngine.hashesBackground[hashString] !== hashesBackground[hashString]) {
-								LightingCalcWorkerEngine.hashesBackground[hashString] = hashesBackground[hashString];
-								hashesChangesBackground[hashString] = hashesBackground[hashString];
-							}
-						}
-
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						// Merge hashes into single map
-						for (hashString in brightnessByHash) {
-							hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
-								brightnessByHash[hashString],
-								brightnessOutsideByHash[hashString] || 0,
-							);
-						}
-						for (hashString in brightnessOutsideByHash) {
-							if (hashesGroup[hashString] === undefined) {
-								hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
-									brightnessByHash[hashString] || 0,
-									brightnessOutsideByHash[hashString],
-								);
-							}
-						}
-
-						// Change detection
-						for (hashString in hashesGroup) {
-							if (LightingCalcWorkerEngine.hashesGroup[hashString] !== hashesGroup[hashString]) {
-								LightingCalcWorkerEngine.hashesGroup[hashString] = hashesGroup[hashString];
-								hashesChangesGroup[hashString] = hashesGroup[hashString];
-							}
-						}
-						break;
+			// Change detection: group
+			for (hashString in hashesGroup) {
+				if (LightingCalcWorkerEngine.hashesGroup[hashString] !== hashesGroup[hashString]) {
+					LightingCalcWorkerEngine.hashesGroup[hashString] = hashesGroup[hashString];
+					hashesChangesGroup[hashString] = hashesGroup[hashString];
 				}
 			}
 
 			/**
-			 * Done
+			 * Merge changes
 			 */
 			for (hashString in hashesChangesBackground) {
 				hashesChangesFinal[hashString] = LightingCalcWorkerEngine.hashStackBrightness(
@@ -551,17 +534,16 @@ class LightingCalcWorkerEngine {
 	 * @param referenceZ2 indirectly impacted by lights (gRadius is halved)
 	 */
 	private static _calcProcessLights(
+		lightNight: boolean,
 		lightsBlockTable: GridBlockTable<GridLight>,
-		referenceZ1: { [key: number]: GridImageBlockReference },
-		referenceZ1Foliage: { [key: number]: GridImageBlockFoliage },
-		referenceZ2: { [key: number]: GridImageBlockReference },
-		referenceZ2Foliage: { [key: number]: GridImageBlockFoliage },
+		brightnessByHashBackground: { [key: number]: number },
+		brightnessByHashGroup: { [key: number]: number },
 	) {
-		let complex: GridBlockTableComplexExtended,
+		let brightness: number,
+			complex: GridBlockTableComplexExtended,
 			direction: GridLightDirection,
 			directions: GridLightDirection[],
 			gRadius: number,
-			gRadiusHalved: number,
 			gx: number,
 			gxString: string,
 			gy: number,
@@ -587,58 +569,38 @@ class LightingCalcWorkerEngine {
 				light = lights[complex.hash];
 				gy = light.gy;
 
-				if (light.directionOmni) {
-					gRadius = <number>light.directionOmniGRadius;
-					_calcProcessLightsDown(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
-					_calcProcessLightsLeft(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
-					_calcProcessLightsRight(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
-					_calcProcessLightsUp(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+				if (light.nightOnly && !lightNight) {
+					continue;
+				}
 
-					if (gRadius > 1) {
-						gRadiusHalved = Math.floor(gRadius / 2);
-						_calcProcessLightsDown(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-						_calcProcessLightsLeft(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-						_calcProcessLightsRight(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-						_calcProcessLightsUp(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-					}
+				if (light.directionOmni) {
+					brightness = <number>light.directionOmniBrightness;
+					gRadius = <number>light.directionOmniGRadius;
+					_calcProcessLightsDown(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
+					_calcProcessLightsLeft(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
+					_calcProcessLightsRight(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
+					_calcProcessLightsUp(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
 				} else {
 					directions = <any>light.directions;
 
 					for (j in directions) {
 						direction = directions[j];
 
+						brightness = direction.brightness;
 						gRadius = direction.gRadius;
 						switch (direction.type) {
 							case GridLightType.DOWN:
-								_calcProcessLightsDown(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								_calcProcessLightsDown(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
 								break;
 							case GridLightType.LEFT:
-								_calcProcessLightsDown(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								_calcProcessLightsLeft(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
 								break;
 							case GridLightType.RIGHT:
-								_calcProcessLightsRight(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								_calcProcessLightsRight(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
 								break;
 							case GridLightType.UP:
-								_calcProcessLightsUp(gRadius, gx, gy, referenceZ1, referenceZ1Foliage);
+								_calcProcessLightsUp(brightness, gRadius, gx, gy, brightnessByHashBackground, brightnessByHashGroup);
 								break;
-						}
-
-						if (gRadius > 1) {
-							gRadiusHalved = Math.floor(gRadius / 2);
-							switch (direction.type) {
-								case GridLightType.DOWN:
-									_calcProcessLightsDown(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-									break;
-								case GridLightType.LEFT:
-									_calcProcessLightsLeft(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-									break;
-								case GridLightType.RIGHT:
-									_calcProcessLightsRight(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-									break;
-								case GridLightType.UP:
-									_calcProcessLightsUp(gRadiusHalved, gx, gy, referenceZ2, referenceZ2Foliage);
-									break;
-							}
 						}
 					}
 				}
@@ -646,41 +608,71 @@ class LightingCalcWorkerEngine {
 		}
 	}
 
-	private static test: boolean;
 	private static _calcProcessLightsDown(
+		brightness: number,
 		gRadius: number,
 		gxCenter: number,
 		gyCenter: number,
-		referenceZ: { [key: number]: GridImageBlockReference },
-		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+		brightnessByHashBackground: { [key: number]: number },
+		brightnessByHashGroup: { [key: number]: number },
 	): void {
-		if (!LightingCalcWorkerEngine.test) {
-			LightingCalcWorkerEngine.test = true;
+		let hash: number;
+
+		hash = UtilEngine.gridHashTo(gxCenter, gyCenter);
+		if (brightnessByHashBackground[hash] === undefined) {
+			brightnessByHashBackground[hash] = brightness;
+		} else {
+			brightnessByHashBackground[hash] += brightness;
+		}
+		if (brightnessByHashGroup[hash] === undefined) {
+			brightnessByHashGroup[hash] = brightness;
+		} else {
+			brightnessByHashGroup[hash] += brightness;
+		}
+
+		for (let gy = gyCenter + 1, i = 1; gy < gyCenter + gRadius; gy++, i++) {
+			for (let gx = gxCenter - i; gx < gxCenter + i + 1; gx++) {
+				hash = UtilEngine.gridHashTo(gx, gy);
+
+				if (brightnessByHashBackground[hash] === undefined) {
+					brightnessByHashBackground[hash] = brightness;
+				} else {
+					brightnessByHashBackground[hash]++;
+				}
+				if (brightnessByHashGroup[hash] === undefined) {
+					brightnessByHashGroup[hash] = brightness;
+				} else {
+					brightnessByHashGroup[hash] += brightness;
+				}
+			}
 		}
 	}
 
 	private static _calcProcessLightsLeft(
+		brightness: number,
 		gRadius: number,
 		gxCenter: number,
 		gyCenter: number,
-		referenceZ: { [key: number]: GridImageBlockReference },
-		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+		brightnessByHashBackground: { [key: number]: number },
+		brightnessByHashGroup: { [key: number]: number },
 	): void {}
 
 	private static _calcProcessLightsRight(
+		brightness: number,
 		gRadius: number,
 		gxCenter: number,
 		gyCenter: number,
-		referenceZ: { [key: number]: GridImageBlockReference },
-		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+		brightnessByHashBackground: { [key: number]: number },
+		brightnessByHashGroup: { [key: number]: number },
 	): void {}
 
 	private static _calcProcessLightsUp(
+		brightness: number,
 		gRadius: number,
 		gxCenter: number,
 		gyCenter: number,
-		referenceZ: { [key: number]: GridImageBlockReference },
-		referenceZFoliage: { [key: number]: GridImageBlockFoliage },
+		brightnessByHashBackground: { [key: number]: number },
+		brightnessByHashGroup: { [key: number]: number },
 	): void {}
 
 	private static _calcProcessFoliage(a: { [key: number]: GridImageBlockFoliage }): { [key: number]: GridBlockTableComplexExtended[] } {

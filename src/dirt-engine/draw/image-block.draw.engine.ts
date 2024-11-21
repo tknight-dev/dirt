@@ -123,7 +123,7 @@ export class ImageBlockDrawEngine {
 				lights: GridBlockTable<GridLight> | undefined = undefined,
 				j: string,
 				k: string,
-				night: boolean = LightingEngine.isNight(3),
+				night: boolean = LightingEngine.isLightNight(),
 				outside: boolean = gridConfig.outside,
 				radius: number,
 				radius2: number,

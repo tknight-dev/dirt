@@ -887,15 +887,22 @@ export class MapEditEngine {
 		}
 		if (data.directionOmni) {
 			delete data.directions;
+			data.directionOmniBrightness = Math.max(1, Math.min(6, Math.round(data.directionOmniBrightness || 0)));
 			data.directionOmniGRadius = Math.max(1, data.directionOmniGRadius || 0);
 		} else {
 			if (!data.directions || !data.directions.length) {
 				delete data.directions;
 				data.directionOmni = true;
+				data.directionOmniBrightness = Math.max(1, Math.min(6, Math.round(data.directionOmniBrightness || 0)));
 				data.directionOmniGRadius = Math.max(1, data.directionOmniGRadius || 0);
 			} else {
 				delete data.directionOmni;
+				delete data.directionOmniBrightness;
 				delete data.directionOmniGRadius;
+
+				for (let i in data.directions) {
+					data.directions[i].brightness = Math.max(1, Math.min(6, Math.round(data.directions[i].brightness || 0)));
+				}
 			}
 		}
 

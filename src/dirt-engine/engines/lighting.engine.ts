@@ -272,12 +272,17 @@ export class LightingEngine {
 	}
 
 	public static getCacheBrightness(gridId: string, hash: number, z: VideoBusInputCmdGameModeEditApplyZ): number {
-		let decompressed: LightingCalcBusOutputDecompressed = LightingEngine.lightingByHashByGrid[gridId][hash] || {};
-
-		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
-			return decompressed.backgroundBrightness || 0;
+		// Vanishing has no brightness
+		if (z === VideoBusInputCmdGameModeEditApplyZ.VANISHING) {
+			return 0;
 		} else {
-			return decompressed.groupBrightness || 0;
+			let decompressed: LightingCalcBusOutputDecompressed = LightingEngine.lightingByHashByGrid[gridId][hash] || {};
+
+			if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+				return decompressed.backgroundBrightness || 0;
+			} else {
+				return decompressed.groupBrightness || 0;
+			}
 		}
 	}
 
@@ -328,6 +333,11 @@ export class LightingEngine {
 			decompressedPrevious = decompressed;
 		}
 
+		// Vanishing has no brightness
+		if (z === VideoBusInputCmdGameModeEditApplyZ.VANISHING) {
+			brightness = 0;
+		}
+
 		// Look up image by brightness
 		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
 		if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
@@ -343,10 +353,10 @@ export class LightingEngine {
 			}
 		} else {
 			// Day
-			images.push(LightingEngine.cacheOutsideDay[assetImageId][Math.min(7, brightnessOutside + brightness)]);
+			images.push(LightingEngine.cacheOutsideDay[assetImageId][Math.min(6, brightnessOutside + brightness)]);
 
 			if (LightingEngine.lightingByHashByGridPrevious) {
-				images.push(LightingEngine.cacheOutsideDay[assetImageId][Math.min(7, brightnessOutsidePrevious + brightness)]);
+				images.push(LightingEngine.cacheOutsideDay[assetImageId][Math.min(6, brightnessOutsidePrevious + brightness)]);
 			} else {
 				images.push(images[0]);
 			}
@@ -404,10 +414,10 @@ export class LightingEngine {
 		}
 	}
 
-	public static isNight(extend: number = 0): boolean {
+	public static isLightNight(): boolean {
 		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
 
-		if (hourPreciseOfDayEff - extend < 5 || hourPreciseOfDayEff > 22 - extend) {
+		if (hourPreciseOfDayEff < 8 || hourPreciseOfDayEff > 19) {
 			return true;
 		} else {
 			return false;

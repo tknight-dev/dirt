@@ -194,6 +194,7 @@ export interface GridLight extends GridObject {
 	assetIdAudioEffectAmbient?: string;
 	destructible?: boolean;
 	directionOmni?: boolean;
+	directionOmniBrightness?: number;
 	directionOmniGRadius?: number;
 	directions?: GridLightDirection[];
 	nightOnly?: boolean;
@@ -201,6 +202,7 @@ export interface GridLight extends GridObject {
 }
 
 export interface GridLightDirection {
+	brightness: number; // max 6 [6 is full sun], min 1 (Precision 0)
 	gRadius: number;
 	type: GridLightType;
 }

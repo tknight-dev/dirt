@@ -1187,9 +1187,11 @@ export class DomUI {
 				assetIdAudioEffectAmbient: undefined,
 				destructible: undefined,
 				directionOmni: true,
+				directionOmniBrightness: 1,
 				directionOmniGRadius: 1,
 				directions: [
 					{
+						brightness: 1,
 						gRadius: 4,
 						type: GridLightType.DOWN,
 					},
@@ -1295,7 +1297,27 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Direction[0]: gRadius
+		// Direction: brightness
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Direction Omni Brightness';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '6';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.directionOmniBrightness = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.directionOmniBrightness;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Direction: gRadius
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		td.innerText = 'Direction Omni G Radius';
@@ -1311,6 +1333,26 @@ export class DomUI {
 		input.step = '1';
 		input.type = 'range';
 		input.value = applicationProperties.directionOmniGRadius;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Direction[0]: brightness
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Direction[0] Brightness';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '6';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.directions[0].brightness = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.directions[0].brightness;
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
