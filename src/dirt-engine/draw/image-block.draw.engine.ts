@@ -270,10 +270,6 @@ export class ImageBlockDrawEngine {
 					complexesByGx = lights.hashesGyByGx;
 					lightHashes = lights.hashes;
 
-					// Cache calculations
-					gInPhEff = gInPh + 1;
-					gInPwEff = gInPw + 1;
-
 					for (j in complexesByGx) {
 						complexes = complexesByGx[j];
 						gx = Number(j);
@@ -287,11 +283,47 @@ export class ImageBlockDrawEngine {
 						for (k in complexes) {
 							gridLight = lightHashes[complexes[k].hash];
 							gy = <number>gridLight.gy;
-
 							if (gy < startGy || gy > stopGy) {
 								continue;
 							}
+
+							// Extended check
+							if (gridLight.extends) {
+								if (gridLight.extends) {
+									// extention block
+									gridLight = lightHashes[gridLight.extends];
+								}
+
+								if (extendedHash[gridLight.hash] === null) {
+									// Skip block as its hash parent's image has already drawn over it
+									continue;
+								} else {
+									// Draw large block
+									extendedHash[gridLight.hash] = null;
+
+									if (gx !== <number>gridLight.gx) {
+										gx = <number>gridLight.gx;
+										drawGx = Math.round((gx - startGx) * gInPw);
+									}
+									gy = <number>gridLight.gy;
+								}
+							} else {
+								if (gx !== <number>gridLight.gx) {
+									gx = <number>gridLight.gx;
+									drawGx = Math.round((gx - startGx) * gInPw);
+								}
+							}
+
+							// Cache calculations
 							drawGy = Math.round((gy - startGy) * gInPh);
+							if (gSizeHPrevious !== gridLight.gSizeH) {
+								gSizeHPrevious = gridLight.gSizeH;
+								gInPhEff = gInPh * gSizeHPrevious + 1;
+							}
+							if (gSizeWPrevious !== gridLight.gSizeW) {
+								gSizeWPrevious = gridLight.gSizeW;
+								gInPwEff = gInPw * gSizeWPrevious + 1;
+							}
 
 							// Get pre-rendered asset variation based on hash
 							if (gridLight.nightOnly && !night) {

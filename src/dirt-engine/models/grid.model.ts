@@ -88,17 +88,13 @@ export interface GridConfig {
 	gHorizon: number; // Precision 0
 	gWidth: number; // Precision 0
 	id: string; // Matches associate grid.id
-	outside: boolean; // defaulted by MapEngine
+	outside: boolean;
+	physics: GridPhysics;
 	startGxCamera: number; // Precision 3
 	startGyCamera: number; // Precision 3
 	startGxPlayer: number; // Precision 3
 	startGyPlayer: number; // Precision 3
 	zoomDefault: number; // defaulted by MapEngine
-}
-
-export interface GridCoordinate {
-	gx: number; // Precision 3
-	gy: number; // Precision 3
 }
 
 export interface GridAudioBlock extends GridObject {
@@ -148,6 +144,11 @@ export enum GridAudioTriggerTripType {
 	CONTACT, // Charactor touches the gBlock
 	HORIZONTAL, // Charactor passes top-to-bottom or vice versa
 	VERTICAL, // Charactor passes left-to-right or vice versa
+}
+
+export interface GridCoordinate {
+	gx: number; // Precision 3
+	gy: number; // Precision 3
 }
 
 export interface GridImageBlock extends GridObject {
@@ -237,4 +238,9 @@ export enum GridObjectType {
 	IMAGE_BLOCK_LIQUID,
 	IMAGE_BLOCK_SOLID,
 	LIGHT,
+}
+
+export enum GridPhysics {
+	SIDE_SCROLLER,
+	TOP_DOWN,
 }

@@ -1,5 +1,13 @@
 import { Camera } from '../../models/camera.model';
-import { Grid, GridConfig, GridBlockTable, GridBlockTableComplex, GridImageBlock, GridImageBlockReference } from '../../models/grid.model';
+import {
+	Grid,
+	GridConfig,
+	GridBlockTable,
+	GridBlockTableComplex,
+	GridImageBlock,
+	GridImageBlockReference,
+	GridLight,
+} from '../../models/grid.model';
 import { LightingEngine } from '../../engines/lighting.engine';
 import { MapActive } from '../../models/map.model';
 import { MapEditEngine } from '../../engines/map-edit.engine';
@@ -177,11 +185,14 @@ class MapDrawWorkerEngine {
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				drawGx: number,
+				drawGy: number,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
+				gInPhEff: number = 0,
+				gInPwEff: number = 0,
 				gradient: CanvasGradient,
 				grid: Grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId],
 				gridConfig: GridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId],
@@ -189,6 +200,9 @@ class MapDrawWorkerEngine {
 				gHeight: number,
 				gHeightMax: number = gridConfig.gHeight,
 				gHeightMaxEff: number,
+				gridLight: GridLight,
+				gSizeHPrevious: number = 0,
+				gSizeWPrevious: number = 0,
 				gWidth: number,
 				gWidthMax: number = gridConfig.gWidth,
 				gWidthMaxEff: number,
@@ -196,8 +210,11 @@ class MapDrawWorkerEngine {
 				gy: number,
 				i: string,
 				imageBitmap: ImageBitmap,
+				imageBitmaps: ImageBitmap[],
 				j: string,
 				k: string,
+				lightHashes: { [key: number]: GridLight },
+				lights: GridBlockTable<GridLight> | undefined = undefined,
 				radius: number,
 				radius2: number,
 				reference: GridBlockTable<GridImageBlockReference>,
@@ -240,18 +257,22 @@ class MapDrawWorkerEngine {
 						switch (z) {
 							case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
 								extendedHash = extendedHashBackground;
+								lights = undefined;
 								reference = grid.imageBlocksBackgroundReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
 								extendedHash = extendedHashForeground;
+								lights = grid.lightsForeground;
 								reference = grid.imageBlocksForegroundReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 								extendedHash = extendedHashPrimary;
+								lights = grid.lightsPrimary;
 								reference = grid.imageBlocksPrimaryReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 								extendedHash = extendedHashVanishing;
+								lights = undefined;
 								reference = grid.imageBlocksVanishingReference;
 								break;
 						}
@@ -264,6 +285,7 @@ class MapDrawWorkerEngine {
 							// Applicable hashes
 							(complexesByGx = <any>reference.hashesGyByGx);
 
+						// Image Blocks
 						for (j in complexesByGx) {
 							complexes = complexesByGx[j];
 							gx = Number(j);
@@ -307,16 +329,85 @@ class MapDrawWorkerEngine {
 									}
 								}
 
-								// Grab global illumination images if outside
-								imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
+								// Cache calculations
+								drawGy = Math.round((gy - gHeight) * resolutionMultiple);
+								if (gSizeHPrevious !== gridImageBlock.gSizeH) {
+									gSizeHPrevious = gridImageBlock.gSizeH;
+									gInPhEff = resolutionMultiple * gridImageBlock.gSizeH;
+								}
+								if (gSizeWPrevious !== gridImageBlock.gSizeW) {
+									gSizeWPrevious = gridImageBlock.gSizeW;
+									gInPwEff = resolutionMultiple * gridImageBlock.gSizeW;
+								}
 
-								ctxTmp.drawImage(
-									imageBitmap,
-									drawGx,
-									Math.round((gy - gHeight) * resolutionMultiple),
-									resolutionMultiple * gridImageBlock.gSizeW,
-									resolutionMultiple * gridImageBlock.gSizeH,
-								);
+								imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
+								ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+							}
+						}
+
+						// Lights
+						if (lights && lights.hashesGyByGx) {
+							complexesByGx = lights.hashesGyByGx;
+							lightHashes = lights.hashes;
+
+							for (j in complexesByGx) {
+								complexes = complexesByGx[j];
+								gx = Number(j);
+
+								if (gx < gWidth || gx > stopGx) {
+									continue;
+								}
+
+								drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+
+								for (k in complexes) {
+									gridLight = lightHashes[complexes[k].hash];
+									gy = <number>gridLight.gy;
+									if (gy < gHeight || gy > stopGy) {
+										continue;
+									}
+
+									// Extended check
+									if (gridLight.extends) {
+										if (gridLight.extends) {
+											// extention block
+											gridLight = lightHashes[gridLight.extends];
+										}
+
+										if (extendedHash[gridLight.hash] === null) {
+											// Skip block as its hash parent's image has already drawn over it
+											continue;
+										} else {
+											// Draw large block
+											extendedHash[gridLight.hash] = null;
+
+											if (gx !== <number>gridLight.gx) {
+												gx = <number>gridLight.gx;
+												drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+											}
+											gy = <number>gridLight.gy;
+										}
+									} else {
+										if (gx !== <number>gridLight.gx) {
+											gx = <number>gridLight.gx;
+											drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+										}
+									}
+
+									// Cache calculations
+									drawGy = Math.round((gy - gHeight) * resolutionMultiple);
+									if (gSizeHPrevious !== gridLight.gSizeH) {
+										gSizeHPrevious = gridLight.gSizeH;
+										gInPhEff = resolutionMultiple * gridLight.gSizeH;
+									}
+									if (gSizeWPrevious !== gridLight.gSizeW) {
+										gSizeWPrevious = gridLight.gSizeW;
+										gInPwEff = resolutionMultiple * gridLight.gSizeW;
+									}
+
+									imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
+									ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+								}
 							}
 						}
 

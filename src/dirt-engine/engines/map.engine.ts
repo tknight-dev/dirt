@@ -1,6 +1,6 @@
 import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetMap } from '../models/asset.model';
-import { Grid, GridConfig } from '../models/grid.model';
+import { Grid, GridConfig, GridPhysics } from '../models/grid.model';
 import { Map, MapActive } from '../models/map.model';
 import { UtilEngine } from './util.engine';
 import { MapEditEngine } from './map-edit.engine';
@@ -46,6 +46,7 @@ export class MapEngine {
 				gWidth: gridWidth,
 				id: 'initial', // protectedId
 				outside: true,
+				physics: GridPhysics.SIDE_SCROLLER,
 				startGxCamera: Math.round(gridWidth / 2),
 				startGyCamera: Math.round((gridWidth * 9) / 32),
 				startGxPlayer: Math.round(gridWidth / 2),

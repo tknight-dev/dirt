@@ -93,7 +93,9 @@ export class LightingEngine {
 			},
 			processorLights = (imageLights: { [key: number]: GridLight }) => {
 				for (let i in imageLights) {
-					assetIds[imageLights[i].assetId] = null;
+					if (!imageLights[i].extends) {
+						assetIds[imageLights[i].assetId] = null;
+					}
 				}
 			};
 

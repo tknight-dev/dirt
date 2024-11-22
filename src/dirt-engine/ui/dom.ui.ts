@@ -1196,6 +1196,8 @@ export class DomUI {
 						type: GridLightType.DOWN,
 					},
 				],
+				gSizeH: 1,
+				gSizeW: 1,
 				nightOnly: undefined,
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -1402,6 +1404,46 @@ export class DomUI {
 				},
 			);
 		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size H';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeH = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeH;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// GSizeW
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Size W';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '10';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gSizeW = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gSizeW;
+		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 

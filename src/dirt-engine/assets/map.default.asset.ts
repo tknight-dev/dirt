@@ -18,6 +18,19 @@ let dirtEngineDefaultMapManifest: AssetMap[] = [
 		order: 0,
 		src: 'maps/level01.map',
 	},
+	{
+		id: 'Light Test',
+		collection: AssetCollection.VIDEO,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		order: 1,
+		src: 'maps/light_test.map',
+	},
 ];
 
 export { dirtEngineDefaultMapManifest };

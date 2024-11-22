@@ -390,9 +390,13 @@ export class MapEditEngine {
 			blocks: GridBlockTable<GridLight>,
 			gCoordinate: GridCoordinate,
 			gHash: number,
+			gHashEff: number,
 			gHashes: number[] = apply.gHashes,
 			mapActive: MapActive,
+			objectType: GridObjectType,
 			properties: any = JSON.parse(JSON.stringify(apply)),
+			x: number,
+			y: number,
 			z: VideoBusInputCmdGameModeEditApplyZ = apply.z;
 
 		if (!MapEditEngine.modeUI) {
@@ -433,6 +437,24 @@ export class MapEditEngine {
 			properties.gy = gCoordinate.gy;
 
 			blockHashes[gHash] = properties;
+			objectType = properties.objectType;
+
+			// Extended blocks
+			for (x = 0; x < properties.gSizeW; x++) {
+				for (y = 0; y < properties.gSizeH; y++) {
+					if (x === 0 && y === 0) {
+						// origin block
+						continue;
+					}
+					gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
+					blockHashes[gHashEff] = <any>{
+						extends: gHash,
+						gx: gCoordinate.gx + x,
+						gy: gCoordinate.gy + y,
+						objectType: objectType,
+					};
+				}
+			}
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(blocks);
@@ -908,8 +930,6 @@ export class MapEditEngine {
 
 		// Set base configs outside of the properties object
 		data.gHashes = gHashes;
-		data.gSizeH = 1;
-		data.gSizeW = 1;
 		data.objectType = GridObjectType.LIGHT;
 		data.z = z;
 
@@ -1051,7 +1071,11 @@ export class MapEditEngine {
 				}
 
 				if (blocks.hashes[gHash]) {
-					return [blocks.hashes[gHash]];
+					if (blocks.hashes[gHash].extends) {
+						return [blocks.hashes[blocks.hashes[gHash].extends]];
+					} else {
+						return [blocks.hashes[gHash]];
+					}
 				} else {
 					return [];
 				}
