@@ -904,9 +904,6 @@ export class MapEditEngine {
 		if (!data.assetIdAudioEffectAmbient) {
 			delete data.assetIdAudioEffectAmbient;
 		}
-		if (!data.nightOnly) {
-			delete data.nightOnly;
-		}
 		if (data.directionOmni) {
 			delete data.directions;
 			data.directionOmniBrightness = Math.max(1, Math.min(6, Math.round(data.directionOmniBrightness || 0)));
@@ -926,6 +923,12 @@ export class MapEditEngine {
 					data.directions[i].brightness = Math.max(1, Math.min(6, Math.round(data.directions[i].brightness || 0)));
 				}
 			}
+		}
+		if (!data.nightOnly) {
+			delete data.nightOnly;
+		}
+		if (!data.rounded) {
+			delete data.rounded;
 		}
 
 		// Set base configs outside of the properties object

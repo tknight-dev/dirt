@@ -1199,6 +1199,7 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				nightOnly: undefined,
+				rounded: true,
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
 			input: HTMLInputElement,
@@ -1457,6 +1458,22 @@ export class DomUI {
 		input.checked = applicationProperties.nightOnly;
 		input.oninput = (event: any) => {
 			applicationProperties.nightOnly = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Rounded
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Rounded';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.rounded;
+		input.oninput = (event: any) => {
+			applicationProperties.rounded = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -3777,7 +3794,7 @@ export class DomUI {
 		}
 
 		mapModalContentBodySelection = document.createElement('div');
-		mapModalContentBodySelection.className = 'button';
+		mapModalContentBodySelection.className = 'button green';
 		mapModalContentBodySelection.innerText = 'New Map';
 		mapModalContentBodySelection.onclick = (event: any) => {
 			DomUI.editMapSelect(undefined);

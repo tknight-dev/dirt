@@ -199,6 +199,7 @@ export interface GridLight extends GridObject {
 	directionOmniGRadius?: number;
 	directions?: GridLightDirection[];
 	nightOnly?: boolean;
+	rounded?: boolean;
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 }
 

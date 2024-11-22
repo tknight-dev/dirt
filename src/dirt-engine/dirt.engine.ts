@@ -341,6 +341,12 @@ export class DirtEngine extends DomUI {
 				DirtEngine.dragging = false;
 				DirtEngine.draggingLoading = false;
 				DirtEngine.domElements['file'].style.display = 'none';
+
+				// Hide map selection if required and set time
+				DomUI.domElementsUIEdit['application-map-modal'].style.display = 'none';
+				DomUI.domElementsUIEdit['map'].classList.remove('active');
+				DomUI.domElementsUIEdit['time'].innerText = map.hourOfDay + ':00';
+				MouseEngine.setSuspendWheel(false);
 			};
 			reader.readAsArrayBuffer(event.dataTransfer.files[0]);
 		};
