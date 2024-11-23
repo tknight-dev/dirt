@@ -875,8 +875,8 @@ class LightingCalcWorkerEngine {
 								gy2 = gys2[j];
 
 								if (j === scratch) {
-									brightnessByGy[gy1] = Math.max(1, Math.round(brightnessByGy[gy1] / 2));
-									brightnessByGy2[gy2] = Math.max(1, Math.round(brightnessByGy2[gy2] / 2));
+									brightnessByGy[gy1] = Math.round(brightnessByGy[gy1] / 2);
+									brightnessByGy2[gy2] = Math.round(brightnessByGy[gy1] / 2);
 								} else {
 									delete brightnessByGy[gy1];
 									delete brightnessByGy2[gy2];
@@ -892,8 +892,8 @@ class LightingCalcWorkerEngine {
 								gy2 = gys2[j];
 
 								if (j === scratch - 1) {
-									brightnessByGy[gy1] = Math.max(1, Math.round(brightnessByGy[gy1] / 2));
-									brightnessByGy2[gy2] = Math.max(1, Math.round(brightnessByGy2[gy2] / 2));
+									brightnessByGy[gy1] = Math.round(brightnessByGy[gy1] / 2);
+									brightnessByGy2[gy2] = Math.round(brightnessByGy[gy1] / 2);
 								} else {
 									delete brightnessByGy[gy1];
 									delete brightnessByGy2[gy2];
@@ -919,8 +919,8 @@ class LightingCalcWorkerEngine {
 								gy2 = gys1[gysLength - j - 1];
 
 								if (j === scratch - 1) {
-									brightnessByGy[gy1] = Math.max(1, Math.round(brightnessByGy[gy1] / 2));
-									brightnessByGy[gy2] = Math.max(1, Math.round(brightnessByGy[gy2] / 2));
+									brightnessByGy[gy1] = Math.round(brightnessByGy[gy1] / 2);
+									brightnessByGy[gy2] = Math.round(brightnessByGy[gy1] / 2);
 								} else {
 									delete brightnessByGy[gy1];
 									delete brightnessByGy[gy2];
@@ -942,8 +942,8 @@ class LightingCalcWorkerEngine {
 								gy2 = gys1[gysLength - j - 1];
 
 								if (j === scratch - 1) {
-									brightnessByGy[gy1] = Math.max(1, Math.round(brightnessByGy[gy1] / 2));
-									brightnessByGy[gy2] = Math.max(1, Math.round(brightnessByGy[gy2] / 2));
+									brightnessByGy[gy1] = Math.round(brightnessByGy[gy1] / 2);
+									brightnessByGy[gy2] = Math.round(brightnessByGy[gy1] / 2);
 								} else {
 									delete brightnessByGy[gy1];
 									delete brightnessByGy[gy2];
