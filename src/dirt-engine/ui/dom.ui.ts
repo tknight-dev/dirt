@@ -84,6 +84,7 @@ export class DomUI {
 	private static detailsModalSelector(
 		assetAudio: boolean,
 		assetImage: boolean,
+		assetNullable: boolean,
 		assetRemovable: boolean,
 		selectors: any[],
 		callback: (value: any) => void,
@@ -103,6 +104,18 @@ export class DomUI {
 			div.innerText = 'None';
 			div.onclick = () => {
 				callback(undefined);
+				modal.style.display = 'none';
+				modalContent.textContent = '';
+			};
+			modalContent.appendChild(div);
+		}
+
+		if (assetNullable) {
+			div = document.createElement('div');
+			div.className = 'button yellow';
+			div.innerText = 'null';
+			div.onclick = () => {
+				callback('null');
 				modal.style.display = 'none';
 				modalContent.textContent = '';
 			};
@@ -193,6 +206,7 @@ export class DomUI {
 				false,
 				false,
 				false,
+				false,
 				AudioModulation.values.map((v) => {
 					return {
 						name: v.displayName,
@@ -257,6 +271,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
+				false,
 				false,
 				false,
 				valuesAudio.map((v) => {
@@ -360,6 +375,7 @@ export class DomUI {
 				false,
 				false,
 				false,
+				false,
 				valuesTrip.map((v) => {
 					return {
 						name: GridAudioTriggerTripType[<any>v],
@@ -449,6 +465,7 @@ export class DomUI {
 			DomUI.detailsModalSelector(
 				false,
 				true,
+				true,
 				false,
 				valuesImage.map((v) => {
 					return {
@@ -478,6 +495,7 @@ export class DomUI {
 				DomUI.detailsModalSelector(
 					false,
 					true,
+					false,
 					true,
 					valuesImage.map((v) => {
 						return {
@@ -507,6 +525,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
+					false,
 					false,
 					true,
 					valuesAudio.map((v) => {
@@ -538,6 +557,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
+					false,
 					false,
 					true,
 					valuesAudio.map((v) => {
@@ -676,7 +696,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block Foliage';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -699,6 +719,7 @@ export class DomUI {
 				assetIdAudioEffectAmbient: undefined,
 				assetIdAudioEffectSwim: undefined,
 				assetIdAudioEffectTread: undefined,
+				gSizeH: 1,
 				gSizeW: 1,
 				viscocity: 1,
 			},
@@ -720,6 +741,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
+				true,
 				true,
 				false,
 				valuesImage.map((v) => {
@@ -748,6 +770,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
+				false,
 				false,
 				true,
 				valuesAudio.map((v) => {
@@ -778,6 +801,7 @@ export class DomUI {
 			DomUI.detailsModalSelector(
 				true,
 				false,
+				false,
 				true,
 				valuesAudio.map((v) => {
 					return {
@@ -806,6 +830,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
+				false,
 				false,
 				true,
 				valuesAudio.map((v) => {
@@ -888,7 +913,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block Liquid';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -939,6 +964,7 @@ export class DomUI {
 				false,
 				true,
 				false,
+				false,
 				valuesImage.map((v) => {
 					return {
 						name: v.id,
@@ -967,6 +993,7 @@ export class DomUI {
 				DomUI.detailsModalSelector(
 					false,
 					true,
+					false,
 					true,
 					valuesImage.map((v) => {
 						return {
@@ -996,6 +1023,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
+					false,
 					false,
 					true,
 					valuesAudio.map((v) => {
@@ -1027,6 +1055,7 @@ export class DomUI {
 			td.onclick = (event: any) => {
 				DomUI.detailsModalSelector(
 					true,
+					false,
 					false,
 					true,
 					valuesAudio.map((v) => {
@@ -1165,7 +1194,7 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block Solid';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
@@ -1222,6 +1251,7 @@ export class DomUI {
 				false,
 				true,
 				false,
+				false,
 				valuesImage.map((v) => {
 					return {
 						name: v.id,
@@ -1248,6 +1278,7 @@ export class DomUI {
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
+				false,
 				false,
 				true,
 				valuesAudio.map((v) => {
@@ -1390,6 +1421,7 @@ export class DomUI {
 		td.innerText = GridLightType[applicationProperties.directions[0].type];
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
+				false,
 				false,
 				false,
 				false,
@@ -2223,6 +2255,7 @@ export class DomUI {
 
 			DomUI.uiEditDraw = {
 				grid: true,
+				nullEnable: true,
 				vanishingEnable: true,
 			};
 
@@ -3541,6 +3574,7 @@ export class DomUI {
 
 			// Draw Options
 			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -3592,6 +3626,7 @@ export class DomUI {
 
 			// Draw Options
 			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -3643,6 +3678,7 @@ export class DomUI {
 
 			// Draw Options
 			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -3692,6 +3728,7 @@ export class DomUI {
 
 			// Draw Options
 			DomUI.uiEditDraw.grid = false;
+			DomUI.uiEditDraw.nullEnable = false;
 			DomUI.uiEditDraw.vanishingEnable = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(false);

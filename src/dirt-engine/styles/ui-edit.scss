@@ -187,6 +187,10 @@ $dirt-engine-ui-edit-button-width: 40px;
 			background-color: rgba($dirt-engine-color-red, 0.4);
 		}
 
+		&.yellow {
+			background-color: rgba($dirt-engine-color-yellow, 0.4);
+		}
+
 		&.right-arrow {
 			justify-content: left;
 

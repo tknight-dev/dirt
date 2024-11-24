@@ -134,6 +134,7 @@ export enum VideoBusInputCmdGameModeEditApplyView {
 
 export interface VideoBusInputCmdGameModeEditDraw {
 	grid: boolean;
+	nullEnable: boolean;
 	vanishingEnable: boolean;
 }
 

@@ -37,6 +37,7 @@ export class ImageBlockDrawEngine {
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
+	private static drawNull: boolean;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
@@ -94,6 +95,7 @@ export class ImageBlockDrawEngine {
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				drawGx: number,
 				drawGy: number,
+				drawNull: boolean = ImageBlockDrawEngine.drawNull,
 				extendedHash: { [key: number]: null },
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
@@ -225,6 +227,10 @@ export class ImageBlockDrawEngine {
 								gx = <number>gridImageBlock.gx;
 								drawGx = Math.round((gx - startGx) * gInPw);
 							}
+						}
+
+						if (gridImageBlock.assetId === 'null' && !drawNull) {
+							continue;
 						}
 
 						// Cache calculations
@@ -389,6 +395,10 @@ export class ImageBlockDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		ImageBlockDrawEngine.mapActive = mapActive;
 		ImageBlockDrawEngine.mapActiveCamera = mapActive.camera;
+	}
+
+	public static setDrawNull(drawNull: boolean) {
+		ImageBlockDrawEngine.drawNull = drawNull;
 	}
 
 	public static setVanishingEnable(vanishingEnable: boolean) {

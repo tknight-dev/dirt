@@ -4,9 +4,9 @@ import { ClockCalcEngine } from '../../calc/clock.calc.engine';
 import { Grid } from '../../models/grid.model';
 import { Camera } from '../../models/camera.model';
 import { CameraEngine } from '../camera.engine';
+import { ImageBlockDrawEngine } from '../../draw/image-block.draw.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
-import { LightingCalcEngineBus } from '../../calc/buses/lighting.calc.engine.bus';
 import { LightingEngine } from '../lighting.engine';
 import { Map, MapActive, MapConfig } from '../../models/map.model';
 import { MapDrawEngine } from '../../draw/map.draw.engine';
@@ -223,6 +223,7 @@ class VideoWorkerEngine {
 
 	public static inputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
 		MapDrawEngineBus.setVanishingEnable(apply.vanishingEnable);
+		ImageBlockDrawEngine.setDrawNull(apply.nullEnable);
 		KernelEngine.draw(apply);
 		VideoWorkerEngine.post([
 			{

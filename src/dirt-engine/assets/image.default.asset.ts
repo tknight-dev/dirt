@@ -36,6 +36,66 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 	{
+		id: 'CORAL1',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/coral1_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/coral1_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/coral1_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		id: 'CORAL2',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/coral2_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/coral2_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/coral2_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
 		gHeight: 1,
 		gWidth: 1,
 		id: 'DIRT',
@@ -146,6 +206,96 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 	{
+		gHeight: 1,
+		gWidth: 1,
+		id: 'ICE',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/ice_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/ice_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/ice_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		id: 'KELP1',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/kelp1_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/kelp1_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/kelp1_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		id: 'KELP2',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/kelp2_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/kelp2_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/kelp2_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
 		id: 'LANTERN1',
 		gHeight: 1,
 		gWidth: 1,
@@ -208,7 +358,7 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 	{
 		gHeight: 1,
 		gWidth: 1,
-		id: 'NULL1',
+		id: 'NULL',
 		meta: {
 			author: 'tknight-dev',
 			authorWebsite: 'https://tknight.dev',
@@ -221,26 +371,6 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 				collection: AssetCollection.SHARED,
 				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/null_16_16.webp',
-			},
-		],
-		type: AssetImageType.NULL,
-	},
-	{
-		gHeight: 1,
-		gWidth: 1,
-		id: 'NULL2',
-		meta: {
-			author: 'tknight-dev',
-			authorWebsite: 'https://tknight.dev',
-			license: undefined,
-			publicDomain: false,
-			title: undefined,
-		},
-		srcs: [
-			{
-				collection: AssetCollection.SHARED,
-				quality: AssetImageSrcQuality.HIGH,
-				src: 'images/grid-objects/null2_16_16.webp',
 			},
 		],
 		type: AssetImageType.NULL,
@@ -384,6 +514,36 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 			},
 		],
 		type: AssetImageType.GRID_BLOCK_FOLIAGE,
+	},
+	{
+		id: 'WATER',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/water_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/water_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/water_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
 	},
 ];
 

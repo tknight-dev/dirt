@@ -329,6 +329,10 @@ class MapDrawWorkerEngine {
 									}
 								}
 
+								if (gridImageBlock.assetId === 'null') {
+									continue;
+								}
+
 								// Cache calculations
 								drawGy = Math.round((gy - gHeight) * resolutionMultiple);
 								if (gSizeHPrevious !== gridImageBlock.gSizeH) {

@@ -511,9 +511,27 @@ export class MapEditEngine {
 		map.gridConfigActive = map.gridConfigs[map.gridActiveId];
 
 		Object.values(map.grids).forEach((grid: Grid) => {
-			// LightingCalcWorkerEngine filters these out
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks || {});
-			MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryTagTriggers || {});
+			// Default values
+			grid.audioPrimaryBlocks = grid.audioPrimaryBlocks || {};
+			grid.audioPrimaryTagTriggers = grid.audioPrimaryTagTriggers || {};
+			grid.imageBlocksBackgroundFoliage = grid.imageBlocksBackgroundFoliage || {};
+			grid.imageBlocksBackgroundLiquid = grid.imageBlocksBackgroundLiquid || {};
+			grid.imageBlocksBackgroundSolid = grid.imageBlocksBackgroundSolid || {};
+			grid.imageBlocksForegroundFoliage = grid.imageBlocksForegroundFoliage || {};
+			grid.imageBlocksForegroundLiquid = grid.imageBlocksForegroundLiquid || {};
+			grid.imageBlocksForegroundSolid = grid.imageBlocksForegroundSolid || {};
+			grid.imageBlocksPrimaryFoliage = grid.imageBlocksPrimaryFoliage || {};
+			grid.imageBlocksPrimaryLiquid = grid.imageBlocksPrimaryLiquid || {};
+			grid.imageBlocksPrimarySolid = grid.imageBlocksPrimarySolid || {};
+			grid.imageBlocksVanishingFoliage = grid.imageBlocksVanishingFoliage || {};
+			grid.imageBlocksVanishingLiquid = grid.imageBlocksVanishingLiquid || {};
+			grid.imageBlocksVanishingSolid = grid.imageBlocksVanishingSolid || {};
+			grid.lightsForeground = grid.lightsForeground || {};
+			grid.lightsPrimary = grid.lightsPrimary || {};
+
+			// Parse
+			MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks);
+			MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryTagTriggers);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksBackgroundFoliage, reference);
@@ -551,8 +569,8 @@ export class MapEditEngine {
 			};
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksVanishingReference);
 
-			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground || {});
-			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary || {});
+			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground);
+			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary);
 		});
 		return map;
 	}

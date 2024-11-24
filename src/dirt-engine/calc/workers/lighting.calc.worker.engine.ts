@@ -475,7 +475,7 @@ class LightingCalcWorkerEngine {
 				}
 			}
 
-			// Change detection: group
+			// Change detection: groups
 			for (hashString in hashesGroup) {
 				if (LightingCalcWorkerEngine.hashesGroup[hashString] !== hashesGroup[hashString]) {
 					LightingCalcWorkerEngine.hashesGroup[hashString] = hashesGroup[hashString];
@@ -679,7 +679,8 @@ class LightingCalcWorkerEngine {
 			gxStopEff: number,
 			gyStart: number = light.gy + light.gSizeH - 1,
 			gyStop: number = gyStart + gRadius + 1,
-			hash: number;
+			hash: number,
+			offset: number;
 
 		for (let gy = gyStart, i = 0; gy < gyStop; gy++, i++) {
 			gxStopEff = gxStop + i + 1;
@@ -741,19 +742,25 @@ class LightingCalcWorkerEngine {
 							brightnessByGyByGx[gx][gy + 1] = 0; // Vertical
 						}
 					} else {
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_LIQUID) {
+							offset = 2;
+						} else {
+							offset = 1;
+						}
+
 						// Dim brightness in next block
 						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
 						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
 						} else {
 							if (gx - 1 > gxStart) {
-								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
 							}
 							if (gx + 1 < gxStop) {
-								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
 							}
-							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
+							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - offset); // Vertical
 						}
 					}
 
@@ -821,10 +828,7 @@ class LightingCalcWorkerEngine {
 
 					for (gyString in brightnessByGy) {
 						// Remove on-self additive values
-						brightnessByGyByGxFinal[gxString][gyString] = Math.min(
-							brightness,
-							(brightnessByGyByGxFinal[gxString][gyString] || 0) + brightnessByGy[gyString],
-						);
+						brightnessByGyByGxFinal[gxString][gyString] = brightnessByGy[gyString];
 					}
 				}
 			}
@@ -1018,7 +1022,8 @@ class LightingCalcWorkerEngine {
 			gyStart: number = light.gy - Math.round(gRadius / 2) + 2,
 			gyStop: number = gyStart + light.gSizeH + Math.round(gRadius / 2) - 3,
 			gyStopEff: number,
-			hash: number;
+			hash: number,
+			offset: number;
 
 		for (let gx = gxStart, i = 0; gx > gxStop; gx--, i++) {
 			gyStopEff = gyStop + i + 1;
@@ -1076,19 +1081,25 @@ class LightingCalcWorkerEngine {
 							brightnessByGyByGx[gx - 1][gy] = 0; // Horizontal
 						}
 					} else {
-						// Dim brightness in next block
-						if (gy > gyCenterBottom) {
-							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Down
-						} else if (gy < gyCenterTop) {
-							brightnessByGyByGx[gx - 1][gy - 1] = Math.max(0, brightnessEff - 1); // Up
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_LIQUID) {
+							offset = 2;
 						} else {
-							if (gy + 1 > gyCenterBottom) {
-								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Down
+							offset = 1;
+						}
+
+						// Dim brightness in next block
+						if (gx < gxStart) {
+							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
+						} else if (gx > gxStop) {
+							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
+						} else {
+							if (gx - 1 > gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
 							}
-							if (gy - 1 < gyCenterTop) {
-								brightnessByGyByGx[gx - 1][gy - 1] = Math.max(0, brightnessEff - 1); // Up
+							if (gx + 1 < gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
 							}
-							brightnessByGyByGx[gx - 1][gy] = Math.max(0, brightnessEff - 1); // Horizontal
+							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - offset); // Vertical
 						}
 					}
 
@@ -1139,7 +1150,8 @@ class LightingCalcWorkerEngine {
 			gyStart: number = light.gy - Math.round(gRadius / 2) + 2,
 			gyStop: number = gyStart + light.gSizeH + Math.round(gRadius / 2) - 3,
 			gyStopEff: number,
-			hash: number;
+			hash: number,
+			offset: number;
 
 		for (let gx = gxStart, i = 0; gx < gxStop; gx++, i++) {
 			gyStopEff = gyStop + i + 1;
@@ -1197,19 +1209,25 @@ class LightingCalcWorkerEngine {
 							brightnessByGyByGx[gx + 1][gy] = 0; // Horizontal
 						}
 					} else {
-						// Dim brightness in next block
-						if (gy > gyCenterBottom) {
-							brightnessByGyByGx[gx + 1][gy - 1] = Math.max(0, brightnessEff - 1); // Up
-						} else if (gy < gyCenterTop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Down
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_LIQUID) {
+							offset = 2;
 						} else {
-							if (gy + 1 > gyCenterBottom) {
-								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Down
+							offset = 1;
+						}
+
+						// Dim brightness in next block
+						if (gx < gxStart) {
+							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
+						} else if (gx > gxStop) {
+							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
+						} else {
+							if (gx - 1 > gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
 							}
-							if (gy - 1 < gyCenterTop) {
-								brightnessByGyByGx[gx + 1][gy - 1] = Math.max(0, brightnessEff - 1); // Up
+							if (gx + 1 < gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
 							}
-							brightnessByGyByGx[gx + 1][gy] = Math.max(0, brightnessEff - 1); // Horizontal
+							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - offset); // Vertical
 						}
 					}
 
@@ -1258,7 +1276,8 @@ class LightingCalcWorkerEngine {
 			gxStopEff: number,
 			gyStart: number = light.gy,
 			gyStop: number = gyStart - gRadius - 1,
-			hash: number;
+			hash: number,
+			offset: number;
 
 		for (let gy = gyStart, i = 0; gy > gyStop; gy--, i++) {
 			gxStopEff = gxStop + i + 1;
@@ -1320,19 +1339,25 @@ class LightingCalcWorkerEngine {
 							brightnessByGyByGx[gx][gy - 1] = 0; // Vertical
 						}
 					} else {
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_LIQUID) {
+							offset = 2;
+						} else {
+							offset = 1;
+						}
+
 						// Dim brightness in next block
 						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy - 1] = Math.max(0, brightnessEff - 1); // Left
+							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
 						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy - 1] = Math.max(0, brightnessEff - 1); // Right
+							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
 						} else {
-							if (gx - 1 < gxStart) {
-								brightnessByGyByGx[gx - 1][gy - 1] = Math.max(0, brightnessEff - 1); // Left
+							if (gx - 1 > gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - offset); // Left
 							}
-							if (gx + 1 > gxStop) {
-								brightnessByGyByGx[gx + 1][gy - 1] = Math.max(0, brightnessEff - 1); // Right
+							if (gx + 1 < gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - offset); // Right
 							}
-							brightnessByGyByGx[gx][gy - 1] = Math.max(0, brightnessEff - 1); // Vertical
+							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - offset); // Vertical
 						}
 					}
 
