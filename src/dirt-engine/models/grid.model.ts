@@ -153,6 +153,15 @@ export interface GridCoordinate {
 
 export interface GridImageBlock extends GridObject {
 	assetId: string;
+	halved?: GridImageBlockHalved;
+	flipH?: boolean;
+	flipV?: boolean;
+}
+
+export enum GridImageBlockHalved {
+	NONE,
+	DOWN,
+	UP,
 }
 
 export interface GridImageBlockFoliage extends GridImageBlock {

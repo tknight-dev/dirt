@@ -18,6 +18,7 @@ import {
 	GridAudioTriggerType,
 	GridCoordinate,
 	GridLightType,
+	GridImageBlockHalved,
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
@@ -432,6 +433,7 @@ export class DomUI {
 
 	private static detailsModalImageBlockFoliage(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesHalved: GridImageBlockHalved[] = <any>Object.values(GridImageBlockHalved).filter((v) => typeof v === 'number'),
 			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
 				(v) => v.type === AssetImageType.GRID_BLOCK_FOLIAGE,
 			),
@@ -440,8 +442,11 @@ export class DomUI {
 				assetIdDamagedImage: undefined,
 				damageable: undefined,
 				destructible: undefined,
+				flipH: undefined,
+				flipV: undefined,
 				gSizeH: 1,
 				gSizeW: 1,
+				halved: GridImageBlockHalved.NONE,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -577,6 +582,38 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
+		// FlipH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Horizontal';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipH;
+		input.oninput = (event: any) => {
+			applicationProperties.flipH = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// FlipV
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Vertical';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipV;
+		input.oninput = (event: any) => {
+			applicationProperties.flipV = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// GSizeH
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -614,6 +651,35 @@ export class DomUI {
 		input.type = 'range';
 		input.value = applicationProperties.gSizeW;
 		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Halved
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Halved';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = GridImageBlockHalved[applicationProperties.halved];
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				false,
+				false,
+				false,
+				valuesHalved.map((v) => {
+					return {
+						name: GridImageBlockHalved[v],
+						value: v,
+					};
+				}),
+				(type: string) => {
+					event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
+					applicationProperties.halved = type;
+				},
+			);
+		};
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -711,6 +777,7 @@ export class DomUI {
 
 	private static detailsModalImageBlockLiquid(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesHalved: GridImageBlockHalved[] = <any>Object.values(GridImageBlockHalved).filter((v) => typeof v === 'number'),
 			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
 				(v) => v.type === AssetImageType.GRID_BLOCK_LIQUID,
 			),
@@ -719,8 +786,11 @@ export class DomUI {
 				assetIdAudioEffectAmbient: undefined,
 				assetIdAudioEffectSwim: undefined,
 				assetIdAudioEffectTread: undefined,
+				flipH: undefined,
+				flipV: undefined,
 				gSizeH: 1,
 				gSizeW: 1,
+				halved: GridImageBlockHalved.NONE,
 				viscocity: 1,
 			},
 			input: HTMLInputElement,
@@ -849,6 +919,38 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
+		// FlipH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Horizontal';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipH;
+		input.oninput = (event: any) => {
+			applicationProperties.flipH = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// FlipV
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Vertical';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipV;
+		input.oninput = (event: any) => {
+			applicationProperties.flipV = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// GSizeH
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -886,6 +988,35 @@ export class DomUI {
 		input.type = 'range';
 		input.value = applicationProperties.gSizeW;
 		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Halved
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Halved';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = GridImageBlockHalved[applicationProperties.halved];
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				false,
+				false,
+				false,
+				valuesHalved.map((v) => {
+					return {
+						name: GridImageBlockHalved[v],
+						value: v,
+					};
+				}),
+				(type: string) => {
+					event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
+					applicationProperties.halved = type;
+				},
+			);
+		};
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -928,6 +1059,7 @@ export class DomUI {
 
 	private static detailsModalImageBlockSolid(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
+			valuesHalved: GridImageBlockHalved[] = <any>Object.values(GridImageBlockHalved).filter((v) => typeof v === 'number'),
 			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter(
 				(v) => v.type === AssetImageType.GRID_BLOCK_SOLID,
 			),
@@ -938,8 +1070,11 @@ export class DomUI {
 				assetIdAudioEffectWalkedOnDamaged: undefined,
 				damageable: undefined,
 				destructible: undefined,
+				flipH: undefined,
+				flipV: undefined,
 				gSizeH: 1,
 				gSizeW: 1,
+				halved: GridImageBlockHalved.NONE,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -963,7 +1098,7 @@ export class DomUI {
 			DomUI.detailsModalSelector(
 				false,
 				true,
-				false,
+				true,
 				false,
 				valuesImage.map((v) => {
 					return {
@@ -1075,6 +1210,38 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
+		// FlipH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Horizontal';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipH;
+		input.oninput = (event: any) => {
+			applicationProperties.flipH = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// FlipV
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Vertical';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipV;
+		input.oninput = (event: any) => {
+			applicationProperties.flipV = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// GSizeH
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -1112,6 +1279,35 @@ export class DomUI {
 		input.type = 'range';
 		input.value = applicationProperties.gSizeW;
 		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Halved
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Halved';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = GridImageBlockHalved[applicationProperties.halved];
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				false,
+				false,
+				false,
+				valuesHalved.map((v) => {
+					return {
+						name: GridImageBlockHalved[v],
+						value: v,
+					};
+				}),
+				(type: string) => {
+					event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
+					applicationProperties.halved = type;
+				},
+			);
+		};
 		tr.appendChild(td);
 		t.appendChild(tr);
 

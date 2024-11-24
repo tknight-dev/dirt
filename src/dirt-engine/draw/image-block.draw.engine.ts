@@ -7,6 +7,7 @@ import {
 	GridImageBlockReference,
 	GridConfig,
 	GridImageBlock,
+	GridImageBlockHalved,
 	GridLight,
 } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
@@ -244,23 +245,92 @@ export class ImageBlockDrawEngine {
 							gInPwEff = gInPw * gSizeWPrevious + 1;
 						}
 
+						// Transforms
+						ctx.setTransform(
+							gridImageBlock.flipH ? -1 : 1,
+							0,
+							0,
+							gridImageBlock.flipV ? -1 : 1,
+							drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
+							drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
+						);
+
 						if (outside) {
 							// Get pre-rendered asset variation based on hash
 							imageBitmaps = getCacheLitOutside(gridImageBlock.assetId, grid.id, gridImageBlock.hash, z);
 
 							// Draw current image
-							ctx.drawImage(imageBitmaps[0], drawGx, drawGy, gInPwEff, gInPhEff);
+							imageBitmap = imageBitmaps[0];
+							if (gridImageBlock.halved !== undefined) {
+								if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
+									ctx.drawImage(
+										imageBitmap,
+										0,
+										imageBitmap.height / 2,
+										imageBitmap.width,
+										imageBitmap.height,
+										0,
+										gInPhEff / 2,
+										gInPwEff,
+										gInPhEff,
+									);
+								} else {
+									ctx.drawImage(
+										imageBitmap,
+										0,
+										0,
+										imageBitmap.width,
+										imageBitmap.height / 2,
+										0,
+										0,
+										gInPwEff,
+										gInPhEff / 2,
+									);
+								}
+							} else {
+								ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
+							}
 
 							// If not the same image
 							if (imageBitmaps[0] !== imageBitmaps[1]) {
+								imageBitmap = imageBitmaps[1];
+								ctx.globalAlpha = imageBitmapsBlend;
+
 								// Draw previous image (blended) [6:00 - 100%, 6:30 - 50%, 6:55 - 8%]
 								// Provides smooth shading transitions
-								ctx.globalAlpha = imageBitmapsBlend;
-								ctx.drawImage(imageBitmaps[1], drawGx, drawGy, gInPwEff, gInPhEff);
-							}
+								if (gridImageBlock.halved !== undefined) {
+									if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
+										ctx.drawImage(
+											imageBitmap,
+											0,
+											imageBitmap.height / 2,
+											imageBitmap.width,
+											imageBitmap.height,
+											0,
+											gInPhEff / 2,
+											gInPwEff,
+											gInPhEff,
+										);
+									} else {
+										ctx.drawImage(
+											imageBitmap,
+											0,
+											0,
+											imageBitmap.width,
+											imageBitmap.height / 2,
+											0,
+											0,
+											gInPwEff,
+											gInPhEff / 2,
+										);
+									}
+								} else {
+									ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
+								}
 
-							// Done
-							ctx.globalAlpha = 1;
+								// Done
+								ctx.globalAlpha = 1;
+							}
 						} else {
 							// Get pre-rendered asset variation based on hash
 							brightness = getCacheBrightness(grid.id, gridImageBlock.hash, z);
@@ -270,6 +340,8 @@ export class ImageBlockDrawEngine {
 						}
 					}
 				}
+				// Reset transforms
+				ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 				// Lights
 				if (lights && lights.hashesGyByGx) {

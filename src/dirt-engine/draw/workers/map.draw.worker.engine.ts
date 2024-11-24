@@ -344,10 +344,22 @@ class MapDrawWorkerEngine {
 									gInPwEff = resolutionMultiple * gridImageBlock.gSizeW;
 								}
 
+								// Transforms
+								ctx.setTransform(
+									gridImageBlock.flipH ? -1 : 1,
+									0,
+									0,
+									gridImageBlock.flipV ? -1 : 1,
+									drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
+									drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
+								);
+
 								imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
 								ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
 							}
 						}
+						// Reset transforms
+						ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 						// Lights
 						if (lights && lights.hashesGyByGx) {

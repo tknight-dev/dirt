@@ -9,6 +9,7 @@ import {
 	GridImageBlock,
 	GridImageBlockReference,
 	GridLight,
+	GridImageBlockHalved,
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
@@ -830,6 +831,15 @@ export class MapEditEngine {
 			delete data.destructible;
 			delete data.strengthToDestroyInN;
 		}
+		if (data.halved === undefined || data.halved === GridImageBlockHalved.NONE) {
+			delete data.halved;
+		}
+		if (!data.flipH) {
+			delete data.flipH;
+		}
+		if (!data.flipV) {
+			delete data.flipV;
+		}
 
 		// Set base configs outside of the properties object
 		data.objectType = GridObjectType.IMAGE_BLOCK_FOLIAGE;
@@ -849,6 +859,15 @@ export class MapEditEngine {
 		if (z !== VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			delete data.assetIdAudioEffectSwim;
 			delete data.assetIdAudioEffectTread;
+		}
+		if (data.halved === undefined || data.halved === GridImageBlockHalved.NONE) {
+			delete data.halved;
+		}
+		if (!data.flipH) {
+			delete data.flipH;
+		}
+		if (!data.flipV) {
+			delete data.flipV;
 		}
 
 		// Set base configs outside of the properties object
@@ -889,6 +908,15 @@ export class MapEditEngine {
 			delete data.destructible;
 			delete data.strengthToDamangeInN;
 			delete data.strengthToDestroyInN;
+		}
+		if (data.halved === undefined || data.halved === GridImageBlockHalved.NONE) {
+			delete data.halved;
+		}
+		if (!data.flipH) {
+			delete data.flipH;
+		}
+		if (!data.flipV) {
+			delete data.flipV;
 		}
 
 		// Set base configs outside of the properties object
