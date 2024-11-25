@@ -303,6 +303,10 @@ class MapDrawWorkerEngine {
 								}
 								gridImageBlock = referenceHashes[complexes[k].hash].block;
 
+								if (gridImageBlock.null) {
+									continue;
+								}
+
 								// Extended check
 								if (gridImageBlock.extends) {
 									if (gridImageBlock.extends) {
@@ -327,10 +331,6 @@ class MapDrawWorkerEngine {
 										gx = <number>gridImageBlock.gx;
 										drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 									}
-								}
-
-								if (gridImageBlock.assetId === 'null') {
-									continue;
 								}
 
 								// Cache calculations
@@ -378,6 +378,11 @@ class MapDrawWorkerEngine {
 
 								for (k in complexes) {
 									gridLight = lightHashes[complexes[k].hash];
+
+									if (gridLight.null) {
+										continue;
+									}
+
 									gy = <number>gridLight.gy;
 									if (gy < gHeight || gy > stopGy) {
 										continue;

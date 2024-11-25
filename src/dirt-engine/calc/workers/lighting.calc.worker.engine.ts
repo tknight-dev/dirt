@@ -176,11 +176,13 @@ class LightingCalcWorkerEngine {
 				complexes: GridBlockTableComplex[],
 				complexesExtended: GridBlockTableComplexExtended[],
 				complexesByGxNoFoliage: { [key: number]: GridBlockTableComplex[] },
+				count: number,
 				first: boolean = LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId],
 				foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] },
 				foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] | undefined,
 				grid: Grid = LightingCalcWorkerEngine.grids[LightingCalcWorkerEngine.gridActiveId],
 				gridConfig: GridConfig = LightingCalcWorkerEngine.gridConfigs[LightingCalcWorkerEngine.gridActiveId],
+				gridImageBlock: GridImageBlock,
 				gridImageBlockFoliage: GridImageBlockFoliage,
 				gSizeW: number,
 				gHeight: number = gridConfig.gHeight,
@@ -273,8 +275,25 @@ class LightingCalcWorkerEngine {
 
 				for (gxString in complexesByGxNoFoliage) {
 					complexes = complexesByGxNoFoliage[gxString];
-					gy = complexes[0].value;
+					count = 0;
 
+					// Check for light interaction
+					gridImageBlock = referenceNoFoliage.hashes[complexes[0].hash].block;
+					if (gridImageBlock.nullPassthroughLight) {
+						for (k = 1; k < complexes.length; k++) {
+							gridImageBlock = referenceNoFoliage.hashes[complexes[k].hash].block;
+
+							if (!gridImageBlock.nullPassthroughLight) {
+								break;
+							}
+						}
+					}
+					if (gridImageBlock.nullPassthroughLight) {
+						continue; // no light interacting blocks on this gx column
+					}
+
+					// Shadeaa
+					gy = gridImageBlock.gy;
 					for (k = 0; k < complexes.length; k++) {
 						if (hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
 							// Brightest part of day
@@ -322,6 +341,10 @@ class LightingCalcWorkerEngine {
 						for (k = 0; k < complexesExtended.length; k++) {
 							complexExtended = complexesExtended[k];
 							gridImageBlockFoliage = <GridImageBlockFoliage>complexExtended.blocks[complexExtended.hash];
+
+							if (gridImageBlockFoliage.nullPassthroughLight) {
+								continue;
+							}
 
 							gy = gridImageBlockFoliage.gy;
 							gyEff = gridImageBlockFoliage.gSizeH + gy;
@@ -715,66 +738,69 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					// Left
-					if (brightnessByGyByGx[gx - 1] === undefined) {
-						brightnessByGyByGx[gx - 1] = {};
-					}
-					// Right
-					if (brightnessByGyByGx[gx + 1] === undefined) {
-						brightnessByGyByGx[gx + 1] = {};
-					}
+					if (!gridImageBlock.nullPassthroughLight) {
+						// Left
+						if (brightnessByGyByGx[gx - 1] === undefined) {
+							brightnessByGyByGx[gx - 1] = {};
+						}
+						// Right
+						if (brightnessByGyByGx[gx + 1] === undefined) {
+							brightnessByGyByGx[gx + 1] = {};
+						}
 
-					// Map
-					if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
-						// Block brightness in next block
-						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy + 1] = 0; // Left
-						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = 0; // Right
-						} else {
-							if (gx - 1 < gxStart) {
+						// Map
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
+							// Block brightness in next block
+							if (gx < gxStart) {
 								brightnessByGyByGx[gx - 1][gy + 1] = 0; // Left
-							}
-							if (gx + 1 > gxStop) {
+							} else if (gx > gxStop) {
 								brightnessByGyByGx[gx + 1][gy + 1] = 0; // Right
-							}
-							brightnessByGyByGx[gx][gy + 1] = 0; // Vertical
-						}
-					} else {
-						// Dim brightness in next block
-						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-						} else {
-							if (gx - 1 > gxStart) {
-								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-							}
-							if (gx + 1 < gxStop) {
-								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-							}
-							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
-						}
-					}
-
-					// Extensions
-					if (gridImageBlock.extends) {
-						gridImageBlock = blocks[gridImageBlock.extends].block;
-
-						if (extended[gridImageBlock.hash] !== null) {
-							extended[gridImageBlock.hash] = null;
-
-							if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
-								brightnessByGyByGx[gridImageBlock.gx] = {};
-								brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
 							} else {
-								if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
-									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								if (gx - 1 < gxStart) {
+									brightnessByGyByGx[gx - 1][gy + 1] = 0; // Left
 								}
+								if (gx + 1 > gxStop) {
+									brightnessByGyByGx[gx + 1][gy + 1] = 0; // Right
+								}
+								brightnessByGyByGx[gx][gy + 1] = 0; // Vertical
 							}
+						} else {
+							// Dim brightness in next block
+							if (gx < gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+							} else if (gx > gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+							} else {
+								if (gx - 1 > gxStart) {
+									brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+								}
+								if (gx + 1 < gxStop) {
+									brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+								}
+								brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
+							}
+						}
 
-							// Assign brightness (additive)
-							brightnessByHashGroup[gridImageBlock.hash] = (brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+						// Extensions
+						if (gridImageBlock.extends) {
+							gridImageBlock = blocks[gridImageBlock.extends].block;
+
+							if (extended[gridImageBlock.hash] !== null) {
+								extended[gridImageBlock.hash] = null;
+
+								if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
+									brightnessByGyByGx[gridImageBlock.gx] = {};
+									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								} else {
+									if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
+										brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+									}
+								}
+
+								// Assign brightness (additive)
+								brightnessByHashGroup[gridImageBlock.hash] =
+									(brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+							}
 						}
 					}
 				}
@@ -1051,62 +1077,69 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					// Left
-					if (brightnessByGyByGx[gx - 1] === undefined) {
-						brightnessByGyByGx[gx - 1] = {};
-					}
+					if (!gridImageBlock.nullPassthroughLight) {
+						// Left
+						if (brightnessByGyByGx[gx - 1] === undefined) {
+							brightnessByGyByGx[gx - 1] = {};
+						}
+						// Right
+						if (brightnessByGyByGx[gx + 1] === undefined) {
+							brightnessByGyByGx[gx + 1] = {};
+						}
 
-					// Map
-					if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
-						// Block brightness in next block
-						if (gy > gyCenterBottom) {
-							brightnessByGyByGx[gx - 1][gy + 1] = 0; // Down
-						} else if (gy < gyCenterTop) {
-							brightnessByGyByGx[gx - 1][gy - 1] = 0; // Up
-						} else {
-							if (gy + 1 > gyCenterBottom) {
+						// Map
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
+							// Block brightness in next block
+							if (gy > gyCenterBottom) {
 								brightnessByGyByGx[gx - 1][gy + 1] = 0; // Down
-							}
-							if (gy - 1 < gyCenterTop) {
+							} else if (gy < gyCenterTop) {
 								brightnessByGyByGx[gx - 1][gy - 1] = 0; // Up
-							}
-							brightnessByGyByGx[gx - 1][gy] = 0; // Horizontal
-						}
-					} else {
-						// Dim brightness in next block
-						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-						} else {
-							if (gx - 1 > gxStart) {
-								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-							}
-							if (gx + 1 < gxStop) {
-								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-							}
-							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
-						}
-					}
-
-					// Extensions
-					if (gridImageBlock.extends) {
-						gridImageBlock = blocks[gridImageBlock.extends].block;
-
-						if (extended[gridImageBlock.hash] !== null) {
-							extended[gridImageBlock.hash] = null;
-
-							if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
-								brightnessByGyByGx[gridImageBlock.gx] = {};
-								brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
 							} else {
-								if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
-									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								if (gy + 1 > gyCenterBottom) {
+									brightnessByGyByGx[gx - 1][gy + 1] = 0; // Down
 								}
+								if (gy - 1 < gyCenterTop) {
+									brightnessByGyByGx[gx - 1][gy - 1] = 0; // Up
+								}
+								brightnessByGyByGx[gx - 1][gy] = 0; // Horizontal
 							}
+						} else {
+							// Dim brightness in next block
+							if (gx < gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+							} else if (gx > gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+							} else {
+								if (gx - 1 > gxStart) {
+									brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+								}
+								if (gx + 1 < gxStop) {
+									brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+								}
+								brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
+							}
+						}
 
-							// Assign brightness (additive)
-							brightnessByHashGroup[gridImageBlock.hash] = (brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+						// Extensions
+						if (gridImageBlock.extends) {
+							gridImageBlock = blocks[gridImageBlock.extends].block;
+
+							if (extended[gridImageBlock.hash] !== null) {
+								extended[gridImageBlock.hash] = null;
+
+								if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
+									brightnessByGyByGx[gridImageBlock.gx] = {};
+									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								} else {
+									if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
+										brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+									}
+								}
+
+								// Assign brightness (additive)
+								brightnessByHashGroup[gridImageBlock.hash] =
+									(brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+							}
 						}
 					}
 				}
@@ -1172,62 +1205,69 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					// Right
-					if (brightnessByGyByGx[gx + 1] === undefined) {
-						brightnessByGyByGx[gx + 1] = {};
-					}
+					if (!gridImageBlock.nullPassthroughLight) {
+						// Left
+						if (brightnessByGyByGx[gx - 1] === undefined) {
+							brightnessByGyByGx[gx - 1] = {};
+						}
+						// Right
+						if (brightnessByGyByGx[gx + 1] === undefined) {
+							brightnessByGyByGx[gx + 1] = {};
+						}
 
-					// Map
-					if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
-						// Block brightness in next block
-						if (gy > gyCenterBottom) {
-							brightnessByGyByGx[gx + 1][gy + 1] = 0; // Down
-						} else if (gy < gyCenterTop) {
-							brightnessByGyByGx[gx + 1][gy - 1] = 0; // Up
-						} else {
-							if (gy + 1 > gyCenterBottom) {
+						// Map
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
+							// Block brightness in next block
+							if (gy > gyCenterBottom) {
 								brightnessByGyByGx[gx + 1][gy + 1] = 0; // Down
-							}
-							if (gy - 1 < gyCenterTop) {
+							} else if (gy < gyCenterTop) {
 								brightnessByGyByGx[gx + 1][gy - 1] = 0; // Up
-							}
-							brightnessByGyByGx[gx + 1][gy] = 0; // Horizontal
-						}
-					} else {
-						// Dim brightness in next block
-						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-						} else {
-							if (gx - 1 > gxStart) {
-								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-							}
-							if (gx + 1 < gxStop) {
-								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-							}
-							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
-						}
-					}
-
-					// Extensions
-					if (gridImageBlock.extends) {
-						gridImageBlock = blocks[gridImageBlock.extends].block;
-
-						if (extended[gridImageBlock.hash] !== null) {
-							extended[gridImageBlock.hash] = null;
-
-							if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
-								brightnessByGyByGx[gridImageBlock.gx] = {};
-								brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
 							} else {
-								if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
-									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								if (gy + 1 > gyCenterBottom) {
+									brightnessByGyByGx[gx + 1][gy + 1] = 0; // Down
 								}
+								if (gy - 1 < gyCenterTop) {
+									brightnessByGyByGx[gx + 1][gy - 1] = 0; // Up
+								}
+								brightnessByGyByGx[gx + 1][gy] = 0; // Horizontal
 							}
+						} else {
+							// Dim brightness in next block
+							if (gx < gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+							} else if (gx > gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+							} else {
+								if (gx - 1 > gxStart) {
+									brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+								}
+								if (gx + 1 < gxStop) {
+									brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+								}
+								brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
+							}
+						}
 
-							// Assign brightness (additive)
-							brightnessByHashGroup[gridImageBlock.hash] = (brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+						// Extensions
+						if (gridImageBlock.extends) {
+							gridImageBlock = blocks[gridImageBlock.extends].block;
+
+							if (extended[gridImageBlock.hash] !== null) {
+								extended[gridImageBlock.hash] = null;
+
+								if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
+									brightnessByGyByGx[gridImageBlock.gx] = {};
+									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								} else {
+									if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
+										brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+									}
+								}
+
+								// Assign brightness (additive)
+								brightnessByHashGroup[gridImageBlock.hash] =
+									(brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+							}
 						}
 					}
 				}
@@ -1291,66 +1331,69 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					// Left
-					if (brightnessByGyByGx[gx - 1] === undefined) {
-						brightnessByGyByGx[gx - 1] = {};
-					}
-					// Right
-					if (brightnessByGyByGx[gx + 1] === undefined) {
-						brightnessByGyByGx[gx + 1] = {};
-					}
+					if (!gridImageBlock.nullPassthroughLight) {
+						// Left
+						if (brightnessByGyByGx[gx - 1] === undefined) {
+							brightnessByGyByGx[gx - 1] = {};
+						}
+						// Right
+						if (brightnessByGyByGx[gx + 1] === undefined) {
+							brightnessByGyByGx[gx + 1] = {};
+						}
 
-					// Map
-					if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
-						// Block brightness in next block
-						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy - 1] = 0; // Left
-						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy - 1] = 0; // Right
-						} else {
-							if (gx - 1 < gxStart) {
+						// Map
+						if (gridImageBlock.objectType === GridObjectType.IMAGE_BLOCK_SOLID) {
+							// Block brightness in next block
+							if (gx < gxStart) {
 								brightnessByGyByGx[gx - 1][gy - 1] = 0; // Left
-							}
-							if (gx + 1 > gxStop) {
+							} else if (gx > gxStop) {
 								brightnessByGyByGx[gx + 1][gy - 1] = 0; // Right
-							}
-							brightnessByGyByGx[gx][gy - 1] = 0; // Vertical
-						}
-					} else {
-						// Dim brightness in next block
-						if (gx < gxStart) {
-							brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-						} else if (gx > gxStop) {
-							brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-						} else {
-							if (gx - 1 > gxStart) {
-								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
-							}
-							if (gx + 1 < gxStop) {
-								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
-							}
-							brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
-						}
-					}
-
-					// Extensions
-					if (gridImageBlock.extends) {
-						gridImageBlock = blocks[gridImageBlock.extends].block;
-
-						if (extended[gridImageBlock.hash] !== null) {
-							extended[gridImageBlock.hash] = null;
-
-							if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
-								brightnessByGyByGx[gridImageBlock.gx] = {};
-								brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
 							} else {
-								if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
-									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								if (gx - 1 < gxStart) {
+									brightnessByGyByGx[gx - 1][gy - 1] = 0; // Left
 								}
+								if (gx + 1 > gxStop) {
+									brightnessByGyByGx[gx + 1][gy - 1] = 0; // Right
+								}
+								brightnessByGyByGx[gx][gy - 1] = 0; // Vertical
 							}
+						} else {
+							// Dim brightness in next block
+							if (gx < gxStart) {
+								brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+							} else if (gx > gxStop) {
+								brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+							} else {
+								if (gx - 1 > gxStart) {
+									brightnessByGyByGx[gx - 1][gy + 1] = Math.max(0, brightnessEff - 1); // Left
+								}
+								if (gx + 1 < gxStop) {
+									brightnessByGyByGx[gx + 1][gy + 1] = Math.max(0, brightnessEff - 1); // Right
+								}
+								brightnessByGyByGx[gx][gy + 1] = Math.max(0, brightnessEff - 1); // Vertical
+							}
+						}
 
-							// Assign brightness (additive)
-							brightnessByHashGroup[gridImageBlock.hash] = (brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+						// Extensions
+						if (gridImageBlock.extends) {
+							gridImageBlock = blocks[gridImageBlock.extends].block;
+
+							if (extended[gridImageBlock.hash] !== null) {
+								extended[gridImageBlock.hash] = null;
+
+								if (brightnessByGyByGx[gridImageBlock.gx] === undefined) {
+									brightnessByGyByGx[gridImageBlock.gx] = {};
+									brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+								} else {
+									if (brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] === undefined) {
+										brightnessByGyByGx[gridImageBlock.gx][gridImageBlock.gy] = brightnessEff;
+									}
+								}
+
+								// Assign brightness (additive)
+								brightnessByHashGroup[gridImageBlock.hash] =
+									(brightnessByHashGroup[gridImageBlock.hash] || 0) + brightnessEff;
+							}
 						}
 					}
 				}

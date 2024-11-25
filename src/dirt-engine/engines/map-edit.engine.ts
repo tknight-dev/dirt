@@ -841,6 +841,20 @@ export class MapEditEngine {
 			delete data.flipV;
 		}
 
+		if (data.assetId === 'null') {
+			data.null = true;
+			if (!data.nullBlocking) {
+				delete data.nullBlocking;
+			}
+			if (!data.nullPassthroughLight) {
+				delete data.nullPassthroughLight;
+			}
+		} else {
+			data.null = false;
+			delete data.nullBlocking;
+			delete data.nullPassthroughLight;
+		}
+
 		// Set base configs outside of the properties object
 		data.objectType = GridObjectType.IMAGE_BLOCK_FOLIAGE;
 		data.gHashes = gHashes;
@@ -868,6 +882,20 @@ export class MapEditEngine {
 		}
 		if (!data.flipV) {
 			delete data.flipV;
+		}
+
+		if (data.assetId === 'null') {
+			data.null = true;
+			if (!data.nullBlocking) {
+				delete data.nullBlocking;
+			}
+			if (!data.nullPassthroughLight) {
+				delete data.nullPassthroughLight;
+			}
+		} else {
+			data.null = false;
+			delete data.nullBlocking;
+			delete data.nullPassthroughLight;
 		}
 
 		// Set base configs outside of the properties object
@@ -917,6 +945,20 @@ export class MapEditEngine {
 		}
 		if (!data.flipV) {
 			delete data.flipV;
+		}
+
+		if (data.assetId === 'null') {
+			data.null = true;
+			if (!data.nullBlocking) {
+				delete data.nullBlocking;
+			}
+			if (!data.nullPassthroughLight) {
+				delete data.nullPassthroughLight;
+			}
+		} else {
+			data.null = false;
+			delete data.nullBlocking;
+			delete data.nullPassthroughLight;
 		}
 
 		// Set base configs outside of the properties object
@@ -969,6 +1011,13 @@ export class MapEditEngine {
 					data.directions[i].brightness = Math.max(1, Math.min(6, Math.round(data.directions[i].brightness || 0)));
 				}
 			}
+		}
+
+		if (data.assetId === 'null') {
+			data.assetId = 'null2';
+			data.null = true;
+		} else {
+			data.null = false;
 		}
 		if (!data.nightOnly) {
 			delete data.nightOnly;

@@ -378,6 +378,26 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 	{
 		gHeight: 1,
 		gWidth: 1,
+		id: 'NULL2',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/null2_16_16.webp',
+			},
+		],
+		type: AssetImageType.NULL,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
 		id: 'ROCK',
 		meta: {
 			author: 'tknight-dev',

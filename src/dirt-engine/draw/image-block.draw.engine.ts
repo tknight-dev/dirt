@@ -203,6 +203,10 @@ export class ImageBlockDrawEngine {
 						}
 						gridImageBlock = referenceHashes[complexes[k].hash].block;
 
+						if (gridImageBlock.null && !drawNull) {
+							continue;
+						}
+
 						// Extended check
 						if (gridImageBlock.extends) {
 							if (gridImageBlock.extends) {
@@ -228,10 +232,6 @@ export class ImageBlockDrawEngine {
 								gx = <number>gridImageBlock.gx;
 								drawGx = Math.round((gx - startGx) * gInPw);
 							}
-						}
-
-						if (gridImageBlock.assetId === 'null' && !drawNull) {
-							continue;
 						}
 
 						// Cache calculations
@@ -360,6 +360,11 @@ export class ImageBlockDrawEngine {
 
 						for (k in complexes) {
 							gridLight = lightHashes[complexes[k].hash];
+
+							if (gridLight.null && !drawNull) {
+								continue;
+							}
+
 							gy = <number>gridLight.gy;
 							if (gy < startGy || gy > stopGy) {
 								continue;

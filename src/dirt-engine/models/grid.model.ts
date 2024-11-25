@@ -156,6 +156,8 @@ export interface GridImageBlock extends GridObject {
 	halved?: GridImageBlockHalved;
 	flipH?: boolean;
 	flipV?: boolean;
+	nullBlocking?: boolean;
+	nullPassthroughLight?: boolean;
 }
 
 export enum GridImageBlockHalved {
@@ -230,6 +232,7 @@ export interface GridObject extends GridCoordinate {
 	gSizeH: number; // refers to number of grid squares the object takes up
 	gSizeW: number; // refers to number of grid squares the object takes up
 	hash: number;
+	null?: boolean;
 	objectType: GridObjectType;
 	weight: number; // kg
 }

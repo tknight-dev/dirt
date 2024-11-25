@@ -447,6 +447,8 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
+				nullBlocking: undefined,
+				nullPassthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -717,6 +719,38 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
+		// Null: blocking
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Null: Blocking';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nullBlocking;
+		input.oninput = (event: any) => {
+			applicationProperties.nullBlocking = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Null: light passthrough
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Null: Passthrough Light';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nullPassthroughLight;
+		input.oninput = (event: any) => {
+			applicationProperties.nullPassthroughLight = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// strengthToDamangeInN
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
@@ -791,6 +825,8 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
+				nullBlocking: undefined,
+				nullPassthroughLight: undefined,
 				viscocity: 1,
 			},
 			input: HTMLInputElement,
@@ -1020,6 +1056,38 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
+		// Null: blocking
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Null: Blocking';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nullBlocking;
+		input.oninput = (event: any) => {
+			applicationProperties.nullBlocking = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Null: light passthrough
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Null: Passthrough Light';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nullPassthroughLight;
+		input.oninput = (event: any) => {
+			applicationProperties.nullPassthroughLight = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// Viscocity
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
@@ -1075,6 +1143,8 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
+				nullBlocking: undefined,
+				nullPassthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -1345,6 +1415,38 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
+		// Null: blocking
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Null: Blocking';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nullBlocking;
+		input.oninput = (event: any) => {
+			applicationProperties.nullBlocking = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Null: light passthrough
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Null: Passthrough Light';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.nullPassthroughLight;
+		input.oninput = (event: any) => {
+			applicationProperties.nullPassthroughLight = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// strengthToDamangeInN
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			tr = document.createElement('tr');
@@ -1446,7 +1548,7 @@ export class DomUI {
 			DomUI.detailsModalSelector(
 				false,
 				true,
-				false,
+				true,
 				false,
 				valuesImage.map((v) => {
 					return {
