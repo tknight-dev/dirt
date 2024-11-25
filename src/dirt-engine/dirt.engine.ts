@@ -414,10 +414,15 @@ export class DirtEngine extends DomUI {
 					if (DirtEngine.gameStarted) {
 						if (keyAction.key === KeyCommon.ESC) {
 							if (keyAction.down) {
-								DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
-								VideoEngineBus.outputGamePause({
-									reason: VideoBusInputCmdGamePauseReason.ESC,
-								});
+								if(DomUI.domElements['feed-fitted-pause'].style.display === 'none') {
+									DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
+									VideoEngineBus.outputGamePause({
+										reason: VideoBusInputCmdGamePauseReason.ESC,
+									});
+								}else {
+									DomUI.domElements['feed-fitted-pause'].style.display = 'none';
+									VideoEngineBus.outputGameUnpause({});
+								}
 							}
 						} else {
 							VideoEngineBus.outputKey(keyAction);

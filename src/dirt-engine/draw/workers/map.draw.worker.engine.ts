@@ -103,10 +103,8 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.ctx = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvas.getContext('2d');
 		MapDrawWorkerEngine.ctxTmp = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvasTmp.getContext('2d');
 
-		// Draw interval
-		UtilEngine.setInterval(() => {
-			MapDrawWorkerEngine._draw();
-		}, 1000);
+		// Done
+		MapDrawWorkerEngine._draw();
 	}
 
 	public static inputSetAssets(data: MapDrawBusInputPlayloadAssets): void {
@@ -167,340 +165,370 @@ class MapDrawWorkerEngine {
 	 * 1g = 1px
 	 */
 	private static _draw(): void {
-		if (MapDrawWorkerEngine.busy || !MapDrawWorkerEngine.mapVisible) {
-			return;
-		}
-		MapDrawWorkerEngine.busy = true;
-		try {
-			let camera: MapDrawBusInputPlayloadCamera = MapDrawWorkerEngine.camera,
-				canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
-				canvasHeight: number = MapDrawWorkerEngine.height,
-				canvasTmp: OffscreenCanvas = MapDrawWorkerEngine.canvasTmp,
-				canvasTmpGh: number = MapDrawWorkerEngine.canvasTmpGh,
-				canvasTmpGhEff: number,
-				canvasTmpGw: number = MapDrawWorkerEngine.canvasTmpGw,
-				canvasTmpGwEff: number,
-				canvasWidth: number = MapDrawWorkerEngine.width,
-				ctx: OffscreenCanvasRenderingContext2D = MapDrawWorkerEngine.ctx,
-				ctxTmp: OffscreenCanvasRenderingContext2D = MapDrawWorkerEngine.ctxTmp,
-				complexes: GridBlockTableComplex[],
-				complexesByGx: { [key: number]: GridBlockTableComplex[] },
-				drawGx: number,
-				drawGy: number,
-				extendedHash: { [key: number]: null },
-				gInPhEff: number = 0,
-				gInPwEff: number = 0,
-				gradient: CanvasGradient,
-				grid: Grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId],
-				gridConfig: GridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId],
-				gridImageBlock: GridImageBlock,
-				gHeight: number,
-				gHeightMax: number = gridConfig.gHeight,
-				gHeightMaxEff: number,
-				gridLight: GridLight,
-				gSizeHPrevious: number = 0,
-				gSizeWPrevious: number = 0,
-				gWidth: number,
-				gWidthMax: number = gridConfig.gWidth,
-				gWidthMaxEff: number,
-				gx: number,
-				gy: number,
-				i: string,
-				imageBitmap: ImageBitmap,
-				j: string,
-				k: string,
-				lightHashes: { [key: number]: GridLight },
-				lights: GridBlockTable<GridLight> | undefined = undefined,
-				radius: number,
-				radius2: number,
-				reference: GridBlockTable<GridImageBlockReference>,
-				referenceHashes: { [key: number]: GridImageBlockReference },
-				resolutionMultiple: number = 4,
-				scaledImageHeight: number = Math.round(canvasHeight * (canvasTmpGh / gHeightMax)),
-				scaledImageWidth: number = Math.round(canvasWidth * (canvasTmpGw / gWidthMax)),
-				stopGx: number,
-				stopGy: number,
-				vanishingEnable: boolean = MapDrawWorkerEngine.vanishingEnable,
-				vanishingPercentageOfViewport: number = MapDrawWorkerEngine.vanishingPercentageOfViewport,
-				x: number,
-				y: number,
-				z: VideoBusInputCmdGameModeEditApplyZ,
-				zBitmapBackground: ImageBitmap = canvas.transferToImageBitmap(),
-				zBitmapForeground: ImageBitmap = canvas.transferToImageBitmap(),
-				zBitmapPrimary: ImageBitmap = canvas.transferToImageBitmap(),
-				zBitmapSecondary: ImageBitmap = canvas.transferToImageBitmap(),
-				zBitmapVanishing: ImageBitmap = canvas.transferToImageBitmap(),
-				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = MapDrawWorkerEngine.zGroup;
+		let camera: MapDrawBusInputPlayloadCamera,
+			canvas: OffscreenCanvas,
+			canvasHeight: number,
+			canvasTmp: OffscreenCanvas,
+			canvasTmpGh: number,
+			canvasTmpGhEff: number,
+			canvasTmpGw: number,
+			canvasTmpGwEff: number,
+			canvasWidth: number,
+			ctx: OffscreenCanvasRenderingContext2D,
+			ctxTmp: OffscreenCanvasRenderingContext2D,
+			complexes: GridBlockTableComplex[],
+			complexesByGx: { [key: number]: GridBlockTableComplex[] },
+			drawGx: number,
+			drawGy: number,
+			extendedHash: { [key: number]: null },
+			gInPhEff: number,
+			gInPwEff: number,
+			gradient: CanvasGradient,
+			grid: Grid,
+			gridConfig: GridConfig,
+			gridImageBlock: GridImageBlock,
+			gHeight: number,
+			gHeightMax: number,
+			gHeightMaxEff: number,
+			gridLight: GridLight,
+			gSizeHPrevious: number,
+			gSizeWPrevious: number,
+			gWidth: number,
+			gWidthMax: number,
+			gWidthMaxEff: number,
+			gx: number,
+			gy: number,
+			i: string,
+			imageBitmap: ImageBitmap,
+			j: string,
+			k: string,
+			lightHashes: { [key: number]: GridLight },
+			lights: GridBlockTable<GridLight> | undefined,
+			radius: number,
+			radius2: number,
+			reference: GridBlockTable<GridImageBlockReference>,
+			referenceHashes: { [key: number]: GridImageBlockReference },
+			resolutionMultiple: number,
+			scaledImageHeight: number,
+			scaledImageWidth: number,
+			stopGx: number,
+			stopGy: number,
+			vanishingEnable: boolean,
+			vanishingPercentageOfViewport: number,
+			x: number,
+			y: number,
+			z: VideoBusInputCmdGameModeEditApplyZ,
+			zBitmapBackground: ImageBitmap,
+			zBitmapForeground: ImageBitmap,
+			zBitmapPrimary: ImageBitmap,
+			zBitmapSecondary: ImageBitmap,
+			zBitmapVanishing: ImageBitmap,
+			zGroup: VideoBusInputCmdGameModeEditApplyZ[];
 
-			// Config
-			canvas.height = canvasHeight;
-			canvas.width = canvasWidth;
-			canvasTmp.height = canvasTmpGh * resolutionMultiple;
-			canvasTmp.width = canvasTmpGw * resolutionMultiple;
-			ctx.imageSmoothingEnabled = false;
-			ctxTmp.imageSmoothingEnabled = false;
+		// Draw interval
+		UtilEngine.setInterval(() => {
+			if(MapDrawWorkerEngine.mapVisible) {
+				try {
+					camera = MapDrawWorkerEngine.camera;
+					canvas = MapDrawWorkerEngine.canvas;
+					canvasHeight = MapDrawWorkerEngine.height;
+					canvasTmp = MapDrawWorkerEngine.canvasTmp;
+					canvasTmpGh = MapDrawWorkerEngine.canvasTmpGh;
+					canvasTmpGw = MapDrawWorkerEngine.canvasTmpGw;
+					canvasWidth = MapDrawWorkerEngine.width;
+					ctx = MapDrawWorkerEngine.ctx;
+					ctxTmp = MapDrawWorkerEngine.ctxTmp;
+					gInPhEff = 0;
+					gInPwEff = 0;
+					grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId];
+					gridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId];
+					gHeightMax = gridConfig.gHeight;
+					gSizeHPrevious = 0;
+					gSizeWPrevious = 0;
+					gWidthMax = gridConfig.gWidth;
+					lights = undefined;
+					resolutionMultiple = 4;
+					scaledImageHeight = Math.round(canvasHeight * (canvasTmpGh / gHeightMax));
+					scaledImageWidth = Math.round(canvasWidth * (canvasTmpGw / gWidthMax));
+					vanishingEnable = MapDrawWorkerEngine.vanishingEnable;
+					vanishingPercentageOfViewport = MapDrawWorkerEngine.vanishingPercentageOfViewport;
+					zBitmapBackground = canvas.transferToImageBitmap();
+					zBitmapForeground = canvas.transferToImageBitmap();
+					zBitmapPrimary = canvas.transferToImageBitmap();
+					zBitmapSecondary = canvas.transferToImageBitmap();
+					zBitmapVanishing = canvas.transferToImageBitmap();
+					zGroup = MapDrawWorkerEngine.zGroup;
 
-			canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
-			canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
-			gHeightMaxEff = gHeightMax * resolutionMultiple;
-			gWidthMaxEff = gWidthMax * resolutionMultiple;
-			radius = Math.round((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple);
-			radius2 = radius * 2;
+					// Config
+					canvas.height = canvasHeight;
+					canvas.width = canvasWidth;
+					canvasTmp.height = canvasTmpGh * resolutionMultiple;
+					canvasTmp.width = canvasTmpGw * resolutionMultiple;
+					ctx.imageSmoothingEnabled = false;
+					ctxTmp.imageSmoothingEnabled = false;
 
-			for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
-				for (gHeight = 0; gHeight < gHeightMax; gHeight += canvasTmpGh) {
-					for (i in zGroup) {
-						z = zGroup[i];
-						switch (z) {
-							case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-								extendedHash = <any>new Object();
-								lights = undefined;
-								reference = grid.imageBlocksBackgroundReference;
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-								extendedHash = <any>new Object();
-								lights = grid.lightsForeground;
-								reference = grid.imageBlocksForegroundReference;
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-								extendedHash = <any>new Object();
-								lights = grid.lightsPrimary;
-								reference = grid.imageBlocksPrimaryReference;
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-								extendedHash = <any>new Object();
-								lights = undefined;
-								reference = grid.imageBlocksSecondaryReference;
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-								extendedHash = <any>new Object();
-								lights = undefined;
-								reference = grid.imageBlocksVanishingReference;
-								break;
-						}
-						referenceHashes = reference.hashes;
+					canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
+					canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
+					gHeightMaxEff = gHeightMax * resolutionMultiple;
+					gWidthMaxEff = gWidthMax * resolutionMultiple;
+					radius = Math.round((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple);
+					radius2 = radius * 2;
 
-						// Prepare
-						stopGx = gWidth + canvasTmpGw;
-						stopGy = gHeight + canvasTmpGh;
-
-						// Applicable hashes
-						complexesByGx = <any>reference.hashesGyByGx;
-
-						// Image Blocks
-						for (j in complexesByGx) {
-							complexes = complexesByGx[j];
-							gx = Number(j);
-
-							if (gx < gWidth || gx > stopGx) {
-								continue;
-							}
-
-							drawGx = Math.round((gx - gWidth) * resolutionMultiple);
-
-							for (k in complexes) {
-								gy = complexes[k].value;
-								if (gy < gHeight || gy > stopGy) {
-									continue;
+					for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
+						for (gHeight = 0; gHeight < gHeightMax; gHeight += canvasTmpGh) {
+							for (i in zGroup) {
+								z = zGroup[i];
+								switch (z) {
+									case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+										extendedHash = <any>new Object();
+										lights = undefined;
+										reference = grid.imageBlocksBackgroundReference;
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+										extendedHash = <any>new Object();
+										lights = grid.lightsForeground;
+										reference = grid.imageBlocksForegroundReference;
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+										extendedHash = <any>new Object();
+										lights = grid.lightsPrimary;
+										reference = grid.imageBlocksPrimaryReference;
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+										extendedHash = <any>new Object();
+										lights = undefined;
+										reference = grid.imageBlocksSecondaryReference;
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+										extendedHash = <any>new Object();
+										lights = undefined;
+										reference = grid.imageBlocksVanishingReference;
+										break;
 								}
-								gridImageBlock = referenceHashes[complexes[k].hash].block;
+								referenceHashes = reference.hashes;
 
-								if (gridImageBlock.null) {
-									continue;
-								}
+								// Prepare
+								stopGx = gWidth + canvasTmpGw;
+								stopGy = gHeight + canvasTmpGh;
 
-								// Extended check
-								if (gridImageBlock.extends) {
-									if (gridImageBlock.extends) {
-										// extention block
-										gridImageBlock = referenceHashes[gridImageBlock.extends].block;
-									}
+								// Applicable hashes
+								complexesByGx = <any>reference.hashesGyByGx;
 
-									if (extendedHash[gridImageBlock.hash] === null) {
-										// Skip block as its hash parent's image has already drawn over it
-										continue;
-									} else {
-										// Draw large block
-										extendedHash[gridImageBlock.hash] = null;
-										if (gx !== <number>gridImageBlock.gx) {
-											gx = <number>gridImageBlock.gx;
-											drawGx = Math.round((gx - gWidth) * resolutionMultiple);
-										}
-										gy = <number>gridImageBlock.gy;
-									}
-								} else {
-									if (gx !== <number>gridImageBlock.gx) {
-										gx = <number>gridImageBlock.gx;
-										drawGx = Math.round((gx - gWidth) * resolutionMultiple);
-									}
-								}
+								// Image Blocks
+								for (j in complexesByGx) {
+									complexes = complexesByGx[j];
+									gx = Number(j);
 
-								// Cache calculations
-								drawGy = Math.round((gy - gHeight) * resolutionMultiple);
-								if (gSizeHPrevious !== gridImageBlock.gSizeH) {
-									gSizeHPrevious = gridImageBlock.gSizeH;
-									gInPhEff = resolutionMultiple * gridImageBlock.gSizeH;
-								}
-								if (gSizeWPrevious !== gridImageBlock.gSizeW) {
-									gSizeWPrevious = gridImageBlock.gSizeW;
-									gInPwEff = resolutionMultiple * gridImageBlock.gSizeW;
-								}
-
-								// Transforms
-								ctx.setTransform(
-									gridImageBlock.flipH ? -1 : 1,
-									0,
-									0,
-									gridImageBlock.flipV ? -1 : 1,
-									drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
-									drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
-								);
-
-								imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
-								ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
-							}
-						}
-						// Reset transforms
-						ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-						// Lights
-						if (lights && lights.hashesGyByGx) {
-							complexesByGx = lights.hashesGyByGx;
-							lightHashes = lights.hashes;
-
-							for (j in complexesByGx) {
-								complexes = complexesByGx[j];
-								gx = Number(j);
-
-								if (gx < gWidth || gx > stopGx) {
-									continue;
-								}
-
-								drawGx = Math.round((gx - gWidth) * resolutionMultiple);
-
-								for (k in complexes) {
-									gridLight = lightHashes[complexes[k].hash];
-
-									if (gridLight.null) {
+									if (gx < gWidth || gx > stopGx) {
 										continue;
 									}
 
-									gy = <number>gridLight.gy;
-									if (gy < gHeight || gy > stopGy) {
-										continue;
-									}
+									drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 
-									// Extended check
-									if (gridLight.extends) {
-										if (gridLight.extends) {
-											// extention block
-											gridLight = lightHashes[gridLight.extends];
-										}
-
-										if (extendedHash[gridLight.hash] === null) {
-											// Skip block as its hash parent's image has already drawn over it
+									for (k in complexes) {
+										gy = complexes[k].value;
+										if (gy < gHeight || gy > stopGy) {
 											continue;
-										} else {
-											// Draw large block
-											extendedHash[gridLight.hash] = null;
+										}
+										gridImageBlock = referenceHashes[complexes[k].hash].block;
 
-											if (gx !== <number>gridLight.gx) {
-												gx = <number>gridLight.gx;
+										if (gridImageBlock.null) {
+											continue;
+										}
+
+										// Extended check
+										if (gridImageBlock.extends) {
+											if (gridImageBlock.extends) {
+												// extention block
+												gridImageBlock = referenceHashes[gridImageBlock.extends].block;
+											}
+
+											if (extendedHash[gridImageBlock.hash] === null) {
+												// Skip block as its hash parent's image has already drawn over it
+												continue;
+											} else {
+												// Draw large block
+												extendedHash[gridImageBlock.hash] = null;
+												if (gx !== <number>gridImageBlock.gx) {
+													gx = <number>gridImageBlock.gx;
+													drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+												}
+												gy = <number>gridImageBlock.gy;
+											}
+										} else {
+											if (gx !== <number>gridImageBlock.gx) {
+												gx = <number>gridImageBlock.gx;
 												drawGx = Math.round((gx - gWidth) * resolutionMultiple);
 											}
+										}
+
+										// Cache calculations
+										drawGy = Math.round((gy - gHeight) * resolutionMultiple);
+										if (gSizeHPrevious !== gridImageBlock.gSizeH) {
+											gSizeHPrevious = gridImageBlock.gSizeH;
+											gInPhEff = resolutionMultiple * gridImageBlock.gSizeH;
+										}
+										if (gSizeWPrevious !== gridImageBlock.gSizeW) {
+											gSizeWPrevious = gridImageBlock.gSizeW;
+											gInPwEff = resolutionMultiple * gridImageBlock.gSizeW;
+										}
+
+										// Transforms
+										ctx.setTransform(
+											gridImageBlock.flipH ? -1 : 1,
+											0,
+											0,
+											gridImageBlock.flipV ? -1 : 1,
+											drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
+											drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
+										);
+
+										imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
+										ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+									}
+								}
+								// Reset transforms
+								ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+								// Lights
+								if (lights && lights.hashesGyByGx) {
+									complexesByGx = lights.hashesGyByGx;
+									lightHashes = lights.hashes;
+
+									for (j in complexesByGx) {
+										complexes = complexesByGx[j];
+										gx = Number(j);
+
+										if (gx < gWidth || gx > stopGx) {
+											continue;
+										}
+
+										drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+
+										for (k in complexes) {
+											gridLight = lightHashes[complexes[k].hash];
+
+											if (gridLight.null) {
+												continue;
+											}
+
 											gy = <number>gridLight.gy;
-										}
-									} else {
-										if (gx !== <number>gridLight.gx) {
-											gx = <number>gridLight.gx;
-											drawGx = Math.round((gx - gWidth) * resolutionMultiple);
-										}
-									}
+											if (gy < gHeight || gy > stopGy) {
+												continue;
+											}
 
-									// Cache calculations
-									drawGy = Math.round((gy - gHeight) * resolutionMultiple);
-									if (gSizeHPrevious !== gridLight.gSizeH) {
-										gSizeHPrevious = gridLight.gSizeH;
-										gInPhEff = Math.round(resolutionMultiple * gridLight.gSizeH);
-									}
-									if (gSizeWPrevious !== gridLight.gSizeW) {
-										gSizeWPrevious = gridLight.gSizeW;
-										gInPwEff = Math.round(resolutionMultiple * gridLight.gSizeW);
-									}
+											// Extended check
+											if (gridLight.extends) {
+												if (gridLight.extends) {
+													// extention block
+													gridLight = lightHashes[gridLight.extends];
+												}
 
-									imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
-									ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+												if (extendedHash[gridLight.hash] === null) {
+													// Skip block as its hash parent's image has already drawn over it
+													continue;
+												} else {
+													// Draw large block
+													extendedHash[gridLight.hash] = null;
+
+													if (gx !== <number>gridLight.gx) {
+														gx = <number>gridLight.gx;
+														drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+													}
+													gy = <number>gridLight.gy;
+												}
+											} else {
+												if (gx !== <number>gridLight.gx) {
+													gx = <number>gridLight.gx;
+													drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+												}
+											}
+
+											// Cache calculations
+											drawGy = Math.round((gy - gHeight) * resolutionMultiple);
+											if (gSizeHPrevious !== gridLight.gSizeH) {
+												gSizeHPrevious = gridLight.gSizeH;
+												gInPhEff = Math.round(resolutionMultiple * gridLight.gSizeH);
+											}
+											if (gSizeWPrevious !== gridLight.gSizeW) {
+												gSizeWPrevious = gridLight.gSizeW;
+												gInPwEff = Math.round(resolutionMultiple * gridLight.gSizeW);
+											}
+
+											imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
+											ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+										}
+									}
+								}
+
+								switch (z) {
+									case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+										zBitmapBackground = canvasTmp.transferToImageBitmap();
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+										zBitmapForeground = canvasTmp.transferToImageBitmap();
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+										zBitmapPrimary = canvasTmp.transferToImageBitmap();
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+										zBitmapSecondary = canvasTmp.transferToImageBitmap();
+										break;
+									case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+										if (vanishingEnable) {
+											x = Math.round((camera.gx - gWidth) * resolutionMultiple);
+											y = Math.round((camera.gy - gHeight) * resolutionMultiple);
+
+											gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
+											gradient.addColorStop(0, 'white');
+											gradient.addColorStop(0.75, 'white');
+											gradient.addColorStop(1, 'transparent');
+
+											ctxTmp.globalCompositeOperation = 'destination-out';
+											ctxTmp.fillStyle = gradient;
+											ctxTmp.fillRect(x - radius, y - radius, radius2, radius2);
+											ctxTmp.globalCompositeOperation = 'source-over'; // restore default setting
+										}
+
+										zBitmapVanishing = canvasTmp.transferToImageBitmap();
+										break;
 								}
 							}
-						}
 
-						switch (z) {
-							case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-								zBitmapBackground = canvasTmp.transferToImageBitmap();
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-								zBitmapForeground = canvasTmp.transferToImageBitmap();
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-								zBitmapPrimary = canvasTmp.transferToImageBitmap();
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-								zBitmapSecondary = canvasTmp.transferToImageBitmap();
-								break;
-							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-								if (vanishingEnable) {
-									x = Math.round((camera.gx - gWidth) * resolutionMultiple);
-									y = Math.round((camera.gy - gHeight) * resolutionMultiple);
+							// Build final cut of the map
+							ctxTmp.drawImage(zBitmapBackground, 0, 0);
+							ctxTmp.drawImage(zBitmapSecondary, 0, 0);
+							ctxTmp.drawImage(zBitmapPrimary, 0, 0);
+							ctxTmp.drawImage(zBitmapForeground, 0, 0);
+							ctxTmp.drawImage(zBitmapVanishing, 0, 0);
 
-									gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
-									gradient.addColorStop(0, 'white');
-									gradient.addColorStop(0.75, 'white');
-									gradient.addColorStop(1, 'transparent');
-
-									ctxTmp.globalCompositeOperation = 'destination-out';
-									ctxTmp.fillStyle = gradient;
-									ctxTmp.fillRect(x - radius, y - radius, radius2, radius2);
-									ctxTmp.globalCompositeOperation = 'source-over'; // restore default setting
-								}
-
-								zBitmapVanishing = canvasTmp.transferToImageBitmap();
-								break;
+							if (canvasTmpGw > canvasWidth) {
+								// Resize to correct size (good)
+								ctx.drawImage(canvasTmp, 0, 0, gWidthMaxEff, gHeightMaxEff, 0, 0, canvasWidth, canvasHeight);
+								// Loop ends after this argument
+							} else {
+								// Resize & offset to correct size (bad)
+								ctx.drawImage(
+									canvasTmp,
+									0,
+									0,
+									canvasTmpGwEff,
+									canvasTmpGhEff,
+									Math.round(canvasWidth * (gWidth / gWidthMax)),
+									Math.round(canvasHeight * (gHeight / gHeightMax)),
+									scaledImageWidth,
+									scaledImageHeight,
+								);
+							}
 						}
 					}
 
-					// Build final cut of the map
-					ctxTmp.drawImage(zBitmapBackground, 0, 0);
-					ctxTmp.drawImage(zBitmapSecondary, 0, 0);
-					ctxTmp.drawImage(zBitmapPrimary, 0, 0);
-					ctxTmp.drawImage(zBitmapForeground, 0, 0);
-					ctxTmp.drawImage(zBitmapVanishing, 0, 0);
-
-					if (canvasTmpGw > canvasWidth) {
-						// Resize to correct size (good)
-						ctx.drawImage(canvasTmp, 0, 0, gWidthMaxEff, gHeightMaxEff, 0, 0, canvasWidth, canvasHeight);
-						// Loop ends after this argument
-					} else {
-						// Resize & offset to correct size (bad)
-						ctx.drawImage(
-							canvasTmp,
-							0,
-							0,
-							canvasTmpGwEff,
-							canvasTmpGhEff,
-							Math.round(canvasWidth * (gWidth / gWidthMax)),
-							Math.round(canvasHeight * (gHeight / gHeightMax)),
-							scaledImageWidth,
-							scaledImageHeight,
-						);
-					}
+					// Done
+					MapDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());
+				} catch (e: any) {
+					//console.error('e', e);
 				}
 			}
-
-			// Done
-			MapDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());
-		} catch (e: any) {
-			//console.error('e', e);
-		}
-		MapDrawWorkerEngine.busy = false;
+		}, 1000);
 	}
 }
