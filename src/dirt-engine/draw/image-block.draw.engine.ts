@@ -101,11 +101,6 @@ export class ImageBlockDrawEngine {
 				drawGy: number,
 				drawNull: boolean = ImageBlockDrawEngine.drawNull,
 				extendedHash: { [key: number]: null },
-				extendedHashBackground: { [key: number]: null } = {},
-				extendedHashForeground: { [key: number]: null } = {},
-				extendedHashPrimary: { [key: number]: null } = {},
-				extendedHashSecondary: { [key: number]: null } = {},
-				extendedHashVanishing: { [key: number]: null } = {},
 				getCacheInstance = LightingEngine.getCacheInstance,
 				getCacheBrightness = LightingEngine.getCacheBrightness,
 				getCacheLitByBrightness = LightingEngine.getCacheLitByBrightness,
@@ -164,26 +159,27 @@ export class ImageBlockDrawEngine {
 				z = zGroup[i];
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						extendedHash = extendedHashBackground;
+						extendedHash = <any>new Object();
 						lights = undefined;
 						reference = grid.imageBlocksBackgroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-						extendedHash = extendedHashForeground;
+						extendedHash = <any>new Object();
 						lights = grid.lightsForeground;
 						reference = grid.imageBlocksForegroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						extendedHash = extendedHashPrimary;
+						extendedHash = <any>new Object();
 						lights = grid.lightsPrimary;
 						reference = grid.imageBlocksPrimaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-						extendedHash = extendedHashSecondary;
+						extendedHash = <any>new Object();
+						lights = undefined;
 						reference = grid.imageBlocksSecondaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-						extendedHash = extendedHashVanishing;
+						extendedHash = <any>new Object();
 						lights = undefined;
 						reference = grid.imageBlocksVanishingReference;
 						break;
@@ -246,11 +242,11 @@ export class ImageBlockDrawEngine {
 						drawGy = Math.round((gy - startGy) * gInPh);
 						if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 							gSizeHPrevious = gridImageBlock.gSizeH;
-							gInPhEff = gInPh * gSizeHPrevious + 1;
+							gInPhEff = Math.round(gInPh * gSizeHPrevious + 1);
 						}
 						if (gSizeWPrevious !== gridImageBlock.gSizeW) {
 							gSizeWPrevious = gridImageBlock.gSizeW;
-							gInPwEff = gInPw * gSizeWPrevious + 1;
+							gInPwEff = Math.round(gInPw * gSizeWPrevious + 1);
 						}
 
 						// Transforms
@@ -274,11 +270,11 @@ export class ImageBlockDrawEngine {
 									ctx.drawImage(
 										imageBitmap,
 										0,
-										imageBitmap.height / 2,
+										Math.round(imageBitmap.height / 2),
 										imageBitmap.width,
 										imageBitmap.height,
 										0,
-										gInPhEff / 2,
+										Math.round(gInPhEff / 2),
 										gInPwEff,
 										gInPhEff,
 									);
@@ -288,11 +284,11 @@ export class ImageBlockDrawEngine {
 										0,
 										0,
 										imageBitmap.width,
-										imageBitmap.height / 2,
+										Math.round(imageBitmap.height / 2),
 										0,
 										0,
 										gInPwEff,
-										gInPhEff / 2,
+										Math.round(gInPhEff / 2),
 									);
 								}
 							} else {
@@ -311,11 +307,11 @@ export class ImageBlockDrawEngine {
 										ctx.drawImage(
 											imageBitmap,
 											0,
-											imageBitmap.height / 2,
+											Math.round(imageBitmap.height / 2),
 											imageBitmap.width,
 											imageBitmap.height,
 											0,
-											gInPhEff / 2,
+											Math.round(gInPhEff / 2),
 											gInPwEff,
 											gInPhEff,
 										);
@@ -325,11 +321,11 @@ export class ImageBlockDrawEngine {
 											0,
 											0,
 											imageBitmap.width,
-											imageBitmap.height / 2,
+											Math.round(imageBitmap.height / 2),
 											0,
 											0,
 											gInPwEff,
-											gInPhEff / 2,
+											Math.round(gInPhEff / 2),
 										);
 									}
 								} else {

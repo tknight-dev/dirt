@@ -54,6 +54,7 @@ export enum AssetImageSrcQuality {
 }
 
 export enum AssetImageType {
+	GRID_BLOCK_ACTION,
 	GRID_BLOCK_FOLIAGE,
 	GRID_BLOCK_LIQUID,
 	GRID_BLOCK_SOLID,

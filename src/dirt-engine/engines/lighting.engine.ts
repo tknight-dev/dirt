@@ -26,6 +26,7 @@ export class LightingEngine {
 	private static cacheOutsideDay: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
 	private static cacheOutsideNight: { [key: string]: ImageBitmap[] } = {}; // key is assetImageId
 	private static darknessMax: number;
+	private static disableShading: boolean;
 	private static gamma: number;
 	private static hourPreciseOfDayEff: number = 0;
 	private static initialized: boolean;
@@ -142,11 +143,15 @@ export class LightingEngine {
 		});
 	}
 
-	public static cacheWorkerImport(assets: { [key: string]: MapDrawBusInputPlayloadAsset }, camera?: Camera) {
+	public static cacheWorkerImport(assets: { [key: string]: MapDrawBusInputPlayloadAsset }) {
 		LightingEngine.cache = Object.assign(LightingEngine.cache || {}, assets);
 	}
 
 	private static draw(assetImageId?: string): void {
+		if (LightingEngine.disableShading) {
+			return;
+		}
+
 		let assetId: string,
 			assetIds: string[] = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache),
 			brightness: string,
@@ -217,12 +222,13 @@ export class LightingEngine {
 		}
 	}
 
-	public static async initialize(worker?: boolean): Promise<void> {
+	public static async initialize(disableShading?: boolean, worker?: boolean): Promise<void> {
 		if (LightingEngine.initialized) {
 			console.error('LightingEngine > initialize: already initialized');
 			return;
 		}
 		LightingEngine.initialized = true;
+		LightingEngine.disableShading = !!disableShading;
 		LightingCalcEngineBus.initialize();
 		LightingCalcEngineBus.setCallback(
 			(

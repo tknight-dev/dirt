@@ -1,6 +1,5 @@
 import { Camera } from '../models/camera.model';
 import { GridConfig } from '../models/grid.model';
-import { LightingEngine } from './lighting.engine';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { UtilEngine } from './util.engine';

@@ -22,7 +22,9 @@ export class LightingCalcEngineBus {
 			return;
 		}
 		LightingCalcEngineBus.initialized = true;
-		LightingCalcEngineBus.worker = new Worker(new URL('../workers/lighting.calc.worker.engine', import.meta.url));
+		LightingCalcEngineBus.worker = new Worker(new URL('../workers/lighting.calc.worker.engine', import.meta.url), {
+			name: 'LightingCalcWorkerEngine',
+		});
 		LightingCalcEngineBus.input();
 
 		LightingCalcEngineBus.worker.postMessage({

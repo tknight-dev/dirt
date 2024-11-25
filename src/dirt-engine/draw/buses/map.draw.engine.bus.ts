@@ -23,7 +23,9 @@ export class MapDrawEngineBus {
 			return;
 		}
 		MapDrawEngineBus.initialized = true;
-		MapDrawEngineBus.worker = new Worker(new URL('../workers/map.draw.worker.engine', import.meta.url));
+		MapDrawEngineBus.worker = new Worker(new URL('../workers/map.draw.worker.engine', import.meta.url), {
+			name: 'MapDrawWorkerEngine',
+		});
 		MapDrawEngineBus.input();
 
 		MapDrawEngineBus.worker.postMessage({

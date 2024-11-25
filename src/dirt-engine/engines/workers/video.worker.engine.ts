@@ -157,7 +157,9 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenSecondaryContext = <any>VideoWorkerEngine.canvasOffscreenSecondary.getContext('2d');
-		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>(
+			VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d', { alpha: false })
+		);
 		VideoWorkerEngine.canvasOffscreenVanishingContext = <any>VideoWorkerEngine.canvasOffscreenVanishing.getContext('2d');
 
 		// Engines

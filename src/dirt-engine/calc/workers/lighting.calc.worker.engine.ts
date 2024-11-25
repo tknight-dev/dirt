@@ -176,7 +176,6 @@ class LightingCalcWorkerEngine {
 				complexes: GridBlockTableComplex[],
 				complexesExtended: GridBlockTableComplexExtended[],
 				complexesByGxNoFoliage: { [key: number]: GridBlockTableComplex[] },
-				count: number,
 				first: boolean = LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId],
 				foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] },
 				foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] | undefined,
@@ -262,6 +261,7 @@ class LightingCalcWorkerEngine {
 						brightnessOutsideByHash = brightnessOutsideByHashGroup;
 						referenceNoFoliage = _calcProcessReferences(
 							[
+								grid.imageBlocksSecondaryReference.hashes,
 								grid.imageBlocksPrimaryReference.hashes,
 								grid.imageBlocksForegroundReference.hashes,
 								grid.imageBlocksVanishingReference.hashes,
@@ -275,7 +275,6 @@ class LightingCalcWorkerEngine {
 
 				for (gxString in complexesByGxNoFoliage) {
 					complexes = complexesByGxNoFoliage[gxString];
-					count = 0;
 
 					// Check for light interaction
 					gridImageBlock = referenceNoFoliage.hashes[complexes[0].hash].block;
@@ -292,7 +291,7 @@ class LightingCalcWorkerEngine {
 						continue; // no light interacting blocks on this gx column
 					}
 
-					// Shadeaa
+					// Shade
 					gy = gridImageBlock.gy;
 					for (k = 0; k < complexes.length; k++) {
 						if (hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
@@ -326,6 +325,7 @@ class LightingCalcWorkerEngine {
 				if (foliageGyByGxAll === undefined) {
 					foliageGyByGxAll = [
 						_calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
+						_calcProcessFoliage(grid.imageBlocksSecondaryFoliage),
 						_calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
 						_calcProcessFoliage(grid.imageBlocksForegroundFoliage),
 						_calcProcessFoliage(grid.imageBlocksVanishingFoliage),

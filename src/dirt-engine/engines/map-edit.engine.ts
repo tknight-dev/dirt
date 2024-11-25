@@ -1,5 +1,6 @@
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import { Camera } from '../models/camera.model';
+import { CameraEngine } from './camera.engine';
 import {
 	Grid,
 	GridBlockTable,

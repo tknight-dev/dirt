@@ -125,36 +125,36 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
-	// {
-	// 	gHeight: 2,
-	// 	gWidth: 2,
-	// 	id: 'DOOR_FRONT1_CLOSED',
-	// 	meta: {
-	// 		author: 'tknight-dev',
-	// 		authorWebsite: 'https://tknight.dev',
-	// 		license: undefined,
-	// 		publicDomain: false,
-	// 		title: undefined,
-	// 	},
-	// 	srcs: [
-	// 		{
-	// 			collection: AssetCollection.VIDEO,
-	// 			quality: AssetImageSrcQuality.LOW,
-	// 			src: 'images/grid-objects/doors/door_front1_closed_32_32.webp',
-	// 		},
-	// 		{
-	// 			collection: AssetCollection.VIDEO,
-	// 			quality: AssetImageSrcQuality.MEDIUM,
-	// 			src: 'images/grid-objects/doors/door_front1_closed_64_64.webp',
-	// 		},
-	// 		{
-	// 			collection: AssetCollection.SHARED,
-	// 			quality: AssetImageSrcQuality.HIGH,
-	// 			src: 'images/grid-objects/doors/door_front1_closed_128_128.webp',
-	// 		},
-	// 	],
-	// 	type: AssetImageType.GRID_BLOCK_SOLID,
-	// },
+	{
+		gHeight: 2,
+		gWidth: 2,
+		id: 'DOOR_FRONT1_CLOSED',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/doors/door_front1_closed_32_32.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/doors/door_front1_closed_64_64.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/doors/door_front1_closed_128_128.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_ACTION,
+	},
 	{
 		gHeight: 1,
 		gWidth: 1,
@@ -294,6 +294,36 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 			},
 		],
 		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		id: 'LADDER1',
+		gHeight: 2,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/ladders/ladder1_16_32.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/ladders/ladder1_32_64.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/ladders/ladder1_64_128.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_ACTION,
 	},
 	{
 		id: 'LANTERN1',

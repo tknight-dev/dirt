@@ -96,7 +96,7 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.initialized = true;
 		MapDrawWorkerEngine.self = self;
 
-		await LightingEngine.initialize(true);
+		await LightingEngine.initialize(true, true);
 
 		MapDrawWorkerEngine.canvas = new OffscreenCanvas(1, 1);
 		MapDrawWorkerEngine.canvasTmp = new OffscreenCanvas(1, 1);
@@ -111,7 +111,7 @@ class MapDrawWorkerEngine {
 
 	public static inputSetAssets(data: MapDrawBusInputPlayloadAssets): void {
 		// console.log('MapDrawWorkerEngine > inputSetAssets', data);
-		MapDrawWorkerEngine.camera && LightingEngine.cacheWorkerImport(data.assets, <Camera>MapDrawWorkerEngine.camera);
+		MapDrawWorkerEngine.camera && LightingEngine.cacheWorkerImport(data.assets);
 	}
 
 	public static inputSetCamera(data: MapDrawBusInputPlayloadCamera): void {
@@ -188,11 +188,6 @@ class MapDrawWorkerEngine {
 				drawGx: number,
 				drawGy: number,
 				extendedHash: { [key: number]: null },
-				extendedHashBackground: { [key: number]: null } = {},
-				extendedHashForeground: { [key: number]: null } = {},
-				extendedHashPrimary: { [key: number]: null } = {},
-				extendedHashSecondary: { [key: number]: null } = {},
-				extendedHashVanishing: { [key: number]: null } = {},
 				gInPhEff: number = 0,
 				gInPwEff: number = 0,
 				gradient: CanvasGradient,
@@ -212,7 +207,6 @@ class MapDrawWorkerEngine {
 				gy: number,
 				i: string,
 				imageBitmap: ImageBitmap,
-				imageBitmaps: ImageBitmap[],
 				j: string,
 				k: string,
 				lightHashes: { [key: number]: GridLight },
@@ -259,26 +253,27 @@ class MapDrawWorkerEngine {
 						z = zGroup[i];
 						switch (z) {
 							case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-								extendedHash = extendedHashBackground;
+								extendedHash = <any>new Object();
 								lights = undefined;
 								reference = grid.imageBlocksBackgroundReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-								extendedHash = extendedHashForeground;
+								extendedHash = <any>new Object();
 								lights = grid.lightsForeground;
 								reference = grid.imageBlocksForegroundReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-								extendedHash = extendedHashPrimary;
+								extendedHash = <any>new Object();
 								lights = grid.lightsPrimary;
 								reference = grid.imageBlocksPrimaryReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-								extendedHash = extendedHashSecondary;
+								extendedHash = <any>new Object();
+								lights = undefined;
 								reference = grid.imageBlocksSecondaryReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-								extendedHash = extendedHashVanishing;
+								extendedHash = <any>new Object();
 								lights = undefined;
 								reference = grid.imageBlocksVanishingReference;
 								break;
@@ -286,11 +281,11 @@ class MapDrawWorkerEngine {
 						referenceHashes = reference.hashes;
 
 						// Prepare
-						ctxTmp.clearRect(0, 0, canvasTmpGw, canvasTmpGh);
-						(stopGx = gWidth + canvasTmpGw),
-							(stopGy = gHeight + canvasTmpGh),
-							// Applicable hashes
-							(complexesByGx = <any>reference.hashesGyByGx);
+						stopGx = gWidth + canvasTmpGw;
+						stopGy = gHeight + canvasTmpGh;
+
+						// Applicable hashes
+						complexesByGx = <any>reference.hashesGyByGx;
 
 						// Image Blocks
 						for (j in complexesByGx) {
@@ -426,11 +421,11 @@ class MapDrawWorkerEngine {
 									drawGy = Math.round((gy - gHeight) * resolutionMultiple);
 									if (gSizeHPrevious !== gridLight.gSizeH) {
 										gSizeHPrevious = gridLight.gSizeH;
-										gInPhEff = resolutionMultiple * gridLight.gSizeH;
+										gInPhEff = Math.round(resolutionMultiple * gridLight.gSizeH);
 									}
 									if (gSizeWPrevious !== gridLight.gSizeW) {
 										gSizeWPrevious = gridLight.gSizeW;
-										gInPwEff = resolutionMultiple * gridLight.gSizeW;
+										gInPwEff = Math.round(resolutionMultiple * gridLight.gSizeW);
 									}
 
 									imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
@@ -449,7 +444,7 @@ class MapDrawWorkerEngine {
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 								zBitmapPrimary = canvasTmp.transferToImageBitmap();
 								break;
-							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+							case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
 								zBitmapSecondary = canvasTmp.transferToImageBitmap();
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:

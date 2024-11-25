@@ -115,7 +115,9 @@ export class VideoEngineBus {
 
 		// Spawn Video thread
 		if (window.Worker) {
-			VideoEngineBus.worker = new Worker(new URL('../workers/video.worker.engine', import.meta.url));
+			VideoEngineBus.worker = new Worker(new URL('../workers/video.worker.engine', import.meta.url), {
+				name: 'VideoWorkerEngine',
+			});
 
 			// Setup listener
 			VideoEngineBus.input();
