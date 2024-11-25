@@ -11,6 +11,7 @@ export class DrawPlayEngine {
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static ctxSecondary: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
@@ -24,6 +25,7 @@ export class DrawPlayEngine {
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxSecondary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
@@ -38,6 +40,7 @@ export class DrawPlayEngine {
 		DrawPlayEngine.ctxForeground = ctxForeground;
 		DrawPlayEngine.ctxOverlay = ctxOverlay;
 		DrawPlayEngine.ctxPrimary = ctxPrimary;
+		DrawPlayEngine.ctxSecondary = ctxSecondary;
 		DrawPlayEngine.ctxUnderlay = ctxUnderlay;
 		DrawPlayEngine.ctxVanishing = ctxVanishing;
 	}

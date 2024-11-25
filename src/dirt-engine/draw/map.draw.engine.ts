@@ -37,14 +37,7 @@ export class MapDrawEngine {
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
-	public static async initialize(
-		ctxBackground: OffscreenCanvasRenderingContext2D,
-		ctxForeground: OffscreenCanvasRenderingContext2D,
-		ctxOverlay: OffscreenCanvasRenderingContext2D,
-		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxUnderlay: OffscreenCanvasRenderingContext2D,
-		ctxVanishing: OffscreenCanvasRenderingContext2D,
-	): Promise<void> {
+	public static async initialize(ctxOverlay: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (MapDrawEngine.initialized) {
 			console.error('MapDrawEngine > initialize: already initialized');
 			return;

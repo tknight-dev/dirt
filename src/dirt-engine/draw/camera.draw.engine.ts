@@ -18,26 +18,14 @@ export class CameraDrawEngine {
 	private static cachePositionPx: number;
 	private static cachePositionPy: number;
 	private static cacheZoom: number;
-	private static ctxBackground: OffscreenCanvasRenderingContext2D;
-	private static ctxForeground: OffscreenCanvasRenderingContext2D;
-	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
-	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
-	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
-	public static async initialize(
-		ctxBackground: OffscreenCanvasRenderingContext2D,
-		ctxForeground: OffscreenCanvasRenderingContext2D,
-		ctxOverlay: OffscreenCanvasRenderingContext2D,
-		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxUnderlay: OffscreenCanvasRenderingContext2D,
-		ctxVanishing: OffscreenCanvasRenderingContext2D,
-	): Promise<void> {
+	public static async initialize(ctxPrimary: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (CameraDrawEngine.initialized) {
 			console.error('CameraDrawEngine > initialize: already initialized');
 			return;

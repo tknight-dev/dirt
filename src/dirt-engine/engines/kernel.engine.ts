@@ -53,6 +53,7 @@ export class KernelEngine {
 		ctxForeground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
+		ctxSecondary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
@@ -69,14 +70,14 @@ export class KernelEngine {
 		ctxUnderlay.imageSmoothingEnabled = false;
 		ctxVanishing.imageSmoothingEnabled = false;
 
-		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
-		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
+		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxSecondary, ctxUnderlay, ctxVanishing);
+		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxSecondary, ctxUnderlay, ctxVanishing);
 
 		// Extended
-		await CameraDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
-		await GridDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
-		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
-		await MapDrawEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxUnderlay, ctxVanishing);
+		await CameraDrawEngine.initialize(ctxPrimary);
+		await GridDrawEngine.initialize(ctxOverlay);
+		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxPrimary, ctxSecondary, ctxVanishing);
+		await MapDrawEngine.initialize(ctxOverlay);
 	}
 
 	private static tmpH: any;

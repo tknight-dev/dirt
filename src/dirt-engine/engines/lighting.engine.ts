@@ -105,6 +105,7 @@ export class LightingEngine {
 			processor(grid.imageBlocksBackgroundReference.hashes);
 			processor(grid.imageBlocksForegroundReference.hashes);
 			processor(grid.imageBlocksPrimaryReference.hashes);
+			processor(grid.imageBlocksSecondaryReference.hashes);
 			processor(grid.imageBlocksVanishingReference.hashes);
 
 			processorLights(grid.lightsForeground.hashes);

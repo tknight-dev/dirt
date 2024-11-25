@@ -5,8 +5,8 @@
 import { AssetDeclarations } from '../../models/asset.model';
 import { AudioEngine } from '../audio.engine';
 import { AudioModulation } from '../../models/audio-modulation.model';
-import { KeyAction, KeyCommon } from '../keyboard.engine';
-import { Map, MapActive, MapConfig } from '../../models/map.model';
+import { KeyAction } from '../keyboard.engine';
+import { MapActive, MapConfig } from '../../models/map.model';
 import { MouseAction } from '../mouse.engine';
 import { TouchAction } from '../touch.engine';
 import { ResizeEngine } from '../resize.engine';
@@ -17,7 +17,6 @@ import {
 	VideoBusInputCmdGameModeEditDraw,
 	VideoBusInputCmdGameModePlay,
 	VideoBusInputCmdGamePause,
-	VideoBusInputCmdGamePauseReason,
 	VideoBusInputCmdGameSave,
 	VideoBusInputCmdGameStart,
 	VideoBusInputCmdGameUnpause,
@@ -41,7 +40,6 @@ import {
 	VideoBusWorkerStatusInitialized,
 } from '../../engines/buses/video.model.bus';
 import { UtilEngine } from '../util.engine';
-import { VisibilityEngine } from '../visibility.engine';
 
 export class VideoEngineBus {
 	private static callbackEditCameraUpdate: (update: VideoBusOutputCmdEditCameraUpdate) => void;
@@ -57,6 +55,7 @@ export class VideoEngineBus {
 	private static canvasForeground: HTMLCanvasElement;
 	private static canvasOverlay: HTMLCanvasElement;
 	private static canvasPrimary: HTMLCanvasElement;
+	private static canvasSecondary: HTMLCanvasElement;
 	private static canvasUnderlay: HTMLCanvasElement;
 	private static canvasVanishing: HTMLCanvasElement;
 	private static complete: boolean;
@@ -76,6 +75,7 @@ export class VideoEngineBus {
 		canvasForeground: HTMLCanvasElement,
 		canvasOverlay: HTMLCanvasElement,
 		canvasPrimary: HTMLCanvasElement,
+		canvasSecondary: HTMLCanvasElement,
 		canvasUnderlay: HTMLCanvasElement,
 		canvasVanishing: HTMLCanvasElement,
 		mapInteration: HTMLElement,
@@ -90,6 +90,7 @@ export class VideoEngineBus {
 		let canvasOffscreenUnderlay: OffscreenCanvas = canvasUnderlay.transferControlToOffscreen(),
 			canvasOffscreenBackground: OffscreenCanvas = canvasBackground.transferControlToOffscreen(),
 			canvasOffscreenPrimary: OffscreenCanvas = canvasPrimary.transferControlToOffscreen(),
+			canvasOffscreenSecondary: OffscreenCanvas = canvasSecondary.transferControlToOffscreen(),
 			canvasOffscreenForeground: OffscreenCanvas = canvasForeground.transferControlToOffscreen(),
 			canvasOffscreenOverlay: OffscreenCanvas = canvasOverlay.transferControlToOffscreen(),
 			canvasOffscreenVanishing: OffscreenCanvas = canvasVanishing.transferControlToOffscreen(),
@@ -102,6 +103,7 @@ export class VideoEngineBus {
 		VideoEngineBus.canvasForeground = canvasForeground;
 		VideoEngineBus.canvasOverlay = canvasOverlay;
 		VideoEngineBus.canvasPrimary = canvasPrimary;
+		VideoEngineBus.canvasSecondary = canvasSecondary;
 		VideoEngineBus.canvasUnderlay = canvasUnderlay;
 		VideoEngineBus.canvasVanishing = canvasVanishing;
 		VideoEngineBus.mapInteration = mapInteration;
@@ -129,6 +131,7 @@ export class VideoEngineBus {
 					canvasOffscreenForeground: canvasOffscreenForeground,
 					canvasOffscreenOverlay: canvasOffscreenOverlay,
 					canvasOffscreenPrimary: canvasOffscreenPrimary,
+					canvasOffscreenSecondary: canvasOffscreenSecondary,
 					canvasOffscreenUnderlay: canvasOffscreenUnderlay,
 					canvasOffscreenVanishing: canvasOffscreenVanishing,
 				},
@@ -144,6 +147,7 @@ export class VideoEngineBus {
 				canvasOffscreenForeground,
 				canvasOffscreenOverlay,
 				canvasOffscreenPrimary,
+				canvasOffscreenSecondary,
 				canvasOffscreenUnderlay,
 				canvasOffscreenVanishing,
 			]);
@@ -484,6 +488,7 @@ export class VideoEngineBus {
 		VideoEngineBus.canvasForeground.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasOverlay.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasPrimary.style.transform = 'scale(' + scaler + ')';
+		VideoEngineBus.canvasSecondary.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasVanishing.style.transform = 'scale(' + scaler + ')';
 		VideoEngineBus.canvasUnderlay.style.transform = 'scale(' + scaler + ')';
 

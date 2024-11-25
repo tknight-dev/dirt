@@ -132,6 +132,9 @@ export class MapEditEngine {
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 						reference = grid.imageBlocksPrimaryReference;
 						break;
+					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+						reference = grid.imageBlocksSecondaryReference;
+						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						reference = grid.imageBlocksVanishingReference;
 						break;
@@ -261,6 +264,20 @@ export class MapEditEngine {
 						break;
 					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
 						blocks = grid.imageBlocksPrimarySolid;
+						break;
+				}
+				break;
+			case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+				reference = grid.imageBlocksSecondaryReference;
+				switch (apply.applyType) {
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE:
+						blocks = grid.imageBlocksSecondaryFoliage;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID:
+						blocks = grid.imageBlocksSecondaryLiquid;
+						break;
+					case VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID:
+						blocks = grid.imageBlocksSecondarySolid;
 						break;
 				}
 				break;
@@ -486,6 +503,7 @@ export class MapEditEngine {
 			delete (<any>grid).imageBlocksBackgroundReference;
 			delete (<any>grid).imageBlocksForegroundReference;
 			delete (<any>grid).imageBlocksPrimaryReference;
+			delete (<any>grid).imageBlocksSecondaryReference;
 			delete (<any>grid).imageBlocksVanishingReference;
 
 			MapEditEngine.gridBlockTableDeflateInstance(grid.lightsForeground || {});
@@ -524,6 +542,9 @@ export class MapEditEngine {
 			grid.imageBlocksPrimaryFoliage = grid.imageBlocksPrimaryFoliage || {};
 			grid.imageBlocksPrimaryLiquid = grid.imageBlocksPrimaryLiquid || {};
 			grid.imageBlocksPrimarySolid = grid.imageBlocksPrimarySolid || {};
+			grid.imageBlocksSecondaryFoliage = grid.imageBlocksSecondaryFoliage || {};
+			grid.imageBlocksSecondaryLiquid = grid.imageBlocksSecondaryLiquid || {};
+			grid.imageBlocksSecondarySolid = grid.imageBlocksSecondarySolid || {};
 			grid.imageBlocksVanishingFoliage = grid.imageBlocksVanishingFoliage || {};
 			grid.imageBlocksVanishingLiquid = grid.imageBlocksVanishingLiquid || {};
 			grid.imageBlocksVanishingSolid = grid.imageBlocksVanishingSolid || {};
@@ -560,6 +581,15 @@ export class MapEditEngine {
 				hashes: reference,
 			};
 			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksPrimaryReference);
+
+			reference = <any>new Object();
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksSecondaryFoliage, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksSecondaryLiquid, reference);
+			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksSecondarySolid, reference);
+			grid.imageBlocksSecondaryReference = {
+				hashes: reference,
+			};
+			MapEditEngine.gridBlockTableInflateInstance(grid.imageBlocksSecondaryReference);
 
 			reference = <any>new Object();
 			MapEditEngine.gridBlockTableInflateReference(grid.imageBlocksVanishingFoliage, reference);
@@ -1148,6 +1178,8 @@ export class MapEditEngine {
 					reference = mapActive.gridActive.imageBlocksForegroundReference;
 				} else if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 					reference = mapActive.gridActive.imageBlocksPrimaryReference;
+				} else if (z === VideoBusInputCmdGameModeEditApplyZ.SECONDARY) {
+					reference = mapActive.gridActive.imageBlocksSecondaryReference;
 				} else {
 					reference = mapActive.gridActive.imageBlocksVanishingReference;
 				}

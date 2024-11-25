@@ -20,6 +20,10 @@ export class Grid {
 	imageBlocksPrimaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksPrimaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
 	imageBlocksPrimarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksSecondaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksSecondaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksSecondaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksSecondarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	imageBlocksVanishingFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
 	imageBlocksVanishingLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksVanishingReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
@@ -40,6 +44,9 @@ export class Grid {
 		this.imageBlocksPrimaryFoliage = data.imageBlocksPrimaryFoliage;
 		this.imageBlocksPrimaryLiquid = data.imageBlocksPrimaryLiquid;
 		this.imageBlocksPrimarySolid = data.imageBlocksPrimarySolid;
+		this.imageBlocksSecondaryFoliage = data.imageBlocksSecondaryFoliage;
+		this.imageBlocksSecondaryLiquid = data.imageBlocksSecondaryLiquid;
+		this.imageBlocksSecondarySolid = data.imageBlocksSecondarySolid;
 		this.imageBlocksVanishingFoliage = data.imageBlocksVanishingFoliage;
 		this.imageBlocksVanishingLiquid = data.imageBlocksVanishingLiquid;
 		this.imageBlocksVanishingSolid = data.imageBlocksVanishingSolid;
@@ -61,6 +68,9 @@ export class Grid {
 			imageBlocksPrimaryFoliage: this.imageBlocksPrimaryFoliage,
 			imageBlocksPrimaryLiquid: this.imageBlocksPrimaryLiquid,
 			imageBlocksPrimarySolid: this.imageBlocksPrimarySolid,
+			imageBlocksSecondaryFoliage: this.imageBlocksSecondaryFoliage,
+			imageBlocksSecondaryLiquid: this.imageBlocksSecondaryLiquid,
+			imageBlocksSecondarySolid: this.imageBlocksSecondarySolid,
 			imageBlocksVanishingFoliage: this.imageBlocksVanishingFoliage,
 			imageBlocksVanishingLiquid: this.imageBlocksVanishingLiquid,
 			imageBlocksVanishingSolid: this.imageBlocksVanishingSolid,

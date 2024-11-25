@@ -119,6 +119,8 @@ class VideoWorkerEngine {
 	private static canvasOffscreenOverlayContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenPrimary: OffscreenCanvas; // Z-3
 	private static canvasOffscreenPrimaryContext: OffscreenCanvasRenderingContext2D;
+	private static canvasOffscreenSecondary: OffscreenCanvas; // Z-3
+	private static canvasOffscreenSecondaryContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenUnderlay: OffscreenCanvas; // Z-1
 	private static canvasOffscreenUnderlayContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenVanishing: OffscreenCanvas; // Z-1
@@ -142,6 +144,7 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenBackground = data.canvasOffscreenBackground;
 		VideoWorkerEngine.canvasOffscreenForeground = data.canvasOffscreenForeground;
 		VideoWorkerEngine.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
+		VideoWorkerEngine.canvasOffscreenSecondary = data.canvasOffscreenSecondary;
 		VideoWorkerEngine.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
 		VideoWorkerEngine.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
 		VideoWorkerEngine.canvasOffscreenVanishing = data.canvasOffscreenVanishing;
@@ -153,6 +156,7 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenForegroundContext = <any>VideoWorkerEngine.canvasOffscreenForeground.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d');
+		VideoWorkerEngine.canvasOffscreenSecondaryContext = <any>VideoWorkerEngine.canvasOffscreenSecondary.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d');
 		VideoWorkerEngine.canvasOffscreenVanishingContext = <any>VideoWorkerEngine.canvasOffscreenVanishing.getContext('2d');
 
@@ -165,6 +169,7 @@ class VideoWorkerEngine {
 			VideoWorkerEngine.canvasOffscreenForegroundContext,
 			VideoWorkerEngine.canvasOffscreenOverlayContext,
 			VideoWorkerEngine.canvasOffscreenPrimaryContext,
+			VideoWorkerEngine.canvasOffscreenSecondaryContext,
 			VideoWorkerEngine.canvasOffscreenUnderlayContext,
 			VideoWorkerEngine.canvasOffscreenVanishingContext,
 		);
@@ -397,6 +402,8 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenOverlay.width = width;
 		VideoWorkerEngine.canvasOffscreenPrimary.height = height;
 		VideoWorkerEngine.canvasOffscreenPrimary.width = width;
+		VideoWorkerEngine.canvasOffscreenSecondary.height = height;
+		VideoWorkerEngine.canvasOffscreenSecondary.width = width;
 		VideoWorkerEngine.canvasOffscreenUnderlay.height = height;
 		VideoWorkerEngine.canvasOffscreenUnderlay.width = width;
 		VideoWorkerEngine.canvasOffscreenVanishing.height = height;

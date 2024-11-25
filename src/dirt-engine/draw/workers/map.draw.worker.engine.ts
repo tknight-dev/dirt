@@ -82,8 +82,9 @@ class MapDrawWorkerEngine {
 	private static width: number;
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[] = [
 		VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
+		VideoBusInputCmdGameModeEditApplyZ.SECONDARY,
+		VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
 		VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
-		VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // After Foreground
 		VideoBusInputCmdGameModeEditApplyZ.VANISHING,
 	];
 
@@ -190,6 +191,7 @@ class MapDrawWorkerEngine {
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
+				extendedHashSecondary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
 				gInPhEff: number = 0,
 				gInPwEff: number = 0,
@@ -232,6 +234,7 @@ class MapDrawWorkerEngine {
 				zBitmapBackground: ImageBitmap = canvas.transferToImageBitmap(),
 				zBitmapForeground: ImageBitmap = canvas.transferToImageBitmap(),
 				zBitmapPrimary: ImageBitmap = canvas.transferToImageBitmap(),
+				zBitmapSecondary: ImageBitmap = canvas.transferToImageBitmap(),
 				zBitmapVanishing: ImageBitmap = canvas.transferToImageBitmap(),
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = MapDrawWorkerEngine.zGroup;
 
@@ -269,6 +272,10 @@ class MapDrawWorkerEngine {
 								extendedHash = extendedHashPrimary;
 								lights = grid.lightsPrimary;
 								reference = grid.imageBlocksPrimaryReference;
+								break;
+							case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+								extendedHash = extendedHashSecondary;
+								reference = grid.imageBlocksSecondaryReference;
 								break;
 							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 								extendedHash = extendedHashVanishing;
@@ -442,6 +449,9 @@ class MapDrawWorkerEngine {
 							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 								zBitmapPrimary = canvasTmp.transferToImageBitmap();
 								break;
+							case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+								zBitmapSecondary = canvasTmp.transferToImageBitmap();
+								break;
 							case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 								if (vanishingEnable) {
 									x = Math.round((camera.gx - gWidth) * resolutionMultiple);
@@ -465,6 +475,7 @@ class MapDrawWorkerEngine {
 
 					// Build final cut of the map
 					ctxTmp.drawImage(zBitmapBackground, 0, 0);
+					ctxTmp.drawImage(zBitmapSecondary, 0, 0);
 					ctxTmp.drawImage(zBitmapPrimary, 0, 0);
 					ctxTmp.drawImage(zBitmapForeground, 0, 0);
 					ctxTmp.drawImage(zBitmapVanishing, 0, 0);

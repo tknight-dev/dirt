@@ -14,26 +14,15 @@ export class GridDrawEngine {
 	private static cacheHashGy: number;
 	private static cacheHashPh: number;
 	private static cacheHashPw: number;
-	private static cacheHashCheckG: number;
-	private static cacheHashCheckP: number;
-	private static cacheModeEdit: boolean;
 	private static cacheZoom: number;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static enable: boolean = true;
 	private static initialized: boolean;
-	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	// private static count: number = 0;
 	// private static sum: number = 0;
 
-	public static async initialize(
-		ctxBackground: OffscreenCanvasRenderingContext2D,
-		ctxForeground: OffscreenCanvasRenderingContext2D,
-		ctxOverlay: OffscreenCanvasRenderingContext2D,
-		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxUnderlay: OffscreenCanvasRenderingContext2D,
-		ctxVanishing: OffscreenCanvasRenderingContext2D,
-	): Promise<void> {
+	public static async initialize(ctxOverlay: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (GridDrawEngine.initialized) {
 			console.error('GridDrawEngine > initialize: already initialized');
 			return;
@@ -129,7 +118,6 @@ export class GridDrawEngine {
 	}
 
 	public static setMapActive(mapActive: MapActive) {
-		GridDrawEngine.mapActive = mapActive;
 		GridDrawEngine.mapActiveCamera = mapActive.camera;
 	}
 }

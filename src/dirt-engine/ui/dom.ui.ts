@@ -2809,7 +2809,7 @@ export class DomUI {
 		DomUI.domElements['feed-overflow-streams'] = domFeedOverflowStreams;
 
 		let streamName: string = '';
-		for (let i = 0; i < 6; i++) {
+		for (let i = 0; i < 7; i++) {
 			// Stream
 			domFeedOverflowStreamsStream = document.createElement('div');
 
@@ -2822,18 +2822,22 @@ export class DomUI {
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 2:
-					streamName = 'primary';
+					streamName = 'secondary';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 3:
-					streamName = 'foreground';
+					streamName = 'primary';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 4:
-					streamName = 'vanishing';
+					streamName = 'foreground';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 5:
+					streamName = 'vanishing';
+					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
+					break;
+				case 6:
 					streamName = 'overlay';
 					break;
 			}
@@ -2981,6 +2985,7 @@ export class DomUI {
 			zForeground: HTMLElement,
 			zGlobal: HTMLElement,
 			zPrimary: HTMLElement,
+			zSecondary: HTMLElement,
 			zVanishing: HTMLElement;
 
 		/*
@@ -3660,6 +3665,7 @@ export class DomUI {
 			zBackground.classList.add('disabled');
 			zForeground.classList.add('disabled');
 			zPrimary.classList.remove('disabled');
+			zSecondary.classList.add('disabled');
 			zVanishing.classList.add('disabled');
 
 			view.classList.add('overlay-text');
@@ -3692,6 +3698,7 @@ export class DomUI {
 			zBackground.classList.remove('disabled');
 			zForeground.classList.remove('disabled');
 			zPrimary.classList.remove('disabled');
+			zSecondary.classList.remove('disabled');
 			zVanishing.classList.remove('disabled');
 
 			view.classList.add('overlay-text');
@@ -3720,6 +3727,7 @@ export class DomUI {
 			zBackground.classList.add('disabled');
 			zForeground.classList.remove('disabled');
 			zPrimary.classList.remove('disabled');
+			zSecondary.classList.add('disabled');
 			zVanishing.classList.add('disabled');
 
 			view.classList.add('overlay-text');
@@ -3802,6 +3810,7 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
@@ -3832,11 +3841,64 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.remove('active');
+			zSecondary.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-background'] = zBackground;
 		DomUI.domElementsUIEdit['z-background'] = zBackground;
 		z.appendChild(zBackground);
+
+		zSecondary = document.createElement('div');
+		zSecondary.className = 'button secondary active';
+		zSecondary.innerText = 'S';
+		zSecondary.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.SECONDARY) {
+				return;
+			}
+			// Display Applications
+			copy.style.display = 'flex';
+			inspect.style.display = 'flex';
+			palette.style.display = 'flex';
+			view.style.display = 'flex';
+
+			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
+
+			// Hide application
+			DomUI.domElementsUIEdit['application'].style.display = 'none';
+			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
+
+			// Remove application cursor
+			DomUI.uiEditCursorReady = false;
+			feedFitted.classList.remove('dirt-engine-cursor-pencil');
+			feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+			feedFitted.classList.remove('dirt-engine-cursor-fill');
+			feedFitted.classList.remove('dirt-engine-cursor-eraser');
+			feedFitted.classList.remove('dirt-engine-cursor-stamp');
+			DomUI.editCursor();
+
+			// Draw Options
+			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.nullEnable = true;
+			DomUI.uiEditDraw.vanishingEnable = false;
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditTimeForced(true);
+
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.SECONDARY;
+			zBackground.classList.remove('active');
+			zGlobal.classList.remove('active');
+			zForeground.classList.remove('active');
+			zPrimary.classList.remove('active');
+			zSecondary.classList.add('active');
+			zVanishing.classList.remove('active');
+		};
+		DomUI.domElements['feed-fitted-ui-z-secondary'] = zSecondary;
+		DomUI.domElementsUIEdit['z-secondary'] = zSecondary;
+		z.appendChild(zSecondary);
 
 		zPrimary = document.createElement('div');
 		zPrimary.className = 'button primary active';
@@ -3852,7 +3914,8 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.75';
+			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
@@ -3882,9 +3945,10 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.add('active');
+			zSecondary.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
-		DomUI.domElements['feed-fitted-ui-z-foreground'] = zPrimary;
+		DomUI.domElements['feed-fitted-ui-z-primary'] = zPrimary;
 		DomUI.domElementsUIEdit['z-primary'] = zPrimary;
 		z.appendChild(zPrimary);
 
@@ -3903,6 +3967,7 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '.2';
@@ -3934,6 +3999,7 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.add('active');
 			zPrimary.classList.remove('active');
+			zSecondary.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-foreground'] = zForeground;
@@ -3955,6 +4021,7 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '1';
@@ -3986,6 +4053,7 @@ export class DomUI {
 			zGlobal.classList.remove('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.remove('active');
+			zSecondary.classList.remove('active');
 			zVanishing.classList.add('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-vanishing'] = zVanishing;
@@ -4009,6 +4077,7 @@ export class DomUI {
 
 			// Display all canvases
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '1';
@@ -4038,6 +4107,7 @@ export class DomUI {
 			zGlobal.classList.add('active');
 			zForeground.classList.remove('active');
 			zPrimary.classList.remove('active');
+			zSecondary.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-global'] = zGlobal;

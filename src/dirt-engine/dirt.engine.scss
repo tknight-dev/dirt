@@ -274,15 +274,19 @@ $dirt-engine-old-tv-background: #162fd8;
 							}
 
 							&.foreground {
-								z-index: 4;
+								z-index: 5;
 							}
 
 							&.overlay {
-								z-index: 6;
+								z-index: 7;
+							}
+
+							&.secondary {
+								z-index: 3;
 							}
 
 							&.primary {
-								z-index: 3;
+								z-index: 4;
 							}
 
 							&.underlay {
@@ -290,7 +294,7 @@ $dirt-engine-old-tv-background: #162fd8;
 							}
 
 							&.vanishing {
-								z-index: 5;
+								z-index: 6;
 							}
 
 							.data {

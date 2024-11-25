@@ -50,6 +50,7 @@ export interface VideoBusInputCmdInit extends VideoBusInputCmdResize, VideoBusIn
 	canvasOffscreenForeground: OffscreenCanvas;
 	canvasOffscreenOverlay: OffscreenCanvas;
 	canvasOffscreenPrimary: OffscreenCanvas;
+	canvasOffscreenSecondary: OffscreenCanvas;
 	canvasOffscreenUnderlay: OffscreenCanvas;
 	canvasOffscreenVanishing: OffscreenCanvas;
 }
@@ -123,6 +124,7 @@ export enum VideoBusInputCmdGameModeEditApplyZ {
 	BACKGROUND,
 	FOREGROUND,
 	PRIMARY,
+	SECONDARY,
 	VANISHING,
 }
 

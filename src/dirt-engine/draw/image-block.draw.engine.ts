@@ -27,6 +27,7 @@ export class ImageBlockDrawEngine {
 	private static cacheBackground: ImageBitmap;
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
+	private static cacheSecondary: ImageBitmap;
 	private static cacheVanishing: ImageBitmap;
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
@@ -37,6 +38,7 @@ export class ImageBlockDrawEngine {
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static ctxSecondary: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static drawNull: boolean;
 	private static initialized: boolean;
@@ -49,9 +51,8 @@ export class ImageBlockDrawEngine {
 	public static async initialize(
 		ctxBackground: OffscreenCanvasRenderingContext2D,
 		ctxForeground: OffscreenCanvasRenderingContext2D,
-		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxUnderlay: OffscreenCanvasRenderingContext2D,
+		ctxSecondary: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (ImageBlockDrawEngine.initialized) {
@@ -62,10 +63,12 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxBackground = ctxBackground;
 		ImageBlockDrawEngine.ctxForeground = ctxForeground;
 		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
+		ImageBlockDrawEngine.ctxSecondary = ctxSecondary;
 		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
 
 		ImageBlockDrawEngine.zGroup = [
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
+			VideoBusInputCmdGameModeEditApplyZ.SECONDARY,
 			VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
 			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
 			VideoBusInputCmdGameModeEditApplyZ.VANISHING,
@@ -101,6 +104,7 @@ export class ImageBlockDrawEngine {
 				extendedHashBackground: { [key: number]: null } = {},
 				extendedHashForeground: { [key: number]: null } = {},
 				extendedHashPrimary: { [key: number]: null } = {},
+				extendedHashSecondary: { [key: number]: null } = {},
 				extendedHashVanishing: { [key: number]: null } = {},
 				getCacheInstance = LightingEngine.getCacheInstance,
 				getCacheBrightness = LightingEngine.getCacheBrightness,
@@ -173,6 +177,10 @@ export class ImageBlockDrawEngine {
 						extendedHash = extendedHashPrimary;
 						lights = grid.lightsPrimary;
 						reference = grid.imageBlocksPrimaryReference;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+						extendedHash = extendedHashSecondary;
+						reference = grid.imageBlocksSecondaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						extendedHash = extendedHashVanishing;
@@ -433,6 +441,9 @@ export class ImageBlockDrawEngine {
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
 						ImageBlockDrawEngine.cachePrimary = canvas.transferToImageBitmap();
 						break;
+					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+						ImageBlockDrawEngine.cacheSecondary = canvas.transferToImageBitmap();
+						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						if (ImageBlockDrawEngine.vanishingEnable) {
 							x = Math.round((camera.gx - startGx) * gInPw);
@@ -466,6 +477,7 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxBackground.drawImage(ImageBlockDrawEngine.cacheBackground, 0, 0);
 		ImageBlockDrawEngine.ctxForeground.drawImage(ImageBlockDrawEngine.cacheForeground, 0, 0);
 		ImageBlockDrawEngine.ctxPrimary.drawImage(ImageBlockDrawEngine.cachePrimary, 0, 0);
+		ImageBlockDrawEngine.ctxSecondary.drawImage(ImageBlockDrawEngine.cacheSecondary, 0, 0);
 		ImageBlockDrawEngine.ctxVanishing.drawImage(ImageBlockDrawEngine.cacheVanishing, 0, 0);
 	}
 
