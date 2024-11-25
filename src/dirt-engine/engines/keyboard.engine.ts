@@ -10,6 +10,7 @@ export interface KeyAction {
 export enum KeyCommon {
 	CROUCH = 87, // 17-lctrl
 	DOWN = 83, // 83-s
+	ESC = 27, // 27-esc
 	INTERACT = 69, // 69-e
 	JUMP = 32, // 32-space
 	LEFT = 65, // 65-a

@@ -282,7 +282,7 @@ class VideoWorkerEngine {
 	}
 
 	public static inputGamePause(pause: VideoBusInputCmdGamePause): void {
-		if (pause.reason === VideoBusInputCmdGamePauseReason.FULLSCREEN || pause.reason === VideoBusInputCmdGamePauseReason.VISIBILITY) {
+		if (pause.reason !== VideoBusInputCmdGamePauseReason.RESIZE) {
 			if (!KernelEngine.isPaused() && KernelEngine.isRunning()) {
 				KernelEngine.pause();
 			}
@@ -413,10 +413,8 @@ class VideoWorkerEngine {
 	}
 
 	public static inputSettings(settings: VideoBusInputCmdSettings): void {
-		console.log('VideoBusWorker > settings', settings);
-
 		settings.darknessMax = Math.round(Math.max(0, Math.min(1, settings.darknessMax)) * 1000) / 1000;
-		settings.gamma = Math.round(Math.max(-0.5, Math.min(1.5, settings.gamma)) * 1000) / 1000;
+		settings.gamma = Math.round(Math.max(-0.2, Math.min(1.5, settings.gamma)) * 1000) / 1000;
 		settings.vanishingPercentageOfViewport = Math.round(Math.max(0, Math.min(2, settings.vanishingPercentageOfViewport)) * 1000) / 1000;
 
 		KernelEngine.updateSettings(settings);

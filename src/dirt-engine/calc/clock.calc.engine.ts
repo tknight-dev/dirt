@@ -23,6 +23,8 @@ export class ClockCalcEngine {
 
 		minute = Math.round((mapActive.clockTicker / clockSpeedRelativeToEarthEff) * 60);
 
+		///console.log('timestampDelta', timestampDelta, mapActive.hourOfDayEff, minute);
+
 		if (minute >= 60) {
 			mapActive.clockTicker = 0;
 			mapActive.hourOfDayEff = (mapActive.hourOfDayEff + 1) % 24;

@@ -63,13 +63,11 @@ export class DirtEngine extends DomUI {
 			return;
 		}
 		DirtEngine.initialized = true;
+		DirtEngine.gameModeEditStart = gameModeEditStart;
+
 		DomUI.assetManifestMaster = AssetEngine.compileMasterManifest(assetDeclarations.manifest || <any>{});
 		DomUI.dom = dom;
-		DomUI.domUIFPSTarget = settings.fps;
-		DomUI.domUIFPSVisible = settings.fpsVisible;
-		DomUI.uiEditResolution = settings.resolution;
-		DomUI.domUIRumbleEnable = settings.screenShakeEnable;
-		DirtEngine.gameModeEditStart = gameModeEditStart;
+		DomUI.settings = settings;
 
 		console.log('DirtEngine: Initializing...');
 		let ready: Promise<void>,
@@ -198,10 +196,6 @@ export class DirtEngine extends DomUI {
 		// Visibility
 		VisibilityEngine.setCallback((visible: boolean) => {
 			if (!visible) {
-				DomUI.domElements['feed-fitted-pause-content'].onclick = () => {
-					DomUI.domElements['feed-fitted-pause'].style.display = 'none';
-					VideoEngineBus.outputGameUnpause({});
-				};
 				DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
 				VideoEngineBus.outputGamePause({
 					reason: VideoBusInputCmdGamePauseReason.VISIBILITY,
@@ -418,7 +412,16 @@ export class DirtEngine extends DomUI {
 			if (!isNaN(keyValue)) {
 				KeyboardEngine.register(keyValue, (keyAction: KeyAction) => {
 					if (DirtEngine.gameStarted) {
-						VideoEngineBus.outputKey(keyAction);
+						if (keyAction.key === KeyCommon.ESC) {
+							if (keyAction.down) {
+								DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
+								VideoEngineBus.outputGamePause({
+									reason: VideoBusInputCmdGamePauseReason.ESC,
+								});
+							}
+						} else {
+							VideoEngineBus.outputKey(keyAction);
+						}
 					}
 				});
 			}

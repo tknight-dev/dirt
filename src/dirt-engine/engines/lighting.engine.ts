@@ -2,7 +2,6 @@ import { AssetCache, AssetEngine } from './asset.engine';
 import { AssetImage, AssetImageSrcQuality } from '../models/asset.model';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
 import { Grid, GridImageBlockReference, GridBlockTable, GridLight } from '../models/grid.model';
-import { Camera } from '../models/camera.model';
 import { LightingCalcEngineBus } from '../calc/buses/lighting.calc.engine.bus';
 import { LightingCalcBusOutputDecompressed } from '../calc/buses/lighting.calc.engine.model';
 import { MapActive } from '../models/map.model';
@@ -274,10 +273,23 @@ export class LightingEngine {
 		}
 	}
 
-	public static settings(darknessMax: number, gamma: number): void {
-		LightingEngine.darknessMax = darknessMax;
-		LightingEngine.gamma = gamma;
-		LightingEngine.draw();
+	public static settings(darknessMax: number, gamma: number, quality: AssetImageSrcQuality): void {
+		let changed: boolean = false;
+
+		if (LightingEngine.darknessMax !== darknessMax) {
+			LightingEngine.darknessMax = darknessMax;
+			changed = true;
+		}
+		if (LightingEngine.gamma !== gamma) {
+			LightingEngine.gamma = gamma;
+			changed = true;
+		}
+		if (LightingEngine.quality !== quality) {
+			LightingEngine.quality = quality;
+			changed = true;
+		}
+
+		changed && LightingEngine.draw();
 	}
 
 	public static getCacheBrightness(gridId: string, hash: number, z: VideoBusInputCmdGameModeEditApplyZ): number {
@@ -431,10 +443,6 @@ export class LightingEngine {
 		} else {
 			return false;
 		}
-	}
-
-	public static setResolution(quality: AssetImageSrcQuality) {
-		LightingEngine.quality = quality;
 	}
 
 	public static setTimeForced(timeForced: boolean) {

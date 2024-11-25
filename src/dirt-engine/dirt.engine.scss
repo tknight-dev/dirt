@@ -189,10 +189,34 @@ $dirt-engine-old-tv-background: #162fd8;
 						z-index: 1;
 
 						.content {
-							background-color: black;
-							border: 1px solid white;
-							height: 200px;
-							width: 200px;
+							background-color: rgba(0, 0, 0, 0.75);
+							border: 1px solid rgb(128, 128, 128);
+							border-radius: 5px;
+							box-shadow: 0 0 2px 3px rgba(0, 0, 0, 0.25);
+							max-height: 75%;
+							overflow-x: hidden;
+							overflow-y: auto;
+							padding: 20px;
+
+							table {
+								tr {
+									height: 40px;
+
+									td {
+										input,
+										select {
+											height: 30px;
+											width: 100%;
+										}
+
+										input[type='checkbox'],
+										input[type='radio'] {
+											height: 20px;
+											width: 20px;
+										}
+									}
+								}
+							}
 						}
 					}
 

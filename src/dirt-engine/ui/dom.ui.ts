@@ -3,6 +3,7 @@ import {
 	AssetAudioType,
 	AssetCollection,
 	AssetImage,
+	AssetImageSrcQuality,
 	AssetImageSrc,
 	AssetImageType,
 	AssetManifestMaster,
@@ -33,6 +34,8 @@ import {
 	VideoBusInputCmdGameModeEditApplyView,
 	VideoBusInputCmdGameModeEditApplyZ,
 	VideoBusInputCmdGameModeEditDraw,
+	VideoBusInputCmdSettings,
+	VideoBusInputCmdSettingsFPS,
 	VideoBusOutputCmdEditCameraUpdate,
 } from '../engines/buses/video.model.bus';
 import { VideoEngineBus } from '../engines/buses/video.engine.bus';
@@ -55,10 +58,7 @@ export class DomUI {
 	protected static domElementsInput: { [key: string]: HTMLInputElement } = {};
 	protected static domElementsInputVolumeTimeout: ReturnType<typeof setTimeout>;
 	protected static domElementsUIEdit: { [key: string]: HTMLElement } = {};
-	protected static domUIFPSTarget: number;
-	protected static domUIFPSVisible: boolean;
 	private static domUIinitialized: boolean;
-	protected static domUIRumbleEnable: boolean;
 	private static domUIRumbleAnimations: Animation[];
 	private static domUIRumbleAnimationStreams: HTMLElement[] = [];
 	private static domUIRumbleTimeout: ReturnType<typeof setTimeout>;
@@ -77,8 +77,8 @@ export class DomUI {
 	private static uiEditMouseCmdCollectionActive: boolean;
 	private static uiEditMouseCmdCollectionEngaged: boolean;
 	private static uiEditMouseCmdCollectionPromise: Promise<void>;
-	protected static uiEditResolution: null | number;
 	private static uiEditSpinnerStatus: boolean;
+	protected static settings: VideoBusInputCmdSettings;
 	private static uiEditView: VideoBusInputCmdGameModeEditApplyView;
 	private static uiEditZ: VideoBusInputCmdGameModeEditApplyZ | undefined;
 
@@ -1941,13 +1941,13 @@ export class DomUI {
 			divWrapper = document.createElement('div');
 			divWrapper.className = 'group';
 
-			if (DomUI.uiEditResolution === null) {
+			if (DomUI.settings.resolution === null) {
 				div.style.height = gInPh + 'px';
 				div.style.width = gInPw + 'px';
 			} else {
 				let domRect: DOMRect = DomUI.domElements['feed-overflow-streams'].getBoundingClientRect();
-				div.style.height = (gInPh * domRect.width) / DomUI.uiEditResolution + 'px';
-				div.style.width = (gInPw * domRect.width) / DomUI.uiEditResolution + 'px';
+				div.style.height = (gInPh * domRect.width) / DomUI.settings.resolution + 'px';
+				div.style.width = (gInPw * domRect.width) / DomUI.settings.resolution + 'px';
 			}
 
 			if (applicationType === ApplicationType.BRUSH) {
@@ -2448,10 +2448,10 @@ export class DomUI {
 		VideoEngineBus.setCallbackFPS((fps: number) => {
 			let div: HTMLElement = DomUI.domElementsUIEdit['fps'];
 
-			if (fps < DomUI.domUIFPSTarget - 20) {
+			if (fps < DomUI.settings.fps - 20) {
 				div.classList.add('bad');
 				div.classList.remove('warn');
-			} else if (fps < DomUI.domUIFPSTarget - 10) {
+			} else if (fps < DomUI.settings.fps - 10) {
 				div.classList.remove('bad');
 				div.classList.add('warn');
 			} else {
@@ -2491,7 +2491,7 @@ export class DomUI {
 			animations = DomUI.domUIRumbleAnimations;
 		}
 
-		if (DomUI.domUIRumbleEnable && enable) {
+		if (DomUI.settings.screenShakeEnable && enable) {
 			// Calc intensity
 			animationFrames = [{ transform: 'rotate(0deg) translate(0, 0)' }];
 			intensityFrames = intensity * 10 + 40;
@@ -2623,7 +2623,14 @@ export class DomUI {
 			domViewerA: HTMLElement,
 			domViewerB: HTMLElement,
 			domViewerBSpinner: HTMLElement,
-			domViewerBSpinnerContent: HTMLElement;
+			domViewerBSpinnerContent: HTMLElement,
+			input: HTMLInputElement,
+			option: HTMLOptionElement,
+			resolutions: string[] = ['256', '384', '512', '640', '1280', '1920'],
+			select: HTMLSelectElement,
+			t: HTMLElement,
+			td: HTMLElement,
+			tr: HTMLElement;
 
 		/*
 		 * Primary
@@ -2757,9 +2764,243 @@ export class DomUI {
 
 		domFeedFittedPauseContent = document.createElement('div');
 		domFeedFittedPauseContent.className = 'content';
-		domFeedFittedPauseContent.innerText = 'paused';
 		DomUI.domElements['feed-fitted-pause-content'] = domFeedFittedPauseContent;
 		domFeedFittedPause.appendChild(domFeedFittedPauseContent);
+
+		// Menu buttons
+		t = document.createElement('table');
+
+		// Table: Continue
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.classList.add('clickable');
+		td.innerText = 'Continue';
+		td.style.fontWeight = 'bold';
+		td.onclick = () => {
+			domFeedFittedPause.style.display = 'none';
+			VideoEngineBus.outputGameUnpause({});
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Darkness Max
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Darkness Max';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '1';
+		input.min = '0';
+		input.step = '0.1';
+		input.type = 'range';
+		input.value = '0.8';
+		input.oninput = (event: any) => {
+			DomUI.settings.darknessMax = Number(event.target.value);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: FPS
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'FPS';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		select = document.createElement('select');
+		select.onchange = (event: any) => {
+			DomUI.settings.fps = <any>Number(event.target.value);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+
+		option = document.createElement('option');
+		option.innerText = '30';
+		option.value = String(VideoBusInputCmdSettingsFPS._30);
+		select.appendChild(option);
+
+		option = document.createElement('option');
+		option.innerText = '40';
+		option.selected = true;
+		option.value = String(VideoBusInputCmdSettingsFPS._40);
+		select.appendChild(option);
+
+		option = document.createElement('option');
+		option.innerText = '60';
+		option.selected = true;
+		option.value = String(VideoBusInputCmdSettingsFPS._60);
+		select.appendChild(option);
+
+		option = document.createElement('option');
+		option.innerText = '120';
+		option.value = String(VideoBusInputCmdSettingsFPS._120);
+		select.appendChild(option);
+
+		td.appendChild(select);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: FPS Visible
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'FPS Visible';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.type = 'checkbox';
+		input.checked = true;
+		input.oninput = (event: any) => {
+			DomUI.settings.fpsVisible = Boolean(event.target.checked);
+
+			if (DomUI.settings.fpsVisible) {
+				DomUI.domElementsUIEdit['fps'].style.display = 'block';
+			} else {
+				DomUI.domElementsUIEdit['fps'].style.display = 'none';
+			}
+
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Gamma
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Gamma';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '1.5';
+		input.min = '-0.2';
+		input.step = '0.1';
+		input.type = 'range';
+		input.value = '0';
+		input.oninput = (event: any) => {
+			DomUI.settings.gamma = Number(event.target.value);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Map
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Map';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.type = 'checkbox';
+		input.checked = true;
+		input.oninput = (event: any) => {
+			DomUI.settings.mapVisible = Boolean(event.target.checked);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Quality
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Quality';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		select = document.createElement('select');
+		select.onchange = (event: any) => {
+			DomUI.settings.quality = <any>Number(event.target.value);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+
+		option = document.createElement('option');
+		option.innerText = 'Low';
+		option.value = String(AssetImageSrcQuality.LOW);
+		select.appendChild(option);
+
+		option = document.createElement('option');
+		option.innerText = 'Medium';
+		option.value = String(AssetImageSrcQuality.MEDIUM);
+		select.appendChild(option);
+
+		option = document.createElement('option');
+		option.innerText = 'High';
+		option.selected = true;
+		option.value = String(AssetImageSrcQuality.HIGH);
+		select.appendChild(option);
+
+		td.appendChild(select);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Resolution
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Resolution';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		select = document.createElement('select');
+		select.onchange = (event: any) => {
+			let value: string = event.target.value;
+
+			if (value === '') {
+				DomUI.settings.resolution = null;
+			} else {
+				DomUI.settings.resolution = <any>Number(value);
+			}
+
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+
+		option = document.createElement('option');
+		option.innerText = 'Native';
+		option.value = '';
+		select.appendChild(option);
+
+		for (let i in resolutions) {
+			option = document.createElement('option');
+			option.innerText = resolutions[i];
+			option.value = resolutions[i];
+			select.appendChild(option);
+		}
+
+		td.appendChild(select);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Screen Shake
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Screen Shaking';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.type = 'checkbox';
+		input.checked = true;
+		input.oninput = (event: any) => {
+			DomUI.settings.screenShakeEnable = Boolean(event.target.checked);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Done
+		domFeedFittedPauseContent.appendChild(t);
 
 		/*
 		 * Feed: Fitted - Title
@@ -3313,7 +3554,7 @@ export class DomUI {
 		 */
 		fps = document.createElement('div');
 		fps.className = 'dirt-engine-ui-edit fps';
-		if (!DomUI.domUIFPSVisible) {
+		if (!DomUI.settings.fpsVisible) {
 			fps.style.display = 'none';
 		}
 		DomUI.domElements['feed-fitted-ui-fps'] = fps;

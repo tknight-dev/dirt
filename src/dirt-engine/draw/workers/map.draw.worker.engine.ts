@@ -1,4 +1,4 @@
-import { Camera } from '../../models/camera.model';
+import { AssetImageSrcQuality } from '../../models/asset.model';
 import {
 	Grid,
 	GridConfig,
@@ -148,7 +148,7 @@ class MapDrawWorkerEngine {
 
 	public static inputSetSettings(data: MapDrawBusInputPlayloadSettings): void {
 		//console.log('MapDrawWorkerEngine > inputSetSettings', data);
-		LightingEngine.settings(data.darknessMax * 0.3, 0);
+		LightingEngine.settings(data.darknessMax * 0.3, 0, AssetImageSrcQuality.LOW);
 		MapDrawWorkerEngine.mapVisible = data.mapVisible;
 		MapDrawWorkerEngine.vanishingEnable = data.vanishingEnable;
 		MapDrawWorkerEngine.vanishingPercentageOfViewport = data.vanishingPercentageOfViewport;

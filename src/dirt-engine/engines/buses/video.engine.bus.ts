@@ -296,6 +296,12 @@ export class VideoEngineBus {
 					case VideoBusOutputCmd.STATUS_INITIALIZED:
 						videoBusWorkerStatusInitialized = <VideoBusWorkerStatusInitialized>videoBusWorkerPayload.data;
 						VideoEngineBus.callbackStatusInitialized(videoBusWorkerStatusInitialized.durationInMs);
+
+						setTimeout(() => {
+							// This possibly resolves screen size issues on first boot
+							// Canvas too small, but fixed on resize (rare, issue with browser)
+							VideoEngineBus.resized(false, true);
+						});
 						break;
 				}
 			}
@@ -429,9 +435,14 @@ export class VideoEngineBus {
 	}
 
 	public static outputSettings(settings: VideoBusInputCmdSettings): void {
+		VideoEngineBus.resolution = settings.resolution;
 		VideoEngineBus.worker.postMessage({
 			cmd: VideoBusInputCmd.SETTINGS,
 			data: settings,
+		});
+
+		setTimeout(() => {
+			VideoEngineBus.resized(false, true);
 		});
 	}
 

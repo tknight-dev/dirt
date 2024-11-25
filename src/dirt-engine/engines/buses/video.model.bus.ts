@@ -147,6 +147,7 @@ export interface VideoBusInputCmdGamePause {
 }
 
 export enum VideoBusInputCmdGamePauseReason {
+	ESC,
 	FULLSCREEN,
 	RESIZE,
 	VISIBILITY,
@@ -174,9 +175,9 @@ export interface VideoBusInputCmdSettings {
 
 export enum VideoBusInputCmdSettingsFPS {
 	_30 = 30,
+	_40 = 40,
 	_60 = 60,
 	_120 = 120,
-	_unlimited = 1,
 }
 
 export interface VideoBusPayload {

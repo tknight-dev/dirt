@@ -1,4 +1,3 @@
-import { AssetImageSrcQuality } from '../models/asset.model';
 import { CalcEditEngine } from './mode/edit/calc.edit.engine';
 import { CalcPlayEngine } from './mode/play/calc.play.engine';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
@@ -16,7 +15,6 @@ import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { TouchAction, TouchCmd } from './touch.engine';
-import { UtilEngine } from './util.engine';
 import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings, VideoBusInputCmdSettingsFPS } from '../engines/buses/video.model.bus';
 
 /**
@@ -31,12 +29,10 @@ export class KernelEngine {
 	private static framesInterval: ReturnType<typeof setInterval>;
 	private static fpms: number;
 	private static fpmsCamera: number = 35;
-	private static fpmsUnlimited: boolean;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static modeEdit: boolean;
 	private static paused: boolean;
-	private static quality: AssetImageSrcQuality;
 	private static status: boolean;
 	private static timestampDelta: number;
 	private static timestampDeltaCamera: number;
@@ -83,7 +79,7 @@ export class KernelEngine {
 	private static tmpH: any;
 	private static tmpV: any;
 	public static inputKey(action: KeyAction): void {
-		if (KernelEngine.status) {
+		if (KernelEngine.status && !KernelEngine.paused) {
 			if (!action.down) {
 				clearInterval(KernelEngine.tmpH);
 				clearInterval(KernelEngine.tmpV);
@@ -121,7 +117,7 @@ export class KernelEngine {
 	}
 
 	public static inputMouse(action: MouseAction): void {
-		if (KernelEngine.status) {
+		if (KernelEngine.status && !KernelEngine.paused) {
 			if (action.cmd == MouseCmd.LEFT_CLICK) {
 				if (MapDrawEngine.isPixelInMap(action.position.xRel, action.position.yRel)) {
 					MapDrawEngine.moveToPx(action.position.xRel, action.position.yRel);
@@ -138,7 +134,7 @@ export class KernelEngine {
 	}
 
 	public static inputTouch(action: TouchAction): void {
-		if (KernelEngine.status) {
+		if (KernelEngine.status && !KernelEngine.paused) {
 			if (action.cmd == TouchCmd.ZOOM) {
 				if (action.down) {
 					KernelEngine.touchDistanceActive = true;
@@ -202,38 +198,19 @@ export class KernelEngine {
 
 		if (KernelEngine.timestampDeltaCamera > KernelEngine.fpmsCamera) {
 			KernelEngine.timestampThenCamera = KernelEngine.timestampNow - (KernelEngine.timestampDeltaCamera % KernelEngine.fpmsCamera);
-			setTimeout(() => {
-				CameraEngine.update();
-			});
+			CameraEngine.update();
 		}
 
-		if (!KernelEngine.fpmsUnlimited) {
-			/**
-			 * FPS limited
-			 */
-			if (KernelEngine.timestampDelta > KernelEngine.fpms) {
-				KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
-				KernelEngine.frames++;
-
-				// Start
-				if (KernelEngine.modeEdit) {
-					!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
-					DrawEditEngine.start();
-				} else {
-					CalcPlayEngine.start(KernelEngine.timestampDelta);
-					DrawPlayEngine.start();
-				}
-			}
-		} else {
-			/**
-			 * FPS unlimited
-			 */
+		if (KernelEngine.timestampDelta > KernelEngine.fpms) {
+			KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
 			KernelEngine.frames++;
+
+			// Start
 			if (KernelEngine.modeEdit) {
 				!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
 				DrawEditEngine.start();
 			} else {
-				!KernelEngine.paused && CalcPlayEngine.start(KernelEngine.timestampDelta);
+				CalcPlayEngine.start(KernelEngine.timestampDelta);
 				DrawPlayEngine.start();
 			}
 		}
@@ -350,7 +327,7 @@ export class KernelEngine {
 		await KernelEngine.cacheResets(true);
 
 		KernelEngine.framesInterval = setInterval(() => {
-			let frames = KernelEngine.frames;
+			let frames: number = KernelEngine.frames;
 			KernelEngine.frames = 0;
 			KernelEngine.callbackFPS(frames);
 		}, 1000);
@@ -415,27 +392,20 @@ export class KernelEngine {
 			return;
 		}
 		KernelEngine.fpms = Math.round(1000 / settings.fps);
-		KernelEngine.fpmsUnlimited = settings.fps === VideoBusInputCmdSettingsFPS._unlimited;
 
 		// Primary
 		DrawEditEngine.mapVisible = settings.mapVisible;
 
 		// Extended
 		ImageBlockDrawEngine.setVanishingPercentageOfViewport(settings.vanishingPercentageOfViewport);
-		LightingEngine.settings(settings.darknessMax, settings.gamma);
+		LightingEngine.settings(settings.darknessMax, settings.gamma, settings.quality);
 		MapDrawEngine.resolution = settings.resolution;
 		MapDrawEngineBus.setDarknessMax(settings.darknessMax);
 		MapDrawEngineBus.setMapVisible(settings.mapVisible);
 
 		// Last
-		if (KernelEngine.quality !== settings.quality) {
-			KernelEngine.quality = settings.quality;
-			LightingEngine.setResolution(settings.quality);
-
-			// Last
-			if (KernelEngine.mapActive) {
-				KernelEngine.cacheResets();
-			}
+		if (KernelEngine.mapActive) {
+			KernelEngine.cacheResets(true);
 		}
 	}
 
