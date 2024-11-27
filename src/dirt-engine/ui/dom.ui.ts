@@ -15,7 +15,7 @@ import { AudioModulation } from '../models/audio-modulation.model';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import {
 	GridConfig,
-	GridAudioTriggerTripType,
+	GridAudioTriggerActivationType,
 	GridAudioTriggerType,
 	GridCoordinate,
 	GridLightType,
@@ -138,21 +138,25 @@ export class DomUI {
 
 				if (assetAudio) {
 					if (selector.type === AssetAudioType.MUSIC) {
-						AudioEngine.pause(selector.value);
+						AudioEngine.controlStop(selector.value);
 					}
 				}
 			};
 			if (assetAudio) {
 				div.onmouseover = () => {
 					if (selector.type === AssetAudioType.EFFECT) {
-						AudioEngine.trigger(selector.value, AudioModulation.NONE, 0, 0.5);
+						AudioEngine.controlPlay(selector.value, {
+							volumePercentage: 0.5,
+						});
 					} else {
-						AudioEngine.play(selector.value, 0, 0.5);
+						AudioEngine.controlPlay(selector.value, {
+							volumePercentage: 0.5,
+						});
 					}
 				};
 				div.onmouseout = () => {
 					if (selector.type === AssetAudioType.MUSIC) {
-						AudioEngine.pause(selector.value);
+						AudioEngine.controlStop(selector.value);
 					}
 				};
 			}
@@ -241,15 +245,17 @@ export class DomUI {
 
 	private static detailsModalAudioTrigger(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
-			valuesTrip: GridAudioTriggerTripType[] = <any>Object.values(GridAudioTriggerTripType).filter((v) => typeof v !== 'string'),
+			valuesTrip: GridAudioTriggerActivationType[] = <any>(
+				Object.values(GridAudioTriggerActivationType).filter((v) => typeof v !== 'string')
+			),
 			applicationProperties: any = {
+				activation: GridAudioTriggerActivationType.CONTACT,
 				assetId: valuesAudio[0].id,
 				fadeDurationInMs: 100,
 				fadeTo: 0,
 				objectType: GridObjectType.AUDIO_TRIGGER,
 				oneshot: true,
 				tagId: '',
-				trip: GridAudioTriggerTripType.CONTACT,
 				type: GridAudioTriggerType.EFFECT,
 				volumePercentage: 1,
 			},
@@ -260,6 +266,35 @@ export class DomUI {
 			tr: HTMLElement;
 
 		t.textContent = '';
+
+		// Activation
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Activation';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = GridAudioTriggerActivationType[valuesTrip[0]];
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				false,
+				false,
+				false,
+				false,
+				valuesTrip.map((v) => {
+					return {
+						name: GridAudioTriggerActivationType[<any>v],
+						value: v,
+					};
+				}),
+				(activation: string) => {
+					event.target.innerText = GridAudioTriggerActivationType[<any>activation];
+					applicationProperties.activation = activation;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Asset
 		tr = document.createElement('tr');
@@ -363,35 +398,6 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Trip
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Trip';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridAudioTriggerTripType[valuesTrip[0]];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				false,
-				valuesTrip.map((v) => {
-					return {
-						name: GridAudioTriggerTripType[<any>v],
-						value: v,
-					};
-				}),
-				(trip: string) => {
-					event.target.innerText = GridAudioTriggerTripType[<any>trip];
-					applicationProperties.trip = trip;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
 		// Volume Percentage
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -406,7 +412,9 @@ export class DomUI {
 			applicationProperties.volumePercentage = Number(event.target.value);
 
 			// Play sample at volume
-			AudioEngine.trigger(applicationProperties.assetId, AudioModulation.NONE, 0, applicationProperties.volumePercentage);
+			AudioEngine.controlPlay(applicationProperties.assetId, {
+				volumePercentage: applicationProperties.volumePercentage,
+			});
 		};
 		input.step = '.1';
 		input.type = 'range';
@@ -448,7 +456,7 @@ export class DomUI {
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
 				nullBlocking: undefined,
-				nullPassthroughLight: undefined,
+				passthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -735,16 +743,16 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Null: light passthrough
+		// light passthrough
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Null: Passthrough Light';
+		td.innerText = 'Passthrough Light';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
-		input.checked = applicationProperties.nullPassthroughLight;
+		input.checked = applicationProperties.passthroughLight;
 		input.oninput = (event: any) => {
-			applicationProperties.nullPassthroughLight = Boolean(event.target.checked);
+			applicationProperties.passthroughLight = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -826,7 +834,7 @@ export class DomUI {
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
 				nullBlocking: undefined,
-				nullPassthroughLight: undefined,
+				passthroughLight: undefined,
 				viscocity: 1,
 			},
 			input: HTMLInputElement,
@@ -1072,16 +1080,16 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Null: light passthrough
+		// light passthrough
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Null: Passthrough Light';
+		td.innerText = 'Passthrough Light';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
-		input.checked = applicationProperties.nullPassthroughLight;
+		input.checked = applicationProperties.passthroughLight;
 		input.oninput = (event: any) => {
-			applicationProperties.nullPassthroughLight = Boolean(event.target.checked);
+			applicationProperties.passthroughLight = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -1144,7 +1152,7 @@ export class DomUI {
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
 				nullBlocking: undefined,
-				nullPassthroughLight: undefined,
+				passthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
@@ -1431,16 +1439,16 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Null: light passthrough
+		// light passthrough
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Null: Passthrough Light';
+		td.innerText = 'Passthrough Light';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
-		input.checked = applicationProperties.nullPassthroughLight;
+		input.checked = applicationProperties.passthroughLight;
 		input.oninput = (event: any) => {
-			applicationProperties.nullPassthroughLight = Boolean(event.target.checked);
+			applicationProperties.passthroughLight = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);

@@ -48,6 +48,7 @@ export class DirtEngine extends DomUI {
 	private static initialized: boolean;
 	private static ready: boolean;
 	private static readyOverlayComplete: boolean;
+	private static titleScreenMusicBufferId: number;
 	private static version: string = '0.1.0';
 
 	public static async initialize(
@@ -142,7 +143,9 @@ export class DirtEngine extends DomUI {
 		return new Promise((resolve: any) => {
 			DirtEngine.domElements['spinner'].classList.remove('start');
 			setTimeout(() => {
-				AudioEngine.trigger('title_screen_effect', AudioModulation.NONE, 0, 0.5);
+				AudioEngine.controlPlay('title_screen_effect', {
+					volumePercentage: 0.5,
+				});
 
 				setTimeout(() => {
 					// Expand the feed out
@@ -162,9 +165,12 @@ export class DirtEngine extends DomUI {
 					}
 
 					DirtEngine.domElements['feed'].classList.add('start');
-					setTimeout(() => {
+					setTimeout(async () => {
 						DirtEngine.domElements['feed'].classList.add('clickable');
-						AudioEngine.play('title_screen_music', 0, 0.15);
+						DirtEngine.titleScreenMusicBufferId = <number>await AudioEngine.controlPlay('title_screen_music', {
+							loop: true,
+							volumePercentage: 0.15,
+						});
 						resolve();
 					}, 500);
 				}, 500);
@@ -181,9 +187,9 @@ export class DirtEngine extends DomUI {
 		DirtEngine.setGameModeEdit(DirtEngine.gameModeEditStart);
 
 		// Audio
-		AudioEngine.fade('title_screen_music', 1000, 0);
+		AudioEngine.controlFade(DirtEngine.titleScreenMusicBufferId, 1000, 0);
 		setTimeout(() => {
-			AudioEngine.pause('title_screen_music');
+			AudioEngine.controlStop(DirtEngine.titleScreenMusicBufferId);
 		}, 1000);
 
 		// Visual
@@ -414,12 +420,12 @@ export class DirtEngine extends DomUI {
 					if (DirtEngine.gameStarted) {
 						if (keyAction.key === KeyCommon.ESC) {
 							if (keyAction.down) {
-								if(DomUI.domElements['feed-fitted-pause'].style.display === 'none') {
+								if (DomUI.domElements['feed-fitted-pause'].style.display === 'none') {
 									DomUI.domElements['feed-fitted-pause'].style.display = 'flex';
 									VideoEngineBus.outputGamePause({
 										reason: VideoBusInputCmdGamePauseReason.ESC,
 									});
-								}else {
+								} else {
 									DomUI.domElements['feed-fitted-pause'].style.display = 'none';
 									VideoEngineBus.outputGameUnpause({});
 								}

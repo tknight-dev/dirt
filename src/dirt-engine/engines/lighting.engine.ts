@@ -195,7 +195,7 @@ export class LightingEngine {
 			/*
 			 * Outside Night
 			 */
-			for (j = 0; j < 4; j++) {
+			for (j = 0; j < 5; j++) {
 				value = Math.round(scale(j, 3, 0, 0.375, 1 - darknessMax) * 1000) / 1000;
 				brightness = 'brightness(' + Math.max(0, value + gamma) + ')';
 

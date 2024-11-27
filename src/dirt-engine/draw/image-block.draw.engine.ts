@@ -13,6 +13,7 @@ import {
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model.bus';
+import { UtilEngine } from '../engines/util.engine';
 
 /**
  * @author tknight-dev
@@ -265,6 +266,16 @@ export class ImageBlockDrawEngine {
 
 							// Draw current image
 							imageBitmap = imageBitmaps[0];
+
+							if (imageBitmap === undefined) {
+								console.log(
+									'undefined',
+									gridImageBlock.assetId,
+									gridImageBlock.hash,
+									UtilEngine.gridHashFrom(gridImageBlock.hash),
+								);
+							}
+
 							if (gridImageBlock.halved !== undefined) {
 								if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
 									ctx.drawImage(

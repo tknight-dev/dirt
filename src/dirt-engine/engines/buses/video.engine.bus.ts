@@ -25,12 +25,12 @@ import {
 	VideoBusInputCmdSettings,
 	VideoBusPayload,
 	VideoBusOutputCmd,
-	VideoBusOutputCmdAudioEffect,
-	VideoBusOutputCmdAudioMusicFade,
-	VideoBusOutputCmdAudioMusicPause,
-	VideoBusOutputCmdAudioMusicPlay,
-	VideoBusOutputCmdAudioMusicUnpause,
-	VideoBusOutputCmdAudioVolume,
+	VideoBusOutputCmdAudioFade,
+	VideoBusOutputCmdAudioPause,
+	VideoBusOutputCmdAudioPlay,
+	VideoBusOutputCmdAudioStop,
+	VideoBusOutputCmdAudioUnpause,
+	VideoBusOutputCmdAudioUpdate,
 	VideoBusOutputCmdEditCameraUpdate,
 	VideoBusOutputCmdMapAsset,
 	VideoBusOutputCmdMapLoadStatus,
@@ -164,12 +164,14 @@ export class VideoEngineBus {
 	 */
 	private static input(): void {
 		let audioModulation: AudioModulation | null,
-			videoBusOutputCmdAudioEffect: VideoBusOutputCmdAudioEffect,
-			videoBusOutputCmdAudioMusicFade: VideoBusOutputCmdAudioMusicFade,
-			videoBusOutputCmdAudioMusicPlay: VideoBusOutputCmdAudioMusicPlay,
-			videoBusOutputCmdAudioMusicPause: VideoBusOutputCmdAudioMusicPause,
-			videoBusOutputCmdAudioMusicUnpause: VideoBusOutputCmdAudioMusicUnpause,
-			videoBusOutputCmdAudioVolume: VideoBusOutputCmdAudioVolume,
+			bufferId: number | undefined,
+			bufferIds: { [key: number]: number | undefined },
+			videoBusOutputCmdAudioFade: VideoBusOutputCmdAudioFade,
+			videoBusOutputCmdAudioPause: VideoBusOutputCmdAudioPause,
+			videoBusOutputCmdAudioPlay: VideoBusOutputCmdAudioPlay,
+			videoBusOutputCmdAudioStop: VideoBusOutputCmdAudioStop,
+			videoBusOutputCmdAudioUnpause: VideoBusOutputCmdAudioUnpause,
+			videoBusOutputCmdAudioUpdate: VideoBusOutputCmdAudioUpdate,
 			videoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate,
 			videoBusOutputCmdMapAsset: VideoBusOutputCmdMapAsset,
 			videoBusOutputCmdMapLoadStatus: VideoBusOutputCmdMapLoadStatus,
@@ -179,54 +181,45 @@ export class VideoEngineBus {
 			videoBusWorkerPayloads: VideoBusWorkerPayload[],
 			videoBusWorkerStatusInitialized: VideoBusWorkerStatusInitialized;
 
-		VideoEngineBus.worker.onmessage = (event: MessageEvent) => {
+		VideoEngineBus.worker.onmessage = async (event: MessageEvent) => {
+			bufferIds = <any>new Object();
 			videoBusWorkerPayloads = event.data.payloads;
 
 			for (let i = 0; i < videoBusWorkerPayloads.length; i++) {
 				videoBusWorkerPayload = videoBusWorkerPayloads[i];
 
 				switch (videoBusWorkerPayload.cmd) {
-					case VideoBusOutputCmd.AUDIO_EFFECT:
-						videoBusOutputCmdAudioEffect = <VideoBusOutputCmdAudioEffect>videoBusWorkerPayload.data;
-						audioModulation = AudioModulation.find(videoBusOutputCmdAudioEffect.modulationId);
-						if (audioModulation) {
-							AudioEngine.trigger(
-								videoBusOutputCmdAudioEffect.id,
-								audioModulation,
-								videoBusOutputCmdAudioEffect.pan,
-								videoBusOutputCmdAudioEffect.volumePercentage,
-							);
-						} else {
-							console.error('GameEngine > video: effect asset-id or modulation-id invalid');
+					case VideoBusOutputCmd.AUDIO_FADE:
+						videoBusOutputCmdAudioFade = <VideoBusOutputCmdAudioFade>videoBusWorkerPayload.data;
+						AudioEngine.controlFade(
+							videoBusOutputCmdAudioFade.bufferId,
+							videoBusOutputCmdAudioFade.durationInMs,
+							videoBusOutputCmdAudioFade.volumePercentage,
+						);
+						break;
+					case VideoBusOutputCmd.AUDIO_PAUSE:
+						videoBusOutputCmdAudioPause = <VideoBusOutputCmdAudioPause>videoBusWorkerPayload.data;
+						AudioEngine.controlPause(videoBusOutputCmdAudioPause.bufferId);
+						break;
+					case VideoBusOutputCmd.AUDIO_PLAY:
+						videoBusOutputCmdAudioPlay = <VideoBusOutputCmdAudioPlay>videoBusWorkerPayload.data;
+						bufferId = await AudioEngine.controlPlay(videoBusOutputCmdAudioPlay.id, videoBusOutputCmdAudioPlay.audioOptions);
+						if (videoBusOutputCmdAudioPlay.transactionId !== undefined) {
+							bufferIds[videoBusOutputCmdAudioPlay.transactionId] = bufferId;
 						}
 						break;
-					case VideoBusOutputCmd.AUDIO_MUSIC_FADE:
-						videoBusOutputCmdAudioMusicFade = <VideoBusOutputCmdAudioMusicFade>videoBusWorkerPayload.data;
-						AudioEngine.fade(
-							videoBusOutputCmdAudioMusicFade.id,
-							videoBusOutputCmdAudioMusicFade.durationInMs,
-							videoBusOutputCmdAudioMusicPlay.volumePercentage,
-						);
+					case VideoBusOutputCmd.AUDIO_STOP:
+						videoBusOutputCmdAudioStop = <VideoBusOutputCmdAudioStop>videoBusWorkerPayload.data;
+						AudioEngine.controlStop(videoBusOutputCmdAudioStop.bufferId);
 						break;
-					case VideoBusOutputCmd.AUDIO_MUSIC_PLAY:
-						videoBusOutputCmdAudioMusicPlay = <VideoBusOutputCmdAudioMusicPlay>videoBusWorkerPayload.data;
-						AudioEngine.play(
-							videoBusOutputCmdAudioMusicPlay.id,
-							videoBusOutputCmdAudioMusicPlay.timeInS,
-							videoBusOutputCmdAudioMusicPlay.volumePercentage,
-						);
+					case VideoBusOutputCmd.AUDIO_UNPAUSE:
+						videoBusOutputCmdAudioUnpause = <VideoBusOutputCmdAudioUnpause>videoBusWorkerPayload.data;
+						AudioEngine.controlUnpause(videoBusOutputCmdAudioUnpause.bufferId);
 						break;
-					case VideoBusOutputCmd.AUDIO_MUSIC_PAUSE:
-						videoBusOutputCmdAudioMusicPause = <VideoBusOutputCmdAudioMusicPause>videoBusWorkerPayload.data;
-						AudioEngine.pause(videoBusOutputCmdAudioMusicPause.id);
-						break;
-					case VideoBusOutputCmd.AUDIO_MUSIC_UNPAUSE:
-						videoBusOutputCmdAudioMusicUnpause = <VideoBusOutputCmdAudioMusicUnpause>videoBusWorkerPayload.data;
-						AudioEngine.unpause(videoBusOutputCmdAudioMusicUnpause.id);
-						break;
-					case VideoBusOutputCmd.AUDIO_VOLUME:
-						videoBusOutputCmdAudioVolume = <VideoBusOutputCmdAudioVolume>videoBusWorkerPayload.data;
-						AudioEngine.setVolumeAsset(videoBusOutputCmdAudioVolume.id, videoBusOutputCmdAudioVolume.volumePercentage);
+					case VideoBusOutputCmd.AUDIO_UPDATE:
+						videoBusOutputCmdAudioUpdate = <VideoBusOutputCmdAudioUpdate>videoBusWorkerPayload.data;
+						AudioEngine.controlPan(videoBusOutputCmdAudioUpdate.bufferId, videoBusOutputCmdAudioUpdate.pan);
+						AudioEngine.controlVolume(videoBusOutputCmdAudioUpdate.bufferId, videoBusOutputCmdAudioUpdate.volumePercentage);
 						break;
 					case VideoBusOutputCmd.EDIT_CAMERA_UPDATE:
 						videoBusOutputCmdEditCameraUpdate = <VideoBusOutputCmdEditCameraUpdate>videoBusWorkerPayload.data;
@@ -304,8 +297,21 @@ export class VideoEngineBus {
 						});
 						break;
 				}
+
+				if (Object.keys(bufferIds).length) {
+					VideoEngineBus.outputAudioBufferId(bufferIds);
+				}
 			}
 		};
+	}
+
+	private static outputAudioBufferId(bufferIds: { [key: number]: number | undefined }): void {
+		VideoEngineBus.worker.postMessage({
+			cmd: VideoBusInputCmd.AUDIO_BUFFER_IDS,
+			data: {
+				bufferIds: bufferIds,
+			},
+		});
 	}
 
 	public static outputGameModeEdit(edit: VideoBusInputCmdGameModeEdit): void {

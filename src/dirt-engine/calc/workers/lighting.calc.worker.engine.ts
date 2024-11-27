@@ -278,16 +278,16 @@ class LightingCalcWorkerEngine {
 
 					// Check for light interaction
 					gridImageBlock = referenceNoFoliage.hashes[complexes[0].hash].block;
-					if (gridImageBlock.nullPassthroughLight) {
+					if (gridImageBlock.passthroughLight) {
 						for (k = 1; k < complexes.length; k++) {
 							gridImageBlock = referenceNoFoliage.hashes[complexes[k].hash].block;
 
-							if (!gridImageBlock.nullPassthroughLight) {
+							if (!gridImageBlock.passthroughLight) {
 								break;
 							}
 						}
 					}
-					if (gridImageBlock.nullPassthroughLight) {
+					if (gridImageBlock.passthroughLight) {
 						continue; // no light interacting blocks on this gx column
 					}
 
@@ -342,7 +342,7 @@ class LightingCalcWorkerEngine {
 							complexExtended = complexesExtended[k];
 							gridImageBlockFoliage = <GridImageBlockFoliage>complexExtended.blocks[complexExtended.hash];
 
-							if (gridImageBlockFoliage.nullPassthroughLight) {
+							if (gridImageBlockFoliage.passthroughLight) {
 								continue;
 							}
 
@@ -738,7 +738,7 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					if (!gridImageBlock.nullPassthroughLight) {
+					if (!gridImageBlock.passthroughLight) {
 						// Left
 						if (brightnessByGyByGx[gx - 1] === undefined) {
 							brightnessByGyByGx[gx - 1] = {};
@@ -1077,7 +1077,7 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					if (!gridImageBlock.nullPassthroughLight) {
+					if (!gridImageBlock.passthroughLight) {
 						// Left
 						if (brightnessByGyByGx[gx - 1] === undefined) {
 							brightnessByGyByGx[gx - 1] = {};
@@ -1205,7 +1205,7 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					if (!gridImageBlock.nullPassthroughLight) {
+					if (!gridImageBlock.passthroughLight) {
 						// Left
 						if (brightnessByGyByGx[gx - 1] === undefined) {
 							brightnessByGyByGx[gx - 1] = {};
@@ -1331,7 +1331,7 @@ class LightingCalcWorkerEngine {
 				if (blocks[hash] !== undefined) {
 					gridImageBlock = blocks[hash].block;
 
-					if (!gridImageBlock.nullPassthroughLight) {
+					if (!gridImageBlock.passthroughLight) {
 						// Left
 						if (brightnessByGyByGx[gx - 1] === undefined) {
 							brightnessByGyByGx[gx - 1] = {};

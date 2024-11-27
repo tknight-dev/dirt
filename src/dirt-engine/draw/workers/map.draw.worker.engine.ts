@@ -227,7 +227,7 @@ class MapDrawWorkerEngine {
 
 		// Draw interval
 		UtilEngine.setInterval(() => {
-			if(MapDrawWorkerEngine.mapVisible) {
+			if (MapDrawWorkerEngine.mapVisible) {
 				try {
 					camera = MapDrawWorkerEngine.camera;
 					canvas = MapDrawWorkerEngine.canvas;
@@ -503,11 +503,10 @@ class MapDrawWorkerEngine {
 							ctxTmp.drawImage(zBitmapVanishing, 0, 0);
 
 							if (canvasTmpGw > canvasWidth) {
-								// Resize to correct size (good)
+								// Resize to correct size
 								ctx.drawImage(canvasTmp, 0, 0, gWidthMaxEff, gHeightMaxEff, 0, 0, canvasWidth, canvasHeight);
-								// Loop ends after this argument
 							} else {
-								// Resize & offset to correct size (bad)
+								// Resize & offset to correct size
 								ctx.drawImage(
 									canvasTmp,
 									0,

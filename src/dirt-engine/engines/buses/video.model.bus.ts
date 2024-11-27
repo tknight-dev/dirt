@@ -1,4 +1,5 @@
 import { AssetDeclarations, AssetImageSrcQuality } from '../../models/asset.model';
+import { AudioOptions } from '../audio.engine';
 import {
 	GridAudioBlock,
 	GridAudioTrigger,
@@ -21,6 +22,7 @@ import { TouchAction } from '../touch.engine';
  */
 
 export enum VideoBusInputCmd {
+	AUDIO_BUFFER_IDS,
 	GAME_MODE_EDIT,
 	GAME_MODE_EDIT_APPLY,
 	GAME_MODE_EDIT_APPLY_GROUP,
@@ -42,6 +44,10 @@ export enum VideoBusInputCmd {
 	RESIZE,
 	SETTINGS,
 	TOUCH,
+}
+
+export interface VideoBusInputCmdAudioBufferIds {
+	bufferIds: { [key: number]: number | undefined };
 }
 
 export interface VideoBusInputCmdInit extends VideoBusInputCmdResize, VideoBusInputCmdSettings {
@@ -188,6 +194,7 @@ export interface VideoBusPayload {
 		| MapConfig
 		| MouseAction
 		| TouchAction
+		| VideoBusInputCmdAudioBufferIds
 		| VideoBusInputCmdGameModeEdit
 		| VideoBusInputCmdGameModeEditApply
 		| VideoBusInputCmdGamePause
@@ -202,12 +209,12 @@ export interface VideoBusPayload {
 }
 
 export enum VideoBusOutputCmd {
-	AUDIO_EFFECT,
-	AUDIO_MUSIC_FADE,
-	AUDIO_MUSIC_PLAY,
-	AUDIO_MUSIC_PAUSE,
-	AUDIO_MUSIC_UNPAUSE,
-	AUDIO_VOLUME,
+	AUDIO_FADE,
+	AUDIO_PAUSE,
+	AUDIO_PLAY,
+	AUDIO_STOP,
+	AUDIO_UNPAUSE,
+	AUDIO_UPDATE,
 	EDIT_CAMERA_UPDATE,
 	EDIT_COMPLETE,
 	FPS,
@@ -219,35 +226,33 @@ export enum VideoBusOutputCmd {
 	STATUS_INITIALIZED,
 }
 
-export interface VideoBusOutputCmdAudioEffect {
-	id: string; // AudioAsset->Id
-	modulationId: string; // EffectModulation->Id
-	pan: number; // -1 left, 0 center, 1 right (precision 3)
-	volumePercentage: number; // 0-1 (precision 3)
-}
-
-export interface VideoBusOutputCmdAudioMusicFade {
+export interface VideoBusOutputCmdAudioFade {
+	bufferId: number;
 	durationInMs: number; // min 100 (precision 0)
-	id: string; // AudioAsset->Id
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
-export interface VideoBusOutputCmdAudioMusicPlay {
-	id: string; // AudioAsset->Id
-	timeInS: number; // 0-duration (precision 3)
-	volumePercentage: number; // 0-1 (precision 3)
+export interface VideoBusOutputCmdAudioPause {
+	bufferId: number;
 }
 
-export interface VideoBusOutputCmdAudioMusicPause {
+export interface VideoBusOutputCmdAudioPlay {
+	audioOptions?: AudioOptions;
 	id: string; // AudioAsset->Id
+	transactionId?: number;
 }
 
-export interface VideoBusOutputCmdAudioMusicUnpause {
-	id: string; // AudioAsset->Id
+export interface VideoBusOutputCmdAudioStop {
+	bufferId: number;
 }
 
-export interface VideoBusOutputCmdAudioVolume {
-	id: string; // AudioAsset->Id
+export interface VideoBusOutputCmdAudioUnpause {
+	bufferId: number;
+}
+
+export interface VideoBusOutputCmdAudioUpdate {
+	bufferId: number;
+	pan: number; // -1-0-1 (precision 3) [1 is right]
 	volumePercentage: number; // 0-1 (precision 3)
 }
 
@@ -286,12 +291,12 @@ export interface VideoBusWorkerPayload {
 	cmd: VideoBusOutputCmd;
 	data:
 		| number
-		| VideoBusOutputCmdAudioEffect
-		| VideoBusOutputCmdAudioMusicFade
-		| VideoBusOutputCmdAudioMusicPlay
-		| VideoBusOutputCmdAudioMusicPause
-		| VideoBusOutputCmdAudioMusicUnpause
-		| VideoBusOutputCmdAudioVolume
+		| VideoBusOutputCmdAudioFade
+		| VideoBusOutputCmdAudioPause
+		| VideoBusOutputCmdAudioPlay
+		| VideoBusOutputCmdAudioStop
+		| VideoBusOutputCmdAudioUnpause
+		| VideoBusOutputCmdAudioUpdate
 		| VideoBusOutputCmdEditCameraUpdate
 		| VideoBusOutputCmdMapAsset
 		| VideoBusOutputCmdMapLoadStatus

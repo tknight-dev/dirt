@@ -206,6 +206,126 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 	{
+		id: 'FOG',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/foliage/fog_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/foliage/fog_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/foliage/fog_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_FOLIAGE,
+	},
+	{
+		id: 'FOG_DROPOFF',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/foliage/fog_dropoff_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/foliage/fog_dropoff_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/foliage/fog_dropoff_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_FOLIAGE,
+	},
+	{
+		id: 'FOG_TALL',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/foliage/fog_tall_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/foliage/fog_tall_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/foliage/fog_tall_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_FOLIAGE,
+	},
+	{
+		id: 'FOG_TALL_DROPOFF',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/foliage/fog_tall_dropoff_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/foliage/fog_tall_dropoff_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/foliage/fog_tall_dropoff_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_FOLIAGE,
+	},
+	{
 		gHeight: 1,
 		gWidth: 1,
 		id: 'ICE',
@@ -481,6 +601,36 @@ let dirtEngineDefaultImageManifest: AssetImage[] = [
 				collection: AssetCollection.SHARED,
 				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/solids/rock_damaged_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
+		id: 'SNOW',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/snow_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/snow_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/snow_64_64.webp',
 			},
 		],
 		type: AssetImageType.GRID_BLOCK_SOLID,

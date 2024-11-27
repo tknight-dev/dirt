@@ -1,6 +1,5 @@
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import { Camera } from '../models/camera.model';
-import { CameraEngine } from './camera.engine';
 import {
 	Grid,
 	GridBlockTable,
@@ -871,19 +870,17 @@ export class MapEditEngine {
 		if (!data.flipV) {
 			delete data.flipV;
 		}
-
 		if (data.assetId === 'null') {
 			data.null = true;
 			if (!data.nullBlocking) {
 				delete data.nullBlocking;
 			}
-			if (!data.nullPassthroughLight) {
-				delete data.nullPassthroughLight;
-			}
 		} else {
 			data.null = false;
 			delete data.nullBlocking;
-			delete data.nullPassthroughLight;
+		}
+		if (!data.passthroughLight) {
+			delete data.passthroughLight;
 		}
 
 		// Set base configs outside of the properties object
@@ -920,13 +917,12 @@ export class MapEditEngine {
 			if (!data.nullBlocking) {
 				delete data.nullBlocking;
 			}
-			if (!data.nullPassthroughLight) {
-				delete data.nullPassthroughLight;
-			}
 		} else {
 			data.null = false;
 			delete data.nullBlocking;
-			delete data.nullPassthroughLight;
+		}
+		if (!data.passthroughLight) {
+			delete data.passthroughLight;
 		}
 
 		// Set base configs outside of the properties object
@@ -983,13 +979,12 @@ export class MapEditEngine {
 			if (!data.nullBlocking) {
 				delete data.nullBlocking;
 			}
-			if (!data.nullPassthroughLight) {
-				delete data.nullPassthroughLight;
-			}
 		} else {
 			data.null = false;
 			delete data.nullBlocking;
-			delete data.nullPassthroughLight;
+		}
+		if (!data.passthroughLight) {
+			delete data.passthroughLight;
 		}
 
 		// Set base configs outside of the properties object

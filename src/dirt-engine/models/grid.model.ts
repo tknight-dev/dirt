@@ -112,48 +112,47 @@ export interface GridAudioBlock extends GridObject {
 }
 
 export interface GridAudioTrigger extends GridObject {
-	trip: GridAudioTriggerTripType;
+	tagId: string; // blank is not-tagged
 	type: GridAudioTriggerType;
 }
 
 export interface GridAudioTriggerEffect extends GridAudioTrigger {
+	activation: GridAudioTriggerActivationType;
+	alwaysOn: boolean; // if true, ignore activation and oneshot
 	assetId: string;
+	gRadius: number; // The distance from origin that the sound can be heard
 	oneshot: boolean; // true and the trigger fires everytime it's tripped
-	volumePercentage: number; // between 0 and 1 with a precision of 3
 }
 
 export interface GridAudioTriggerMusic extends GridAudioTrigger {
 	assetId: string;
-	tagId: string;
 	volumePercentage: number; // between 0 and 1 with a precision of 3
 }
 
-export interface GridAudioTriggerMusicFade extends GridAudioTrigger {
-	fadeDurationInMs: number; // between 0 and 1 with a precision of 3
+export interface GridAudioTriggerFade extends GridAudioTrigger {
+	fadeDurationInMs: number; // min 0 (precision 0)
 	fadeTo: number; // between 0 and 1 with a precision of 3
-	tagId: string;
 }
 
-export interface GridAudioTriggerMusicPause extends GridAudioTrigger {
-	tagId: string;
-}
+export interface GridAudioTriggerPause extends GridAudioTrigger {}
 
-export interface GridAudioTriggerMusicUnpause extends GridAudioTrigger {
-	tagId: string;
+export interface GridAudioTriggerUnpause extends GridAudioTrigger {}
+
+export interface GridAudioTriggerStop extends GridAudioTrigger {}
+
+export enum GridAudioTriggerActivationType {
+	CONTACT, // Charactor touches the gBlock
+	HORIZONTAL, // Charactor passes top-to-bottom or vice versa
+	VERTICAL, // Charactor passes left-to-right or vice versa
 }
 
 export enum GridAudioTriggerType {
 	EFFECT,
+	FADE,
 	MUSIC,
-	MUSIC_FADE,
-	MUSIC_PAUSE,
-	MUSIC_UNPAUSE,
-}
-
-export enum GridAudioTriggerTripType {
-	CONTACT, // Charactor touches the gBlock
-	HORIZONTAL, // Charactor passes top-to-bottom or vice versa
-	VERTICAL, // Charactor passes left-to-right or vice versa
+	PAUSE,
+	UNPAUSE,
+	STOP,
 }
 
 export interface GridCoordinate {
@@ -167,7 +166,7 @@ export interface GridImageBlock extends GridObject {
 	flipH?: boolean;
 	flipV?: boolean;
 	nullBlocking?: boolean;
-	nullPassthroughLight?: boolean;
+	passthroughLight?: boolean;
 }
 
 export enum GridImageBlockHalved {

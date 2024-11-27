@@ -1,5 +1,6 @@
 import { AssetCollection, AssetImageSrcQuality, AssetManifestMaster, AssetMap } from '../../models/asset.model';
 import { AssetEngine } from '../asset.engine';
+import { AudioOptions } from '../audio.engine';
 import { ClockCalcEngine } from '../../calc/clock.calc.engine';
 import { Grid } from '../../models/grid.model';
 import { Camera } from '../../models/camera.model';
@@ -18,6 +19,7 @@ import { TouchAction } from '../touch.engine';
 import { UtilEngine } from '../util.engine';
 import {
 	VideoBusInputCmd,
+	VideoBusInputCmdAudioBufferIds,
 	VideoBusInputCmdInit,
 	VideoBusInputCmdMapLoad,
 	VideoBusInputCmdMapLoadById,
@@ -33,7 +35,6 @@ import {
 	VideoBusInputCmdSettings,
 	VideoBusPayload,
 	VideoBusOutputCmd,
-	VideoBusOutputCmdAudioEffect,
 	VideoBusWorkerPayload,
 } from '../../engines/buses/video.model.bus';
 
@@ -45,6 +46,9 @@ self.onmessage = (event: MessageEvent) => {
 	let videoBusPayload: VideoBusPayload = event.data;
 
 	switch (videoBusPayload.cmd) {
+		case VideoBusInputCmd.AUDIO_BUFFER_IDS:
+			VideoWorkerEngine.inputAudioBufferIds(<VideoBusInputCmdAudioBufferIds>videoBusPayload.data);
+			break;
 		case VideoBusInputCmd.GAME_MODE_EDIT:
 			VideoWorkerEngine.inputGameModeEdit(<VideoBusInputCmdGameModeEdit>videoBusPayload.data);
 			break;
@@ -111,6 +115,8 @@ self.onmessage = (event: MessageEvent) => {
 
 class VideoWorkerEngine {
 	private static assetManifestMaster: AssetManifestMaster;
+	private static audioTransactionCache: { [key: number]: (status: boolean) => void } = {};
+	private static audioTransactionCacheKey: number = 0;
 	private static canvasOffscreenBackground: OffscreenCanvas; // Z-2
 	private static canvasOffscreenBackgroundContext: OffscreenCanvasRenderingContext2D;
 	private static canvasOffscreenForeground: OffscreenCanvas; // Z-4
@@ -201,6 +207,21 @@ class VideoWorkerEngine {
 				},
 			},
 		]);
+	}
+
+	public static inputAudioBufferIds(audioBufferIds: VideoBusInputCmdAudioBufferIds): void {
+		let audioTransactionCache: { [key: number]: (status: boolean) => void } = VideoWorkerEngine.audioTransactionCache,
+			bufferIds: { [key: number]: number | undefined } = audioBufferIds.bufferIds,
+			caller = (transactionId: number) => {
+				setTimeout(() => {
+					audioTransactionCache[transactionId](bufferIds[transactionId] !== undefined);
+				});
+			};
+
+		for (let transactionId in bufferIds) {
+			caller(Number(transactionId));
+			delete audioTransactionCache[transactionId];
+		}
 	}
 
 	public static inputGameModeEdit(modeEdit: VideoBusInputCmdGameModeEdit): void {
@@ -420,116 +441,122 @@ class VideoWorkerEngine {
 		KernelEngine.updateSettings(settings);
 	}
 
-	/**
-	 * @param pan between -1 left and 1 right (precision 3)
-	 * @param volumePercentage between 0 and 1 (precision 3)
-	 */
-	public static outputAudioEffect(assetId: string, modulationId: string, pan: number, volumePercentage: number): void {
+	public static outputAudio(assetId: string, audioOptions?: AudioOptions, callback?: (status: boolean) => void): void {
+		let audioTransactionCache: { [key: number]: (status: boolean) => void } = VideoWorkerEngine.audioTransactionCache,
+			transactionId: number | undefined;
+
+		if (callback) {
+			transactionId = VideoWorkerEngine.audioTransactionCacheKey++;
+			if (VideoWorkerEngine.audioTransactionCacheKey >= 0xff) {
+				VideoWorkerEngine.audioTransactionCacheKey %= 0xff;
+			}
+
+			audioTransactionCache[transactionId] = callback;
+		}
+
 		VideoWorkerEngine.post([
 			{
-				cmd: VideoBusOutputCmd.AUDIO_EFFECT,
+				cmd: VideoBusOutputCmd.AUDIO_PLAY,
 				data: {
 					id: assetId,
-					modulationId: modulationId,
-					pan: Math.round(Math.max(-1, Math.min(1, pan)) * 1000) / 1000,
-					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
+					audioOptions: audioOptions,
+					transactionId: transactionId,
 				},
 			},
 		]);
 	}
 
 	/**
-	 * Play a stack of effects at once
-	 *
-	 * @param pan between -1 left and 1 right (precision 3)
-	 * @param volumePercentage between 0 and 1 (precision 3)
+	 * Play a stack of audio at once
 	 */
-	public static outputAudioEffectBatch(effects: VideoBusOutputCmdAudioEffect[]): void {
-		let effect: VideoBusOutputCmdAudioEffect,
+	public static outputAudioBatch(
+		assetIds: string[],
+		audioOptions: (AudioOptions | undefined)[],
+		callbacks: (((status: boolean) => void) | undefined)[],
+	): void {
+		let audioTransactionCache: { [key: number]: (status: boolean) => void } = VideoWorkerEngine.audioTransactionCache,
+			transactionId: number | undefined,
 			payloads: VideoBusWorkerPayload[] = [];
 
-		for (let i in effects) {
-			effect = effects[i];
+		for (let i in assetIds) {
+			if (callbacks[i]) {
+				transactionId = VideoWorkerEngine.audioTransactionCacheKey++;
+				if (VideoWorkerEngine.audioTransactionCacheKey >= 0xff) {
+					VideoWorkerEngine.audioTransactionCacheKey %= 0xff;
+				}
+
+				audioTransactionCache[transactionId] = callbacks[i];
+			}
 
 			payloads.push({
-				cmd: VideoBusOutputCmd.AUDIO_EFFECT,
+				cmd: VideoBusOutputCmd.AUDIO_PLAY,
 				data: {
-					id: effect.id,
-					modulationId: effect.modulationId,
-					pan: Math.round(Math.max(-1, Math.min(1, effect.pan)) * 1000) / 1000,
-					volumePercentage: Math.round(Math.max(0, Math.min(1, effect.volumePercentage)) * 1000) / 1000,
+					id: assetIds[i],
+					audioOptions: audioOptions[i],
+					transactionId: transactionId,
 				},
 			});
+
+			transactionId = undefined;
 		}
 
 		VideoWorkerEngine.post(payloads);
 	}
 
-	/**
-	 * @param durationInMs min 100 (precision 0)
-	 * @param volumePercentage between 0 and 1 (precision 3)
-	 */
-	public static outputAudioMusicFade(assetId: string, durationInMs: number, volumePercentage: number): void {
+	public static outputAudioFade(bufferId: number, durationInMs: number, volumePercentage: number): void {
 		VideoWorkerEngine.post([
 			{
-				cmd: VideoBusOutputCmd.AUDIO_MUSIC_FADE,
+				cmd: VideoBusOutputCmd.AUDIO_FADE,
 				data: {
-					durationInMs: Math.max(100, Math.round(durationInMs)),
-					id: assetId,
-					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
+					durationInMs: durationInMs,
+					bufferId: bufferId,
+					volumePercentage: volumePercentage,
 				},
 			},
 		]);
 	}
 
-	/**
-	 * @param volumePercentage between 0 and 1 (precision 3)
-	 */
-	public static outputAudioMusicPlay(assetId: string, timeInS: number, volumePercentage: number): void {
+	public static outputAudioPause(bufferId: number): void {
 		VideoWorkerEngine.post([
 			{
-				cmd: VideoBusOutputCmd.AUDIO_MUSIC_PLAY,
+				cmd: VideoBusOutputCmd.AUDIO_PAUSE,
 				data: {
-					id: assetId,
-					timeInS: Math.round(timeInS),
-					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
+					bufferId: bufferId,
 				},
 			},
 		]);
 	}
 
-	public static outputAudioMusicPause(assetId: string): void {
+	public static outputAudioStop(bufferId: number): void {
 		VideoWorkerEngine.post([
 			{
-				cmd: VideoBusOutputCmd.AUDIO_MUSIC_PAUSE,
+				cmd: VideoBusOutputCmd.AUDIO_STOP,
 				data: {
-					id: assetId,
+					bufferId: bufferId,
 				},
 			},
 		]);
 	}
 
-	public static outputAudioMusicUnpause(assetId: string): void {
+	public static outputAudioUnpause(bufferId: number): void {
 		VideoWorkerEngine.post([
 			{
-				cmd: VideoBusOutputCmd.AUDIO_MUSIC_UNPAUSE,
+				cmd: VideoBusOutputCmd.AUDIO_UNPAUSE,
 				data: {
-					id: assetId,
+					bufferId: bufferId,
 				},
 			},
 		]);
 	}
 
-	/**
-	 * @param volumePercentage between 0 and 1 (precision 3)
-	 */
-	public static outputAudioVolume(assetId: string, volumePercentage: number): void {
+	public static outputAudioUpdate(bufferId: number, pan: number, volumePercentage: number): void {
 		VideoWorkerEngine.post([
 			{
-				cmd: VideoBusOutputCmd.AUDIO_VOLUME,
+				cmd: VideoBusOutputCmd.AUDIO_UPDATE,
 				data: {
-					id: assetId,
-					volumePercentage: Math.round(Math.max(0, Math.min(1, volumePercentage)) * 1000) / 1000,
+					bufferId: bufferId,
+					pan: pan,
+					volumePercentage: volumePercentage,
 				},
 			},
 		]);
