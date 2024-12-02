@@ -441,16 +441,6 @@ export class LightingEngine {
 		}
 	}
 
-	public static isLightNight(): boolean {
-		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
-
-		if (hourPreciseOfDayEff < 8 || hourPreciseOfDayEff > 19) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
 	public static setTimeForced(timeForced: boolean) {
 		LightingEngine.timeForced = timeForced;
 	}

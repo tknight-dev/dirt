@@ -221,6 +221,7 @@ export interface GridLight extends GridObject {
 	directionOmniBrightness?: number;
 	directionOmniGRadius?: number;
 	directions?: GridLightDirection[];
+	gRadiusAudioEffect?: number;
 	nightOnly?: boolean;
 	rounded?: boolean;
 	strengthToDestroyInN?: number; // newtons of force required to destroy

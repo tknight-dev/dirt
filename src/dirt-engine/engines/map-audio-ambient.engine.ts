@@ -10,6 +10,7 @@ import {
 	GridAudioTagType,
 	GridBlockTable,
 	GridBlockTableComplex,
+	GridLight,
 } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { VideoBusOutputCmdEditCameraUpdate } from '../engines/buses/video.model.bus';
@@ -21,7 +22,22 @@ import { UtilEngine } from './util.engine';
  * @author tknight-dev
  */
 
-interface Position {
+interface LightMeta {
+	on: boolean;
+}
+
+interface LightState {
+	ambient: State;
+	switchOff: State;
+	switchOn: State;
+}
+
+interface State {
+	pan: number;
+	volumePercentage: number;
+}
+
+interface TagMeta {
 	activationCount: number;
 	activationType: GridAudioTagActivationType;
 	contacted: boolean;
@@ -32,19 +48,26 @@ interface Position {
 	upPrevious: boolean;
 }
 
-interface State {
-	pan: number;
-	volumePercentage: number;
-}
+interface TagState extends State {}
 
 export class MapAudioAmbientEngine {
 	private static active: boolean;
-	private static activeAudio: { [key: number]: number } = {};
+	private static activeAudioLightForegroundAmbient: { [key: number]: number } = {};
+	private static activeAudioLightForegroundSwitchOff: { [key: number]: number } = {};
+	private static activeAudioLightForegroundSwitchOn: { [key: number]: number } = {};
+	private static activeAudioLightPrimaryAmbient: { [key: number]: number } = {};
+	private static activeAudioLightPrimarySwitchOff: { [key: number]: number } = {};
+	private static activeAudioLightPrimarySwitchOn: { [key: number]: number } = {};
+	private static activeAudioTag: { [key: number]: number } = {};
 	private static initialized: boolean;
+	private static lightForegroundMetaByGrid: { [key: string]: { [key: number]: LightMeta } } = {};
+	private static lightForegroundTagStatesByGrid: { [key: string]: { [key: number]: LightState } } = {};
+	private static lightPrimaryMetaByGrid: { [key: string]: { [key: number]: LightMeta } } = {};
+	private static lightPrimaryTagStatesByGrid: { [key: string]: { [key: number]: LightState } } = {};
 	private static mapActive: MapActive;
 	private static requestFrame: number;
-	private static tagPositionsByGrid: { [key: string]: { [key: number]: Position } } = {};
-	private static tagStatesByGrid: { [key: string]: { [key: number]: State } } = {};
+	private static tagMetaByGrid: { [key: string]: { [key: number]: TagMeta } } = {};
+	private static tagStatesByGrid: { [key: string]: { [key: number]: TagState } } = {};
 	private static timingResolution: number = 30;
 	private static timestampDelta: number;
 	private static timestampNow: number;
@@ -52,33 +75,60 @@ export class MapAudioAmbientEngine {
 	private static volumePercentage: number = 1;
 
 	private static calc(): void {
-		// determine positions of all activation by trip tags (left: boolean, up: boolean, currentStateLeft: boolean, currentStateUp: boolean)
+		// determine positions of all activation by trip tags (left: boolean, up: boolean, currentTagStateLeft: boolean, currentTagStateUp: boolean)
 		let mapActive: MapActive = MapAudioAmbientEngine.mapActive,
 			grid: Grid,
 			gridAudioTagActivationType: GridAudioTagActivationType | undefined,
 			gridAudioTag: GridAudioTag,
-			hashes: { [key: number]: GridAudioTag },
-			j: string,
+			gridLight: GridLight,
 			gx: number = mapActive.camera.gx,
 			gy: number = mapActive.camera.gy,
-			tagPositions: { [key: number]: Position },
-			tagPositionsByGrid: { [key: string]: { [key: number]: Position } } = MapAudioAmbientEngine.tagPositionsByGrid,
-			tagStatesByGrid: { [key: string]: { [key: number]: State } } = MapAudioAmbientEngine.tagStatesByGrid;
+			j: string,
+			k: string,
+			lightHashes: { [key: number]: GridLight },
+			lightMeta: { [key: number]: LightMeta },
+			lightNight: boolean = UtilEngine.isLightNight(mapActive.hourOfDayEff + 1),
+			lights: GridBlockTable<GridLight>[],
+			lightForegroundMetaByGrid: { [key: string]: { [key: number]: LightMeta } } = MapAudioAmbientEngine.lightForegroundMetaByGrid,
+			lightForegroundTagStatesByGrid: { [key: string]: { [key: number]: LightState } } =
+				MapAudioAmbientEngine.lightForegroundTagStatesByGrid,
+			lightPrimaryMetaByGrid: { [key: string]: { [key: number]: LightMeta } } = MapAudioAmbientEngine.lightPrimaryMetaByGrid,
+			lightPrimaryTagStatesByGrid: { [key: string]: { [key: number]: LightState } } =
+				MapAudioAmbientEngine.lightPrimaryTagStatesByGrid,
+			tagHashes: { [key: number]: GridAudioTag },
+			tagMeta: { [key: number]: TagMeta },
+			tagMetaByGrid: { [key: string]: { [key: number]: TagMeta } } = MapAudioAmbientEngine.tagMetaByGrid,
+			tagStatesByGrid: { [key: string]: { [key: number]: TagState } } = MapAudioAmbientEngine.tagStatesByGrid;
 
 		for (let i in mapActive.grids) {
 			grid = mapActive.grids[i];
-			hashes = grid.audioPrimaryTags.hashes;
 
-			if (tagPositionsByGrid[grid.id] === undefined) {
-				tagPositionsByGrid[grid.id] = {};
+			if (lightForegroundMetaByGrid[grid.id] === undefined) {
+				lightForegroundMetaByGrid[grid.id] = {};
+			}
+			if (lightForegroundTagStatesByGrid[grid.id] === undefined) {
+				lightForegroundTagStatesByGrid[grid.id] = {};
+			}
+			if (lightPrimaryMetaByGrid[grid.id] === undefined) {
+				lightPrimaryMetaByGrid[grid.id] = {};
+			}
+			if (lightPrimaryTagStatesByGrid[grid.id] === undefined) {
+				lightPrimaryTagStatesByGrid[grid.id] = {};
+			}
+			if (tagMetaByGrid[grid.id] === undefined) {
+				tagMetaByGrid[grid.id] = {};
 			}
 			if (tagStatesByGrid[grid.id] === undefined) {
 				tagStatesByGrid[grid.id] = {};
 			}
-			tagPositions = tagPositionsByGrid[grid.id];
 
-			for (j in hashes) {
-				gridAudioTag = hashes[j];
+			/**
+			 * Audio Blocks/Tags
+			 */
+			tagHashes = grid.audioPrimaryTags.hashes;
+			tagMeta = tagMetaByGrid[grid.id];
+			for (j in tagHashes) {
+				gridAudioTag = tagHashes[j];
 
 				if (gridAudioTag.alwaysOn) {
 					continue;
@@ -86,7 +136,7 @@ export class MapAudioAmbientEngine {
 
 				gridAudioTagActivationType = (<GridAudioTagEffect>gridAudioTag).activation;
 				if (gridAudioTagActivationType) {
-					tagPositions[gridAudioTag.hash] = {
+					tagMeta[gridAudioTag.hash] = {
 						activationCount: 0,
 						activationType: gridAudioTagActivationType,
 						contacted: false,
@@ -96,6 +146,40 @@ export class MapAudioAmbientEngine {
 						upCurrent: gridAudioTag.gy < gy,
 						upPrevious: gridAudioTag.gy < gy,
 					};
+				}
+			}
+
+			/**
+			 * Lights
+			 */
+			lights = [grid.lightsForeground, grid.lightsPrimary];
+			for (j in lights) {
+				lightHashes = lights[j].hashes;
+
+				if (j === '0') {
+					lightMeta = lightForegroundMetaByGrid[grid.id];
+				} else {
+					lightMeta = lightPrimaryMetaByGrid[grid.id];
+				}
+
+				for (k in lightHashes) {
+					gridLight = lightHashes[k];
+
+					if (
+						gridLight.assetIdAudioEffectAmbient ||
+						gridLight.assetIdAudioEffectSwitchOff ||
+						gridLight.assetIdAudioEffectSwitchOn
+					) {
+						if (gridLight.nightOnly) {
+							lightMeta[gridLight.hash] = {
+								on: lightNight,
+							};
+						} else {
+							lightMeta[gridLight.hash] = {
+								on: true,
+							};
+						}
+					}
 				}
 			}
 		}
@@ -125,33 +209,63 @@ export class MapAudioAmbientEngine {
 
 			// Start
 			let activate: boolean,
-				activeAudio: { [key: number]: number } = MapAudioAmbientEngine.activeAudio,
+				activeAudioLightAmbient: { [key: number]: number },
+				activeAudioLightSwitchOff: { [key: number]: number },
+				activeAudioLightSwitchOn: { [key: number]: number },
+				activeAudioLightForegroundAmbient: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundAmbient,
+				activeAudioLightForegroundSwitchOff: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundSwitchOff,
+				activeAudioLightForegroundSwitchOn: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundSwitchOn,
+				activeAudioLightPrimaryAmbient: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimaryAmbient,
+				activeAudioLightPrimarySwitchOff: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimarySwitchOff,
+				activeAudioLightPrimarySwitchOn: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimarySwitchOn,
+				activeAudioTag: { [key: number]: number } = MapAudioAmbientEngine.activeAudioTag,
 				audioBufferId: number | undefined,
+				audioBufferIdAmbient: number | undefined,
+				audioBufferIdSwitchOff: number | undefined,
+				audioBufferIdSwitchOn: number | undefined,
 				audioOptions: AudioOptions,
 				mapActive: MapActive = MapAudioAmbientEngine.mapActive,
 				audioPrimaryBlocks: GridBlockTable<GridAudioBlock> = mapActive.gridActive.audioPrimaryBlocks,
 				audioPrimaryTags: GridBlockTable<GridAudioTag> = mapActive.gridActive.audioPrimaryTags,
+				audioPrimaryTagsHashes: { [key: number]: GridAudioTag } = audioPrimaryTags.hashes,
+				cameraHash: number = UtilEngine.gridHashTo(mapActive.camera.gx, mapActive.camera.gy),
 				complex: GridBlockTableComplex,
-				distance: number,
+				distance: number = 0,
 				distanceGx: number,
 				distanceGy: number,
 				gRadius: number | undefined,
 				gridAudioBlock: GridAudioBlock,
 				gridAudioTag: GridAudioTag,
-				gridAudioTagEffect: GridAudioTagEffect,
-				gridAudioTagMusic: GridAudioTagMusic,
+				gridLight: GridLight,
 				gx: number = mapActive.camera.gx,
+				gxString: string,
 				gy: number = mapActive.camera.gy,
 				hash: number,
-				hashesGy: GridBlockTableComplex[],
-				hashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
 				i: string,
+				j: string,
+				lightForeground: boolean,
+				lightHashes: { [key: number]: GridLight },
+				lightHashesGy: GridBlockTableComplex[],
+				lightHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
+				lightForegroundMeta: { [key: number]: LightMeta } = MapAudioAmbientEngine.lightForegroundMetaByGrid[mapActive.gridActiveId],
+				lightForegroundTagStates: { [key: number]: LightState } =
+					MapAudioAmbientEngine.lightForegroundTagStatesByGrid[mapActive.gridActiveId],
+				lightMeta: LightMeta,
+				lightNight: boolean = UtilEngine.isLightNight(mapActive.hourOfDayEff + 1),
+				lightPrimaryMeta: { [key: number]: LightMeta } = MapAudioAmbientEngine.lightPrimaryMetaByGrid[mapActive.gridActiveId],
+				lightPrimaryTagStates: { [key: number]: LightState } =
+					MapAudioAmbientEngine.lightPrimaryTagStatesByGrid[mapActive.gridActiveId],
+				lights: GridBlockTable<GridLight>[] = [mapActive.gridActive.lightsForeground, mapActive.gridActive.lightsPrimary],
+				lightState: LightState,
 				pan: number,
 				panIgnored: boolean,
 				panOffset: number,
-				position: Position,
-				tagStates: { [key: number]: State } = MapAudioAmbientEngine.tagStatesByGrid[mapActive.gridActiveId],
-				tagPositions: { [key: number]: Position } = MapAudioAmbientEngine.tagPositionsByGrid[mapActive.gridActiveId],
+				position: TagMeta,
+				state: State,
+				tagHashesGy: GridBlockTableComplex[],
+				tagHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
+				tagStates: { [key: number]: TagState } = MapAudioAmbientEngine.tagStatesByGrid[mapActive.gridActiveId],
+				tagMeta: { [key: number]: TagMeta } = MapAudioAmbientEngine.tagMetaByGrid[mapActive.gridActiveId],
 				timingResolution: number = MapAudioAmbientEngine.timingResolution,
 				viewportGxStart: number = mapActive.camera.viewportGx,
 				viewportGxStop: number = viewportGxStart + Math.round((mapActive.camera.viewportPw / mapActive.camera.gInPw) * 1000) / 1000,
@@ -168,35 +282,263 @@ export class MapAudioAmbientEngine {
 				panOffset = 0;
 			}
 
-			for (let gxString in hashesGyByGx) {
-				hashesGy = hashesGyByGx[gxString];
+			/**
+			 * Lights
+			 */
+			for (i in lights) {
+				lightHashes = lights[i].hashes;
+				lightHashesGyByGx = <any>lights[i].hashesGyByGx;
 
-				for (i in hashesGy) {
-					complex = hashesGy[i];
+				if (i === '0') {
+					lightForeground = true;
+				} else {
+					lightForeground = false;
+				}
+
+				for (gxString in lightHashesGyByGx) {
+					lightHashesGy = lightHashesGyByGx[gxString];
+
+					for (j in lightHashesGy) {
+						complex = lightHashesGy[j];
+						hash = complex.hash;
+
+						gridLight = lightHashes[hash];
+						gRadius = gridLight.gRadiusAudioEffect;
+
+						// Select source
+						if (lightForeground) {
+							activeAudioLightAmbient = activeAudioLightForegroundAmbient;
+							activeAudioLightSwitchOff = activeAudioLightForegroundSwitchOff;
+							activeAudioLightSwitchOn = activeAudioLightForegroundSwitchOn;
+
+							audioBufferIdAmbient = activeAudioLightForegroundAmbient[hash];
+							audioBufferIdSwitchOff = activeAudioLightForegroundSwitchOff[hash];
+							audioBufferIdSwitchOn = activeAudioLightForegroundSwitchOn[hash];
+
+							lightMeta = lightForegroundMeta[hash];
+							if (!lightMeta) {
+								// calc didn't pick it up
+								continue;
+							}
+
+							if (lightForegroundTagStates[hash] === undefined) {
+								lightForegroundTagStates[hash] = <any>{};
+							}
+							lightState = lightForegroundTagStates[hash];
+							state = lightForegroundTagStates[hash].ambient;
+						} else {
+							activeAudioLightAmbient = activeAudioLightPrimaryAmbient;
+							activeAudioLightSwitchOff = activeAudioLightPrimarySwitchOff;
+							activeAudioLightSwitchOn = activeAudioLightPrimarySwitchOn;
+
+							audioBufferIdAmbient = activeAudioLightPrimaryAmbient[hash];
+							audioBufferIdSwitchOff = activeAudioLightPrimarySwitchOff[hash];
+							audioBufferIdSwitchOn = activeAudioLightPrimarySwitchOn[hash];
+
+							lightMeta = lightPrimaryMeta[hash];
+							if (!lightMeta) {
+								// calc didn't pick it up
+								continue;
+							}
+
+							if (lightPrimaryTagStates[hash] === undefined) {
+								lightPrimaryTagStates[hash] = <any>{};
+							}
+							lightState = lightPrimaryTagStates[hash];
+							state = lightPrimaryTagStates[hash].ambient;
+						}
+
+						// Is effected by distance?
+						if (gRadius) {
+							distanceGx = gridLight.gx + gridLight.gSizeW / 2 - gx;
+							distanceGy = gridLight.gy + gridLight.gSizeH / 2 - gy;
+							distance = Math.round(Math.sqrt(distanceGx * distanceGx + distanceGy * distanceGy) * 1000) / 1000;
+
+							if (distance > gRadius) {
+								// stop if currently playing
+								if (audioBufferId !== undefined) {
+									AudioEngine.controlStop(audioBufferIdAmbient);
+									AudioEngine.controlStop(audioBufferIdSwitchOff);
+									AudioEngine.controlStop(audioBufferIdSwitchOn);
+									continue;
+								}
+							}
+
+							volumePercentage = Math.round(UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0) * 1000) / 1000;
+						} else {
+							volumePercentage = 1;
+						}
+
+						pan =
+							Math.round(
+								Math.max(
+									-1,
+									Math.min(1, UtilEngine.scale(gridLight.gx, viewportGxStop, viewportGxStart, 1, -1) + panOffset),
+								) * 1000,
+							) / 1000;
+						audioOptions = {
+							pan: pan,
+							volumePercentage: volumePercentage,
+						};
+						gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
+						if (gridAudioBlock) {
+							audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
+						}
+
+						// Already playing? AMBIENT
+						if (audioBufferIdAmbient !== undefined) {
+							if (gRadius && state.volumePercentage !== volumePercentage) {
+								// Update audio volume by fading the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlFade(audioBufferIdAmbient, timingResolution, volumePercentage)) {
+									// Audio ended before volume could be adjusted
+									delete activeAudioLightAmbient[hash];
+									continue;
+								}
+
+								state.volumePercentage = volumePercentage;
+							}
+
+							if (state.pan !== pan) {
+								// Update audio pan by panning the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlPan(audioBufferIdAmbient, timingResolution, pan)) {
+									// Audio ended before pan could be adjusted
+									delete activeAudioLightAmbient[hash];
+									continue;
+								}
+
+								state.pan = pan;
+							}
+						} else {
+							if (gridLight.assetIdAudioEffectAmbient) {
+								audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectAmbient, audioOptions);
+
+								if (audioBufferId) {
+									activeAudioLightAmbient[hash] = audioBufferId;
+									lightState.ambient = {
+										pan: pan,
+										volumePercentage: volumePercentage,
+									};
+								}
+							}
+						}
+
+						// Already playing? SWITCH_OFF
+						if (audioBufferIdAmbient !== undefined) {
+							if (gRadius && state.volumePercentage !== volumePercentage) {
+								// Update audio volume by fading the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlFade(audioBufferIdSwitchOff, timingResolution, volumePercentage)) {
+									// Audio ended before volume could be adjusted
+									delete activeAudioLightSwitchOff[hash];
+									continue;
+								}
+
+								state.volumePercentage = volumePercentage;
+							}
+
+							if (state.pan !== pan) {
+								// Update audio pan by panning the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlPan(audioBufferIdSwitchOff, timingResolution, pan)) {
+									// Audio ended before pan could be adjusted
+									delete activeAudioLightSwitchOff[hash];
+									continue;
+								}
+
+								state.pan = pan;
+							}
+						} else {
+							if (lightMeta.on && !lightNight) {
+								lightMeta.on = false;
+
+								if (gridLight.assetIdAudioEffectSwitchOff) {
+									audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOff, audioOptions);
+
+									if (audioBufferId) {
+										activeAudioLightSwitchOff[hash] = audioBufferId;
+										lightState.ambient = {
+											pan: pan,
+											volumePercentage: volumePercentage,
+										};
+									}
+								}
+							}
+						}
+
+						// Already playing? SWITCH_ON
+						if (audioBufferIdAmbient !== undefined) {
+							if (gRadius && state.volumePercentage !== volumePercentage) {
+								// Update audio volume by fading the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlFade(audioBufferIdSwitchOff, timingResolution, volumePercentage)) {
+									// Audio ended before volume could be adjusted
+									delete activeAudioLightSwitchOff[hash];
+									continue;
+								}
+
+								state.volumePercentage = volumePercentage;
+							}
+
+							if (state.pan !== pan) {
+								// Update audio pan by panning the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlPan(audioBufferIdSwitchOff, timingResolution, pan)) {
+									// Audio ended before pan could be adjusted
+									delete activeAudioLightSwitchOff[hash];
+									continue;
+								}
+
+								state.pan = pan;
+							}
+						} else {
+							if (!lightMeta.on && lightNight) {
+								lightMeta.on = true;
+
+								if (gridLight.assetIdAudioEffectSwitchOn) {
+									audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOn, audioOptions);
+
+									if (audioBufferId) {
+										activeAudioLightSwitchOn[hash] = audioBufferId;
+										lightState.switchOn = {
+											pan: pan,
+											volumePercentage: volumePercentage,
+										};
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			/**
+			 * Audio Blocks/Tags
+			 */
+			for (gxString in tagHashesGyByGx) {
+				tagHashesGy = tagHashesGyByGx[gxString];
+
+				for (i in tagHashesGy) {
+					complex = tagHashesGy[i];
 					hash = complex.hash;
 
-					audioBufferId = activeAudio[hash];
-					gridAudioTag = audioPrimaryTags.hashes[hash];
+					audioBufferId = activeAudioTag[hash];
+					gridAudioTag = audioPrimaryTagsHashes[hash];
 					gRadius = gridAudioTag.gRadius;
 					panIgnored = !!gridAudioTag.panIgnored;
 
 					// Is effected by distance?
 					if (gRadius) {
-						distanceGx = gridAudioTag.gx - gx;
-						distanceGy = gridAudioTag.gy - gy;
+						distanceGx = gridAudioTag.gx - gx + 0.5; // .5 centers the sound in the grid box
+						distanceGy = gridAudioTag.gy - gy + 0.5; // .5 centers the sound in the grid box
 						distance = Math.round(Math.sqrt(distanceGx * distanceGx + distanceGy * distanceGy) * 1000) / 1000;
 
 						if (distance > gRadius) {
 							// stop if currently playing
 							if (audioBufferId !== undefined) {
-								AudioEngine.controlStop(activeAudio[hash]);
+								AudioEngine.controlStop(activeAudioTag[hash]);
 								continue;
 							}
 						}
 
 						// Audio volume based on distance
 						if (gridAudioTag.type === GridAudioTagType.EFFECT) {
-							volumePercentage = UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0);
+							volumePercentage = Math.round(UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0) * 1000) / 1000;
 						} else {
 							volumePercentage = (<GridAudioTagMusic>gridAudioTag).volumePercentage;
 						}
@@ -223,8 +565,7 @@ export class MapAudioAmbientEngine {
 							// Update audio volume by fading the duration of this interval for smooth audio voluming
 							if (!AudioEngine.controlFade(audioBufferId, timingResolution, volumePercentage)) {
 								// Audio ended before volume could be adjusted
-								delete activeAudio[hash];
-								delete tagStates[hash];
+								delete activeAudioTag[hash];
 								continue;
 							}
 
@@ -235,8 +576,7 @@ export class MapAudioAmbientEngine {
 							// Update audio pan by panning the duration of this interval for smooth audio voluming
 							if (!AudioEngine.controlPan(audioBufferId, timingResolution, pan)) {
 								// Audio ended before pan could be adjusted
-								delete activeAudio[hash];
-								delete tagStates[hash];
+								delete activeAudioTag[hash];
 								continue;
 							}
 
@@ -249,13 +589,13 @@ export class MapAudioAmbientEngine {
 							volumePercentage: volumePercentage,
 						};
 
-						gridAudioBlock = audioPrimaryBlocks.hashes[hash];
+						gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
 						if (gridAudioBlock) {
 							audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
 						}
 
 						// Play audio
-						position = tagPositions[hash];
+						position = tagMeta[hash];
 						if (position) {
 							activate = false;
 
@@ -300,10 +640,10 @@ export class MapAudioAmbientEngine {
 
 							if (activate) {
 								audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
+								position.activationCount++;
 
 								if (audioBufferId) {
-									activeAudio[hash] = audioBufferId;
-									position.activationCount++;
+									activeAudioTag[hash] = audioBufferId;
 									tagStates[hash] = {
 										pan: pan,
 										volumePercentage: volumePercentage,
@@ -314,7 +654,7 @@ export class MapAudioAmbientEngine {
 							audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
 
 							if (audioBufferId) {
-								activeAudio[hash] = audioBufferId;
+								activeAudioTag[hash] = audioBufferId;
 								tagStates[hash] = {
 									pan: pan,
 									volumePercentage: volumePercentage,
@@ -338,16 +678,37 @@ export class MapAudioAmbientEngine {
 	}
 
 	public static stop(): void {
-		let activeAudio: { [key: number]: number } = MapAudioAmbientEngine.activeAudio;
+		let j: string,
+			stop: { [key: number]: number }[] = [
+				MapAudioAmbientEngine.activeAudioLightForegroundAmbient,
+				MapAudioAmbientEngine.activeAudioLightForegroundSwitchOff,
+				MapAudioAmbientEngine.activeAudioLightForegroundSwitchOn,
+				MapAudioAmbientEngine.activeAudioLightPrimaryAmbient,
+				MapAudioAmbientEngine.activeAudioLightPrimarySwitchOff,
+				MapAudioAmbientEngine.activeAudioLightPrimarySwitchOn,
+				MapAudioAmbientEngine.activeAudioTag,
+			],
+			stopInstance: { [key: number]: number };
 
 		MapAudioAmbientEngine.active = false;
 		cancelAnimationFrame(MapAudioAmbientEngine.requestFrame);
 
-		for (let i in activeAudio) {
-			AudioEngine.controlStop(activeAudio[i]);
-			delete activeAudio[i];
+		for (let i in stop) {
+			stopInstance = stop[i];
+
+			for (j in stopInstance) {
+				AudioEngine.controlStop(stopInstance[j]);
+				delete stopInstance[j];
+			}
 		}
-		MapAudioAmbientEngine.tagPositionsByGrid = <any>new Object();
+
+		MapAudioAmbientEngine.lightForegroundMetaByGrid = <any>new Object();
+		MapAudioAmbientEngine.lightForegroundTagStatesByGrid = <any>new Object();
+
+		MapAudioAmbientEngine.lightPrimaryMetaByGrid = <any>new Object();
+		MapAudioAmbientEngine.lightPrimaryTagStatesByGrid = <any>new Object();
+
+		MapAudioAmbientEngine.tagMetaByGrid = <any>new Object();
 		MapAudioAmbientEngine.tagStatesByGrid = <any>new Object();
 	}
 

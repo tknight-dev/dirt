@@ -1675,6 +1675,7 @@ export class DomUI {
 						type: GridLightType.DOWN,
 					},
 				],
+				gRadiusAudioEffect: 5,
 				gSizeH: 1,
 				gSizeW: 1,
 				nightOnly: undefined,
@@ -1977,6 +1978,25 @@ export class DomUI {
 				},
 			);
 		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// G Radius Audio Effect
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Radius Audio Effect';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.max = '25';
+		input.min = '1';
+		input.oninput = (event: any) => {
+			applicationProperties.gRadiusAudioEffect = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gRadiusAudioEffect;
+		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2454,7 +2474,7 @@ export class DomUI {
 			hash: number,
 			interval: ReturnType<typeof setInterval> = setInterval(() => {
 				gHashes = new Array();
-				length = collection.getLength();
+				length = collection.length;
 
 				if (length) {
 					// Process available positions within this time interval
@@ -2717,6 +2737,7 @@ export class DomUI {
 			div.innerText = String(fps);
 		});
 		VideoEngineBus.setCallbackMapHourOfDayEff((hourOfDayEff: number) => {
+			MapEditEngine.uiClockUpdate(hourOfDayEff);
 			DomUI.domElementsUIEdit['time'].innerText = hourOfDayEff + ':00';
 		});
 		VideoEngineBus.setCallbackRumble((durationInMs: number, enable: boolean, intensity: number) => {

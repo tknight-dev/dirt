@@ -3,8 +3,6 @@ import { Camera } from '../models/camera.model';
 import {
 	Grid,
 	GridAudioTag,
-	GridAudioTagEffect,
-	GridAudioTagMusic,
 	GridAudioTagType,
 	GridBlockTable,
 	GridBlockTableComplex,
@@ -52,7 +50,7 @@ export class MapEditEngine {
 	public static readonly gWidthMax: number = 240; // 0xff (8bits)
 	private static initialized: boolean;
 	private static mapActiveUI: MapActive;
-	private static mapHistoryLength: number = 10;
+	private static mapHistoryLength: number = 20;
 	private static mapHistoryRedo: DoubleLinkedList<MapActive> = new DoubleLinkedList<MapActive>();
 	private static mapHistoryUndo: DoubleLinkedList<MapActive> = new DoubleLinkedList<MapActive>();
 	private static modeUI: boolean; // indicates thread context
@@ -708,7 +706,7 @@ export class MapEditEngine {
 
 		MapEditEngine.mapHistoryRedo.clear();
 
-		if (MapEditEngine.mapHistoryUndo.getLength() > MapEditEngine.mapHistoryLength) {
+		if (MapEditEngine.mapHistoryUndo.length > MapEditEngine.mapHistoryLength) {
 			MapEditEngine.mapHistoryUndo.popStart();
 		}
 	}
@@ -719,7 +717,7 @@ export class MapEditEngine {
 	 * Video: only call directly on bus communication
 	 */
 	public static historyRedo(): MapActive | undefined {
-		if (!MapEditEngine.mapHistoryRedo.getLength()) {
+		if (!MapEditEngine.mapHistoryRedo.length) {
 			return;
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryRedo.popEnd();
@@ -747,7 +745,7 @@ export class MapEditEngine {
 	 * Video: only call directly on bus communication
 	 */
 	public static historyUndo(): MapActive | undefined {
-		if (!MapEditEngine.mapHistoryUndo.getLength()) {
+		if (!MapEditEngine.mapHistoryUndo.length) {
 			return;
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryUndo.popEnd();
@@ -805,6 +803,13 @@ export class MapEditEngine {
 	 */
 	public static uiCameraUpdate(videoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate) {
 		MapEditEngine.mapActiveUI.camera = Object.assign(MapEditEngine.mapActiveUI.camera, videoBusOutputCmdEditCameraUpdate);
+	}
+
+	/**
+	 * UI only, the video thread sent a clock update through the bus to the UI. So the UI has to update it's cache of the map's clock.
+	 */
+	public static uiClockUpdate(hourOfDayEff: number) {
+		MapEditEngine.mapActiveUI.hourOfDayEff = hourOfDayEff;
 	}
 
 	/**
@@ -1129,6 +1134,9 @@ export class MapEditEngine {
 		} else {
 			data.null = false;
 		}
+		if (!data.gRadiusAudioEffect) {
+			delete data.gRadiusAudioEffect;
+		}
 		if (!data.nightOnly) {
 			delete data.nightOnly;
 		}
@@ -1313,10 +1321,10 @@ export class MapEditEngine {
 	}
 
 	public static getHistoryRedoLength(): number {
-		return MapEditEngine.mapHistoryRedo.getLength();
+		return MapEditEngine.mapHistoryRedo.length;
 	}
 
 	public static getHistoryUndoLength(): number {
-		return MapEditEngine.mapHistoryUndo.getLength();
+		return MapEditEngine.mapHistoryUndo.length;
 	}
 }

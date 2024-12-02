@@ -91,6 +91,14 @@ export class UtilEngine {
 		return ((gx & 0xff) << 8) | (gy & 0xff);
 	}
 
+	public static isLightNight(hourOfDayEff: number): boolean {
+		if (hourOfDayEff < 8 || hourOfDayEff > 19) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	/**
 	 * From Base64
 	 */
