@@ -1,5 +1,5 @@
 import { AssetCache, AssetEngine } from './asset.engine';
-import { AssetImage, AssetImageSrcQuality } from '../models/asset.model';
+import { AssetImage, AssetImageType, AssetImageSrcQuality } from '../models/asset.model';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
 import { Grid, GridImageBlockReference, GridBlockTable, GridLight } from '../models/grid.model';
 import { LightingCalcEngineBus } from '../calc/buses/lighting.calc.engine.bus';
@@ -44,6 +44,12 @@ export class LightingEngine {
 
 		if (!assetIds) {
 			assetIds = LightingEngine.buildBinariesCollectAssetIds();
+
+			for (let i in assetImages) {
+				if (assetImages[i].type === AssetImageType.SYSTEM) {
+					assetIds.push(assetImages[i].id);
+				}
+			}
 		}
 
 		for (let i in assetIds) {

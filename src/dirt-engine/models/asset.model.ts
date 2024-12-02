@@ -62,6 +62,7 @@ export enum AssetImageType {
 	GRID_LIQUID,
 	LOGO,
 	NULL,
+	SYSTEM,
 }
 
 export interface AssetManifest {

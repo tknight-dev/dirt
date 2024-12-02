@@ -15,8 +15,8 @@ import { AudioModulation } from '../models/audio-modulation.model';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import {
 	GridConfig,
-	GridAudioTriggerActivationType,
-	GridAudioTriggerType,
+	GridAudioTagActivationType,
+	GridAudioTagType,
 	GridCoordinate,
 	GridLightType,
 	GridImageBlockHalved,
@@ -24,6 +24,7 @@ import {
 	GridObjectType,
 } from '../models/grid.model';
 import { MapActive, MapConfig } from '../models/map.model';
+import { MapAudioAmbientEngine } from '../engines/map-audio-ambient.engine';
 import { MapEditEngine } from '../engines/map-edit.engine';
 import { MouseAction, MouseEngine } from '../engines/mouse.engine';
 import { TouchAction } from '../engines/touch.engine';
@@ -90,7 +91,8 @@ export class DomUI {
 		selectors: any[],
 		callback: (value: any) => void,
 	): void {
-		let div: HTMLElement,
+		let audioBufferId: number,
+			div: HTMLElement,
 			image: HTMLImageElement,
 			imageWrapper: HTMLElement,
 			modal = DomUI.domElements['feed-fitted-ui-select-modal'],
@@ -137,27 +139,23 @@ export class DomUI {
 				modalContent.textContent = '';
 
 				if (assetAudio) {
-					if (selector.type === AssetAudioType.MUSIC) {
-						AudioEngine.controlStop(selector.value);
-					}
+					AudioEngine.controlStop(audioBufferId);
 				}
 			};
 			if (assetAudio) {
-				div.onmouseover = () => {
+				div.onmouseover = async () => {
 					if (selector.type === AssetAudioType.EFFECT) {
-						AudioEngine.controlPlay(selector.value, {
+						audioBufferId = <number>await AudioEngine.controlPlay(selector.value, {
 							volumePercentage: 0.5,
 						});
 					} else {
-						AudioEngine.controlPlay(selector.value, {
+						audioBufferId = <number>await AudioEngine.controlPlay(selector.value, {
 							volumePercentage: 0.5,
 						});
 					}
 				};
 				div.onmouseout = () => {
-					if (selector.type === AssetAudioType.MUSIC) {
-						AudioEngine.controlStop(selector.value);
-					}
+					AudioEngine.controlStop(audioBufferId);
 				};
 			}
 			if (assetImage) {
@@ -243,21 +241,18 @@ export class DomUI {
 		};
 	}
 
-	private static detailsModalAudioTrigger(): void {
+	private static detailsModalAudioTagEffect(): void {
 		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.EFFECT),
-			valuesTrip: GridAudioTriggerActivationType[] = <any>(
-				Object.values(GridAudioTriggerActivationType).filter((v) => typeof v !== 'string')
-			),
+			valuesTrip: GridAudioTagActivationType[] = <any>Object.values(GridAudioTagActivationType).filter((v) => typeof v !== 'string'),
 			applicationProperties: any = {
-				activation: GridAudioTriggerActivationType.CONTACT,
+				activation: GridAudioTagActivationType.CONTACT,
+				alwaysOn: undefined,
 				assetId: valuesAudio[0].id,
-				fadeDurationInMs: 100,
-				fadeTo: 0,
-				objectType: GridObjectType.AUDIO_TRIGGER,
-				oneshot: true,
+				gRadius: 5,
+				oneshot: undefined,
+				panIgnored: undefined,
 				tagId: '',
-				type: GridAudioTriggerType.EFFECT,
-				volumePercentage: 1,
+				type: GridAudioTagType.EFFECT,
 			},
 			input: HTMLInputElement,
 			playing: boolean,
@@ -274,7 +269,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = GridAudioTriggerActivationType[valuesTrip[0]];
+		td.innerText = GridAudioTagActivationType[valuesTrip[0]];
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
@@ -283,16 +278,32 @@ export class DomUI {
 				false,
 				valuesTrip.map((v) => {
 					return {
-						name: GridAudioTriggerActivationType[<any>v],
+						name: GridAudioTagActivationType[<any>v],
 						value: v,
 					};
 				}),
 				(activation: string) => {
-					event.target.innerText = GridAudioTriggerActivationType[<any>activation];
+					event.target.innerText = GridAudioTagActivationType[<any>activation];
 					applicationProperties.activation = activation;
 				},
 			);
 		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// AlwaysOn
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Always On';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.alwaysOn;
+		input.oninput = (event: any) => {
+			applicationProperties.alwaysOn = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -326,40 +337,21 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Fade Duration In MS
+		// gRadius
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Fade Duration In Ms';
+		td.innerText = 'G Radius';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
-		input.max = '10000';
-		input.min = '100';
+		input.max = '25';
+		input.min = '0'; // 0 is inf
 		input.oninput = (event: any) => {
-			applicationProperties.fadeDurationInMs = Number(event.target.value);
+			applicationProperties.gRadius = Number(event.target.value);
 		};
-		input.step = '10';
+		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.fadeDurationInMs;
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Fade To
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Fade To Volume';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '1';
-		input.min = '0';
-		input.oninput = (event: any) => {
-			applicationProperties.fadeTo = Number(event.target.value);
-		};
-		input.step = '.1';
-		input.type = 'range';
-		input.value = applicationProperties.fadeTo;
+		input.value = applicationProperties.gRadius;
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -374,6 +366,155 @@ export class DomUI {
 		input.checked = applicationProperties.oneshot;
 		input.oninput = (event: any) => {
 			applicationProperties.oneshot = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// PanIgnored
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Pan: Ignore';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.panIgnored;
+		input.oninput = (event: any) => {
+			applicationProperties.panIgnored = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// TagId
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Tag Id';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.oninput = (event: any) => {
+			let string: string = String(event.target.value).replaceAll(/[\W]/g, '').trim();
+			input.value = string;
+			applicationProperties.tagId = string;
+		};
+		input.type = 'text';
+		input.value = applicationProperties.tagId;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Show the cancel/apply buttons
+		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Effect';
+
+		// Apply
+		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
+			// Values
+			DomUI.uiEditApplicationProperties = applicationProperties;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TAG;
+
+			// Graphics
+			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
+		};
+	}
+
+	private static detailsModalAudioTagMusic(): void {
+		let valuesAudio: AssetAudio[] = Object.values(DomUI.assetManifestMaster.audio).filter((v) => v.type === AssetAudioType.MUSIC),
+			applicationProperties: any = {
+				alwaysOn: undefined,
+				assetId: valuesAudio[0].id,
+				gRadius: 5,
+				panIgnored: undefined,
+				tagId: '',
+				type: GridAudioTagType.MUSIC,
+			},
+			input: HTMLInputElement,
+			playing: boolean,
+			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
+			td: HTMLElement,
+			tr: HTMLElement;
+
+		t.textContent = '';
+
+		// AlwaysOn
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Always On';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.alwaysOn;
+		input.oninput = (event: any) => {
+			applicationProperties.alwaysOn = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = valuesAudio[0].id;
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				false,
+				false,
+				false,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId;
+					applicationProperties.assetId = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// gRadius
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'G Radius';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.max = '25';
+		input.min = '0'; // 0 is inf
+		input.oninput = (event: any) => {
+			applicationProperties.gRadius = Number(event.target.value);
+		};
+		input.step = '1';
+		input.type = 'range';
+		input.value = applicationProperties.gRadius;
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// PanIgnored
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Pan: Ignore';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.panIgnored;
+		input.oninput = (event: any) => {
+			applicationProperties.panIgnored = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -426,13 +567,13 @@ export class DomUI {
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Effect';
+		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Audio Tag - Music';
 
 		// Apply
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
-			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER;
+			DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TAG;
 
 			// Graphics
 			DomUI.detailsModalPostClickGraphics('mode-menu-audio');
@@ -1520,6 +1661,9 @@ export class DomUI {
 			applicationProperties: any = {
 				assetId: valuesImage[0].id,
 				assetIdAudioEffectAmbient: undefined,
+				assetIdAudioEffectDestroyed: undefined,
+				assetIdAudioEffectSwitchOff: undefined,
+				assetIdAudioEffectSwitchOn: undefined,
 				destructible: undefined,
 				directionOmni: true,
 				directionOmniBrightness: 1,
@@ -1597,6 +1741,96 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId || 'None';
 					applicationProperties.assetIdAudioEffectAmbient = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset - Destroyed
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Destroyed';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				false,
+				false,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectDestroyed = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset - Switch Off
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Switch Off';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				false,
+				false,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectSwitchOff = assetId;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Asset - Switch On
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Asset Audio Effect Switch On';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'NONE';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelector(
+				true,
+				false,
+				false,
+				true,
+				valuesAudio.map((v) => {
+					return {
+						name: v.id,
+						type: v.type,
+						value: v.id,
+					};
+				}),
+				(assetId: string) => {
+					event.target.innerText = assetId || 'None';
+					applicationProperties.assetIdAudioEffectSwitchOn = assetId;
 				},
 			);
 		};
@@ -2143,8 +2377,8 @@ export class DomUI {
 						case GridObjectType.AUDIO_BLOCK:
 							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK;
 							break;
-						case GridObjectType.AUDIO_TRIGGER:
-							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TRIGGER;
+						case GridObjectType.AUDIO_TAG:
+							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.AUDIO_TAG;
 							break;
 						case GridObjectType.IMAGE_BLOCK_FOLIAGE:
 							DomUI.uiEditApplyType = VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE;
@@ -2247,6 +2481,15 @@ export class DomUI {
 					); // Auto-applies to map
 
 					if (payload) {
+						MapAudioAmbientEngine.setMapActive(MapEditEngine.getMapActive());
+						if (
+							payload.applyType === VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK ||
+							payload.applyType === VideoBusInputCmdGameModeEditApplyType.AUDIO_TAG
+						) {
+							MapAudioAmbientEngine.stop();
+							MapAudioAmbientEngine.start();
+						}
+
 						VideoEngineBus.outputGameModeEditApply(payload);
 					} else {
 						console.error('DomIU > editMouseProcessor: payload failed to generate');
@@ -2434,9 +2677,13 @@ export class DomUI {
 		DomUI.domUIinitialized = true;
 		let maps: AssetMap[] = Object.values(DomUI.assetManifestMaster.maps).sort((a: AssetMap, b: AssetMap) => a.order - b.order);
 
-		VideoEngineBus.setCallbackMapAsset((mapActive: MapActive | undefined) => {
+		VideoEngineBus.setCallbackMapAsset(async (mapActive: MapActive | undefined) => {
 			if (mapActive) {
-				MapEditEngine.load(mapActive);
+				await MapEditEngine.load(mapActive);
+
+				MapAudioAmbientEngine.stop();
+				MapAudioAmbientEngine.setMapActive(MapEditEngine.getMapActive());
+				MapAudioAmbientEngine.start();
 
 				DomUI.domElementsUIEdit['time'].innerText = mapActive.hourOfDayEff + ':00';
 				DomUI.uiEditCursorGInPh = Math.round((mapActive.camera.gInPh / window.devicePixelRatio) * 1000) / 1000;
@@ -2560,8 +2807,8 @@ export class DomUI {
 			}
 
 			DomUI.uiEditDraw = {
+				editing: true,
 				grid: true,
-				nullEnable: true,
 				vanishingEnable: true,
 			};
 
@@ -3677,14 +3924,27 @@ export class DomUI {
 				tr.appendChild(td);
 				t.appendChild(tr);
 
-				// Table: Audio Trigger
+				// Table: Audio Tag - Effect
 				tr = document.createElement('tr');
 				td = document.createElement('td');
 				paletteModalContentBodyButton = document.createElement('div');
 				paletteModalContentBodyButton.className = 'button';
-				paletteModalContentBodyButton.innerText = 'Audio Trigger';
+				paletteModalContentBodyButton.innerText = 'Audio Tag: Effect';
 				paletteModalContentBodyButton.onclick = () => {
-					DomUI.detailsModalAudioTrigger();
+					DomUI.detailsModalAudioTagEffect();
+				};
+				td.appendChild(paletteModalContentBodyButton);
+				tr.appendChild(td);
+				t.appendChild(tr);
+
+				// Table: Audio Tag - Music
+				tr = document.createElement('tr');
+				td = document.createElement('td');
+				paletteModalContentBodyButton = document.createElement('div');
+				paletteModalContentBodyButton.className = 'button';
+				paletteModalContentBodyButton.innerText = 'Audio Tag: Music';
+				paletteModalContentBodyButton.onclick = () => {
+					DomUI.detailsModalAudioTagMusic();
 				};
 				td.appendChild(paletteModalContentBodyButton);
 				tr.appendChild(td);
@@ -4080,6 +4340,7 @@ export class DomUI {
 			}
 
 			// Draw Options
+			DomUI.uiEditDraw.editing = true;
 			DomUI.uiEditDraw.grid = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
@@ -4131,8 +4392,8 @@ export class DomUI {
 			DomUI.editCursor();
 
 			// Draw Options
+			DomUI.uiEditDraw.editing = true;
 			DomUI.uiEditDraw.grid = true;
-			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -4183,8 +4444,8 @@ export class DomUI {
 			DomUI.editCursor();
 
 			// Draw Options
+			DomUI.uiEditDraw.editing = true;
 			DomUI.uiEditDraw.grid = true;
-			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -4237,8 +4498,8 @@ export class DomUI {
 			}
 
 			// Draw Options
+			DomUI.uiEditDraw.editing = true;
 			DomUI.uiEditDraw.grid = true;
-			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -4291,8 +4552,8 @@ export class DomUI {
 			}
 
 			// Draw Options
+			DomUI.uiEditDraw.editing = true;
 			DomUI.uiEditDraw.grid = true;
-			DomUI.uiEditDraw.nullEnable = true;
 			DomUI.uiEditDraw.vanishingEnable = false;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
@@ -4343,8 +4604,8 @@ export class DomUI {
 			DomUI.editCursor();
 
 			// Draw Options
+			DomUI.uiEditDraw.editing = false;
 			DomUI.uiEditDraw.grid = false;
-			DomUI.uiEditDraw.nullEnable = false;
 			DomUI.uiEditDraw.vanishingEnable = true;
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(false);

@@ -1,7 +1,6 @@
 import {
 	AssetDeclarations,
 	AssetImageSrcQuality,
-	AssetManifest,
 	DirtEngine,
 	VideoBusInputCmdSettings,
 	VideoBusInputCmdSettingsFPS,
@@ -42,6 +41,9 @@ class Dirt {
 				//resolution: 640,
 				screenShakeEnable: true, // Screen rumble (earthquake, proximity to explosion)
 				vanishingPercentageOfViewport: 1.5,
+				volumeAmbient: 0.8,
+				volumeEffect: 0.8,
+				volumeMusic: 1,
 			};
 
 		DirtEngine.initialize(assetDeclarations, domGame, true, true, settings);

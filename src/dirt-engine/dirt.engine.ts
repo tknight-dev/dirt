@@ -2,12 +2,12 @@
 import { AssetCollection, AssetDeclarations } from './models/asset.model';
 import { AssetCache, AssetEngine } from './engines/asset.engine';
 import { AudioEngine } from './engines/audio.engine';
-import { AudioModulation } from './models/audio-modulation.model';
 import { Grid } from './models/grid.model';
 import { DomUI } from './ui/dom.ui';
 import { FullscreenEngine } from './engines/fullscreen.engine';
 import { KeyAction, KeyCommon, KeyboardEngine } from './engines/keyboard.engine';
 import { Map } from './models/map.model';
+import { MapAudioAmbientEngine } from './engines/map-audio-ambient.engine';
 import { MapEditEngine } from './engines/map-edit.engine';
 import { MapEngine } from './engines/map.engine';
 import { MouseAction, MouseCmd, MouseEngine } from './engines/mouse.engine';
@@ -85,7 +85,11 @@ export class DirtEngine extends DomUI {
 		// Start basic systems and load assets into ram
 		await AssetEngine.initialize(assetDeclarations, AssetCollection.UI);
 		await AssetEngine.load();
+
 		await AudioEngine.initialize(AssetCollection.UI);
+		AudioEngine.setVolumeEffect(settings.volumeEffect);
+		AudioEngine.setVolumeMusic(settings.volumeMusic);
+		MapAudioAmbientEngine.setVolumePercentage(settings.volumeAmbient);
 		await AudioEngine.load(Object.values(Object.values(DirtEngine.assetManifestMaster.audio)));
 
 		// Start feed
@@ -336,7 +340,11 @@ export class DirtEngine extends DomUI {
 				for (let i in map.grids) {
 					map.grids[i] = new Grid(JSON.parse(<any>map.grids[i]));
 				}
+
 				await MapEditEngine.load(MapEngine.loadFromFile(map));
+				MapAudioAmbientEngine.stop();
+				MapAudioAmbientEngine.setMapActive(MapEditEngine.getMapActive());
+				MapAudioAmbientEngine.start();
 
 				// Reset UI
 				DirtEngine.dragging = false;

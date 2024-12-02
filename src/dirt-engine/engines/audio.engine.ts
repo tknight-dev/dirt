@@ -35,6 +35,13 @@ interface Fader {
 	updated: boolean;
 }
 
+interface Panner {
+	durationInMs: number;
+	pan: number;
+	panner: (bufferId: number, panner: Panner) => Promise<void>;
+	updated: boolean;
+}
+
 /**
  * @param gain is between 0 and 10 (precision 3)
  * @param pan is -1 left, 0 center, 1 right (precision 3)
@@ -61,6 +68,7 @@ export class AudioEngine {
 	private static initialized: boolean;
 	private static loaded: boolean = false;
 	private static muted: boolean = false;
+	private static panners: { [key: number]: Panner } = {}; // key is bufferId
 	private static permitted: boolean;
 	private static permittedCallback: (permitted: boolean) => void;
 	private static testSample: HTMLAudioElement;
@@ -104,17 +112,25 @@ export class AudioEngine {
 	 * @param durationInMs min 0 (precision 0)
 	 * @param volumePercentage between 0 and 1 (precision 3)
 	 */
-	public static controlFade(bufferId: number, durationInMs: number, volumePercentage: number): void {
+	public static controlFade(bufferId: number, durationInMs: number, volumePercentage: number): boolean {
+		if (!AudioEngine.initialized) {
+			console.error('AudioEngine > controlFade: not initialized');
+			return false;
+		} else if (!AudioEngine.permitted) {
+			console.error('AudioEngine > controlFade: not permitted');
+			return false;
+		}
+
 		let bufferStack: BufferStack = AudioEngine.buffers[bufferId],
 			volumeTarget: number,
 			volumeTargetMax: number;
 
 		if (!bufferStack) {
 			console.error('AudioEngine > fade: invalid bufferId');
-			return;
+			return false;
 		}
 		if (bufferStack.audio.ended) {
-			return;
+			return false;
 		}
 		volumeTargetMax = bufferStack.type === AssetAudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
 
@@ -125,7 +141,7 @@ export class AudioEngine {
 		// The difference between the current and target value is too small to fade
 		if (durationInMs === 0 || Math.abs(bufferStack.audio.volume - volumeTarget) < 0.01) {
 			bufferStack.audio.volume = volumeTarget;
-			return;
+			return true;
 		}
 
 		if (AudioEngine.faders[bufferId]) {
@@ -134,13 +150,14 @@ export class AudioEngine {
 			AudioEngine.faders[bufferId].updated = true;
 		} else {
 			AudioEngine.faders[bufferId] = {
-				durationInMs: Math.max(100, Math.round(durationInMs)),
+				durationInMs: Math.max(50, Math.round(durationInMs)),
 				fader: AudioEngine.controlFader,
 				volumeTarget: volumeTarget,
 				updated: true,
 			};
 			AudioEngine.faders[bufferId].fader(bufferId, AudioEngine.faders[bufferId]); //async
 		}
+		return true;
 	}
 
 	/**
@@ -149,8 +166,8 @@ export class AudioEngine {
 	private static async controlFader(bufferId: number, fader: Fader): Promise<void> {
 		let audio: HTMLAudioElement = AudioEngine.buffers[bufferId].audio,
 			interval: ReturnType<typeof setInterval>,
-			intervalInMs: number = 40,
-			step: number = 0.1,
+			intervalInMs: number = 20,
+			step: number = 0.05,
 			volume: number,
 			volumeTarget: number = 0;
 
@@ -161,7 +178,7 @@ export class AudioEngine {
 				volumeTarget = fader.volumeTarget;
 				step = (volumeTarget - Math.round(audio.volume * 1000) / 1000) / (fader.durationInMs / intervalInMs);
 			}
-			volume = Math.round(audio.volume * 1000) / 1000 + step;
+			volume = Math.round((audio.volume + step) * 1000) / 1000;
 
 			// Check target
 			if (step > 0) {
@@ -182,48 +199,110 @@ export class AudioEngine {
 	}
 
 	/**
+	 * @param durationInMs min 0 (precision 0)
 	 * @param pan is -1 left, 0 center, 1 right (precision 3)
 	 */
-	public static async controlPan(bufferId: number, pan: number): Promise<void> {
+	public static async controlPan(bufferId: number, durationInMs: number, pan: number): Promise<boolean> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > controlPan: not initialized');
-			return;
+			return false;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > controlPan: not permitted');
-			return;
+			return false;
 		}
+
 		let bufferStack: BufferStack = AudioEngine.buffers[bufferId];
 
-		if (bufferStack) {
-			if (!bufferStack.audio.ended) {
-				bufferStack.nodePannerStereo.pan.setValueAtTime(Math.max(-1, Math.min(1, Math.round(pan * 1000) / 1000)), 0);
-			} else {
-				console.error('AudioEngine > controlPan: bufferId', bufferId, 'audio is ended');
-			}
-		} else {
-			console.error('AudioEngine > controlPan: bufferId', bufferId, 'invalid');
+		if (!bufferStack) {
+			console.error('AudioEngine > controlPan: invalid bufferId');
+			return false;
 		}
+		if (bufferStack.audio.ended) {
+			return false;
+		}
+
+		// Calc the target pan
+		pan = Math.max(-1, Math.min(1, Math.round(pan * 1000) / 1000));
+
+		// The difference between the current and target value is too small to fade
+		if (durationInMs === 0 || Math.abs(bufferStack.nodePannerStereo.pan.value - pan) < 0.01) {
+			bufferStack.nodePannerStereo.pan.setValueAtTime(pan, 0);
+			return true;
+		}
+
+		if (AudioEngine.panners[bufferId]) {
+			AudioEngine.panners[bufferId].durationInMs = Math.max(100, Math.round(durationInMs));
+			AudioEngine.panners[bufferId].pan = pan;
+			AudioEngine.panners[bufferId].updated = true;
+		} else {
+			AudioEngine.panners[bufferId] = {
+				durationInMs: Math.max(50, Math.round(durationInMs)),
+				pan: pan,
+				panner: AudioEngine.controlPanner,
+				updated: true,
+			};
+			AudioEngine.panners[bufferId].panner(bufferId, AudioEngine.panners[bufferId]); //async
+		}
+		return true;
 	}
 
-	public static async controlPause(bufferId: number): Promise<void> {
+	/**
+	 * Supports live duration and pan changes
+	 */
+	private static async controlPanner(bufferId: number, panner: Panner): Promise<void> {
+		let interval: ReturnType<typeof setInterval>,
+			intervalInMs: number = 20,
+			step: number = 0.05,
+			pan: number,
+			pannerNode: StereoPannerNode = AudioEngine.buffers[bufferId].nodePannerStereo,
+			panTarget: number = 0;
+
+		interval = setInterval(() => {
+			// Rediscover targets
+			if (panner.updated) {
+				panner.updated = false;
+				panTarget = panner.pan;
+				step = (panTarget - Math.round(pannerNode.pan.value * 1000) / 1000) / (panner.durationInMs / intervalInMs);
+			}
+			pan = Math.round((pannerNode.pan.value + step) * 1000) / 1000;
+
+			// Check target
+			if (step > 0) {
+				if (pan >= panTarget) {
+					pannerNode.pan.setValueAtTime(panTarget, 0);
+					clearInterval(interval);
+					delete AudioEngine.panners[bufferId];
+				}
+			} else {
+				if (pan <= panTarget) {
+					pannerNode.pan.setValueAtTime(panTarget, 0);
+					clearInterval(interval);
+					delete AudioEngine.panners[bufferId];
+				}
+			}
+			pannerNode.pan.setValueAtTime(Math.max(-1, Math.min(1, pan)), 0);
+		}, intervalInMs);
+	}
+
+	public static async controlPause(bufferId: number): Promise<boolean> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > controlPause: not initialized');
-			return;
+			return false;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > controlPause: not permitted');
-			return;
+			return false;
 		}
 		let bufferStack: BufferStack = AudioEngine.buffers[bufferId];
 
 		if (bufferStack) {
 			if (!bufferStack.audio.ended) {
 				bufferStack.audio.pause();
-			} else {
-				console.error('AudioEngine > controlPause: bufferId', bufferId, 'audio is ended');
+				return true;
 			}
 		} else {
 			console.error('AudioEngine > controlPause: bufferId', bufferId, 'invalid');
 		}
+		return false;
 	}
 
 	/**
@@ -307,13 +386,13 @@ export class AudioEngine {
 		return bufferStack.id;
 	}
 
-	public static async controlStop(bufferId: number): Promise<void> {
+	public static async controlStop(bufferId: number): Promise<boolean> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > controlStop: not initialized');
-			return;
+			return false;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > controlStop: not permitted');
-			return;
+			return false;
 		}
 		let bufferStack: BufferStack = AudioEngine.buffers[bufferId];
 
@@ -321,53 +400,58 @@ export class AudioEngine {
 			if (!bufferStack.audio.ended) {
 				bufferStack.audio.loop = false;
 				bufferStack.audio.currentTime = bufferStack.audio.duration;
+				return true;
 			}
 		} else {
 			console.error('AudioEngine > controlStop: bufferId', bufferId, 'invalid');
 		}
+		return false;
 	}
 
-	public static async controlUnpause(bufferId: number): Promise<void> {
+	public static async controlUnpause(bufferId: number): Promise<boolean> {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > controlUnpause: not initialized');
-			return;
+			return false;
 		} else if (!AudioEngine.permitted) {
 			console.error('AudioEngine > controlUnpause: not permitted');
-			return;
+			return false;
 		}
 		let bufferStack: BufferStack = AudioEngine.buffers[bufferId];
 
 		if (bufferStack) {
 			if (!bufferStack.audio.ended) {
 				bufferStack.audio.play();
-			} else {
-				console.error('AudioEngine > controlUnpause: bufferId', bufferId, 'audio is ended');
+				return true;
 			}
 		} else {
 			console.error('AudioEngine > controlUnpause: bufferId', bufferId, 'invalid');
 		}
+		return false;
 	}
 
 	/**
 	 * @param volumePercentage is between 0 and 1 (precision 3)
 	 */
-	public static controlVolume(bufferId: number, volumePercentage: number): void {
+	public static controlVolume(bufferId: number, volumePercentage: number): boolean {
 		if (!AudioEngine.initialized) {
 			console.error('AudioEngine > setAssetVolume: not initialized');
-			return;
+			return false;
 		}
 		let bufferStack: BufferStack = AudioEngine.buffers[bufferId];
 
-		if (!bufferStack) {
+		if (bufferStack) {
+			let volumeTargetMax: number =
+				bufferStack.type === AssetAudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
+
+			volumePercentage = Math.max(0, Math.min(1, volumePercentage));
+
+			bufferStack.audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, volumeTargetMax, 0) * 1000) / 1000;
+			return true;
+		} else {
 			console.error('AudioEngine > setAssetVolume: bufferId', bufferId, 'invalid');
-			return;
 		}
 
-		let volumeTargetMax: number = bufferStack.type === AssetAudioType.EFFECT ? AudioEngine.volumeEffectEff : AudioEngine.volumeMusicEff;
-
-		volumePercentage = Math.max(0, Math.min(1, volumePercentage));
-
-		bufferStack.audio.volume = Math.round(UtilEngine.scale(volumePercentage, 1, 0, volumeTargetMax, 0) * 1000) / 1000;
+		return true;
 	}
 
 	/**

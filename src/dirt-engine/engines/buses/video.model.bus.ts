@@ -2,7 +2,7 @@ import { AssetDeclarations, AssetImageSrcQuality } from '../../models/asset.mode
 import { AudioOptions } from '../audio.engine';
 import {
 	GridAudioBlock,
-	GridAudioTrigger,
+	GridAudioTag,
 	GridImageBlockFoliage,
 	GridImageBlockLiquid,
 	GridImageBlockSolid,
@@ -89,7 +89,7 @@ export interface VideoBusInputCmdGameModeEditApply {
 
 export interface VideoBusInputCmdGameModeEditApplyAudioBlock extends GridAudioBlock, VideoBusInputCmdGameModeEditApply {}
 
-export interface VideoBusInputCmdGameModeEditApplyAudioTrigger extends GridAudioTrigger, VideoBusInputCmdGameModeEditApply {}
+export interface VideoBusInputCmdGameModeEditApplyAudioTag extends GridAudioTag, VideoBusInputCmdGameModeEditApply {}
 
 export interface VideoBusInputCmdGameModeEditApplyErase extends VideoBusInputCmdGameModeEditApply {
 	type: VideoBusInputCmdGameModeEditApplyType;
@@ -118,7 +118,7 @@ export interface VideoBusInputCmdGameModeEditApplyLight extends GridLight, Video
 
 export enum VideoBusInputCmdGameModeEditApplyType {
 	AUDIO_BLOCK,
-	AUDIO_TRIGGER,
+	AUDIO_TAG,
 	ERASE,
 	IMAGE_BLOCK_FOLIAGE,
 	IMAGE_BLOCK_LIQUID,
@@ -141,8 +141,8 @@ export enum VideoBusInputCmdGameModeEditApplyView {
 }
 
 export interface VideoBusInputCmdGameModeEditDraw {
+	editing: boolean;
 	grid: boolean;
-	nullEnable: boolean;
 	vanishingEnable: boolean;
 }
 
@@ -177,6 +177,9 @@ export interface VideoBusInputCmdSettings {
 	resolution: null | 256 | 384 | 512 | 640 | 1280 | 1920; // null is native resolution
 	screenShakeEnable: boolean;
 	vanishingPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
+	volumeAmbient: number; // between 0 and 1, default is .8 (Precision 3)
+	volumeEffect: number; // between 0 and 1, default is .8 (Precision 3)
+	volumeMusic: number; // between 0 and 1, default is 1 (Precision 3)
 }
 
 export enum VideoBusInputCmdSettingsFPS {
@@ -214,7 +217,6 @@ export enum VideoBusOutputCmd {
 	AUDIO_PLAY,
 	AUDIO_STOP,
 	AUDIO_UNPAUSE,
-	AUDIO_UPDATE,
 	EDIT_CAMERA_UPDATE,
 	EDIT_COMPLETE,
 	FPS,
@@ -250,15 +252,11 @@ export interface VideoBusOutputCmdAudioUnpause {
 	bufferId: number;
 }
 
-export interface VideoBusOutputCmdAudioUpdate {
-	bufferId: number;
-	pan: number; // -1-0-1 (precision 3) [1 is right]
-	volumePercentage: number; // 0-1 (precision 3)
-}
-
 export interface VideoBusOutputCmdEditCameraUpdate {
 	gInPh: number; // Precision 3
 	gInPw: number; // Precision 3
+	gx: number; // Precision 3
+	gy: number; // Precision 3
 	viewportPh: number; // Precision 0
 	viewportPw: number; // Precision 0
 	viewportPx: number; // Precision 0
@@ -296,7 +294,6 @@ export interface VideoBusWorkerPayload {
 		| VideoBusOutputCmdAudioPlay
 		| VideoBusOutputCmdAudioStop
 		| VideoBusOutputCmdAudioUnpause
-		| VideoBusOutputCmdAudioUpdate
 		| VideoBusOutputCmdEditCameraUpdate
 		| VideoBusOutputCmdMapAsset
 		| VideoBusOutputCmdMapLoadStatus

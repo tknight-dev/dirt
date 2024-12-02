@@ -30,7 +30,6 @@ import {
 	VideoBusOutputCmdAudioPlay,
 	VideoBusOutputCmdAudioStop,
 	VideoBusOutputCmdAudioUnpause,
-	VideoBusOutputCmdAudioUpdate,
 	VideoBusOutputCmdEditCameraUpdate,
 	VideoBusOutputCmdMapAsset,
 	VideoBusOutputCmdMapLoadStatus,
@@ -171,7 +170,6 @@ export class VideoEngineBus {
 			videoBusOutputCmdAudioPlay: VideoBusOutputCmdAudioPlay,
 			videoBusOutputCmdAudioStop: VideoBusOutputCmdAudioStop,
 			videoBusOutputCmdAudioUnpause: VideoBusOutputCmdAudioUnpause,
-			videoBusOutputCmdAudioUpdate: VideoBusOutputCmdAudioUpdate,
 			videoBusOutputCmdEditCameraUpdate: VideoBusOutputCmdEditCameraUpdate,
 			videoBusOutputCmdMapAsset: VideoBusOutputCmdMapAsset,
 			videoBusOutputCmdMapLoadStatus: VideoBusOutputCmdMapLoadStatus,
@@ -215,11 +213,6 @@ export class VideoEngineBus {
 					case VideoBusOutputCmd.AUDIO_UNPAUSE:
 						videoBusOutputCmdAudioUnpause = <VideoBusOutputCmdAudioUnpause>videoBusWorkerPayload.data;
 						AudioEngine.controlUnpause(videoBusOutputCmdAudioUnpause.bufferId);
-						break;
-					case VideoBusOutputCmd.AUDIO_UPDATE:
-						videoBusOutputCmdAudioUpdate = <VideoBusOutputCmdAudioUpdate>videoBusWorkerPayload.data;
-						AudioEngine.controlPan(videoBusOutputCmdAudioUpdate.bufferId, videoBusOutputCmdAudioUpdate.pan);
-						AudioEngine.controlVolume(videoBusOutputCmdAudioUpdate.bufferId, videoBusOutputCmdAudioUpdate.volumePercentage);
 						break;
 					case VideoBusOutputCmd.EDIT_CAMERA_UPDATE:
 						videoBusOutputCmdEditCameraUpdate = <VideoBusOutputCmdEditCameraUpdate>videoBusWorkerPayload.data;

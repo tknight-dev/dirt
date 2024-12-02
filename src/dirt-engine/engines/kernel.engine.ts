@@ -15,7 +15,7 @@ import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { TouchAction, TouchCmd } from './touch.engine';
-import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings, VideoBusInputCmdSettingsFPS } from '../engines/buses/video.model.bus';
+import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings } from '../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
@@ -33,6 +33,7 @@ export class KernelEngine {
 	private static mapActive: MapActive;
 	private static modeEdit: boolean;
 	private static paused: boolean;
+	private static requestFrame: number;
 	private static status: boolean;
 	private static timestampDelta: number;
 	private static timestampDeltaCamera: number;
@@ -191,7 +192,7 @@ export class KernelEngine {
 		}
 
 		//Start the request for the next frame
-		requestAnimationFrame(KernelEngine.loop);
+		KernelEngine.requestFrame = requestAnimationFrame(KernelEngine.loop);
 		KernelEngine.timestampNow = performance.now();
 		KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
 		KernelEngine.timestampDeltaCamera = KernelEngine.timestampNow - KernelEngine.timestampThenCamera;
@@ -331,7 +332,7 @@ export class KernelEngine {
 			KernelEngine.frames = 0;
 			KernelEngine.callbackFPS(frames);
 		}, 1000);
-		requestAnimationFrame(KernelEngine.loop);
+		KernelEngine.requestFrame = requestAnimationFrame(KernelEngine.loop);
 	}
 
 	public static stop(): void {
@@ -343,6 +344,7 @@ export class KernelEngine {
 			return;
 		}
 		clearInterval(KernelEngine.framesInterval);
+		cancelAnimationFrame(KernelEngine.requestFrame);
 		KernelEngine.status = false;
 	}
 

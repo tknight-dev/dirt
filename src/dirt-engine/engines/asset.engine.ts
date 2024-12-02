@@ -158,7 +158,6 @@ export class AssetEngine {
 			assetCache: AssetCache,
 			assetDirCustom: string = AssetEngine.assetDeclarations.dirCustom || './',
 			assetDirDefault: string = AssetEngine.assetDeclarations.dirDefault || './',
-			assetImageSrc: AssetImageSrc,
 			assets: { [key: string]: AssetTmp } = {}, // key is fileName
 			assetsCustomS: string | undefined = AssetEngine.assetDeclarations.customS,
 			assetsCustomU: string | undefined = AssetEngine.assetDeclarations.customU,
@@ -172,7 +171,6 @@ export class AssetEngine {
 			filenameOriginalShared: string,
 			filenamesCustom: string[] = [],
 			image: boolean,
-			textDecoder: TextDecoder = new TextDecoder('ISO-8859-1'),
 			timestamp: number = Date.now(),
 			zip: JSZip;
 
@@ -194,7 +192,7 @@ export class AssetEngine {
 			case AssetCollection.VIDEO:
 				filenameOriginal = assetDirDefault + AssetEngine.assetFilenameV;
 
-				if (assetsCustomV && Array.isArray(assetsCustomV)) {
+				if (assetsCustomV) {
 					filenamesCustom.push(assetDirCustom + assetsCustomV);
 				}
 				break;

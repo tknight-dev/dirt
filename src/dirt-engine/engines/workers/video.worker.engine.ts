@@ -251,7 +251,7 @@ class VideoWorkerEngine {
 
 	public static inputGameModeEditDraw(apply: VideoBusInputCmdGameModeEditDraw): void {
 		MapDrawEngineBus.setVanishingEnable(apply.vanishingEnable);
-		ImageBlockDrawEngine.setDrawNull(apply.nullEnable);
+		ImageBlockDrawEngine.setEditing(apply.editing);
 		KernelEngine.draw(apply);
 		VideoWorkerEngine.post([
 			{
@@ -549,19 +549,6 @@ class VideoWorkerEngine {
 		]);
 	}
 
-	public static outputAudioUpdate(bufferId: number, pan: number, volumePercentage: number): void {
-		VideoWorkerEngine.post([
-			{
-				cmd: VideoBusOutputCmd.AUDIO_UPDATE,
-				data: {
-					bufferId: bufferId,
-					pan: pan,
-					volumePercentage: volumePercentage,
-				},
-			},
-		]);
-	}
-
 	public static outputEditCameraUpdate(camera: Camera): void {
 		if (VideoWorkerEngine.gameModeEdit) {
 			VideoWorkerEngine.post([
@@ -570,6 +557,8 @@ class VideoWorkerEngine {
 					data: {
 						gInPh: camera.gInPh,
 						gInPw: camera.gInPw,
+						gx: camera.gx,
+						gy: camera.gy,
 						viewportPh: camera.viewportPh,
 						viewportPw: camera.viewportPw,
 						viewportPx: camera.viewportPx,

@@ -6,7 +6,7 @@
 
 export class Grid {
 	audioPrimaryBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
-	audioPrimaryTagTriggers: GridBlockTable<GridAudioTrigger>; // (gx,gy), Precision 3
+	audioPrimaryTags: GridBlockTable<GridAudioTag>; // (gx,gy), Precision 3
 	id: string;
 	imageBlocksBackgroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
 	imageBlocksBackgroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
@@ -33,7 +33,7 @@ export class Grid {
 
 	constructor(data: any) {
 		this.audioPrimaryBlocks = data.audioPrimaryBlocks;
-		this.audioPrimaryTagTriggers = data.audioPrimaryTagTriggers;
+		this.audioPrimaryTags = data.audioPrimaryTags;
 		this.id = data.id;
 		this.imageBlocksBackgroundFoliage = data.imageBlocksBackgroundFoliage;
 		this.imageBlocksBackgroundLiquid = data.imageBlocksBackgroundLiquid;
@@ -57,7 +57,7 @@ export class Grid {
 	toJSON(): string {
 		return JSON.stringify({
 			audioPrimaryBlocks: this.audioPrimaryBlocks,
-			audioPrimaryTagTriggers: this.audioPrimaryTagTriggers,
+			audioPrimaryTags: this.audioPrimaryTags,
 			id: this.id,
 			imageBlocksBackgroundFoliage: this.imageBlocksBackgroundFoliage,
 			imageBlocksBackgroundLiquid: this.imageBlocksBackgroundLiquid,
@@ -111,42 +111,42 @@ export interface GridAudioBlock extends GridObject {
 	modulationId: string;
 }
 
-export interface GridAudioTrigger extends GridObject {
-	tagId: string; // blank is not-tagged
-	type: GridAudioTriggerType;
+export interface GridAudioTag extends GridObject {
+	alwaysOn?: boolean; // if true, ignore activation and oneshot
+	assetId: string;
+	gRadius?: number; // The distance from origin that the sound can be heard, 0 is everywhere
+	panIgnored?: boolean;
+	tagId?: string; // blank is not-tagged
+	type: GridAudioTagType;
 }
 
-export interface GridAudioTriggerEffect extends GridAudioTrigger {
-	activation: GridAudioTriggerActivationType;
-	alwaysOn: boolean; // if true, ignore activation and oneshot
-	assetId: string;
-	gRadius: number; // The distance from origin that the sound can be heard
-	oneshot: boolean; // true and the trigger fires everytime it's tripped
+export interface GridAudioTagEffect extends GridAudioTag {
+	activation?: GridAudioTagActivationType;
+	oneshot?: boolean; // false and the trigger fires everytime it's tripped
 }
 
-export interface GridAudioTriggerMusic extends GridAudioTrigger {
-	assetId: string;
+export interface GridAudioTagMusic extends GridAudioTag {
 	volumePercentage: number; // between 0 and 1 with a precision of 3
 }
 
-export interface GridAudioTriggerFade extends GridAudioTrigger {
+export interface GridAudioTagFade extends GridAudioTag {
 	fadeDurationInMs: number; // min 0 (precision 0)
 	fadeTo: number; // between 0 and 1 with a precision of 3
 }
 
-export interface GridAudioTriggerPause extends GridAudioTrigger {}
+export interface GridAudioTagPause extends GridAudioTag {}
 
-export interface GridAudioTriggerUnpause extends GridAudioTrigger {}
+export interface GridAudioTagUnpause extends GridAudioTag {}
 
-export interface GridAudioTriggerStop extends GridAudioTrigger {}
+export interface GridAudioTagStop extends GridAudioTag {}
 
-export enum GridAudioTriggerActivationType {
+export enum GridAudioTagActivationType {
 	CONTACT, // Charactor touches the gBlock
 	HORIZONTAL, // Charactor passes top-to-bottom or vice versa
 	VERTICAL, // Charactor passes left-to-right or vice versa
 }
 
-export enum GridAudioTriggerType {
+export enum GridAudioTagType {
 	EFFECT,
 	FADE,
 	MUSIC,
@@ -213,6 +213,9 @@ export interface GridImageBlockSolid extends GridImageBlock {
 export interface GridLight extends GridObject {
 	assetId: string;
 	assetIdAudioEffectAmbient?: string;
+	assetIdAudioEffectDestroyed?: string;
+	assetIdAudioEffectSwitchOff?: string;
+	assetIdAudioEffectSwitchOn?: string;
 	destructible?: boolean;
 	directionOmni?: boolean;
 	directionOmniBrightness?: number;
@@ -255,7 +258,7 @@ export interface GridObjectActive extends GridObject {
 
 export enum GridObjectType {
 	AUDIO_BLOCK,
-	AUDIO_TRIGGER,
+	AUDIO_TAG,
 	IMAGE_BLOCK_FOLIAGE,
 	IMAGE_BLOCK_LIQUID,
 	IMAGE_BLOCK_SOLID,
