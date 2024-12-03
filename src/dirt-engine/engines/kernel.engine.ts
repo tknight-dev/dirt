@@ -36,7 +36,6 @@ export class KernelEngine {
 	private static requestFrame: number;
 	private static status: boolean;
 	private static timestampDelta: number;
-	private static timestampNow: number;
 	private static timestampThen: number = performance.now();
 	private static touchDistanceActive: boolean;
 	private static touchDistanceOrig: number;
@@ -184,18 +183,17 @@ export class KernelEngine {
 		}
 	}
 
-	private static loop(): void {
+	private static loop(timestampNow: number): void {
 		if (!KernelEngine.status) {
 			return;
 		}
 
-		//Start the request for the next frame
+		// Start the request for the next frame
 		KernelEngine.requestFrame = requestAnimationFrame(KernelEngine.loop);
-		KernelEngine.timestampNow = performance.now();
-		KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
+		KernelEngine.timestampDelta = timestampNow - KernelEngine.timestampThen;
 
 		if (KernelEngine.timestampDelta > KernelEngine.fpms) {
-			KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
+			KernelEngine.timestampThen = timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
 			KernelEngine.frames++;
 
 			// Start

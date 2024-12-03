@@ -68,7 +68,6 @@ export class MapAudioAmbientEngine {
 	private static tagStatesByGrid: { [key: string]: { [key: number]: TagState } } = {};
 	private static timingResolution: number = 30;
 	private static timestampDelta: number;
-	private static timestampNow: number;
 	private static timestampThen: number = performance.now();
 	private static volumePercentage: number = 1;
 
@@ -189,7 +188,7 @@ export class MapAudioAmbientEngine {
 		MapAudioAmbientEngine.initialized = true;
 	}
 
-	private static async loop(): Promise<void> {
+	private static async loop(timestampNow: number): Promise<void> {
 		if (!MapAudioAmbientEngine.active) {
 			return;
 		}
@@ -197,12 +196,11 @@ export class MapAudioAmbientEngine {
 		try {
 			//Start the request for the next frame
 			MapAudioAmbientEngine.requestFrame = requestAnimationFrame(MapAudioAmbientEngine.loop);
-			MapAudioAmbientEngine.timestampNow = performance.now();
 
-			MapAudioAmbientEngine.timestampDelta = MapAudioAmbientEngine.timestampNow - MapAudioAmbientEngine.timestampThen;
+			MapAudioAmbientEngine.timestampDelta = timestampNow - MapAudioAmbientEngine.timestampThen;
 			if (MapAudioAmbientEngine.timestampDelta > MapAudioAmbientEngine.timingResolution) {
 				MapAudioAmbientEngine.timestampThen =
-					MapAudioAmbientEngine.timestampNow - (MapAudioAmbientEngine.timestampDelta % MapAudioAmbientEngine.timingResolution);
+					timestampNow - (MapAudioAmbientEngine.timestampDelta % MapAudioAmbientEngine.timingResolution);
 
 				// Start
 				let activate: boolean,

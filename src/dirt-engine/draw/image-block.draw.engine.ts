@@ -315,6 +315,7 @@ export class ImageBlockDrawEngine {
 									gridImageBlock.hash,
 									UtilEngine.gridHashFrom(gridImageBlock.hash),
 								);
+								continue;
 							}
 
 							if (gridImageBlock.halved !== undefined) {
