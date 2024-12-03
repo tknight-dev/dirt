@@ -1,7 +1,9 @@
+import { AudioModulation } from '../models/audio-modulation.model';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import { Camera } from '../models/camera.model';
 import {
 	Grid,
+	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
 	GridBlockTable,
@@ -80,7 +82,43 @@ export class MapEditEngine {
 	}
 
 	private static applyAudioBlock(apply: VideoBusInputCmdGameModeEditApplyAudioBlock): void {
-		console.warn('MapEditEngine > applyAudioArea: not yet implemented');
+		let blocks: { [key: number]: GridAudioBlock } = {},
+			gCoordinate: GridCoordinate,
+			gHash: number,
+			gHashes: number[] = apply.gHashes,
+			grid: Grid,
+			mapActive: MapActive,
+			properties: any = JSON.parse(JSON.stringify(apply));
+
+		if (!MapEditEngine.modeUI) {
+			mapActive = KernelEngine.getMapActive();
+		} else {
+			mapActive = MapEditEngine.mapActiveUI;
+		}
+		grid = mapActive.gridActive;
+		blocks = grid.audioPrimaryBlocks.hashes;
+
+		// Clean
+		delete properties.applyType;
+		delete properties.gHashes;
+		delete properties.z;
+
+		properties.objectType = GridObjectType.AUDIO_TAG;
+
+		// Apply
+		for (let i = 0; i < gHashes.length; i++) {
+			gHash = gHashes[i];
+			gCoordinate = UtilEngine.gridHashFrom(gHash);
+
+			// Origin block
+			properties.hash = gHash;
+			properties.gx = gCoordinate.gx;
+			properties.gy = gCoordinate.gy;
+
+			blocks[gHash] = JSON.parse(JSON.stringify(properties));
+		}
+
+		MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks);
 	}
 
 	private static applyAudioTag(apply: VideoBusInputCmdGameModeEditApplyAudioTag): void {
@@ -862,13 +900,21 @@ export class MapEditEngine {
 		return apply;
 	}
 
-	// Try to have unique colors for every area tag.. maybe array of colors?
 	private static uiApplyAudioBlock(
 		gHashes: number[],
 		properties: VideoBusInputCmdGameModeEditApply,
 		z: VideoBusInputCmdGameModeEditApplyZ,
 	): VideoBusInputCmdGameModeEditApplyAudioBlock {
-		return <any>{};
+		let data: any = <VideoBusInputCmdGameModeEditApplyAudioBlock>properties;
+
+		// Set base configs outside of the properties object
+		data.objectType = GridObjectType.AUDIO_BLOCK;
+		data.gHashes = gHashes;
+		data.gSizeH = 1;
+		data.gSizeW = 1;
+		data.z = z;
+
+		return data;
 	}
 
 	private static uiApplyAudioTag(

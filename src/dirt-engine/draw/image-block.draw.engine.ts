@@ -1,7 +1,9 @@
+import { AudioModulation } from '../models/audio-modulation.model';
 import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
 import {
 	Grid,
+	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
 	GridBlockTable,
@@ -95,7 +97,11 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.cacheZoom !== camera.zoom
 		) {
 			// Draw cache
-			let audioPrimaryTags: GridBlockTable<GridAudioTag> | undefined,
+			let audioModulation: AudioModulation,
+				audioModulations: { [key: string]: AudioModulation } = AudioModulation.valuesWithoutNoneMap,
+				audioPrimaryBlocks: GridBlockTable<GridAudioBlock> | undefined,
+				audioPrimaryBlockHashes: { [key: number]: GridAudioBlock },
+				audioPrimaryTags: GridBlockTable<GridAudioTag> | undefined,
 				audioPrimaryTagHashes: { [key: number]: GridAudioTag },
 				brightness: number,
 				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
@@ -116,6 +122,7 @@ export class ImageBlockDrawEngine {
 				gInPwEff: number = 0,
 				gradient: CanvasGradient,
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
+				gridAudioBlock: GridAudioBlock,
 				gridAudioTag: GridAudioTag,
 				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
 				gridImageBlock: GridImageBlock,
@@ -165,30 +172,35 @@ export class ImageBlockDrawEngine {
 				z = zGroup[i];
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+						audioPrimaryBlocks = undefined;
 						audioPrimaryTags = undefined;
 						extendedHash = <any>new Object();
 						lights = undefined;
 						reference = grid.imageBlocksBackgroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+						audioPrimaryBlocks = undefined;
 						audioPrimaryTags = undefined;
 						extendedHash = <any>new Object();
 						lights = grid.lightsForeground;
 						reference = grid.imageBlocksForegroundReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						audioPrimaryBlocks = grid.audioPrimaryBlocks;
 						audioPrimaryTags = grid.audioPrimaryTags;
 						extendedHash = <any>new Object();
 						lights = grid.lightsPrimary;
 						reference = grid.imageBlocksPrimaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+						audioPrimaryBlocks = undefined;
 						audioPrimaryTags = undefined;
 						extendedHash = <any>new Object();
 						lights = undefined;
 						reference = grid.imageBlocksSecondaryReference;
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+						audioPrimaryBlocks = undefined;
 						audioPrimaryTags = undefined;
 						extendedHash = <any>new Object();
 						lights = undefined;
@@ -368,51 +380,6 @@ export class ImageBlockDrawEngine {
 				// Reset transforms
 				ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-				// Audio Tags
-				if (editing && audioPrimaryTags && audioPrimaryTags.hashesGyByGx) {
-					complexesByGx = audioPrimaryTags.hashesGyByGx;
-					audioPrimaryTagHashes = audioPrimaryTags.hashes;
-
-					gInPhEff = gInPh + 1;
-					gInPwEff = gInPw + 1;
-
-					for (j in complexesByGx) {
-						complexes = complexesByGx[j];
-						gx = Number(j);
-
-						if (gx < startGx || gx > stopGx) {
-							continue;
-						}
-
-						drawGx = Math.round((gx - startGx) * gInPw);
-
-						for (k in complexes) {
-							gridAudioTag = audioPrimaryTagHashes[complexes[k].hash];
-
-							gy = <number>gridAudioTag.gy;
-							if (gy < startGy || gy > stopGy) {
-								continue;
-							}
-
-							// Calc
-							if (gx !== <number>gridAudioTag.gx) {
-								gx = <number>gridAudioTag.gx;
-								drawGx = Math.round((gx - startGx) * gInPw);
-							}
-							drawGy = Math.round((gy - startGy) * gInPh);
-
-							// Draw
-							if (gridAudioTag.type === GridAudioTagType.EFFECT) {
-								imageBitmap = getCacheInstance('audio_tag_effect').image;
-							} else {
-								imageBitmap = getCacheInstance('audio_tag_music').image;
-							}
-
-							ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
-						}
-					}
-				}
-
 				// Lights
 				if (lights && lights.hashesGyByGx) {
 					complexesByGx = lights.hashesGyByGx;
@@ -485,6 +452,95 @@ export class ImageBlockDrawEngine {
 								ctx.drawImage(imageBitmaps[0], drawGx, drawGy, gInPwEff, gInPhEff);
 							} else {
 								imageBitmap = getCacheInstance(gridLight.assetId).image;
+
+								ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+							}
+						}
+					}
+				}
+
+				// Edit mode only
+				if (editing) {
+					// Audio Blocks
+					if (audioPrimaryBlocks && audioPrimaryBlocks.hashesGyByGx) {
+						complexesByGx = audioPrimaryBlocks.hashesGyByGx;
+						audioPrimaryBlockHashes = audioPrimaryBlocks.hashes;
+
+						gInPhEff = gInPh + 1;
+						gInPwEff = gInPw + 1;
+
+						for (j in complexesByGx) {
+							complexes = complexesByGx[j];
+							gx = Number(j);
+
+							if (gx < startGx || gx > stopGx) {
+								continue;
+							}
+
+							drawGx = Math.round((gx - startGx) * gInPw);
+
+							for (k in complexes) {
+								gridAudioBlock = audioPrimaryBlockHashes[complexes[k].hash];
+
+								gy = <number>gridAudioBlock.gy;
+								if (gy < startGy || gy > stopGy) {
+									continue;
+								}
+
+								// Calc
+								if (gx !== <number>gridAudioBlock.gx) {
+									gx = <number>gridAudioBlock.gx;
+									drawGx = Math.round((gx - startGx) * gInPw);
+								}
+								drawGy = Math.round((gy - startGy) * gInPh);
+
+								// Draw
+								audioModulation = audioModulations[gridAudioBlock.modulationId];
+								ctx.fillStyle = 'rgba(' + audioModulation.colorRGB + ',.25)';
+								ctx.fillRect(drawGx, drawGy, gInPwEff, gInPhEff);
+							}
+						}
+					}
+
+					// Audio Tags
+					if (audioPrimaryTags && audioPrimaryTags.hashesGyByGx) {
+						complexesByGx = audioPrimaryTags.hashesGyByGx;
+						audioPrimaryTagHashes = audioPrimaryTags.hashes;
+
+						gInPhEff = gInPh + 1;
+						gInPwEff = gInPw + 1;
+
+						for (j in complexesByGx) {
+							complexes = complexesByGx[j];
+							gx = Number(j);
+
+							if (gx < startGx || gx > stopGx) {
+								continue;
+							}
+
+							drawGx = Math.round((gx - startGx) * gInPw);
+
+							for (k in complexes) {
+								gridAudioTag = audioPrimaryTagHashes[complexes[k].hash];
+
+								gy = <number>gridAudioTag.gy;
+								if (gy < startGy || gy > stopGy) {
+									continue;
+								}
+
+								// Calc
+								if (gx !== <number>gridAudioTag.gx) {
+									gx = <number>gridAudioTag.gx;
+									drawGx = Math.round((gx - startGx) * gInPw);
+								}
+								drawGy = Math.round((gy - startGy) * gInPh);
+
+								// Draw
+								if (gridAudioTag.type === GridAudioTagType.EFFECT) {
+									imageBitmap = getCacheInstance('audio_tag_effect').image;
+								} else {
+									imageBitmap = getCacheInstance('audio_tag_music').image;
+								}
 
 								ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
 							}

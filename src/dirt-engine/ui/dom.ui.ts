@@ -187,7 +187,7 @@ export class DomUI {
 
 	private static detailsModalAudioBlock(): void {
 		let applicationProperties: any = {
-				modulationId: AudioModulation.NONE.id,
+				modulationId: AudioModulation.valuesWithoutNone[0].id,
 				objectType: GridObjectType.AUDIO_BLOCK,
 			},
 			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
@@ -203,14 +203,14 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = AudioModulation.NONE.displayName;
+		td.innerText = AudioModulation.valuesWithoutNone[0].displayName;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
 				false,
 				false,
 				false,
-				AudioModulation.values.map((v) => {
+				AudioModulation.valuesWithoutNone.map((v) => {
 					return {
 						name: v.displayName,
 						value: v.id,
