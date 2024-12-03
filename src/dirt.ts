@@ -4,6 +4,7 @@ import {
 	DirtEngine,
 	VideoBusInputCmdSettings,
 	VideoBusInputCmdSettingsFPS,
+	VideoBusInputCmdSettingsShadingQuality,
 } from './dirt-engine/dirt.engine';
 import { audioManifest } from './assets/audio.asset';
 import { imageManifest } from './assets/image.asset';
@@ -35,11 +36,12 @@ class Dirt {
 				fps: VideoBusInputCmdSettingsFPS._60,
 				fpsVisible: true,
 				gamma: 0,
+				imageQuality: AssetImageSrcQuality.HIGH,
 				mapVisible: true,
-				quality: AssetImageSrcQuality.HIGH,
 				resolution: null,
 				//resolution: 640,
 				screenShakeEnable: true, // Screen rumble (earthquake, proximity to explosion)
+				shadingQuality: VideoBusInputCmdSettingsShadingQuality.HIGH,
 				vanishingPercentageOfViewport: 1.5,
 				volumeAmbient: 0.8,
 				volumeEffect: 0.8,

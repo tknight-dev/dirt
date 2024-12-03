@@ -33,14 +33,14 @@ export class LightingEngine {
 	private static lightingByHashByGridPrevious: { [key: string]: { [key: number]: LightingCalcBusOutputDecompressed } } | undefined;
 	private static lightingByHashByGridPreviousHour: number;
 	private static mapActive: MapActive;
-	private static quality: AssetImageSrcQuality;
+	private static imageQuality: AssetImageSrcQuality;
 	private static timeForced: boolean;
 
 	private static buildBinaries(assetIds?: string[]): void {
 		let assetImage: AssetImage,
 			assetImages: { [key: string]: AssetImage } = AssetEngine.getAssetManifestMaster().images,
 			cacheInstance: LightingCacheInstance | undefined,
-			quality: AssetImageSrcQuality = LightingEngine.quality;
+			imageQuality: AssetImageSrcQuality = LightingEngine.imageQuality;
 
 		if (!assetIds) {
 			assetIds = LightingEngine.buildBinariesCollectAssetIds();
@@ -63,7 +63,7 @@ export class LightingEngine {
 
 			// Try to load target quality
 			for (let j in assetImage.srcs) {
-				if (assetImage.srcs[j].quality === quality) {
+				if (assetImage.srcs[j].quality === imageQuality) {
 					cacheInstance = {
 						gHeight: assetImage.gHeight || 1,
 						gWidth: assetImage.gWidth || 1,
@@ -279,7 +279,7 @@ export class LightingEngine {
 		}
 	}
 
-	public static settings(darknessMax: number, gamma: number, quality: AssetImageSrcQuality): void {
+	public static settings(darknessMax: number, gamma: number, imageQuality: AssetImageSrcQuality): void {
 		let changed: boolean = false;
 
 		if (LightingEngine.darknessMax !== darknessMax) {
@@ -290,8 +290,8 @@ export class LightingEngine {
 			LightingEngine.gamma = gamma;
 			changed = true;
 		}
-		if (LightingEngine.quality !== quality) {
-			LightingEngine.quality = quality;
+		if (LightingEngine.imageQuality !== imageQuality) {
+			LightingEngine.imageQuality = imageQuality;
 			changed = true;
 		}
 

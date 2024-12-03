@@ -36,10 +36,8 @@ export class KernelEngine {
 	private static requestFrame: number;
 	private static status: boolean;
 	private static timestampDelta: number;
-	private static timestampDeltaCamera: number;
 	private static timestampNow: number;
 	private static timestampThen: number = performance.now();
-	private static timestampThenCamera: number = performance.now();
 	private static touchDistanceActive: boolean;
 	private static touchDistanceOrig: number;
 	private static touchDistanceOrigX: number;
@@ -195,23 +193,19 @@ export class KernelEngine {
 		KernelEngine.requestFrame = requestAnimationFrame(KernelEngine.loop);
 		KernelEngine.timestampNow = performance.now();
 		KernelEngine.timestampDelta = KernelEngine.timestampNow - KernelEngine.timestampThen;
-		KernelEngine.timestampDeltaCamera = KernelEngine.timestampNow - KernelEngine.timestampThenCamera;
-
-		if (KernelEngine.timestampDeltaCamera > KernelEngine.fpmsCamera) {
-			KernelEngine.timestampThenCamera = KernelEngine.timestampNow - (KernelEngine.timestampDeltaCamera % KernelEngine.fpmsCamera);
-			CameraEngine.update();
-		}
 
 		if (KernelEngine.timestampDelta > KernelEngine.fpms) {
 			KernelEngine.timestampThen = KernelEngine.timestampNow - (KernelEngine.timestampDelta % KernelEngine.fpms);
 			KernelEngine.frames++;
 
 			// Start
+			CameraEngine.update();
+
 			if (KernelEngine.modeEdit) {
 				!KernelEngine.paused && CalcEditEngine.start(KernelEngine.timestampDelta);
 				DrawEditEngine.start();
 			} else {
-				CalcPlayEngine.start(KernelEngine.timestampDelta);
+				!KernelEngine.paused && CalcPlayEngine.start(KernelEngine.timestampDelta);
 				DrawPlayEngine.start();
 			}
 		}
@@ -393,14 +387,15 @@ export class KernelEngine {
 			console.error('KernelEngine > updateSettings: not initialized');
 			return;
 		}
-		KernelEngine.fpms = Math.round(1000 / settings.fps);
+		KernelEngine.fpms = Math.floor(1000 / settings.fps);
 
 		// Primary
 		DrawEditEngine.mapVisible = settings.mapVisible;
 
 		// Extended
+		ImageBlockDrawEngine.setShadingQuality(settings.shadingQuality);
 		ImageBlockDrawEngine.setVanishingPercentageOfViewport(settings.vanishingPercentageOfViewport);
-		LightingEngine.settings(settings.darknessMax, settings.gamma, settings.quality);
+		LightingEngine.settings(settings.darknessMax, settings.gamma, settings.imageQuality);
 		MapDrawEngine.resolution = settings.resolution;
 		MapDrawEngineBus.setDarknessMax(settings.darknessMax);
 		MapDrawEngineBus.setMapVisible(settings.mapVisible);

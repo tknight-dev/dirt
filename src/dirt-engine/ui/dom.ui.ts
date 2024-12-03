@@ -37,6 +37,7 @@ import {
 	VideoBusInputCmdGameModeEditDraw,
 	VideoBusInputCmdSettings,
 	VideoBusInputCmdSettingsFPS,
+	VideoBusInputCmdSettingsShadingQuality,
 	VideoBusOutputCmdEditCameraUpdate,
 } from '../engines/buses/video.model.bus';
 import { VideoEngineBus } from '../engines/buses/video.engine.bus';
@@ -3168,35 +3169,16 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Table: Map
+		// Table: Image Quality
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Map';
-		tr.appendChild(td);
-
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.type = 'checkbox';
-		input.checked = true;
-		input.oninput = (event: any) => {
-			DomUI.settings.mapVisible = Boolean(event.target.checked);
-			VideoEngineBus.outputSettings(DomUI.settings);
-		};
-		td.appendChild(input);
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Table: Quality
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Quality';
+		td.innerText = 'Image Quality';
 		tr.appendChild(td);
 
 		td = document.createElement('td');
 		select = document.createElement('select');
 		select.onchange = (event: any) => {
-			DomUI.settings.quality = <any>Number(event.target.value);
+			DomUI.settings.imageQuality = <any>Number(event.target.value);
 			VideoEngineBus.outputSettings(DomUI.settings);
 		};
 
@@ -3217,6 +3199,25 @@ export class DomUI {
 		select.appendChild(option);
 
 		td.appendChild(select);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Map
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Map';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.type = 'checkbox';
+		input.checked = true;
+		input.oninput = (event: any) => {
+			DomUI.settings.mapVisible = Boolean(event.target.checked);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -3272,6 +3273,34 @@ export class DomUI {
 			VideoEngineBus.outputSettings(DomUI.settings);
 		};
 		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Table: Shading Quality
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Shading Quality';
+		tr.appendChild(td);
+
+		td = document.createElement('td');
+		select = document.createElement('select');
+		select.onchange = (event: any) => {
+			DomUI.settings.shadingQuality = <any>Number(event.target.value);
+			VideoEngineBus.outputSettings(DomUI.settings);
+		};
+
+		option = document.createElement('option');
+		option.innerText = 'Low';
+		option.value = String(VideoBusInputCmdSettingsShadingQuality.LOW);
+		select.appendChild(option);
+
+		option = document.createElement('option');
+		option.innerText = 'High';
+		option.selected = true;
+		option.value = String(VideoBusInputCmdSettingsShadingQuality.HIGH);
+		select.appendChild(option);
+
+		td.appendChild(select);
 		tr.appendChild(td);
 		t.appendChild(tr);
 

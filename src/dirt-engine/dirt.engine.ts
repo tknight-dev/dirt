@@ -33,7 +33,11 @@ export {
 	AssetManifest,
 	AssetMeta,
 } from './models/asset.model';
-export { VideoBusInputCmdSettings, VideoBusInputCmdSettingsFPS } from './engines/buses/video.model.bus';
+export {
+	VideoBusInputCmdSettings,
+	VideoBusInputCmdSettingsFPS,
+	VideoBusInputCmdSettingsShadingQuality,
+} from './engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev

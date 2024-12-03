@@ -16,7 +16,7 @@ import {
 } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from './buses/map.draw.engine.bus';
-import { VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model.bus';
+import { VideoBusInputCmdGameModeEditApplyZ, VideoBusInputCmdSettingsShadingQuality } from '../engines/buses/video.model.bus';
 import { UtilEngine } from '../engines/util.engine';
 
 /**
@@ -30,6 +30,7 @@ interface ZGroup {
 
 export class ImageBlockDrawEngine {
 	private static cacheBackground: ImageBitmap;
+	private static cacheCanvas: OffscreenCanvas;
 	private static cacheForeground: ImageBitmap;
 	private static cachePrimary: ImageBitmap;
 	private static cacheSecondary: ImageBitmap;
@@ -40,6 +41,7 @@ export class ImageBlockDrawEngine {
 	private static cacheHashPw: number;
 	private static cacheHourPrecise: number;
 	private static cacheZoom: number;
+	private static ctx: OffscreenCanvasRenderingContext2D;
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
@@ -49,6 +51,7 @@ export class ImageBlockDrawEngine {
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
+	private static shadingQuality: VideoBusInputCmdSettingsShadingQuality = VideoBusInputCmdSettingsShadingQuality.HIGH;
 	private static vanishingEnable: boolean;
 	private static vanishingPercentageOfViewport: number;
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[];
@@ -70,6 +73,10 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
 		ImageBlockDrawEngine.ctxSecondary = ctxSecondary;
 		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
+
+		ImageBlockDrawEngine.cacheCanvas = new OffscreenCanvas(0, 0);
+		ImageBlockDrawEngine.ctx = <OffscreenCanvasRenderingContext2D>ImageBlockDrawEngine.cacheCanvas.getContext('2d');
+		ImageBlockDrawEngine.ctx.imageSmoothingEnabled = false;
 
 		ImageBlockDrawEngine.zGroup = [
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
@@ -104,8 +111,7 @@ export class ImageBlockDrawEngine {
 				audioPrimaryTags: GridBlockTable<GridAudioTag> | undefined,
 				audioPrimaryTagHashes: { [key: number]: GridAudioTag },
 				brightness: number,
-				canvas: OffscreenCanvas = new OffscreenCanvas(camera.windowPw, camera.windowPh),
-				ctx: OffscreenCanvasRenderingContext2D = <OffscreenCanvasRenderingContext2D>canvas.getContext('2d'),
+				ctx: OffscreenCanvasRenderingContext2D = ImageBlockDrawEngine.ctx,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
 				drawGx: number,
@@ -144,6 +150,8 @@ export class ImageBlockDrawEngine {
 				radius2: number,
 				reference: GridBlockTable<GridImageBlockReference>,
 				referenceHashes: { [key: number]: GridImageBlockReference },
+				transform: boolean,
+				shadingQuality: VideoBusInputCmdSettingsShadingQuality = ImageBlockDrawEngine.shadingQuality,
 				startGx: number = camera.viewportGx,
 				startGxEff: number = startGx - 1,
 				startGy: number = camera.viewportGy,
@@ -156,12 +164,14 @@ export class ImageBlockDrawEngine {
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
 			// Config
-			ctx.imageSmoothingEnabled = false;
-
+			if (ImageBlockDrawEngine.cacheCanvas.height !== camera.windowPh || ImageBlockDrawEngine.cacheCanvas.width !== camera.windowPw) {
+				ImageBlockDrawEngine.cacheCanvas.height = camera.windowPh;
+				ImageBlockDrawEngine.cacheCanvas.width = camera.windowPw;
+			}
 			imageBitmapsBlend = Math.round((imageBitmapsBlend - Math.floor(imageBitmapsBlend)) * 1000) / 1000;
 			imageBitmapsBlend = Math.round((1 - imageBitmapsBlend) * 1000) / 1000;
 
-			radius = Math.round(((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom);
+			radius = (((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom) | 0;
 			radius2 = radius * 2;
 
 			/*
@@ -217,16 +227,20 @@ export class ImageBlockDrawEngine {
 					complexes = complexesByGx[j];
 					gx = Number(j);
 
-					if (gx < startGxEff || gx > stopGx) {
+					if (gx < startGxEff) {
 						continue;
+					} else if (gx > stopGx) {
+						break;
 					}
 
-					drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+					drawGx = ((gx - startGx) * gInPw) | 0;
 
 					for (k in complexes) {
 						gy = complexes[k].value;
-						if (gy < startGyEff || gy > stopGy) {
+						if (gy < startGyEff) {
 							continue;
+						} else if (gy > stopGy) {
+							break;
 						}
 						gridImageBlock = referenceHashes[complexes[k].hash].block;
 
@@ -250,37 +264,42 @@ export class ImageBlockDrawEngine {
 
 								if (gx !== <number>gridImageBlock.gx) {
 									gx = <number>gridImageBlock.gx;
-									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+									drawGx = ((gx - startGx) * gInPw) | 0;
 								}
 								gy = <number>gridImageBlock.gy;
 							}
 						} else {
 							if (gx !== <number>gridImageBlock.gx) {
 								gx = <number>gridImageBlock.gx;
-								drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+								drawGx = ((gx - startGx) * gInPw) | 0;
 							}
 						}
 
 						// Cache calculations
-						drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
+						drawGy = ((gy - startGy) * gInPh) | 0;
 						if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 							gSizeHPrevious = gridImageBlock.gSizeH;
-							gInPhEff = Math.round((gInPh * gSizeHPrevious + 1) * 1000) / 1000;
+							gInPhEff = (gInPh * gSizeHPrevious + 1) | 0;
 						}
 						if (gSizeWPrevious !== gridImageBlock.gSizeW) {
 							gSizeWPrevious = gridImageBlock.gSizeW;
-							gInPwEff = Math.round((gInPw * gSizeWPrevious + 1) * 1000) / 1000;
+							gInPwEff = (gInPw * gSizeWPrevious + 1) | 0;
 						}
 
 						// Transforms
-						ctx.setTransform(
-							gridImageBlock.flipH ? -1 : 1,
-							0,
-							0,
-							gridImageBlock.flipV ? -1 : 1,
-							drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
-							drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
-						);
+						if (gridImageBlock.flipH || gridImageBlock.flipV) {
+							transform = true;
+							ctx.setTransform(
+								gridImageBlock.flipH ? -1 : 1,
+								0,
+								0,
+								gridImageBlock.flipV ? -1 : 1,
+								drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
+								drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
+							);
+						} else {
+							transform = false;
+						}
 
 						if (outside) {
 							// Get pre-rendered asset variation based on hash
@@ -300,51 +319,15 @@ export class ImageBlockDrawEngine {
 
 							if (gridImageBlock.halved !== undefined) {
 								if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
-									ctx.drawImage(
-										imageBitmap,
-										0,
-										Math.round((imageBitmap.height / 2) * 1000) / 1000,
-										imageBitmap.width,
-										imageBitmap.height,
-										0,
-										Math.round((gInPhEff / 2) * 1000) / 1000,
-										gInPwEff,
-										gInPhEff,
-									);
-								} else {
-									ctx.drawImage(
-										imageBitmap,
-										0,
-										0,
-										imageBitmap.width,
-										Math.round((imageBitmap.height / 2) * 1000) / 1000,
-										0,
-										0,
-										gInPwEff,
-										Math.round((gInPhEff / 2) * 1000) / 1000,
-									);
-								}
-							} else {
-								ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
-							}
-
-							// If not the same image
-							if (imageBitmaps[0] !== imageBitmaps[1]) {
-								imageBitmap = imageBitmaps[1];
-								ctx.globalAlpha = imageBitmapsBlend;
-
-								// Draw previous image (blended) [6:00 - 100%, 6:30 - 50%, 6:55 - 8%]
-								// Provides smooth shading transitions
-								if (gridImageBlock.halved !== undefined) {
-									if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
+									if (transform) {
 										ctx.drawImage(
 											imageBitmap,
 											0,
-											Math.round((imageBitmap.height / 2) * 1000) / 1000,
+											(imageBitmap.height / 2) | 0,
 											imageBitmap.width,
 											imageBitmap.height,
 											0,
-											Math.round((gInPhEff / 2) * 1000) / 1000,
+											(gInPhEff / 2) | 0,
 											gInPwEff,
 											gInPhEff,
 										);
@@ -352,17 +335,117 @@ export class ImageBlockDrawEngine {
 										ctx.drawImage(
 											imageBitmap,
 											0,
-											0,
+											(imageBitmap.height / 2) | 0,
 											imageBitmap.width,
-											Math.round((imageBitmap.height / 2) * 1000) / 1000,
-											0,
-											0,
+											imageBitmap.height,
+											drawGx,
+											(drawGy + gInPhEff / 2) | 0,
 											gInPwEff,
-											Math.round((gInPhEff / 2) * 1000) / 1000,
+											gInPhEff,
 										);
 									}
 								} else {
+									if (transform) {
+										ctx.drawImage(
+											imageBitmap,
+											0,
+											0,
+											imageBitmap.width,
+											(imageBitmap.height / 2) | 0,
+											0,
+											0,
+											gInPwEff,
+											(gInPhEff / 2) | 0,
+										);
+									} else {
+										ctx.drawImage(
+											imageBitmap,
+											0,
+											0,
+											imageBitmap.width,
+											(imageBitmap.height / 2) | 0,
+											drawGx,
+											(drawGy + gInPhEff / 2) | 0,
+											gInPwEff,
+											(gInPhEff / 2) | 0,
+										);
+									}
+								}
+							} else {
+								if (transform) {
 									ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
+								} else {
+									ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+								}
+							}
+
+							// If not the same image
+							if (shadingQuality === VideoBusInputCmdSettingsShadingQuality.HIGH && imageBitmaps[0] !== imageBitmaps[1]) {
+								imageBitmap = imageBitmaps[1];
+								ctx.globalAlpha = imageBitmapsBlend;
+
+								// Draw previous image (blended) [6:00 - 100%, 6:30 - 50%, 6:55 - 8%]
+								// Provides smooth shading transitions
+								if (gridImageBlock.halved !== undefined) {
+									if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
+										if (transform) {
+											ctx.drawImage(
+												imageBitmap,
+												0,
+												(imageBitmap.height / 2) | 0,
+												imageBitmap.width,
+												imageBitmap.height,
+												0,
+												(gInPhEff / 2) | 0,
+												gInPwEff,
+												gInPhEff,
+											);
+										} else {
+											ctx.drawImage(
+												imageBitmap,
+												0,
+												(imageBitmap.height / 2) | 0,
+												imageBitmap.width,
+												imageBitmap.height,
+												drawGx,
+												(drawGy + gInPhEff / 2) | 0,
+												gInPwEff,
+												gInPhEff,
+											);
+										}
+									} else {
+										if (transform) {
+											ctx.drawImage(
+												imageBitmap,
+												0,
+												0,
+												imageBitmap.width,
+												(imageBitmap.height / 2) | 0,
+												0,
+												0,
+												gInPwEff,
+												(gInPhEff / 2) | 0,
+											);
+										} else {
+											ctx.drawImage(
+												imageBitmap,
+												0,
+												0,
+												imageBitmap.width,
+												(imageBitmap.height / 2) | 0,
+												drawGx,
+												(drawGy + gInPhEff / 2) | 0,
+												gInPwEff,
+												(gInPhEff / 2) | 0,
+											);
+										}
+									}
+								} else {
+									if (transform) {
+										ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
+									} else {
+										ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+									}
 								}
 
 								// Done
@@ -373,12 +456,19 @@ export class ImageBlockDrawEngine {
 							brightness = getCacheBrightness(grid.id, gridImageBlock.hash, z);
 							imageBitmap = getCacheLitByBrightness(gridImageBlock.assetId, brightness);
 
-							ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+							if (transform) {
+								ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
+							} else {
+								ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+							}
+						}
+
+						// Reset transforms
+						if (transform) {
+							ctx.setTransform(1, 0, 0, 1, 0, 0);
 						}
 					}
 				}
-				// Reset transforms
-				ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 				// Lights
 				if (lights && lights.hashesGyByGx) {
@@ -389,11 +479,13 @@ export class ImageBlockDrawEngine {
 						complexes = complexesByGx[j];
 						gx = Number(j);
 
-						if (gx < startGx || gx > stopGx) {
+						if (gx < startGx) {
 							continue;
+						} else if (gx > stopGx) {
+							break;
 						}
 
-						drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+						drawGx = ((gx - startGx) * gInPw) | 0;
 
 						for (k in complexes) {
 							gridLight = lightHashes[complexes[k].hash];
@@ -403,8 +495,10 @@ export class ImageBlockDrawEngine {
 							}
 
 							gy = <number>gridLight.gy;
-							if (gy < startGy || gy > stopGy) {
+							if (gy < startGy) {
 								continue;
+							} else if (gy > stopGy) {
+								break;
 							}
 
 							// Extended check
@@ -423,26 +517,26 @@ export class ImageBlockDrawEngine {
 
 									if (gx !== <number>gridLight.gx) {
 										gx = <number>gridLight.gx;
-										drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+										drawGx = ((gx - startGx) * gInPw) | 0;
 									}
 									gy = <number>gridLight.gy;
 								}
 							} else {
 								if (gx !== <number>gridLight.gx) {
 									gx = <number>gridLight.gx;
-									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+									drawGx = ((gx - startGx) * gInPw) | 0;
 								}
 							}
 
 							// Cache calculations
-							drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
+							drawGy = ((gy - startGy) * gInPh) | 0;
 							if (gSizeHPrevious !== gridLight.gSizeH) {
 								gSizeHPrevious = gridLight.gSizeH;
-								gInPhEff = Math.round((gInPh * gSizeHPrevious + 1) * 1000) / 1000;
+								gInPhEff = (gInPh * gSizeHPrevious + 1) | 0;
 							}
 							if (gSizeWPrevious !== gridLight.gSizeW) {
 								gSizeWPrevious = gridLight.gSizeW;
-								gInPwEff = Math.round((gInPw * gSizeWPrevious + 1) * 1000) / 1000;
+								gInPwEff = (gInPw * gSizeWPrevious + 1) | 0;
 							}
 
 							// Get pre-rendered asset variation based on hash
@@ -473,26 +567,30 @@ export class ImageBlockDrawEngine {
 							complexes = complexesByGx[j];
 							gx = Number(j);
 
-							if (gx < startGx || gx > stopGx) {
+							if (gx < startGx) {
 								continue;
+							} else if (gx > stopGx) {
+								break;
 							}
 
-							drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+							drawGx = ((gx - startGx) * gInPw) | 0;
 
 							for (k in complexes) {
 								gridAudioBlock = audioPrimaryBlockHashes[complexes[k].hash];
 
 								gy = <number>gridAudioBlock.gy;
-								if (gy < startGy || gy > stopGy) {
+								if (gy < startGy) {
 									continue;
+								} else if (gy > stopGy) {
+									break;
 								}
 
 								// Calc
 								if (gx !== <number>gridAudioBlock.gx) {
 									gx = <number>gridAudioBlock.gx;
-									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+									drawGx = ((gx - startGx) * gInPw) | 0;
 								}
-								drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
+								drawGy = ((gy - startGy) * gInPh) | 0;
 
 								// Draw
 								audioModulation = audioModulations[gridAudioBlock.modulationId];
@@ -514,26 +612,30 @@ export class ImageBlockDrawEngine {
 							complexes = complexesByGx[j];
 							gx = Number(j);
 
-							if (gx < startGx || gx > stopGx) {
+							if (gx < startGx) {
 								continue;
+							} else if (gx > stopGx) {
+								break;
 							}
 
-							drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+							drawGx = ((gx - startGx) * gInPw) | 0;
 
 							for (k in complexes) {
 								gridAudioTag = audioPrimaryTagHashes[complexes[k].hash];
 
 								gy = <number>gridAudioTag.gy;
-								if (gy < startGy || gy > stopGy) {
+								if (gy < startGy) {
 									continue;
+								} else if (gy > stopGy) {
+									break;
 								}
 
 								// Calc
 								if (gx !== <number>gridAudioTag.gx) {
 									gx = <number>gridAudioTag.gx;
-									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
+									drawGx = ((gx - startGx) * gInPw) | 0;
 								}
-								drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
+								drawGy = ((gy - startGy) * gInPh) | 0;
 
 								// Draw
 								if (gridAudioTag.type === GridAudioTagType.EFFECT) {
@@ -551,21 +653,21 @@ export class ImageBlockDrawEngine {
 				// CacheIt
 				switch (z) {
 					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						ImageBlockDrawEngine.cacheBackground = canvas.transferToImageBitmap();
+						ImageBlockDrawEngine.cacheBackground = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-						ImageBlockDrawEngine.cacheForeground = canvas.transferToImageBitmap();
+						ImageBlockDrawEngine.cacheForeground = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						ImageBlockDrawEngine.cachePrimary = canvas.transferToImageBitmap();
+						ImageBlockDrawEngine.cachePrimary = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-						ImageBlockDrawEngine.cacheSecondary = canvas.transferToImageBitmap();
+						ImageBlockDrawEngine.cacheSecondary = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						if (ImageBlockDrawEngine.vanishingEnable) {
-							x = Math.round((camera.gx - startGx) * gInPw * 1000) / 1000;
-							y = Math.round((camera.gy - startGy) * gInPh * 1000) / 1000;
+							x = ((camera.gx - startGx) * gInPw) | 0;
+							y = ((camera.gy - startGy) * gInPh) | 0;
 
 							gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
 							gradient.addColorStop(0, 'white');
@@ -578,7 +680,7 @@ export class ImageBlockDrawEngine {
 							ctx.globalCompositeOperation = 'source-over'; // restore default setting
 						}
 
-						ImageBlockDrawEngine.cacheVanishing = canvas.transferToImageBitmap();
+						ImageBlockDrawEngine.cacheVanishing = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
 						break;
 				}
 			}
@@ -602,19 +704,28 @@ export class ImageBlockDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		ImageBlockDrawEngine.mapActive = mapActive;
 		ImageBlockDrawEngine.mapActiveCamera = mapActive.camera;
+		ImageBlockDrawEngine.cacheReset();
 	}
 
 	public static setEditing(editing: boolean) {
 		ImageBlockDrawEngine.editing = editing;
+		ImageBlockDrawEngine.cacheReset();
+	}
+
+	public static setShadingQuality(shadingQuality: VideoBusInputCmdSettingsShadingQuality) {
+		ImageBlockDrawEngine.shadingQuality = shadingQuality;
+		ImageBlockDrawEngine.cacheReset();
 	}
 
 	public static setVanishingEnable(vanishingEnable: boolean) {
 		ImageBlockDrawEngine.vanishingEnable = vanishingEnable;
 		MapDrawEngineBus.setVanishingEnable(vanishingEnable);
+		ImageBlockDrawEngine.cacheReset();
 	}
 
 	public static setVanishingPercentageOfViewport(vanishingPercentageOfViewport: number) {
 		ImageBlockDrawEngine.vanishingPercentageOfViewport = vanishingPercentageOfViewport;
 		MapDrawEngineBus.setVanishingPercentageOfViewport(ImageBlockDrawEngine.vanishingPercentageOfViewport);
+		ImageBlockDrawEngine.cacheReset();
 	}
 }

@@ -41,11 +41,9 @@ interface TagMeta {
 	activationCount: number;
 	activationType: GridAudioTagActivationType;
 	contacted: boolean;
-	leftCurrent: boolean;
-	leftPrevious: boolean;
+	left: boolean;
 	oneshot: boolean;
-	upCurrent: boolean;
-	upPrevious: boolean;
+	up: boolean;
 }
 
 interface TagState extends State {}
@@ -135,16 +133,14 @@ export class MapAudioAmbientEngine {
 				}
 
 				gridAudioTagActivationType = (<GridAudioTagEffect>gridAudioTag).activation;
-				if (gridAudioTagActivationType) {
+				if (gridAudioTagActivationType !== undefined) {
 					tagMeta[gridAudioTag.hash] = {
 						activationCount: 0,
 						activationType: gridAudioTagActivationType,
 						contacted: false,
-						leftCurrent: gridAudioTag.gx < gx,
-						leftPrevious: gridAudioTag.gx < gx,
+						left: gridAudioTag.gx < gx,
 						oneshot: !!(<GridAudioTagEffect>gridAudioTag).oneshot,
-						upCurrent: gridAudioTag.gy < gy,
-						upPrevious: gridAudioTag.gy < gy,
+						up: gridAudioTag.gy < gy,
 					};
 				}
 			}
@@ -621,8 +617,10 @@ export class MapAudioAmbientEngine {
 								switch (position.activationType) {
 									case GridAudioTagActivationType.CONTACT:
 										if (
-											Math.round(gridAudioTag.gx) === Math.round(gx) &&
-											Math.round(gridAudioTag.gy) === Math.round(gy)
+											gx >= gridAudioTag.gx &&
+											gx <= gridAudioTag.gx + 1 &&
+											gy >= gridAudioTag.gy &&
+											gy <= gridAudioTag.gy + 1
 										) {
 											if (!position.contacted) {
 												activate = true;
@@ -633,23 +631,17 @@ export class MapAudioAmbientEngine {
 										}
 										break;
 									case GridAudioTagActivationType.HORIZONTAL:
-										if (position.leftCurrent === position.leftPrevious) {
-											position.leftCurrent = gridAudioTag.gy < gy;
+										if (position.left !== gridAudioTag.gx < gx) {
+											position.left = gridAudioTag.gx < gx;
 
-											if (position.leftCurrent !== position.leftPrevious) {
-												activate = true;
-												position.leftPrevious = position.leftCurrent;
-											}
+											activate = true;
 										}
 										break;
 									case GridAudioTagActivationType.VERTICAL:
-										if (position.upCurrent === position.upPrevious) {
-											position.upCurrent = gridAudioTag.gy < gy;
+										if (position.up !== gridAudioTag.gy < gy) {
+											position.up = gridAudioTag.gy < gy;
 
-											if (position.upCurrent !== position.upPrevious) {
-												activate = true;
-												position.upPrevious = position.upCurrent;
-											}
+											activate = true;
 										}
 										break;
 								}

@@ -172,10 +172,11 @@ export interface VideoBusInputCmdSettings {
 	fps: VideoBusInputCmdSettingsFPS;
 	fpsVisible: boolean;
 	gamma: number; // between -.5 and 1.5, default is 0 (Precision 3)
+	imageQuality: AssetImageSrcQuality;
 	mapVisible: boolean;
-	quality: AssetImageSrcQuality;
 	resolution: null | 256 | 384 | 512 | 640 | 1280 | 1920; // null is native resolution
 	screenShakeEnable: boolean;
+	shadingQuality: VideoBusInputCmdSettingsShadingQuality;
 	vanishingPercentageOfViewport: number; // between 0 and 2, default is .25 (Precision 3)
 	volumeAmbient: number; // between 0 and 1, default is .8 (Precision 3)
 	volumeEffect: number; // between 0 and 1, default is .8 (Precision 3)
@@ -187,6 +188,11 @@ export enum VideoBusInputCmdSettingsFPS {
 	_40 = 40,
 	_60 = 60,
 	_120 = 120,
+}
+
+export enum VideoBusInputCmdSettingsShadingQuality {
+	LOW,
+	HIGH,
 }
 
 export interface VideoBusPayload {

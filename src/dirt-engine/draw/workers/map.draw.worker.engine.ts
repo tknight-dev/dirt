@@ -101,7 +101,9 @@ class MapDrawWorkerEngine {
 		MapDrawWorkerEngine.canvas = new OffscreenCanvas(1, 1);
 		MapDrawWorkerEngine.canvasTmp = new OffscreenCanvas(1, 1);
 		MapDrawWorkerEngine.ctx = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvas.getContext('2d');
+		MapDrawWorkerEngine.ctx.imageSmoothingEnabled = false;
 		MapDrawWorkerEngine.ctxTmp = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvasTmp.getContext('2d');
+		MapDrawWorkerEngine.ctxTmp.imageSmoothingEnabled = false;
 
 		// Done
 		MapDrawWorkerEngine._draw();
@@ -166,9 +168,9 @@ class MapDrawWorkerEngine {
 	 */
 	private static _draw(): void {
 		let camera: MapDrawBusInputPlayloadCamera,
-			canvas: OffscreenCanvas,
+			canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
 			canvasHeight: number,
-			canvasTmp: OffscreenCanvas,
+			canvasTmp: OffscreenCanvas = MapDrawWorkerEngine.canvasTmp,
 			canvasTmpGh: number,
 			canvasTmpGhEff: number,
 			canvasTmpGw: number,
@@ -208,7 +210,7 @@ class MapDrawWorkerEngine {
 			radius2: number,
 			reference: GridBlockTable<GridImageBlockReference>,
 			referenceHashes: { [key: number]: GridImageBlockReference },
-			resolutionMultiple: number,
+			resolutionMultiple: number = 4,
 			scaledImageHeight: number,
 			scaledImageWidth: number,
 			stopGx: number,
@@ -223,16 +225,14 @@ class MapDrawWorkerEngine {
 			zBitmapPrimary: ImageBitmap,
 			zBitmapSecondary: ImageBitmap,
 			zBitmapVanishing: ImageBitmap,
-			zGroup: VideoBusInputCmdGameModeEditApplyZ[];
+			zGroup: VideoBusInputCmdGameModeEditApplyZ[] = MapDrawWorkerEngine.zGroup;
 
 		// Draw interval
 		UtilEngine.setInterval(() => {
 			if (MapDrawWorkerEngine.mapVisible) {
 				try {
 					camera = MapDrawWorkerEngine.camera;
-					canvas = MapDrawWorkerEngine.canvas;
 					canvasHeight = MapDrawWorkerEngine.height;
-					canvasTmp = MapDrawWorkerEngine.canvasTmp;
 					canvasTmpGh = MapDrawWorkerEngine.canvasTmpGh;
 					canvasTmpGw = MapDrawWorkerEngine.canvasTmpGw;
 					canvasWidth = MapDrawWorkerEngine.width;
@@ -247,9 +247,8 @@ class MapDrawWorkerEngine {
 					gSizeWPrevious = 0;
 					gWidthMax = gridConfig.gWidth;
 					lights = undefined;
-					resolutionMultiple = 4;
-					scaledImageHeight = Math.round(canvasHeight * (canvasTmpGh / gHeightMax));
-					scaledImageWidth = Math.round(canvasWidth * (canvasTmpGw / gWidthMax));
+					scaledImageHeight = (canvasHeight * (canvasTmpGh / gHeightMax)) | 0;
+					scaledImageWidth = (canvasWidth * (canvasTmpGw / gWidthMax)) | 0;
 					vanishingEnable = MapDrawWorkerEngine.vanishingEnable;
 					vanishingPercentageOfViewport = MapDrawWorkerEngine.vanishingPercentageOfViewport;
 					zBitmapBackground = canvas.transferToImageBitmap();
@@ -257,21 +256,20 @@ class MapDrawWorkerEngine {
 					zBitmapPrimary = canvas.transferToImageBitmap();
 					zBitmapSecondary = canvas.transferToImageBitmap();
 					zBitmapVanishing = canvas.transferToImageBitmap();
-					zGroup = MapDrawWorkerEngine.zGroup;
 
 					// Config
-					canvas.height = canvasHeight;
-					canvas.width = canvasWidth;
+					if (canvas.height !== canvasHeight || canvas.width !== canvasWidth) {
+						canvas.height = canvasHeight;
+						canvas.width = canvasWidth;
+					}
 					canvasTmp.height = canvasTmpGh * resolutionMultiple;
 					canvasTmp.width = canvasTmpGw * resolutionMultiple;
-					ctx.imageSmoothingEnabled = false;
-					ctxTmp.imageSmoothingEnabled = false;
 
 					canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
 					canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
 					gHeightMaxEff = gHeightMax * resolutionMultiple;
 					gWidthMaxEff = gWidthMax * resolutionMultiple;
-					radius = Math.round((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple);
+					radius = ((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple) | 0;
 					radius2 = radius * 2;
 
 					for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
@@ -323,7 +321,7 @@ class MapDrawWorkerEngine {
 										continue;
 									}
 
-									drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
+									drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 
 									for (k in complexes) {
 										gy = complexes[k].value;
@@ -351,26 +349,26 @@ class MapDrawWorkerEngine {
 												extendedHash[gridImageBlock.hash] = null;
 												if (gx !== <number>gridImageBlock.gx) {
 													gx = <number>gridImageBlock.gx;
-													drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
+													drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 												}
 												gy = <number>gridImageBlock.gy;
 											}
 										} else {
 											if (gx !== <number>gridImageBlock.gx) {
 												gx = <number>gridImageBlock.gx;
-												drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
+												drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 											}
 										}
 
 										// Cache calculations
-										drawGy = Math.round((gy - gHeight) * resolutionMultiple * 1000) / 1000;
+										drawGy = ((gy - gHeight) * resolutionMultiple) | 0;
 										if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 											gSizeHPrevious = gridImageBlock.gSizeH;
-											gInPhEff = Math.round(resolutionMultiple * gridImageBlock.gSizeH * 1000) / 1000;
+											gInPhEff = (resolutionMultiple * gridImageBlock.gSizeH) | 0;
 										}
 										if (gSizeWPrevious !== gridImageBlock.gSizeW) {
 											gSizeWPrevious = gridImageBlock.gSizeW;
-											gInPwEff = Math.round(resolutionMultiple * gridImageBlock.gSizeW * 1000) / 1000;
+											gInPwEff = (resolutionMultiple * gridImageBlock.gSizeW) | 0;
 										}
 
 										// Transforms
@@ -403,7 +401,7 @@ class MapDrawWorkerEngine {
 											continue;
 										}
 
-										drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
+										drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 
 										for (k in complexes) {
 											gridLight = lightHashes[complexes[k].hash];
@@ -433,26 +431,26 @@ class MapDrawWorkerEngine {
 
 													if (gx !== <number>gridLight.gx) {
 														gx = <number>gridLight.gx;
-														drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
+														drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 													}
 													gy = <number>gridLight.gy;
 												}
 											} else {
 												if (gx !== <number>gridLight.gx) {
 													gx = <number>gridLight.gx;
-													drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
+													drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 												}
 											}
 
 											// Cache calculations
-											drawGy = Math.round((gy - gHeight) * resolutionMultiple * 1000) / 1000;
+											drawGy = Math.floor((gy - gHeight) * resolutionMultiple);
 											if (gSizeHPrevious !== gridLight.gSizeH) {
 												gSizeHPrevious = gridLight.gSizeH;
-												gInPhEff = Math.round(resolutionMultiple * gridLight.gSizeH);
+												gInPhEff = (resolutionMultiple * gridLight.gSizeH) | 0;
 											}
 											if (gSizeWPrevious !== gridLight.gSizeW) {
 												gSizeWPrevious = gridLight.gSizeW;
-												gInPwEff = Math.round(resolutionMultiple * gridLight.gSizeW);
+												gInPwEff = (resolutionMultiple * gridLight.gSizeW) | 0;
 											}
 
 											imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
@@ -476,8 +474,8 @@ class MapDrawWorkerEngine {
 										break;
 									case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 										if (vanishingEnable) {
-											x = Math.round((camera.gx - gWidth) * resolutionMultiple * 1000) / 1000;
-											y = Math.round((camera.gy - gHeight) * resolutionMultiple * 1000) / 1000;
+											x = Math.floor((camera.gx - gWidth) * resolutionMultiple);
+											y = Math.floor((camera.gy - gHeight) * resolutionMultiple);
 
 											gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
 											gradient.addColorStop(0, 'white');
@@ -513,8 +511,8 @@ class MapDrawWorkerEngine {
 									0,
 									canvasTmpGwEff,
 									canvasTmpGhEff,
-									Math.round(canvasWidth * (gWidth / gWidthMax) * 1000) / 1000,
-									Math.round(canvasHeight * (gHeight / gHeightMax) * 1000) / 1000,
+									(canvasWidth * (gWidth / gWidthMax)) | 0,
+									(canvasHeight * (gHeight / gHeightMax)) | 0,
 									scaledImageWidth,
 									scaledImageHeight,
 								);

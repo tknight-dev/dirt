@@ -9,11 +9,13 @@ import { MapActive } from '../models/map.model';
 
 export class GridDrawEngine {
 	private static cache: ImageBitmap;
+	private static cacheCanvas: OffscreenCanvas;
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
 	private static cacheHashPh: number;
 	private static cacheHashPw: number;
 	private static cacheZoom: number;
+	private static ctx: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static enable: boolean = true;
 	private static initialized: boolean;
@@ -26,6 +28,10 @@ export class GridDrawEngine {
 		}
 		GridDrawEngine.initialized = true;
 		GridDrawEngine.ctxOverlay = ctxOverlay;
+
+		GridDrawEngine.cacheCanvas = new OffscreenCanvas(0, 0);
+		GridDrawEngine.ctx = <OffscreenCanvasRenderingContext2D>GridDrawEngine.cacheCanvas.getContext('2d');
+		GridDrawEngine.ctx.imageSmoothingEnabled = false;
 	}
 
 	public static cacheReset(): void {
@@ -48,8 +54,7 @@ export class GridDrawEngine {
 				GridDrawEngine.cacheZoom !== camera.zoom
 			) {
 				// Draw from scratch
-				let cacheCanvas: OffscreenCanvas,
-					ctx: OffscreenCanvasRenderingContext2D,
+				let ctx: OffscreenCanvasRenderingContext2D = GridDrawEngine.ctx,
 					gEff: number,
 					gInPh: number = camera.gInPh,
 					gInPw: number = camera.gInPw,
@@ -63,9 +68,10 @@ export class GridDrawEngine {
 					windowPw: number = camera.windowPw;
 
 				// Canvas
-				cacheCanvas = new OffscreenCanvas(windowPw, windowPh);
-				ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
-				ctx.imageSmoothingEnabled = false;
+				if (GridDrawEngine.cacheCanvas.height !== windowPh || GridDrawEngine.cacheCanvas.width !== windowPw) {
+					GridDrawEngine.cacheCanvas.height = windowPh;
+					GridDrawEngine.cacheCanvas.width = windowPw;
+				}
 
 				// Perimeter
 				ctx.beginPath();
@@ -76,23 +82,23 @@ export class GridDrawEngine {
 
 				// Horizontal
 				for (let g = 0; g < viewportGhEff; g++) {
-					gEff = g * gInPh - viewportPyEff;
+					gEff = (g * gInPh - viewportPyEff) | 0;
 					ctx.moveTo(0, gEff);
 					ctx.lineTo(windowPw, gEff);
-					ctx.fillText(String(Math.floor(g + viewportGy)).padStart(3, ' '), 5 * gInPw, gEff);
+					ctx.fillText(String((g + viewportGy) | 0), 5 * gInPw, gEff);
 				}
 
 				// Vertical
 				for (let g = 0; g < viewportGwEff; g++) {
-					gEff = g * gInPw - viewportPxEff;
+					gEff = (g * gInPw - viewportPxEff) | 0;
 					ctx.moveTo(gEff, 0);
 					ctx.lineTo(gEff, windowPh);
-					ctx.fillText(String(Math.floor(g + viewportGx - 0.001)).padStart(3, ' '), gEff, 5 * gInPh);
+					ctx.fillText(String((g + viewportGx - 0.001) | 0), gEff, 5 * gInPh);
 				}
 				ctx.stroke();
 
 				// Cache it
-				GridDrawEngine.cache = cacheCanvas.transferToImageBitmap();
+				GridDrawEngine.cache = GridDrawEngine.cacheCanvas.transferToImageBitmap();
 				GridDrawEngine.cacheHashGx = camera.gx;
 				GridDrawEngine.cacheHashGy = camera.gy;
 				GridDrawEngine.cacheHashPh = windowPh;
