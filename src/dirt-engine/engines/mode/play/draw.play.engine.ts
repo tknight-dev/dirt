@@ -1,6 +1,7 @@
 import { Camera } from '../../../models/camera.model';
 import { ImageBlockDrawEngine } from '../../../draw/image-block.draw.engine';
 import { MapActive } from '../../../models/map.model';
+import { UnderlayDrawEngine } from '../../../draw/underlay.draw.engine';
 
 /**
  * @author tknight-dev
@@ -50,6 +51,21 @@ export class DrawPlayEngine {
 			console.error('DrawPlayEngine > start: not initialized');
 			return;
 		}
+		let camera: Camera = DrawPlayEngine.mapActiveCamera;
+
+		/*
+		 * Clear canvas
+		 */
+		// DrawEditEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxBackground.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxForeground.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxPrimary.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxSecondary.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxOverlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxVanishing.clearRect(0, 0, camera.windowPw, camera.windowPh);
+
+		// Draw
+		UnderlayDrawEngine.start();
 		ImageBlockDrawEngine.start();
 	}
 

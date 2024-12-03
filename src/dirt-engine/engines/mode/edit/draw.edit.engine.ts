@@ -4,6 +4,7 @@ import { GridDrawEngine } from '../../../draw/grid.draw.engine';
 import { ImageBlockDrawEngine } from '../../../draw/image-block.draw.engine';
 import { MapActive } from '../../../models/map.model';
 import { MapDrawEngine } from '../../../draw/map.draw.engine';
+import { UnderlayDrawEngine } from '../../../draw/underlay.draw.engine';
 
 /**
  * @author tknight-dev
@@ -57,7 +58,7 @@ export class DrawEditEngine {
 		/*
 		 * Clear canvas
 		 */
-		DrawEditEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		// DrawEditEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxBackground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxForeground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxPrimary.clearRect(0, 0, camera.windowPw, camera.windowPh);
@@ -66,6 +67,7 @@ export class DrawEditEngine {
 		DrawEditEngine.ctxVanishing.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 		// Draw
+		UnderlayDrawEngine.start();
 		ImageBlockDrawEngine.start();
 		GridDrawEngine.start();
 		CameraDrawEngine.start();

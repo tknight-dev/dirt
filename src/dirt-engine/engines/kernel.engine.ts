@@ -15,6 +15,7 @@ import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MouseAction, MouseCmd } from './mouse.engine';
 import { TouchAction, TouchCmd } from './touch.engine';
+import { UnderlayDrawEngine } from '../draw/underlay.draw.engine';
 import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings } from '../engines/buses/video.model.bus';
 
 /**
@@ -72,6 +73,7 @@ export class KernelEngine {
 		await GridDrawEngine.initialize(ctxOverlay);
 		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxPrimary, ctxSecondary, ctxVanishing);
 		await MapDrawEngine.initialize(ctxOverlay);
+		await UnderlayDrawEngine.initialize(ctxUnderlay);
 	}
 
 	private static tmpH: any;
@@ -229,6 +231,7 @@ export class KernelEngine {
 	public static async draw(draw: VideoBusInputCmdGameModeEditDraw): Promise<void> {
 		GridDrawEngine.setEnable(draw.grid);
 		ImageBlockDrawEngine.setVanishingEnable(draw.vanishingEnable);
+		UnderlayDrawEngine.setEditing(draw.editing);
 	}
 
 	public static async historyUpdate(mapActive: MapActive): Promise<void> {
@@ -250,6 +253,7 @@ export class KernelEngine {
 		ImageBlockDrawEngine.setMapActive(mapActive);
 		LightingEngine.setMapActive(mapActive);
 		MapDrawEngine.setMapActive(mapActive);
+		UnderlayDrawEngine.setMapActive(mapActive);
 
 		// Extended
 		KernelEngine.cacheResets(false);
@@ -318,6 +322,7 @@ export class KernelEngine {
 
 		// Last
 		await KernelEngine.cacheResets(true);
+		UnderlayDrawEngine.setDimensions(KernelEngine.ctxDimensionHeight, KernelEngine.ctxDimensionWidth);
 
 		KernelEngine.framesInterval = setInterval(() => {
 			let frames: number = KernelEngine.frames;
@@ -352,6 +357,8 @@ export class KernelEngine {
 		if (KernelEngine.mapActive) {
 			CameraEngine.dimensions(height, width);
 		}
+
+		UnderlayDrawEngine.setDimensions(height, width);
 	}
 
 	public static setModeEdit(modeEdit: boolean): void {

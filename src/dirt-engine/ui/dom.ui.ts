@@ -3102,7 +3102,6 @@ export class DomUI {
 
 		option = document.createElement('option');
 		option.innerText = '40';
-		option.selected = true;
 		option.value = String(VideoBusInputCmdSettingsFPS._40);
 		select.appendChild(option);
 

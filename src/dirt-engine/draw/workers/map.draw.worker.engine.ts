@@ -159,7 +159,7 @@ class MapDrawWorkerEngine {
 		LightingEngine.setTimeForced(data.forced);
 	}
 
-	protected static outputBitmap(image: ImageBitmap): void {
+	private static outputBitmap(image: ImageBitmap): void {
 		(<any>MapDrawWorkerEngine.self).postMessage(image, [image]);
 	}
 

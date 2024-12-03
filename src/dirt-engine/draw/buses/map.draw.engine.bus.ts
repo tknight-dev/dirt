@@ -1,8 +1,7 @@
 import { AssetEngine } from '../../engines/asset.engine';
 import { Camera } from '../../models/camera.model';
 import { Grid, GridConfig } from '../../models/grid.model';
-import { MapDrawEngine } from '../map.draw.engine';
-import { MapDrawBusInputCmd, MapDrawBusInputPlayload, MapDrawBusInputPlayloadAsset } from './map.draw.model.bus';
+import { MapDrawBusInputCmd, MapDrawBusInputPlayloadAsset } from './map.draw.model.bus';
 
 /**
  * @author tknight-dev

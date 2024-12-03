@@ -7,6 +7,7 @@ import { LightingCalcBusOutputDecompressed } from '../calc/buses/lighting.calc.e
 import { MapActive } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { MapDrawBusInputPlayloadAsset } from '../draw/buses/map.draw.model.bus';
+import { UnderlayDrawEngineBus } from '../draw/buses/underlay.draw.engine.bus';
 import { UtilEngine } from './util.engine';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../engines/buses/video.model.bus';
 
@@ -274,6 +275,7 @@ export class LightingEngine {
 						LightingEngine.lightingByHashByGridPrevious = undefined;
 					}
 					LightingCalcEngineBus.outputHourPreciseOfDayEff(LightingEngine.hourPreciseOfDayEff);
+					UnderlayDrawEngineBus.outputTime(LightingEngine.hourPreciseOfDayEff);
 				}
 			});
 		}
