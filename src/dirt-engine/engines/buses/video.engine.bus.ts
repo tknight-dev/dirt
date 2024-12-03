@@ -281,7 +281,7 @@ export class VideoEngineBus {
 						break;
 					case VideoBusOutputCmd.STATUS_INITIALIZED:
 						videoBusWorkerStatusInitialized = <VideoBusWorkerStatusInitialized>videoBusWorkerPayload.data;
-						VideoEngineBus.callbackStatusInitialized(videoBusWorkerStatusInitialized.durationInMs);
+						VideoEngineBus.callbackStatusInitialized(Math.round(videoBusWorkerStatusInitialized.durationInMs * 1000) / 1000);
 
 						setTimeout(() => {
 							// This possibly resolves screen size issues on first boot

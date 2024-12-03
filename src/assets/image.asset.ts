@@ -568,6 +568,66 @@ let imageManifest: AssetImage[] = [
 	{
 		gHeight: 1,
 		gWidth: 1,
+		id: 'RUBBLE',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/rubble_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/rubble_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/rubble_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
+		id: 'SAND',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/sand_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/sand_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/sand_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
 		id: 'SNOW',
 		meta: {
 			author: 'tknight-dev',
@@ -591,6 +651,36 @@ let imageManifest: AssetImage[] = [
 				collection: AssetCollection.SHARED,
 				quality: AssetImageSrcQuality.HIGH,
 				src: 'images/grid-objects/solids/snow_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
+		id: 'STONE_DARK',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/stone_dark_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/stone_dark_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/stone_dark_64_64.webp',
 			},
 		],
 		type: AssetImageType.GRID_BLOCK_SOLID,
@@ -704,6 +794,66 @@ let imageManifest: AssetImage[] = [
 			},
 		],
 		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
+		id: 'WOOD',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/wood_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/wood_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/wood_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
+		id: 'WOOD_ROTATED',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/solids/wood_rotated_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/solids/wood_rotated_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/solids/wood_rotated_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 ];
 

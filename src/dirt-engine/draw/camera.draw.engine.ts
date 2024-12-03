@@ -1,5 +1,4 @@
 import { Camera } from '../models/camera.model';
-import { Grid } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
 import { UtilEngine } from '../engines/util.engine';
 
@@ -22,8 +21,6 @@ export class CameraDrawEngine {
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
-	// private static count: number = 0;
-	// private static sum: number = 0;
 
 	public static async initialize(ctxPrimary: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (CameraDrawEngine.initialized) {
@@ -44,7 +41,6 @@ export class CameraDrawEngine {
 	}
 
 	public static start(): void {
-		//let start: number = performance.now();
 		let camera: Camera = CameraDrawEngine.mapActiveCamera,
 			sizeEff: number = 0;
 

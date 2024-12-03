@@ -13,8 +13,6 @@ import {
 	GridObjectType,
 	GridObject,
 	GridImageBlock,
-	GridImageBlockLiquid,
-	GridObjectActive,
 } from '../../models/grid.model';
 import {
 	LightingCalcBusInputCmd,
@@ -64,6 +62,7 @@ self.onmessage = (event: MessageEvent) => {
 };
 
 class LightingCalcWorkerEngine {
+	private static calcIntervalInMs: number = 10;
 	private static flashes: DoubleLinkedList<LightingCalcBusInputPlayloadFlash> = new DoubleLinkedList<LightingCalcBusInputPlayloadFlash>();
 	private static gridActiveId: string;
 	private static grids: { [key: string]: Grid };
@@ -579,7 +578,7 @@ class LightingCalcWorkerEngine {
 			} catch (error: any) {
 				//console.error('LightingCalcWorkerEngine > _calc: error', error);
 			}
-		}, 10);
+		}, LightingCalcWorkerEngine.calcIntervalInMs);
 	}
 
 	/**

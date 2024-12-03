@@ -1,6 +1,5 @@
 import { Camera } from '../models/camera.model';
 import { MapActive } from '../models/map.model';
-import { UtilEngine } from '../engines/util.engine';
 
 /**
  * Known: grid number can flicker off by one due to rounding issue
@@ -19,8 +18,6 @@ export class GridDrawEngine {
 	private static enable: boolean = true;
 	private static initialized: boolean;
 	private static mapActiveCamera: Camera;
-	// private static count: number = 0;
-	// private static sum: number = 0;
 
 	public static async initialize(ctxOverlay: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (GridDrawEngine.initialized) {
@@ -40,8 +37,6 @@ export class GridDrawEngine {
 	}
 
 	public static start(): void {
-		//let start: number = performance.now();
-
 		let camera: Camera = GridDrawEngine.mapActiveCamera;
 
 		if (GridDrawEngine.enable) {
@@ -107,10 +102,6 @@ export class GridDrawEngine {
 
 			GridDrawEngine.ctxOverlay.drawImage(GridDrawEngine.cache, 0, 0);
 		}
-
-		// MapDrawEngine.count++;
-		// MapDrawEngine.sum += performance.now() - start;
-		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
 	}
 
 	public static setEnable(enable: boolean) {

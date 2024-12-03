@@ -62,7 +62,6 @@ self.onmessage = (event: MessageEvent) => {
 };
 
 class MapDrawWorkerEngine {
-	private static busy: boolean;
 	private static canvas: OffscreenCanvas;
 	private static canvasTmp: OffscreenCanvas;
 	private static canvasTmpGh: number = 1080;
@@ -70,6 +69,7 @@ class MapDrawWorkerEngine {
 	private static camera: MapDrawBusInputPlayloadCamera;
 	private static ctx: OffscreenCanvasRenderingContext2D;
 	private static ctxTmp: OffscreenCanvasRenderingContext2D;
+	private static drawIntervalInMs: number = 1000;
 	private static gridActiveId: string;
 	private static grids: { [key: string]: Grid };
 	private static gridConfigs: { [key: string]: GridConfig };
@@ -323,7 +323,7 @@ class MapDrawWorkerEngine {
 										continue;
 									}
 
-									drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+									drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
 
 									for (k in complexes) {
 										gy = complexes[k].value;
@@ -351,26 +351,26 @@ class MapDrawWorkerEngine {
 												extendedHash[gridImageBlock.hash] = null;
 												if (gx !== <number>gridImageBlock.gx) {
 													gx = <number>gridImageBlock.gx;
-													drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+													drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
 												}
 												gy = <number>gridImageBlock.gy;
 											}
 										} else {
 											if (gx !== <number>gridImageBlock.gx) {
 												gx = <number>gridImageBlock.gx;
-												drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+												drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
 											}
 										}
 
 										// Cache calculations
-										drawGy = Math.round((gy - gHeight) * resolutionMultiple);
+										drawGy = Math.round((gy - gHeight) * resolutionMultiple * 1000) / 1000;
 										if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 											gSizeHPrevious = gridImageBlock.gSizeH;
-											gInPhEff = resolutionMultiple * gridImageBlock.gSizeH;
+											gInPhEff = Math.round(resolutionMultiple * gridImageBlock.gSizeH * 1000) / 1000;
 										}
 										if (gSizeWPrevious !== gridImageBlock.gSizeW) {
 											gSizeWPrevious = gridImageBlock.gSizeW;
-											gInPwEff = resolutionMultiple * gridImageBlock.gSizeW;
+											gInPwEff = Math.round(resolutionMultiple * gridImageBlock.gSizeW * 1000) / 1000;
 										}
 
 										// Transforms
@@ -403,7 +403,7 @@ class MapDrawWorkerEngine {
 											continue;
 										}
 
-										drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+										drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
 
 										for (k in complexes) {
 											gridLight = lightHashes[complexes[k].hash];
@@ -433,19 +433,19 @@ class MapDrawWorkerEngine {
 
 													if (gx !== <number>gridLight.gx) {
 														gx = <number>gridLight.gx;
-														drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+														drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
 													}
 													gy = <number>gridLight.gy;
 												}
 											} else {
 												if (gx !== <number>gridLight.gx) {
 													gx = <number>gridLight.gx;
-													drawGx = Math.round((gx - gWidth) * resolutionMultiple);
+													drawGx = Math.round((gx - gWidth) * resolutionMultiple * 1000) / 1000;
 												}
 											}
 
 											// Cache calculations
-											drawGy = Math.round((gy - gHeight) * resolutionMultiple);
+											drawGy = Math.round((gy - gHeight) * resolutionMultiple * 1000) / 1000;
 											if (gSizeHPrevious !== gridLight.gSizeH) {
 												gSizeHPrevious = gridLight.gSizeH;
 												gInPhEff = Math.round(resolutionMultiple * gridLight.gSizeH);
@@ -476,8 +476,8 @@ class MapDrawWorkerEngine {
 										break;
 									case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 										if (vanishingEnable) {
-											x = Math.round((camera.gx - gWidth) * resolutionMultiple);
-											y = Math.round((camera.gy - gHeight) * resolutionMultiple);
+											x = Math.round((camera.gx - gWidth) * resolutionMultiple * 1000) / 1000;
+											y = Math.round((camera.gy - gHeight) * resolutionMultiple * 1000) / 1000;
 
 											gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
 											gradient.addColorStop(0, 'white');
@@ -513,8 +513,8 @@ class MapDrawWorkerEngine {
 									0,
 									canvasTmpGwEff,
 									canvasTmpGhEff,
-									Math.round(canvasWidth * (gWidth / gWidthMax)),
-									Math.round(canvasHeight * (gHeight / gHeightMax)),
+									Math.round(canvasWidth * (gWidth / gWidthMax) * 1000) / 1000,
+									Math.round(canvasHeight * (gHeight / gHeightMax) * 1000) / 1000,
 									scaledImageWidth,
 									scaledImageHeight,
 								);
@@ -528,6 +528,6 @@ class MapDrawWorkerEngine {
 					//console.error('e', e);
 				}
 			}
-		}, 1000);
+		}, MapDrawWorkerEngine.drawIntervalInMs);
 	}
 }

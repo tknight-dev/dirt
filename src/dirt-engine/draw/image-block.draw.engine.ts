@@ -221,7 +221,7 @@ export class ImageBlockDrawEngine {
 						continue;
 					}
 
-					drawGx = Math.round((gx - startGx) * gInPw);
+					drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 
 					for (k in complexes) {
 						gy = complexes[k].value;
@@ -250,26 +250,26 @@ export class ImageBlockDrawEngine {
 
 								if (gx !== <number>gridImageBlock.gx) {
 									gx = <number>gridImageBlock.gx;
-									drawGx = Math.round((gx - startGx) * gInPw);
+									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 								}
 								gy = <number>gridImageBlock.gy;
 							}
 						} else {
 							if (gx !== <number>gridImageBlock.gx) {
 								gx = <number>gridImageBlock.gx;
-								drawGx = Math.round((gx - startGx) * gInPw);
+								drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 							}
 						}
 
 						// Cache calculations
-						drawGy = Math.round((gy - startGy) * gInPh);
+						drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
 						if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 							gSizeHPrevious = gridImageBlock.gSizeH;
-							gInPhEff = Math.round(gInPh * gSizeHPrevious + 1);
+							gInPhEff = Math.round((gInPh * gSizeHPrevious + 1) * 1000) / 1000;
 						}
 						if (gSizeWPrevious !== gridImageBlock.gSizeW) {
 							gSizeWPrevious = gridImageBlock.gSizeW;
-							gInPwEff = Math.round(gInPw * gSizeWPrevious + 1);
+							gInPwEff = Math.round((gInPw * gSizeWPrevious + 1) * 1000) / 1000;
 						}
 
 						// Transforms
@@ -303,11 +303,11 @@ export class ImageBlockDrawEngine {
 									ctx.drawImage(
 										imageBitmap,
 										0,
-										Math.round(imageBitmap.height / 2),
+										Math.round((imageBitmap.height / 2) * 1000) / 1000,
 										imageBitmap.width,
 										imageBitmap.height,
 										0,
-										Math.round(gInPhEff / 2),
+										Math.round((gInPhEff / 2) * 1000) / 1000,
 										gInPwEff,
 										gInPhEff,
 									);
@@ -317,11 +317,11 @@ export class ImageBlockDrawEngine {
 										0,
 										0,
 										imageBitmap.width,
-										Math.round(imageBitmap.height / 2),
+										Math.round((imageBitmap.height / 2) * 1000) / 1000,
 										0,
 										0,
 										gInPwEff,
-										Math.round(gInPhEff / 2),
+										Math.round((gInPhEff / 2) * 1000) / 1000,
 									);
 								}
 							} else {
@@ -340,11 +340,11 @@ export class ImageBlockDrawEngine {
 										ctx.drawImage(
 											imageBitmap,
 											0,
-											Math.round(imageBitmap.height / 2),
+											Math.round((imageBitmap.height / 2) * 1000) / 1000,
 											imageBitmap.width,
 											imageBitmap.height,
 											0,
-											Math.round(gInPhEff / 2),
+											Math.round((gInPhEff / 2) * 1000) / 1000,
 											gInPwEff,
 											gInPhEff,
 										);
@@ -354,11 +354,11 @@ export class ImageBlockDrawEngine {
 											0,
 											0,
 											imageBitmap.width,
-											Math.round(imageBitmap.height / 2),
+											Math.round((imageBitmap.height / 2) * 1000) / 1000,
 											0,
 											0,
 											gInPwEff,
-											Math.round(gInPhEff / 2),
+											Math.round((gInPhEff / 2) * 1000) / 1000,
 										);
 									}
 								} else {
@@ -393,7 +393,7 @@ export class ImageBlockDrawEngine {
 							continue;
 						}
 
-						drawGx = Math.round((gx - startGx) * gInPw);
+						drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 
 						for (k in complexes) {
 							gridLight = lightHashes[complexes[k].hash];
@@ -423,26 +423,26 @@ export class ImageBlockDrawEngine {
 
 									if (gx !== <number>gridLight.gx) {
 										gx = <number>gridLight.gx;
-										drawGx = Math.round((gx - startGx) * gInPw);
+										drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 									}
 									gy = <number>gridLight.gy;
 								}
 							} else {
 								if (gx !== <number>gridLight.gx) {
 									gx = <number>gridLight.gx;
-									drawGx = Math.round((gx - startGx) * gInPw);
+									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 								}
 							}
 
 							// Cache calculations
-							drawGy = Math.round((gy - startGy) * gInPh);
+							drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
 							if (gSizeHPrevious !== gridLight.gSizeH) {
 								gSizeHPrevious = gridLight.gSizeH;
-								gInPhEff = gInPh * gSizeHPrevious + 1;
+								gInPhEff = Math.round((gInPh * gSizeHPrevious + 1) * 1000) / 1000;
 							}
 							if (gSizeWPrevious !== gridLight.gSizeW) {
 								gSizeWPrevious = gridLight.gSizeW;
-								gInPwEff = gInPw * gSizeWPrevious + 1;
+								gInPwEff = Math.round((gInPw * gSizeWPrevious + 1) * 1000) / 1000;
 							}
 
 							// Get pre-rendered asset variation based on hash
@@ -477,7 +477,7 @@ export class ImageBlockDrawEngine {
 								continue;
 							}
 
-							drawGx = Math.round((gx - startGx) * gInPw);
+							drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 
 							for (k in complexes) {
 								gridAudioBlock = audioPrimaryBlockHashes[complexes[k].hash];
@@ -490,9 +490,9 @@ export class ImageBlockDrawEngine {
 								// Calc
 								if (gx !== <number>gridAudioBlock.gx) {
 									gx = <number>gridAudioBlock.gx;
-									drawGx = Math.round((gx - startGx) * gInPw);
+									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 								}
-								drawGy = Math.round((gy - startGy) * gInPh);
+								drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
 
 								// Draw
 								audioModulation = audioModulations[gridAudioBlock.modulationId];
@@ -518,7 +518,7 @@ export class ImageBlockDrawEngine {
 								continue;
 							}
 
-							drawGx = Math.round((gx - startGx) * gInPw);
+							drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 
 							for (k in complexes) {
 								gridAudioTag = audioPrimaryTagHashes[complexes[k].hash];
@@ -531,9 +531,9 @@ export class ImageBlockDrawEngine {
 								// Calc
 								if (gx !== <number>gridAudioTag.gx) {
 									gx = <number>gridAudioTag.gx;
-									drawGx = Math.round((gx - startGx) * gInPw);
+									drawGx = Math.round((gx - startGx) * gInPw * 1000) / 1000;
 								}
-								drawGy = Math.round((gy - startGy) * gInPh);
+								drawGy = Math.round((gy - startGy) * gInPh * 1000) / 1000;
 
 								// Draw
 								if (gridAudioTag.type === GridAudioTagType.EFFECT) {
@@ -564,8 +564,8 @@ export class ImageBlockDrawEngine {
 						break;
 					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
 						if (ImageBlockDrawEngine.vanishingEnable) {
-							x = Math.round((camera.gx - startGx) * gInPw);
-							y = Math.round((camera.gy - startGy) * gInPh);
+							x = Math.round((camera.gx - startGx) * gInPw * 1000) / 1000;
+							y = Math.round((camera.gy - startGy) * gInPh * 1000) / 1000;
 
 							gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
 							gradient.addColorStop(0, 'white');

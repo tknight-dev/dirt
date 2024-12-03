@@ -198,262 +198,234 @@ export class MapAudioAmbientEngine {
 			return;
 		}
 
-		//Start the request for the next frame
-		MapAudioAmbientEngine.requestFrame = requestAnimationFrame(MapAudioAmbientEngine.loop);
-		MapAudioAmbientEngine.timestampNow = performance.now();
+		try {
+			//Start the request for the next frame
+			MapAudioAmbientEngine.requestFrame = requestAnimationFrame(MapAudioAmbientEngine.loop);
+			MapAudioAmbientEngine.timestampNow = performance.now();
 
-		MapAudioAmbientEngine.timestampDelta = MapAudioAmbientEngine.timestampNow - MapAudioAmbientEngine.timestampThen;
-		if (MapAudioAmbientEngine.timestampDelta > MapAudioAmbientEngine.timingResolution) {
-			MapAudioAmbientEngine.timestampThen =
-				MapAudioAmbientEngine.timestampNow - (MapAudioAmbientEngine.timestampDelta % MapAudioAmbientEngine.timingResolution);
+			MapAudioAmbientEngine.timestampDelta = MapAudioAmbientEngine.timestampNow - MapAudioAmbientEngine.timestampThen;
+			if (MapAudioAmbientEngine.timestampDelta > MapAudioAmbientEngine.timingResolution) {
+				MapAudioAmbientEngine.timestampThen =
+					MapAudioAmbientEngine.timestampNow - (MapAudioAmbientEngine.timestampDelta % MapAudioAmbientEngine.timingResolution);
 
-			// Start
-			let activate: boolean,
-				activeAudioLightAmbient: { [key: number]: number },
-				activeAudioLightSwitchOff: { [key: number]: number },
-				activeAudioLightSwitchOn: { [key: number]: number },
-				activeAudioLightForegroundAmbient: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundAmbient,
-				activeAudioLightForegroundSwitchOff: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundSwitchOff,
-				activeAudioLightForegroundSwitchOn: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundSwitchOn,
-				activeAudioLightPrimaryAmbient: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimaryAmbient,
-				activeAudioLightPrimarySwitchOff: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimarySwitchOff,
-				activeAudioLightPrimarySwitchOn: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimarySwitchOn,
-				activeAudioTag: { [key: number]: number } = MapAudioAmbientEngine.activeAudioTag,
-				audioBufferId: number | undefined,
-				audioBufferIdAmbient: number | undefined,
-				audioBufferIdSwitchOff: number | undefined,
-				audioBufferIdSwitchOn: number | undefined,
-				audioOptions: AudioOptions,
-				mapActive: MapActive = MapAudioAmbientEngine.mapActive,
-				audioPrimaryBlocks: GridBlockTable<GridAudioBlock> = mapActive.gridActive.audioPrimaryBlocks,
-				audioPrimaryTags: GridBlockTable<GridAudioTag> = mapActive.gridActive.audioPrimaryTags,
-				audioPrimaryTagsHashes: { [key: number]: GridAudioTag } = audioPrimaryTags.hashes,
-				cameraHash: number = UtilEngine.gridHashTo(mapActive.camera.gx, mapActive.camera.gy),
-				complex: GridBlockTableComplex,
-				distance: number = 0,
-				distanceGx: number,
-				distanceGy: number,
-				gRadius: number | undefined,
-				gridAudioBlock: GridAudioBlock,
-				gridAudioTag: GridAudioTag,
-				gridLight: GridLight,
-				gx: number = mapActive.camera.gx,
-				gxString: string,
-				gy: number = mapActive.camera.gy,
-				hash: number,
-				i: string,
-				j: string,
-				lightForeground: boolean,
-				lightHashes: { [key: number]: GridLight },
-				lightHashesGy: GridBlockTableComplex[],
-				lightHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
-				lightForegroundMeta: { [key: number]: LightMeta } = MapAudioAmbientEngine.lightForegroundMetaByGrid[mapActive.gridActiveId],
-				lightForegroundTagStates: { [key: number]: LightState } =
-					MapAudioAmbientEngine.lightForegroundTagStatesByGrid[mapActive.gridActiveId],
-				lightMeta: LightMeta,
-				lightNight: boolean = UtilEngine.isLightNight(mapActive.hourOfDayEff + 1),
-				lightPrimaryMeta: { [key: number]: LightMeta } = MapAudioAmbientEngine.lightPrimaryMetaByGrid[mapActive.gridActiveId],
-				lightPrimaryTagStates: { [key: number]: LightState } =
-					MapAudioAmbientEngine.lightPrimaryTagStatesByGrid[mapActive.gridActiveId],
-				lights: GridBlockTable<GridLight>[] = [mapActive.gridActive.lightsForeground, mapActive.gridActive.lightsPrimary],
-				lightState: LightState,
-				pan: number,
-				panIgnored: boolean,
-				panOffset: number,
-				position: TagMeta,
-				state: State,
-				tagHashesGy: GridBlockTableComplex[],
-				tagHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
-				tagStates: { [key: number]: TagState } = MapAudioAmbientEngine.tagStatesByGrid[mapActive.gridActiveId],
-				tagMeta: { [key: number]: TagMeta } = MapAudioAmbientEngine.tagMetaByGrid[mapActive.gridActiveId],
-				timingResolution: number = MapAudioAmbientEngine.timingResolution,
-				viewportGxStart: number = mapActive.camera.viewportGx,
-				viewportGxStop: number = viewportGxStart + Math.round((mapActive.camera.viewportPw / mapActive.camera.gInPw) * 1000) / 1000,
-				volumePercentage: number,
-				volumePercentageMax: number = MapAudioAmbientEngine.volumePercentage;
+				// Start
+				let activate: boolean,
+					activeAudioLightAmbient: { [key: number]: number },
+					activeAudioLightSwitchOff: { [key: number]: number },
+					activeAudioLightSwitchOn: { [key: number]: number },
+					activeAudioLightForegroundAmbient: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightForegroundAmbient,
+					activeAudioLightForegroundSwitchOff: { [key: number]: number } =
+						MapAudioAmbientEngine.activeAudioLightForegroundSwitchOff,
+					activeAudioLightForegroundSwitchOn: { [key: number]: number } =
+						MapAudioAmbientEngine.activeAudioLightForegroundSwitchOn,
+					activeAudioLightPrimaryAmbient: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimaryAmbient,
+					activeAudioLightPrimarySwitchOff: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimarySwitchOff,
+					activeAudioLightPrimarySwitchOn: { [key: number]: number } = MapAudioAmbientEngine.activeAudioLightPrimarySwitchOn,
+					activeAudioTag: { [key: number]: number } = MapAudioAmbientEngine.activeAudioTag,
+					audioBufferId: number | undefined,
+					audioBufferIdAmbient: number | undefined,
+					audioBufferIdSwitchOff: number | undefined,
+					audioBufferIdSwitchOn: number | undefined,
+					audioOptions: AudioOptions,
+					mapActive: MapActive = MapAudioAmbientEngine.mapActive,
+					audioPrimaryBlocks: GridBlockTable<GridAudioBlock> = mapActive.gridActive.audioPrimaryBlocks,
+					audioPrimaryTags: GridBlockTable<GridAudioTag> = mapActive.gridActive.audioPrimaryTags,
+					audioPrimaryTagsHashes: { [key: number]: GridAudioTag } = audioPrimaryTags.hashes,
+					cameraHash: number = UtilEngine.gridHashTo(mapActive.camera.gx, mapActive.camera.gy),
+					complex: GridBlockTableComplex,
+					distance: number = 0,
+					distanceGx: number,
+					distanceGy: number,
+					gRadius: number | undefined,
+					gridAudioBlock: GridAudioBlock,
+					gridAudioTag: GridAudioTag,
+					gridLight: GridLight,
+					gx: number = mapActive.camera.gx,
+					gxString: string,
+					gy: number = mapActive.camera.gy,
+					hash: number,
+					i: string,
+					j: string,
+					lightForeground: boolean,
+					lightHashes: { [key: number]: GridLight },
+					lightHashesGy: GridBlockTableComplex[],
+					lightHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
+					lightForegroundMeta: { [key: number]: LightMeta } =
+						MapAudioAmbientEngine.lightForegroundMetaByGrid[mapActive.gridActiveId],
+					lightForegroundTagStates: { [key: number]: LightState } =
+						MapAudioAmbientEngine.lightForegroundTagStatesByGrid[mapActive.gridActiveId],
+					lightMeta: LightMeta,
+					lightNight: boolean = UtilEngine.isLightNight(mapActive.hourOfDayEff + 1),
+					lightPrimaryMeta: { [key: number]: LightMeta } = MapAudioAmbientEngine.lightPrimaryMetaByGrid[mapActive.gridActiveId],
+					lightPrimaryTagStates: { [key: number]: LightState } =
+						MapAudioAmbientEngine.lightPrimaryTagStatesByGrid[mapActive.gridActiveId],
+					lights: GridBlockTable<GridLight>[] = [mapActive.gridActive.lightsForeground, mapActive.gridActive.lightsPrimary],
+					lightState: LightState,
+					pan: number,
+					panIgnored: boolean,
+					panOffset: number,
+					position: TagMeta,
+					state: State,
+					tagHashesGy: GridBlockTableComplex[],
+					tagHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
+					tagStates: { [key: number]: TagState } = MapAudioAmbientEngine.tagStatesByGrid[mapActive.gridActiveId],
+					tagMeta: { [key: number]: TagMeta } = MapAudioAmbientEngine.tagMetaByGrid[mapActive.gridActiveId],
+					timingResolution: number = MapAudioAmbientEngine.timingResolution,
+					viewportGxStart: number = mapActive.camera.viewportGx,
+					viewportGxStop: number =
+						viewportGxStart + Math.round((mapActive.camera.viewportPw / mapActive.camera.gInPw) * 1000) / 1000,
+					volumePercentage: number,
+					volumePercentageMax: number = MapAudioAmbientEngine.volumePercentage;
 
-			// Offset pan when camera isn't perfectly center
-			if (viewportGxStart === 0 || viewportGxStart + mapActive.camera.viewportGwEff === mapActive.gridConfigActive.gWidth) {
-				panOffset = Math.max(
-					-1,
-					Math.min(1, Math.round(UtilEngine.scale(mapActive.camera.gx, viewportGxStop, viewportGxStart, -1, 1) * 1000) / 1000),
-				);
-			} else {
-				panOffset = 0;
-			}
-
-			/**
-			 * Lights
-			 */
-			for (i in lights) {
-				lightHashes = lights[i].hashes;
-				lightHashesGyByGx = <any>lights[i].hashesGyByGx;
-
-				if (i === '0') {
-					lightForeground = true;
+				// Offset pan when camera isn't perfectly center
+				if (viewportGxStart === 0 || viewportGxStart + mapActive.camera.viewportGwEff === mapActive.gridConfigActive.gWidth) {
+					panOffset = Math.max(
+						-1,
+						Math.min(
+							1,
+							Math.round(UtilEngine.scale(mapActive.camera.gx, viewportGxStop, viewportGxStart, -1, 1) * 1000) / 1000,
+						),
+					);
 				} else {
-					lightForeground = false;
+					panOffset = 0;
 				}
 
-				for (gxString in lightHashesGyByGx) {
-					lightHashesGy = lightHashesGyByGx[gxString];
+				/**
+				 * Lights
+				 */
+				for (i in lights) {
+					lightHashes = lights[i].hashes;
+					lightHashesGyByGx = <any>lights[i].hashesGyByGx;
 
-					for (j in lightHashesGy) {
-						complex = lightHashesGy[j];
-						hash = complex.hash;
+					if (i === '0') {
+						lightForeground = true;
+					} else {
+						lightForeground = false;
+					}
 
-						gridLight = lightHashes[hash];
-						gRadius = gridLight.gRadiusAudioEffect;
+					for (gxString in lightHashesGyByGx) {
+						lightHashesGy = lightHashesGyByGx[gxString];
 
-						// Select source
-						if (lightForeground) {
-							activeAudioLightAmbient = activeAudioLightForegroundAmbient;
-							activeAudioLightSwitchOff = activeAudioLightForegroundSwitchOff;
-							activeAudioLightSwitchOn = activeAudioLightForegroundSwitchOn;
+						for (j in lightHashesGy) {
+							complex = lightHashesGy[j];
+							hash = complex.hash;
 
-							audioBufferIdAmbient = activeAudioLightForegroundAmbient[hash];
-							audioBufferIdSwitchOff = activeAudioLightForegroundSwitchOff[hash];
-							audioBufferIdSwitchOn = activeAudioLightForegroundSwitchOn[hash];
+							gridLight = lightHashes[hash];
+							gRadius = gridLight.gRadiusAudioEffect;
 
-							lightMeta = lightForegroundMeta[hash];
-							if (!lightMeta) {
-								// calc didn't pick it up
-								continue;
-							}
+							// Select source
+							if (lightForeground) {
+								activeAudioLightAmbient = activeAudioLightForegroundAmbient;
+								activeAudioLightSwitchOff = activeAudioLightForegroundSwitchOff;
+								activeAudioLightSwitchOn = activeAudioLightForegroundSwitchOn;
 
-							if (lightForegroundTagStates[hash] === undefined) {
-								lightForegroundTagStates[hash] = <any>{};
-							}
-							lightState = lightForegroundTagStates[hash];
-							state = lightForegroundTagStates[hash].ambient;
-						} else {
-							activeAudioLightAmbient = activeAudioLightPrimaryAmbient;
-							activeAudioLightSwitchOff = activeAudioLightPrimarySwitchOff;
-							activeAudioLightSwitchOn = activeAudioLightPrimarySwitchOn;
+								audioBufferIdAmbient = activeAudioLightForegroundAmbient[hash];
+								audioBufferIdSwitchOff = activeAudioLightForegroundSwitchOff[hash];
+								audioBufferIdSwitchOn = activeAudioLightForegroundSwitchOn[hash];
 
-							audioBufferIdAmbient = activeAudioLightPrimaryAmbient[hash];
-							audioBufferIdSwitchOff = activeAudioLightPrimarySwitchOff[hash];
-							audioBufferIdSwitchOn = activeAudioLightPrimarySwitchOn[hash];
-
-							lightMeta = lightPrimaryMeta[hash];
-							if (!lightMeta) {
-								// calc didn't pick it up
-								continue;
-							}
-
-							if (lightPrimaryTagStates[hash] === undefined) {
-								lightPrimaryTagStates[hash] = <any>{};
-							}
-							lightState = lightPrimaryTagStates[hash];
-							state = lightPrimaryTagStates[hash].ambient;
-						}
-
-						// Is effected by distance?
-						if (gRadius) {
-							distanceGx = gridLight.gx + gridLight.gSizeW / 2 - gx;
-							distanceGy = gridLight.gy + gridLight.gSizeH / 2 - gy;
-							distance = Math.round(Math.sqrt(distanceGx * distanceGx + distanceGy * distanceGy) * 1000) / 1000;
-
-							if (distance > gRadius) {
-								// stop if currently playing
-								if (audioBufferId !== undefined) {
-									AudioEngine.controlStop(audioBufferIdAmbient);
-									AudioEngine.controlStop(audioBufferIdSwitchOff);
-									AudioEngine.controlStop(audioBufferIdSwitchOn);
-									continue;
-								}
-							}
-
-							volumePercentage = Math.round(UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0) * 1000) / 1000;
-						} else {
-							volumePercentage = 1;
-						}
-
-						pan =
-							Math.round(
-								Math.max(
-									-1,
-									Math.min(1, UtilEngine.scale(gridLight.gx, viewportGxStop, viewportGxStart, 1, -1) + panOffset),
-								) * 1000,
-							) / 1000;
-						audioOptions = {
-							pan: pan,
-							volumePercentage: volumePercentage,
-						};
-						gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
-						if (gridAudioBlock) {
-							audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
-						}
-
-						// Already playing? AMBIENT
-						if (audioBufferIdAmbient !== undefined) {
-							if (gRadius && state.volumePercentage !== volumePercentage) {
-								// Update audio volume by fading the duration of this interval for smooth audio voluming
-								if (!AudioEngine.controlFade(audioBufferIdAmbient, timingResolution, volumePercentage)) {
-									// Audio ended before volume could be adjusted
-									delete activeAudioLightAmbient[hash];
+								lightMeta = lightForegroundMeta[hash];
+								if (!lightMeta) {
+									// calc didn't pick it up
 									continue;
 								}
 
-								state.volumePercentage = volumePercentage;
-							}
+								if (lightForegroundTagStates[hash] === undefined) {
+									lightForegroundTagStates[hash] = <any>{};
+								}
+								lightState = lightForegroundTagStates[hash];
+								state = lightForegroundTagStates[hash].ambient;
+							} else {
+								activeAudioLightAmbient = activeAudioLightPrimaryAmbient;
+								activeAudioLightSwitchOff = activeAudioLightPrimarySwitchOff;
+								activeAudioLightSwitchOn = activeAudioLightPrimarySwitchOn;
 
-							if (state.pan !== pan) {
-								// Update audio pan by panning the duration of this interval for smooth audio voluming
-								if (!AudioEngine.controlPan(audioBufferIdAmbient, timingResolution, pan)) {
-									// Audio ended before pan could be adjusted
-									delete activeAudioLightAmbient[hash];
+								audioBufferIdAmbient = activeAudioLightPrimaryAmbient[hash];
+								audioBufferIdSwitchOff = activeAudioLightPrimarySwitchOff[hash];
+								audioBufferIdSwitchOn = activeAudioLightPrimarySwitchOn[hash];
+
+								lightMeta = lightPrimaryMeta[hash];
+								if (!lightMeta) {
+									// calc didn't pick it up
 									continue;
 								}
 
-								state.pan = pan;
-							}
-						} else {
-							if (gridLight.assetIdAudioEffectAmbient) {
-								audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectAmbient, audioOptions);
-
-								if (audioBufferId) {
-									activeAudioLightAmbient[hash] = audioBufferId;
-									lightState.ambient = {
-										pan: pan,
-										volumePercentage: volumePercentage,
-									};
+								if (lightPrimaryTagStates[hash] === undefined) {
+									lightPrimaryTagStates[hash] = <any>{};
 								}
+								lightState = lightPrimaryTagStates[hash];
+								state = lightPrimaryTagStates[hash].ambient;
 							}
-						}
 
-						// Already playing? SWITCH_OFF
-						if (audioBufferIdAmbient !== undefined) {
-							if (gRadius && state.volumePercentage !== volumePercentage) {
-								// Update audio volume by fading the duration of this interval for smooth audio voluming
-								if (!AudioEngine.controlFade(audioBufferIdSwitchOff, timingResolution, volumePercentage)) {
-									// Audio ended before volume could be adjusted
-									delete activeAudioLightSwitchOff[hash];
+							// Is effected by distance?
+							if (gRadius) {
+								distanceGx = gridLight.gx + gridLight.gSizeW / 2 - gx;
+								distanceGy = gridLight.gy + gridLight.gSizeH / 2 - gy;
+								distance = Math.round(Math.sqrt(distanceGx * distanceGx + distanceGy * distanceGy) * 1000) / 1000;
+
+								if (distance > gRadius) {
+									// stop if currently playing
+									if (audioBufferId !== undefined) {
+										AudioEngine.controlStop(audioBufferIdAmbient);
+										AudioEngine.controlStop(audioBufferIdSwitchOff);
+										AudioEngine.controlStop(audioBufferIdSwitchOn);
+
+										delete activeAudioLightAmbient[hash];
+										delete activeAudioLightSwitchOff[hash];
+										delete activeAudioLightSwitchOn[hash];
+									}
 									continue;
 								}
 
-								state.volumePercentage = volumePercentage;
+								volumePercentage = Math.round(UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0) * 1000) / 1000;
+							} else {
+								volumePercentage = 1;
 							}
 
-							if (state.pan !== pan) {
-								// Update audio pan by panning the duration of this interval for smooth audio voluming
-								if (!AudioEngine.controlPan(audioBufferIdSwitchOff, timingResolution, pan)) {
-									// Audio ended before pan could be adjusted
-									delete activeAudioLightSwitchOff[hash];
-									continue;
+							pan =
+								Math.round(
+									Math.max(
+										-1,
+										Math.min(1, UtilEngine.scale(gridLight.gx, viewportGxStop, viewportGxStart, 1, -1) + panOffset),
+									) * 1000,
+								) / 1000;
+							audioOptions = {
+								pan: pan,
+								volumePercentage: volumePercentage,
+							};
+							gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
+							if (gridAudioBlock) {
+								audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
+							}
+
+							// Already playing? AMBIENT
+							if (audioBufferIdAmbient !== undefined) {
+								if (gRadius && state.volumePercentage !== volumePercentage) {
+									// Update audio volume by fading the duration of this interval for smooth audio voluming
+									if (!AudioEngine.controlFade(audioBufferIdAmbient, timingResolution, volumePercentage)) {
+										// Audio ended before volume could be adjusted
+										delete activeAudioLightAmbient[hash];
+										continue;
+									}
+
+									state.volumePercentage = volumePercentage;
 								}
 
-								state.pan = pan;
-							}
-						} else {
-							if (lightMeta.on && !lightNight) {
-								lightMeta.on = false;
+								if (state.pan !== pan) {
+									// Update audio pan by panning the duration of this interval for smooth audio voluming
+									if (!AudioEngine.controlPan(audioBufferIdAmbient, timingResolution, pan)) {
+										// Audio ended before pan could be adjusted
+										delete activeAudioLightAmbient[hash];
+										continue;
+									}
 
-								if (gridLight.assetIdAudioEffectSwitchOff) {
-									audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOff, audioOptions);
+									state.pan = pan;
+								}
+							} else {
+								if (gridLight.assetIdAudioEffectAmbient) {
+									audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectAmbient, audioOptions);
 
 									if (audioBufferId) {
-										activeAudioLightSwitchOff[hash] = audioBufferId;
+										activeAudioLightAmbient[hash] = audioBufferId;
 										lightState.ambient = {
 											pan: pan,
 											volumePercentage: volumePercentage,
@@ -461,186 +433,241 @@ export class MapAudioAmbientEngine {
 									}
 								}
 							}
-						}
 
-						// Already playing? SWITCH_ON
-						if (audioBufferIdAmbient !== undefined) {
-							if (gRadius && state.volumePercentage !== volumePercentage) {
-								// Update audio volume by fading the duration of this interval for smooth audio voluming
-								if (!AudioEngine.controlFade(audioBufferIdSwitchOff, timingResolution, volumePercentage)) {
-									// Audio ended before volume could be adjusted
-									delete activeAudioLightSwitchOff[hash];
-									continue;
+							// Already playing? SWITCH_OFF
+							if (audioBufferIdAmbient !== undefined) {
+								if (gRadius && state.volumePercentage !== volumePercentage) {
+									// Update audio volume by fading the duration of this interval for smooth audio voluming
+									if (!AudioEngine.controlFade(audioBufferIdSwitchOff, timingResolution, volumePercentage)) {
+										// Audio ended before volume could be adjusted
+										delete activeAudioLightSwitchOff[hash];
+										continue;
+									}
+
+									state.volumePercentage = volumePercentage;
 								}
 
-								state.volumePercentage = volumePercentage;
+								if (state.pan !== pan) {
+									// Update audio pan by panning the duration of this interval for smooth audio voluming
+									if (!AudioEngine.controlPan(audioBufferIdSwitchOff, timingResolution, pan)) {
+										// Audio ended before pan could be adjusted
+										delete activeAudioLightSwitchOff[hash];
+										continue;
+									}
+
+									state.pan = pan;
+								}
+							} else {
+								if (lightMeta.on && !lightNight) {
+									lightMeta.on = false;
+
+									if (gridLight.assetIdAudioEffectSwitchOff) {
+										audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOff, audioOptions);
+
+										if (audioBufferId) {
+											activeAudioLightSwitchOff[hash] = audioBufferId;
+											lightState.ambient = {
+												pan: pan,
+												volumePercentage: volumePercentage,
+											};
+										}
+									}
+								}
 							}
 
-							if (state.pan !== pan) {
-								// Update audio pan by panning the duration of this interval for smooth audio voluming
-								if (!AudioEngine.controlPan(audioBufferIdSwitchOff, timingResolution, pan)) {
-									// Audio ended before pan could be adjusted
-									delete activeAudioLightSwitchOff[hash];
-									continue;
+							// Already playing? SWITCH_ON
+							if (audioBufferIdAmbient !== undefined) {
+								if (gRadius && state.volumePercentage !== volumePercentage) {
+									// Update audio volume by fading the duration of this interval for smooth audio voluming
+									if (!AudioEngine.controlFade(audioBufferIdSwitchOff, timingResolution, volumePercentage)) {
+										// Audio ended before volume could be adjusted
+										delete activeAudioLightSwitchOff[hash];
+										continue;
+									}
+
+									state.volumePercentage = volumePercentage;
 								}
 
-								state.pan = pan;
-							}
-						} else {
-							if (!lightMeta.on && lightNight) {
-								lightMeta.on = true;
+								if (state.pan !== pan) {
+									// Update audio pan by panning the duration of this interval for smooth audio voluming
+									if (!AudioEngine.controlPan(audioBufferIdSwitchOff, timingResolution, pan)) {
+										// Audio ended before pan could be adjusted
+										delete activeAudioLightSwitchOff[hash];
+										continue;
+									}
 
-								if (gridLight.assetIdAudioEffectSwitchOn) {
-									audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOn, audioOptions);
+									state.pan = pan;
+								}
+							} else {
+								if (!lightMeta.on && lightNight) {
+									lightMeta.on = true;
 
-									if (audioBufferId) {
-										activeAudioLightSwitchOn[hash] = audioBufferId;
-										lightState.switchOn = {
-											pan: pan,
-											volumePercentage: volumePercentage,
-										};
+									if (gridLight.assetIdAudioEffectSwitchOn) {
+										audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOn, audioOptions);
+
+										if (audioBufferId) {
+											activeAudioLightSwitchOn[hash] = audioBufferId;
+											lightState.switchOn = {
+												pan: pan,
+												volumePercentage: volumePercentage,
+											};
+										}
 									}
 								}
 							}
 						}
 					}
 				}
-			}
 
-			/**
-			 * Audio Blocks/Tags
-			 */
-			for (gxString in tagHashesGyByGx) {
-				tagHashesGy = tagHashesGyByGx[gxString];
+				/**
+				 * Audio Blocks/Tags
+				 */
+				for (gxString in tagHashesGyByGx) {
+					tagHashesGy = tagHashesGyByGx[gxString];
 
-				for (i in tagHashesGy) {
-					complex = tagHashesGy[i];
-					hash = complex.hash;
+					for (i in tagHashesGy) {
+						complex = tagHashesGy[i];
+						hash = complex.hash;
 
-					audioBufferId = activeAudioTag[hash];
-					gridAudioTag = audioPrimaryTagsHashes[hash];
-					gRadius = gridAudioTag.gRadius;
-					panIgnored = !!gridAudioTag.panIgnored;
+						audioBufferId = activeAudioTag[hash];
+						gridAudioTag = audioPrimaryTagsHashes[hash];
+						gRadius = gridAudioTag.gRadius;
+						panIgnored = !!gridAudioTag.panIgnored;
 
-					// Is effected by distance?
-					if (gRadius) {
-						distanceGx = gridAudioTag.gx - gx + 0.5; // .5 centers the sound in the grid box
-						distanceGy = gridAudioTag.gy - gy + 0.5; // .5 centers the sound in the grid box
-						distance = Math.round(Math.sqrt(distanceGx * distanceGx + distanceGy * distanceGy) * 1000) / 1000;
+						// Is effected by distance?
+						if (gRadius) {
+							distanceGx = gridAudioTag.gx - gx + 0.5; // .5 centers the sound in the grid box
+							distanceGy = gridAudioTag.gy - gy + 0.5; // .5 centers the sound in the grid box
+							distance = Math.round(Math.sqrt(distanceGx * distanceGx + distanceGy * distanceGy) * 1000) / 1000;
 
-						if (distance > gRadius) {
-							// stop if currently playing
-							if (audioBufferId !== undefined) {
-								AudioEngine.controlStop(activeAudioTag[hash]);
+							if (distance > gRadius) {
+								// stop if currently playing
+								if (audioBufferId !== undefined) {
+									AudioEngine.controlStop(activeAudioTag[hash]);
+									delete activeAudioTag[hash];
+								}
 								continue;
 							}
-						}
 
-						// Audio volume based on distance
-						if (gridAudioTag.type === GridAudioTagType.EFFECT) {
-							volumePercentage = Math.round(UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0) * 1000) / 1000;
+							// Audio volume based on distance
+							if (gridAudioTag.type === GridAudioTagType.EFFECT) {
+								volumePercentage = Math.round(UtilEngine.scale(distance, 0, gRadius, volumePercentageMax, 0) * 1000) / 1000;
+							} else {
+								volumePercentage = (<GridAudioTagMusic>gridAudioTag).volumePercentage;
+							}
 						} else {
-							volumePercentage = (<GridAudioTagMusic>gridAudioTag).volumePercentage;
+							volumePercentage = 1;
 						}
-					} else {
-						volumePercentage = 1;
-					}
 
-					// Pan based on gx
-					if (panIgnored) {
-						pan = 0;
-					} else {
-						pan =
-							Math.round(
-								Math.max(
-									-1,
-									Math.min(1, UtilEngine.scale(gridAudioTag.gx, viewportGxStop, viewportGxStart, 1, -1) + panOffset),
-								) * 1000,
-							) / 1000;
-					}
+						// Pan based on gx
+						if (panIgnored) {
+							pan = 0;
+						} else {
+							pan =
+								Math.round(
+									Math.max(
+										-1,
+										Math.min(1, UtilEngine.scale(gridAudioTag.gx, viewportGxStop, viewportGxStart, 1, -1) + panOffset),
+									) * 1000,
+								) / 1000;
+						}
 
-					// Already playing?
-					if (audioBufferId !== undefined) {
-						if (gRadius && tagStates[hash].volumePercentage !== volumePercentage) {
-							// Update audio volume by fading the duration of this interval for smooth audio voluming
-							if (!AudioEngine.controlFade(audioBufferId, timingResolution, volumePercentage)) {
-								// Audio ended before volume could be adjusted
-								delete activeAudioTag[hash];
-								continue;
+						// Already playing?
+						if (audioBufferId !== undefined) {
+							if (gRadius && tagStates[hash].volumePercentage !== volumePercentage) {
+								// Update audio volume by fading the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlFade(audioBufferId, timingResolution, volumePercentage)) {
+									// Audio ended before volume could be adjusted
+									delete activeAudioTag[hash];
+									continue;
+								}
+
+								tagStates[hash].volumePercentage = volumePercentage;
 							}
 
-							tagStates[hash].volumePercentage = volumePercentage;
-						}
+							if (!panIgnored && tagStates[hash].pan !== pan) {
+								// Update audio pan by panning the duration of this interval for smooth audio voluming
+								if (!AudioEngine.controlPan(audioBufferId, timingResolution, pan)) {
+									// Audio ended before pan could be adjusted
+									delete activeAudioTag[hash];
+									continue;
+								}
 
-						if (!panIgnored && tagStates[hash].pan !== pan) {
-							// Update audio pan by panning the duration of this interval for smooth audio voluming
-							if (!AudioEngine.controlPan(audioBufferId, timingResolution, pan)) {
-								// Audio ended before pan could be adjusted
-								delete activeAudioTag[hash];
-								continue;
+								tagStates[hash].pan = pan;
+							}
+						} else {
+							audioOptions = {
+								loop: gridAudioTag.alwaysOn,
+								pan: pan,
+								volumePercentage: volumePercentage,
+							};
+
+							gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
+							if (gridAudioBlock) {
+								audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
 							}
 
-							tagStates[hash].pan = pan;
-						}
-					} else {
-						audioOptions = {
-							loop: gridAudioTag.alwaysOn,
-							pan: pan,
-							volumePercentage: volumePercentage,
-						};
+							// Play audio
+							position = tagMeta[hash];
+							if (position) {
+								activate = false;
 
-						gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
-						if (gridAudioBlock) {
-							audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
-						}
+								// Already triggered
+								if (position.oneshot && position.activationCount) {
+									continue;
+								}
 
-						// Play audio
-						position = tagMeta[hash];
-						if (position) {
-							activate = false;
-
-							// Already triggered
-							if (position.oneshot && position.activationCount) {
-								continue;
-							}
-
-							// Requires specification activation
-							switch (position.activationType) {
-								case GridAudioTagActivationType.CONTACT:
-									if (Math.round(gridAudioTag.gx) === Math.round(gx) && Math.round(gridAudioTag.gy) === Math.round(gy)) {
-										if (!position.contacted) {
-											activate = true;
-											position.contacted = true;
+								// Requires specification activation
+								switch (position.activationType) {
+									case GridAudioTagActivationType.CONTACT:
+										if (
+											Math.round(gridAudioTag.gx) === Math.round(gx) &&
+											Math.round(gridAudioTag.gy) === Math.round(gy)
+										) {
+											if (!position.contacted) {
+												activate = true;
+												position.contacted = true;
+											}
+										} else {
+											position.contacted = false;
 										}
-									} else {
-										position.contacted = false;
-									}
-									break;
-								case GridAudioTagActivationType.HORIZONTAL:
-									if (position.leftCurrent === position.leftPrevious) {
-										position.leftCurrent = gridAudioTag.gy < gy;
+										break;
+									case GridAudioTagActivationType.HORIZONTAL:
+										if (position.leftCurrent === position.leftPrevious) {
+											position.leftCurrent = gridAudioTag.gy < gy;
 
-										if (position.leftCurrent !== position.leftPrevious) {
-											activate = true;
-											position.leftPrevious = position.leftCurrent;
+											if (position.leftCurrent !== position.leftPrevious) {
+												activate = true;
+												position.leftPrevious = position.leftCurrent;
+											}
 										}
-									}
-									break;
-								case GridAudioTagActivationType.VERTICAL:
-									if (position.upCurrent === position.upPrevious) {
-										position.upCurrent = gridAudioTag.gy < gy;
+										break;
+									case GridAudioTagActivationType.VERTICAL:
+										if (position.upCurrent === position.upPrevious) {
+											position.upCurrent = gridAudioTag.gy < gy;
 
-										if (position.upCurrent !== position.upPrevious) {
-											activate = true;
-											position.upPrevious = position.upCurrent;
+											if (position.upCurrent !== position.upPrevious) {
+												activate = true;
+												position.upPrevious = position.upCurrent;
+											}
 										}
-									}
-									break;
-							}
+										break;
+								}
 
-							if (activate) {
+								if (activate) {
+									audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
+									position.activationCount++;
+
+									if (audioBufferId) {
+										activeAudioTag[hash] = audioBufferId;
+										tagStates[hash] = {
+											pan: pan,
+											volumePercentage: volumePercentage,
+										};
+									}
+								}
+							} else {
 								audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
-								position.activationCount++;
 
 								if (audioBufferId) {
 									activeAudioTag[hash] = audioBufferId;
@@ -650,20 +677,12 @@ export class MapAudioAmbientEngine {
 									};
 								}
 							}
-						} else {
-							audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
-
-							if (audioBufferId) {
-								activeAudioTag[hash] = audioBufferId;
-								tagStates[hash] = {
-									pan: pan,
-									volumePercentage: volumePercentage,
-								};
-							}
 						}
 					}
 				}
 			}
+		} catch (error: any) {
+			console.log('error', error);
 		}
 	}
 

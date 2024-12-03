@@ -108,7 +108,7 @@ export class DirtEngine extends DomUI {
 
 		// Hooks
 		await DirtEngine.initializeHooks();
-		console.log('DirtEngine: UI Initialization completed in', performance.now() - timestamp, 'ms');
+		console.log('DirtEngine: UI Initialization completed in', Math.round((performance.now() - timestamp) * 1000) / 1000, 'ms');
 
 		// Ready to start engine
 		await ready;

@@ -34,8 +34,6 @@ export class MapDrawEngine {
 	public static scaler: number;
 	public static devicePixelRatio: number;
 	public static devicePixelRatioEff: number;
-	// private static count: number = 0;
-	// private static sum: number = 0;
 
 	public static async initialize(ctxOverlay: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (MapDrawEngine.initialized) {
@@ -77,8 +75,6 @@ export class MapDrawEngine {
 	}
 
 	public static start(): void {
-		let start: number = performance.now();
-
 		// calcs
 		let camera: Camera = MapDrawEngine.mapActiveCamera;
 
@@ -96,26 +92,23 @@ export class MapDrawEngine {
 			MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
 
 			// Draw from scratch
-			let cacheCanvas: OffscreenCanvas,
-				ctx: OffscreenCanvasRenderingContext2D,
-				backgroundPh: number = MapDrawEngine.backgroundPh,
-				backgroundPw: number = MapDrawEngine.backgroundPw;
+			let cacheCanvas: OffscreenCanvas, ctx: OffscreenCanvasRenderingContext2D;
 
 			// Canvas
-			cacheCanvas = new OffscreenCanvas(backgroundPw, backgroundPh);
+			cacheCanvas = new OffscreenCanvas(MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 			ctx.imageSmoothingEnabled = false;
 
 			// Background
 			ctx.fillStyle = 'rgba(0,0,0,.5)';
-			ctx.fillRect(0, 0, backgroundPw, backgroundPh);
+			ctx.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 			if (MapDrawEngine.mapImage) {
 				ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
 			}
 
 			// Background Border
 			ctx.lineWidth = 1;
-			ctx.rect(0, 0, backgroundPw, backgroundPh);
+			ctx.rect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 			ctx.strokeStyle = 'white';
 			ctx.stroke();
 
@@ -142,8 +135,6 @@ export class MapDrawEngine {
 			let cacheCanvas: OffscreenCanvas,
 				ctx: OffscreenCanvasRenderingContext2D,
 				gridConfig: GridConfig = MapDrawEngine.mapActive.gridConfigActive,
-				gh: number = gridConfig.gHeight,
-				gw: number = gridConfig.gWidth,
 				ghRelScaled: number,
 				ghRelScaledEffB: number,
 				ghRelScaledEffL: number,
@@ -153,20 +144,18 @@ export class MapDrawEngine {
 				gxRelScaled: number,
 				gxRelScaledEff: number,
 				gyRelScaled: number,
-				gyRelScaledEff: number,
-				backgroundPh: number = MapDrawEngine.backgroundPh,
-				backgroundPw: number = MapDrawEngine.backgroundPw;
+				gyRelScaledEff: number;
 
 			// Canvas
-			cacheCanvas = new OffscreenCanvas(backgroundPw, backgroundPh);
+			cacheCanvas = new OffscreenCanvas(MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 			ctx = <OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d');
 			ctx.imageSmoothingEnabled = false;
 
 			// Calc
-			ghRelScaled = backgroundPh * (camera.viewportGhEff / gh);
-			gwRelScaled = backgroundPw * (camera.viewportGwEff / gw);
-			gxRelScaled = backgroundPw * (camera.viewportGx / gw);
-			gyRelScaled = backgroundPh * (camera.viewportGy / gh);
+			ghRelScaled = MapDrawEngine.backgroundPh * (camera.viewportGhEff / gridConfig.gHeight);
+			gwRelScaled = MapDrawEngine.backgroundPw * (camera.viewportGwEff / gridConfig.gWidth);
+			gxRelScaled = MapDrawEngine.backgroundPw * (camera.viewportGx / gridConfig.gWidth);
+			gyRelScaled = MapDrawEngine.backgroundPh * (camera.viewportGy / gridConfig.gHeight);
 
 			// Calc eff
 			ghRelScaledEffB = gyRelScaled + Math.round(ghRelScaled * 0.3);
@@ -239,10 +228,6 @@ export class MapDrawEngine {
 			MapDrawEngine.cacheZoom = camera.zoom;
 		}
 		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
-
-		// MapDrawEngine.count++;
-		// MapDrawEngine.sum += performance.now() - start;
-		// console.log('MapDrawEngine(perf)', Math.round(MapDrawEngine.sum / MapDrawEngine.count * 1000) / 1000);
 	}
 
 	public static isPixelInMap(xRel: number, yRel: number): boolean {

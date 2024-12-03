@@ -134,7 +134,6 @@ class VideoWorkerEngine {
 	private static gameModeEdit: boolean;
 	private static gameStarted: boolean;
 	private static initialized: boolean;
-	private static quality: AssetImageSrcQuality;
 	private static self: Window & typeof globalThis;
 
 	public static async initialize(self: Window & typeof globalThis, data: VideoBusInputCmdInit): Promise<void> {
@@ -154,7 +153,6 @@ class VideoWorkerEngine {
 		VideoWorkerEngine.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
 		VideoWorkerEngine.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
 		VideoWorkerEngine.canvasOffscreenVanishing = data.canvasOffscreenVanishing;
-		VideoWorkerEngine.quality = data.quality;
 		VideoWorkerEngine.self = self;
 
 		// Get contexts
