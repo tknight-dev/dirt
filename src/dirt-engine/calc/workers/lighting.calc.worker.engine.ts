@@ -87,10 +87,7 @@ class LightingCalcWorkerEngine {
 		}
 		LightingCalcWorkerEngine.initialized = true;
 		LightingCalcWorkerEngine.self = self;
-
-		UtilEngine.setInterval(() => {
-			LightingCalcWorkerEngine._calc();
-		}, 10);
+		LightingCalcWorkerEngine._calc();
 	}
 
 	public static inputFlash(data: LightingCalcBusInputPlayloadFlash): void {
@@ -163,405 +160,426 @@ class LightingCalcWorkerEngine {
 	}
 
 	private static _calc(): void {
-		try {
-			let brightnessByHashBackground: { [key: number]: number } = {},
-				brightnessByHashGroup: { [key: number]: number } = {},
-				brightnessOutside: number,
-				brightnessOutsideByHash: { [key: number]: number },
-				brightnessOutsideByHashBackground: { [key: number]: number } = {},
-				brightnessOutsideByHashGroup: { [key: number]: number } = {},
-				brightnessOutsideDayMax: number = 6,
-				brightnessOutsideNightMax: number = 3,
-				complexExtended: GridBlockTableComplexExtended,
-				complexes: GridBlockTableComplex[],
-				complexesExtended: GridBlockTableComplexExtended[],
-				complexesByGxNoFoliage: { [key: number]: GridBlockTableComplex[] },
-				first: boolean = LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId],
-				foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] },
-				foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] | undefined,
-				grid: Grid = LightingCalcWorkerEngine.grids[LightingCalcWorkerEngine.gridActiveId],
-				gridConfig: GridConfig = LightingCalcWorkerEngine.gridConfigs[LightingCalcWorkerEngine.gridActiveId],
-				gridImageBlock: GridImageBlock,
-				gridImageBlockFoliage: GridImageBlockFoliage,
-				gSizeW: number,
-				gHeight: number = gridConfig.gHeight,
-				gWidth: number = gridConfig.gWidth,
-				gx: number,
-				gxEff: number,
-				gxString: string,
-				gy: number,
-				gyEff: number,
-				hash: number,
-				hashString: string,
-				hashesBackground: { [key: number]: number } = {},
-				hashesChangesBackground: { [key: number]: number } = {},
-				hashesChangesGroup: { [key: number]: number } = {},
-				hashesChangesFinal: { [key: number]: number } = {},
-				hashesChangesFinalOutputCount: number = 0,
-				hashesChangesFinalOutput: Uint32Array,
-				hashesGroup: { [key: number]: number } = {},
-				hourOfDayEff: number = Math.floor(LightingCalcWorkerEngine.hourPreciseOfDayEff) + 1, // +1 to offset previous hour image blending
-				hourOfDayEffOutsideModifier: number = hourOfDayEff % 12,
-				j: string,
-				k: number,
-				lightNight: boolean,
-				referenceNoFoliage: GridBlockTable<GridImageBlockReference> = <any>{},
-				skip: boolean,
-				z: VideoBusInputCmdGameModeEditApplyZ,
-				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = LightingCalcWorkerEngine.zGroup,
-				_calcProcessLights = LightingCalcWorkerEngine._calcProcessLights,
-				_calcProcessFoliage = LightingCalcWorkerEngine._calcProcessFoliage,
-				_calcProcessReferences = LightingCalcWorkerEngine._calcProcessReferences;
+		let brightnessByHashBackground: { [key: number]: number },
+			brightnessByHashGroup: { [key: number]: number },
+			brightnessOutside: number,
+			brightnessOutsideByHash: { [key: number]: number },
+			brightnessOutsideByHashBackground: { [key: number]: number },
+			brightnessOutsideByHashGroup: { [key: number]: number },
+			brightnessOutsideDayMax: number = 6,
+			brightnessOutsideNightMax: number = 3,
+			complexExtended: GridBlockTableComplexExtended,
+			complexes: GridBlockTableComplex[],
+			complexesExtended: GridBlockTableComplexExtended[],
+			complexesByGxNoFoliage: { [key: number]: GridBlockTableComplex[] },
+			first: boolean,
+			foliageGyByGx: { [key: number]: GridBlockTableComplexExtended[] },
+			foliageGyByGxAll: { [key: number]: GridBlockTableComplexExtended[] }[] | undefined,
+			grid: Grid,
+			gridConfig: GridConfig,
+			gridImageBlock: GridImageBlock,
+			gridImageBlockFoliage: GridImageBlockFoliage,
+			gSizeW: number,
+			gHeight: number,
+			gWidth: number,
+			gx: number,
+			gxEff: number,
+			gxString: string,
+			gy: number,
+			gyEff: number,
+			hash: number,
+			hashString: string,
+			hashesBackground: { [key: number]: number },
+			hashesChangesBackground: { [key: number]: number },
+			hashesChangesGroup: { [key: number]: number },
+			hashesChangesFinal: { [key: number]: number },
+			hashesChangesFinalOutputCount: number,
+			hashesChangesFinalOutput: Uint32Array,
+			hashesGroup: { [key: number]: number },
+			hourOfDayEff: number,
+			hourOfDayEffOutsideModifier: number,
+			j: string,
+			k: number,
+			lightNight: boolean,
+			referenceNoFoliage: GridBlockTable<GridImageBlockReference>,
+			skip: boolean,
+			z: VideoBusInputCmdGameModeEditApplyZ,
+			zGroup: VideoBusInputCmdGameModeEditApplyZ[] = LightingCalcWorkerEngine.zGroup,
+			_calcProcessLights = LightingCalcWorkerEngine._calcProcessLights,
+			_calcProcessFoliage = LightingCalcWorkerEngine._calcProcessFoliage,
+			_calcProcessReferences = LightingCalcWorkerEngine._calcProcessReferences;
 
-			if (hourOfDayEff < 8 || hourOfDayEff > 19) {
-				lightNight = true;
-			} else {
-				lightNight = false;
-			}
+		UtilEngine.setInterval(() => {
+			try {
+				brightnessByHashBackground = <any>new Object();
+				brightnessByHashGroup = <any>new Object();
+				brightnessOutsideByHashBackground = <any>new Object();
+				brightnessOutsideByHashGroup = <any>new Object();
+				first = LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId];
+				grid = LightingCalcWorkerEngine.grids[LightingCalcWorkerEngine.gridActiveId];
+				gridConfig = LightingCalcWorkerEngine.gridConfigs[LightingCalcWorkerEngine.gridActiveId];
+				gHeight = gridConfig.gHeight;
+				gWidth = gridConfig.gWidth;
+				hashesBackground = <any>new Object();
+				hashesChangesBackground = <any>new Object();
+				hashesChangesGroup = <any>new Object();
+				hashesChangesFinal = <any>new Object();
+				hashesChangesFinalOutputCount = 0;
+				hashesGroup = <any>new Object();
+				hourOfDayEff = Math.floor(LightingCalcWorkerEngine.hourPreciseOfDayEff) + 1; // +1 to offset previous hour image blending
+				hourOfDayEffOutsideModifier = hourOfDayEff % 12;
+				referenceNoFoliage = <any>new Object();
 
-			if (hourOfDayEff === 1) {
-				// Small Hours
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 2);
-			} else if (hourOfDayEff < 6) {
-				// Small Hours
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 5 - hourOfDayEff);
-			} else if (hourOfDayEff < 10) {
-				// Morning
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, hourOfDayEff - 4);
-			} else if (hourOfDayEff < 18) {
-				// Afternoon
-				hourOfDayEffOutsideModifier = brightnessOutsideDayMax;
-			} else if (hourOfDayEff < 23) {
-				// Evening
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, 23 - hourOfDayEff);
-			} else {
-				// Dusk
-				hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, hourOfDayEff - 23);
-				hourOfDayEffOutsideModifier++;
-			}
-
-			//console.log(hourOfDayEff, hourOfDayEffOutsideModifier);
-
-			for (let i in zGroup) {
-				z = zGroup[i];
-
-				/*
-				 * Day/Night Illumination (foliage ignored)
-				 */
-				switch (z) {
-					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						brightnessOutsideByHash = brightnessOutsideByHashBackground;
-						referenceNoFoliage = _calcProcessReferences(
-							[grid.imageBlocksBackgroundReference.hashes],
-							GridObjectType.IMAGE_BLOCK_FOLIAGE,
-						);
-						break;
-					default:
-					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						brightnessOutsideByHash = brightnessOutsideByHashGroup;
-						referenceNoFoliage = _calcProcessReferences(
-							[
-								grid.imageBlocksSecondaryReference.hashes,
-								grid.imageBlocksPrimaryReference.hashes,
-								grid.imageBlocksForegroundReference.hashes,
-								grid.imageBlocksVanishingReference.hashes,
-							],
-							GridObjectType.IMAGE_BLOCK_FOLIAGE,
-						);
-						break;
+				if (hourOfDayEff < 8 || hourOfDayEff > 19) {
+					lightNight = true;
+				} else {
+					lightNight = false;
 				}
-				complexesByGxNoFoliage = <any>referenceNoFoliage.hashesGyByGx;
-				skip = true;
 
-				for (gxString in complexesByGxNoFoliage) {
-					complexes = complexesByGxNoFoliage[gxString];
+				if (hourOfDayEff === 1) {
+					// Small Hours
+					hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 2);
+				} else if (hourOfDayEff < 6) {
+					// Small Hours
+					hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, 5 - hourOfDayEff);
+				} else if (hourOfDayEff < 10) {
+					// Morning
+					hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, hourOfDayEff - 4);
+				} else if (hourOfDayEff < 18) {
+					// Afternoon
+					hourOfDayEffOutsideModifier = brightnessOutsideDayMax;
+				} else if (hourOfDayEff < 23) {
+					// Evening
+					hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, 23 - hourOfDayEff);
+				} else {
+					// Dusk
+					hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, hourOfDayEff - 23);
+					hourOfDayEffOutsideModifier++;
+				}
 
-					// Check for light interaction
-					gridImageBlock = referenceNoFoliage.hashes[complexes[0].hash].block;
-					if (gridImageBlock.passthroughLight) {
-						for (k = 1; k < complexes.length; k++) {
-							gridImageBlock = referenceNoFoliage.hashes[complexes[k].hash].block;
+				//console.log(hourOfDayEff, hourOfDayEffOutsideModifier);
 
-							if (!gridImageBlock.passthroughLight) {
-								break;
+				for (let i in zGroup) {
+					z = zGroup[i];
+
+					/*
+					 * Day/Night Illumination (foliage ignored)
+					 */
+					switch (z) {
+						case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+							brightnessOutsideByHash = brightnessOutsideByHashBackground;
+							referenceNoFoliage = _calcProcessReferences(
+								[grid.imageBlocksBackgroundReference.hashes],
+								GridObjectType.IMAGE_BLOCK_FOLIAGE,
+							);
+							break;
+						default:
+						case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+							brightnessOutsideByHash = brightnessOutsideByHashGroup;
+							referenceNoFoliage = _calcProcessReferences(
+								[
+									grid.imageBlocksSecondaryReference.hashes,
+									grid.imageBlocksPrimaryReference.hashes,
+									grid.imageBlocksForegroundReference.hashes,
+									grid.imageBlocksVanishingReference.hashes,
+								],
+								GridObjectType.IMAGE_BLOCK_FOLIAGE,
+							);
+							break;
+					}
+					complexesByGxNoFoliage = <any>referenceNoFoliage.hashesGyByGx;
+					skip = true;
+
+					for (gxString in complexesByGxNoFoliage) {
+						complexes = complexesByGxNoFoliage[gxString];
+
+						// Check for light interaction
+						gridImageBlock = referenceNoFoliage.hashes[complexes[0].hash].block;
+						if (gridImageBlock.passthroughLight) {
+							for (k = 1; k < complexes.length; k++) {
+								gridImageBlock = referenceNoFoliage.hashes[complexes[k].hash].block;
+
+								if (!gridImageBlock.passthroughLight) {
+									break;
+								}
 							}
 						}
-					}
-					if (gridImageBlock.passthroughLight) {
-						continue; // no light interacting blocks on this gx column
-					}
+						if (gridImageBlock.passthroughLight) {
+							continue; // no light interacting blocks on this gx column
+						}
 
-					// Shade
-					gy = gridImageBlock.gy;
-					for (k = 0; k < complexes.length; k++) {
-						if (hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
-							// Brightest part of day
-							if (skip) {
-								// Skip the first to allow for a smoother transition to full brightness
+						// Shade
+						gy = gridImageBlock.gy;
+						for (k = 0; k < complexes.length; k++) {
+							if (hourOfDayEffOutsideModifier === brightnessOutsideDayMax) {
+								// Brightest part of day
+								if (skip) {
+									// Skip the first to allow for a smoother transition to full brightness
+									brightnessOutsideByHash[complexes[k].hash] = Math.max(
+										0,
+										hourOfDayEffOutsideModifier - (complexes[k].value - gy),
+									);
+									skip = false;
+								} else {
+									brightnessOutsideByHash[complexes[k].hash] = Math.max(
+										0,
+										hourOfDayEffOutsideModifier - Math.max(0, complexes[k].value - gy - 1),
+									);
+								}
+							} else {
+								// complexes[k].value - gy, shadows depend on distance from first, not consecutive blocks
 								brightnessOutsideByHash[complexes[k].hash] = Math.max(
 									0,
 									hourOfDayEffOutsideModifier - (complexes[k].value - gy),
 								);
-								skip = false;
-							} else {
-								brightnessOutsideByHash[complexes[k].hash] = Math.max(
-									0,
-									hourOfDayEffOutsideModifier - Math.max(0, complexes[k].value - gy - 1),
-								);
 							}
-						} else {
-							// complexes[k].value - gy, shadows depend on distance from first, not consecutive blocks
-							brightnessOutsideByHash[complexes[k].hash] = Math.max(
-								0,
-								hourOfDayEffOutsideModifier - (complexes[k].value - gy),
-							);
+						}
+					}
+
+					/*
+					 * Day/Night Shadows for Foliage
+					 */
+					if (foliageGyByGxAll === undefined) {
+						foliageGyByGxAll = [
+							_calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
+							_calcProcessFoliage(grid.imageBlocksSecondaryFoliage),
+							_calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
+							_calcProcessFoliage(grid.imageBlocksForegroundFoliage),
+							_calcProcessFoliage(grid.imageBlocksVanishingFoliage),
+						];
+					}
+
+					for (j in foliageGyByGxAll) {
+						foliageGyByGx = foliageGyByGxAll[j];
+
+						for (gxString in foliageGyByGx) {
+							complexesExtended = foliageGyByGx[gxString];
+
+							for (k = 0; k < complexesExtended.length; k++) {
+								complexExtended = complexesExtended[k];
+								gridImageBlockFoliage = <GridImageBlockFoliage>complexExtended.blocks[complexExtended.hash];
+
+								if (gridImageBlockFoliage.passthroughLight) {
+									continue;
+								}
+
+								gy = gridImageBlockFoliage.gy;
+								gyEff = gridImageBlockFoliage.gSizeH + gy;
+
+								if (gyEff > gHeight) {
+									// Shadow below map, some goof put a tree on the bottom of the map
+									continue;
+								}
+								gx = Number(gxString);
+								gSizeW = gridImageBlockFoliage.gSizeW + gx;
+
+								/*
+								 * Light Foliage
+								 */
+								if (k === 0) {
+									if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
+										brightnessOutsideByHash[gridImageBlockFoliage.hash] = Math.max(0, hourOfDayEffOutsideModifier);
+									}
+								}
+
+								/*
+								 * Foliage Shadow
+								 */
+								// Shift shadow by time of day (sun rise is east/right)
+								if (15 < hourOfDayEff && hourOfDayEff < 22) {
+									if (hourOfDayEff > 17 && hourOfDayEff !== 21) {
+										// Long shadow, right
+										if (gx === gWidth) {
+											gxEff = gx;
+											gSizeW = gx + 1;
+										} else {
+											gxEff = gx + 1;
+											gSizeW += 2;
+										}
+									} else {
+										// shadow, right
+										if (gx === gWidth) {
+											gxEff = gx;
+											gSizeW = gx + 1;
+										} else {
+											gxEff = gx;
+											gSizeW++;
+										}
+									}
+								} else if (4 < hourOfDayEff && hourOfDayEff < 10) {
+									if (hourOfDayEff < 8) {
+										// Long shadow, left
+										if (gx === 0) {
+											gxEff = gx;
+										} else {
+											gxEff = gx - 2;
+										}
+										gSizeW--;
+									} else {
+										// shadow, left
+										if (gx === 0) {
+											gxEff = gx;
+										} else {
+											gxEff = gx - 1;
+										}
+									}
+								} else {
+									// Shadow directly below
+									gxEff = gx;
+								}
+
+								for (; gxEff < gSizeW; gxEff++) {
+									// Is there something blocking the sun above the foliage on this gx column?
+									if (!complexesByGxNoFoliage[gxEff] || complexesByGxNoFoliage[gxEff][0].value >= gy) {
+										// Hash is ground below foliage
+										hash = UtilEngine.gridHashTo(gxEff, gyEff);
+
+										// Apply shadow
+										brightnessOutside = brightnessOutsideByHash[hash];
+										if (brightnessOutside === hourOfDayEffOutsideModifier) {
+											// Shadows are not additive (prevents multiple shadow overlaps)
+											brightnessOutsideByHash[hash] = Math.max(0, brightnessOutside - 2);
+										} else if (brightnessOutside === hourOfDayEffOutsideModifier - 1) {
+											// Shadows are not additive (prevents multiple shadow overlaps)
+											brightnessOutsideByHash[hash] = Math.max(0, brightnessOutside - 1);
+										}
+									}
+								}
+							}
 						}
 					}
 				}
 
-				/*
-				 * Day/Night Shadows for Foliage
+				/**
+				 * Third pass: Points of light, group layer and background layer with smaller radius
 				 */
-				if (foliageGyByGxAll === undefined) {
-					foliageGyByGxAll = [
-						_calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
-						_calcProcessFoliage(grid.imageBlocksSecondaryFoliage),
-						_calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
-						_calcProcessFoliage(grid.imageBlocksForegroundFoliage),
-						_calcProcessFoliage(grid.imageBlocksVanishingFoliage),
-					];
+				_calcProcessLights(
+					lightNight,
+					grid.lightsPrimary,
+					grid.imageBlocksPrimaryReference.hashes,
+					brightnessByHashBackground,
+					brightnessByHashGroup,
+				);
+				_calcProcessLights(
+					lightNight,
+					grid.lightsForeground,
+					grid.imageBlocksForegroundReference.hashes,
+					brightnessByHashBackground,
+					brightnessByHashGroup,
+				);
+
+				/**
+				 * Fourth pass: Flash
+				 */
+
+				/**
+				 * Merge and check for changes
+				 */
+				// Merge hashes into single map: background
+				for (hashString in brightnessByHashBackground) {
+					hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
+						Math.min(brightnessOutsideDayMax, brightnessByHashBackground[hashString]),
+						brightnessOutsideByHashBackground[hashString] || 0,
+					);
 				}
-
-				for (j in foliageGyByGxAll) {
-					foliageGyByGx = foliageGyByGxAll[j];
-
-					for (gxString in foliageGyByGx) {
-						complexesExtended = foliageGyByGx[gxString];
-
-						for (k = 0; k < complexesExtended.length; k++) {
-							complexExtended = complexesExtended[k];
-							gridImageBlockFoliage = <GridImageBlockFoliage>complexExtended.blocks[complexExtended.hash];
-
-							if (gridImageBlockFoliage.passthroughLight) {
-								continue;
-							}
-
-							gy = gridImageBlockFoliage.gy;
-							gyEff = gridImageBlockFoliage.gSizeH + gy;
-
-							if (gyEff > gHeight) {
-								// Shadow below map, some goof put a tree on the bottom of the map
-								continue;
-							}
-							gx = Number(gxString);
-							gSizeW = gridImageBlockFoliage.gSizeW + gx;
-
-							/*
-							 * Light Foliage
-							 */
-							if (k === 0) {
-								if (!complexesByGxNoFoliage[gx] || complexesByGxNoFoliage[gx][0].value >= gy) {
-									brightnessOutsideByHash[gridImageBlockFoliage.hash] = Math.max(0, hourOfDayEffOutsideModifier);
-								}
-							}
-
-							/*
-							 * Foliage Shadow
-							 */
-							// Shift shadow by time of day (sun rise is east/right)
-							if (15 < hourOfDayEff && hourOfDayEff < 22) {
-								if (hourOfDayEff > 17 && hourOfDayEff !== 21) {
-									// Long shadow, right
-									if (gx === gWidth) {
-										gxEff = gx;
-										gSizeW = gx + 1;
-									} else {
-										gxEff = gx + 1;
-										gSizeW += 2;
-									}
-								} else {
-									// shadow, right
-									if (gx === gWidth) {
-										gxEff = gx;
-										gSizeW = gx + 1;
-									} else {
-										gxEff = gx;
-										gSizeW++;
-									}
-								}
-							} else if (4 < hourOfDayEff && hourOfDayEff < 10) {
-								if (hourOfDayEff < 8) {
-									// Long shadow, left
-									if (gx === 0) {
-										gxEff = gx;
-									} else {
-										gxEff = gx - 2;
-									}
-									gSizeW--;
-								} else {
-									// shadow, left
-									if (gx === 0) {
-										gxEff = gx;
-									} else {
-										gxEff = gx - 1;
-									}
-								}
-							} else {
-								// Shadow directly below
-								gxEff = gx;
-							}
-
-							for (; gxEff < gSizeW; gxEff++) {
-								// Is there something blocking the sun above the foliage on this gx column?
-								if (!complexesByGxNoFoliage[gxEff] || complexesByGxNoFoliage[gxEff][0].value >= gy) {
-									// Hash is ground below foliage
-									hash = UtilEngine.gridHashTo(gxEff, gyEff);
-
-									// Apply shadow
-									brightnessOutside = brightnessOutsideByHash[hash];
-									if (brightnessOutside === hourOfDayEffOutsideModifier) {
-										// Shadows are not additive (prevents multiple shadow overlaps)
-										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutside - 2);
-									} else if (brightnessOutside === hourOfDayEffOutsideModifier - 1) {
-										// Shadows are not additive (prevents multiple shadow overlaps)
-										brightnessOutsideByHash[hash] = Math.max(0, brightnessOutside - 1);
-									}
-								}
-							}
-						}
+				for (hashString in brightnessOutsideByHashBackground) {
+					if (hashesBackground[hashString] === undefined) {
+						hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
+							Math.min(brightnessOutsideDayMax, brightnessByHashBackground[hashString] || 0),
+							brightnessOutsideByHashBackground[hashString],
+						);
 					}
 				}
-			}
 
-			/**
-			 * Third pass: Points of light, group layer and background layer with smaller radius
-			 */
-			_calcProcessLights(
-				lightNight,
-				grid.lightsPrimary,
-				grid.imageBlocksPrimaryReference.hashes,
-				brightnessByHashBackground,
-				brightnessByHashGroup,
-			);
-			_calcProcessLights(
-				lightNight,
-				grid.lightsForeground,
-				grid.imageBlocksForegroundReference.hashes,
-				brightnessByHashBackground,
-				brightnessByHashGroup,
-			);
-
-			/**
-			 * Fourth pass: Flash
-			 */
-
-			/**
-			 * Merge and check for changes
-			 */
-			// Merge hashes into single map: background
-			for (hashString in brightnessByHashBackground) {
-				hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
-					Math.min(brightnessOutsideDayMax, brightnessByHashBackground[hashString]),
-					brightnessOutsideByHashBackground[hashString] || 0,
-				);
-			}
-			for (hashString in brightnessOutsideByHashBackground) {
-				if (hashesBackground[hashString] === undefined) {
-					hashesBackground[hashString] = LightingCalcWorkerEngine.hashBrightness(
-						Math.min(brightnessOutsideDayMax, brightnessByHashBackground[hashString] || 0),
-						brightnessOutsideByHashBackground[hashString],
-					);
+				// Change detection: background
+				for (hashString in hashesBackground) {
+					if (LightingCalcWorkerEngine.hashesBackground[hashString] !== hashesBackground[hashString]) {
+						LightingCalcWorkerEngine.hashesBackground[hashString] = hashesBackground[hashString];
+						hashesChangesBackground[hashString] = hashesBackground[hashString];
+					}
 				}
-			}
 
-			// Change detection: background
-			for (hashString in hashesBackground) {
-				if (LightingCalcWorkerEngine.hashesBackground[hashString] !== hashesBackground[hashString]) {
-					LightingCalcWorkerEngine.hashesBackground[hashString] = hashesBackground[hashString];
-					hashesChangesBackground[hashString] = hashesBackground[hashString];
-				}
-			}
-
-			// Merge hashes into single map: group
-			for (hashString in brightnessByHashGroup) {
-				hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
-					Math.min(brightnessOutsideDayMax, brightnessByHashGroup[hashString]),
-					brightnessOutsideByHashGroup[hashString] || 0,
-				);
-			}
-			for (hashString in brightnessOutsideByHashGroup) {
-				if (hashesGroup[hashString] === undefined) {
+				// Merge hashes into single map: group
+				for (hashString in brightnessByHashGroup) {
 					hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
-						Math.min(brightnessOutsideDayMax, brightnessByHashGroup[hashString] || 0),
-						brightnessOutsideByHashGroup[hashString],
+						Math.min(brightnessOutsideDayMax, brightnessByHashGroup[hashString]),
+						brightnessOutsideByHashGroup[hashString] || 0,
 					);
 				}
-			}
-
-			// Change detection: groups
-			for (hashString in hashesGroup) {
-				if (LightingCalcWorkerEngine.hashesGroup[hashString] !== hashesGroup[hashString]) {
-					LightingCalcWorkerEngine.hashesGroup[hashString] = hashesGroup[hashString];
-					hashesChangesGroup[hashString] = hashesGroup[hashString];
+				for (hashString in brightnessOutsideByHashGroup) {
+					if (hashesGroup[hashString] === undefined) {
+						hashesGroup[hashString] = LightingCalcWorkerEngine.hashBrightness(
+							Math.min(brightnessOutsideDayMax, brightnessByHashGroup[hashString] || 0),
+							brightnessOutsideByHashGroup[hashString],
+						);
+					}
 				}
-			}
 
-			/**
-			 * Merge changes
-			 */
-			for (hashString in hashesChangesBackground) {
-				hashesChangesFinal[hashString] = LightingCalcWorkerEngine.hashStackBrightness(
-					hashesChangesBackground[hashString],
-					LightingCalcWorkerEngine.hashesGroup[hashString] || 0,
-				);
-			}
-			for (hashString in hashesChangesGroup) {
-				if (hashesChangesFinal[hashString] === undefined) {
+				// Change detection: groups
+				for (hashString in hashesGroup) {
+					if (LightingCalcWorkerEngine.hashesGroup[hashString] !== hashesGroup[hashString]) {
+						LightingCalcWorkerEngine.hashesGroup[hashString] = hashesGroup[hashString];
+						hashesChangesGroup[hashString] = hashesGroup[hashString];
+					}
+				}
+
+				/**
+				 * Merge changes
+				 */
+				for (hashString in hashesChangesBackground) {
 					hashesChangesFinal[hashString] = LightingCalcWorkerEngine.hashStackBrightness(
-						LightingCalcWorkerEngine.hashesBackground[hashString] || 0,
-						hashesChangesGroup[hashString],
+						hashesChangesBackground[hashString],
+						LightingCalcWorkerEngine.hashesGroup[hashString] || 0,
 					);
 				}
-			}
-
-			// Merge hash stacks into g hash to fully optimize bus data throughput
-			for (hashString in hashesChangesFinal) {
-				if (first && hashesChangesFinal[hashString] === 0) {
-					// The other side of the bus instantiates values as zero
-					// So skip the first time around, as change detection will
-					// prevent duplicates in the future
-					continue;
+				for (hashString in hashesChangesGroup) {
+					if (hashesChangesFinal[hashString] === undefined) {
+						hashesChangesFinal[hashString] = LightingCalcWorkerEngine.hashStackBrightness(
+							LightingCalcWorkerEngine.hashesBackground[hashString] || 0,
+							hashesChangesGroup[hashString],
+						);
+					}
 				}
 
-				hashesChangesFinalOutputCount++;
-			}
-
-			// If data available create transferrable buffer
-			hashesChangesFinalOutput = new Uint32Array(hashesChangesFinalOutputCount);
-			if (hashesChangesFinalOutputCount) {
-				hashesChangesFinalOutputCount = 0;
+				// Merge hash stacks into g hash to fully optimize bus data throughput
 				for (hashString in hashesChangesFinal) {
 					if (first && hashesChangesFinal[hashString] === 0) {
+						// The other side of the bus instantiates values as zero
+						// So skip the first time around, as change detection will
+						// prevent duplicates in the future
 						continue;
 					}
 
-					hashesChangesFinalOutput[hashesChangesFinalOutputCount] = LightingCalcWorkerEngine.hashMergeG(
-						Number(hashString),
-						hashesChangesFinal[hashString],
-					);
 					hashesChangesFinalOutputCount++;
 				}
+
+				// If data available create transferrable buffer
+				hashesChangesFinalOutput = new Uint32Array(hashesChangesFinalOutputCount);
+				if (hashesChangesFinalOutputCount) {
+					hashesChangesFinalOutputCount = 0;
+					for (hashString in hashesChangesFinal) {
+						if (first && hashesChangesFinal[hashString] === 0) {
+							continue;
+						}
+
+						hashesChangesFinalOutput[hashesChangesFinalOutputCount] = LightingCalcWorkerEngine.hashMergeG(
+							Number(hashString),
+							hashesChangesFinal[hashString],
+						);
+						hashesChangesFinalOutputCount++;
+					}
+				}
+				// Report the original hour as the calc is for the next hour
+				// That way images blended with the previous hour are correctly representing the current hour
+				LightingCalcWorkerEngine.output(LightingCalcWorkerEngine.hourPreciseOfDayEff, hashesChangesFinalOutput);
+				if (first) {
+					// console.log('hashesChangesFinalOutput', hashesChangesFinalOutput);
+					LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId] = false;
+				}
+			} catch (error: any) {
+				//console.error('LightingCalcWorkerEngine > _calc: error', error);
 			}
-			// Report the original hour as the calc is for the next hour
-			// That way images blended with the previous hour are correctly representing the current hour
-			LightingCalcWorkerEngine.output(LightingCalcWorkerEngine.hourPreciseOfDayEff, hashesChangesFinalOutput);
-			if (first) {
-				// console.log('hashesChangesFinalOutput', hashesChangesFinalOutput);
-				LightingCalcWorkerEngine.firstByGridId[LightingCalcWorkerEngine.gridActiveId] = false;
-			}
-		} catch (error: any) {
-			//console.error('LightingCalcWorkerEngine > _calc: error', error);
-		}
+		}, 10);
 	}
 
 	/**
