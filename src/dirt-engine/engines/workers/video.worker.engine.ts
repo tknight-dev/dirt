@@ -6,6 +6,7 @@ import { Grid } from '../../models/grid.model';
 import { Camera } from '../../models/camera.model';
 import { CameraEngine } from '../camera.engine';
 import { ImageBlockDrawEngine } from '../../draw/image-block.draw.engine';
+import { InputsCalcEngine } from '../../calc/inputs.calc.engine';
 import { KernelEngine } from '../kernel.engine';
 import { KeyAction } from '../keyboard.engine';
 import { LightingEngine } from '../lighting.engine';
@@ -89,7 +90,7 @@ self.onmessage = (event: MessageEvent) => {
 			VideoWorkerEngine.initialize(self, <VideoBusInputCmdInit>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.KEY:
-			KernelEngine.inputKey(<KeyAction>videoBusPayload.data);
+			InputsCalcEngine.inputKey(<KeyAction>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.MAP_LOAD:
 			VideoWorkerEngine.inputMapLoad(<VideoBusInputCmdMapLoad>videoBusPayload.data);
@@ -98,7 +99,7 @@ self.onmessage = (event: MessageEvent) => {
 			VideoWorkerEngine.inputMapLoadById(<VideoBusInputCmdMapLoadById>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.MOUSE:
-			KernelEngine.inputMouse(<MouseAction>videoBusPayload.data);
+			InputsCalcEngine.inputMouse(<MouseAction>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.RESIZE:
 			VideoWorkerEngine.inputGamePause({ reason: VideoBusInputCmdGamePauseReason.RESIZE });
@@ -108,7 +109,7 @@ self.onmessage = (event: MessageEvent) => {
 			VideoWorkerEngine.inputSettings(<VideoBusInputCmdSettings>videoBusPayload.data);
 			break;
 		case VideoBusInputCmd.TOUCH:
-			KernelEngine.inputTouch(<TouchAction>videoBusPayload.data);
+			InputsCalcEngine.inputTouch(<TouchAction>videoBusPayload.data);
 			break;
 	}
 };

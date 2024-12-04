@@ -7,14 +7,12 @@ import { DrawEditEngine } from './mode/edit/draw.edit.engine';
 import { DrawPlayEngine } from './mode/play/draw.play.engine';
 import { GridDrawEngine } from '../draw/grid.draw.engine';
 import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
-import { KeyAction, KeyCommon } from './keyboard.engine';
+import { InputsCalcEngine } from '../calc/inputs.calc.engine';
 import { LightingEngine } from './lighting.engine';
 import { LightingCalcEngineBus } from '../calc/buses/lighting.calc.engine.bus';
 import { MapActive } from '../models/map.model';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
-import { MouseAction, MouseCmd } from './mouse.engine';
-import { TouchAction, TouchCmd } from './touch.engine';
 import { UnderlayDrawEngine } from '../draw/underlay.draw.engine';
 import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings } from '../engines/buses/video.model.bus';
 
@@ -29,7 +27,6 @@ export class KernelEngine {
 	private static frames: number = 0;
 	private static framesInterval: ReturnType<typeof setInterval>;
 	private static fpms: number;
-	private static fpmsCamera: number = 35;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static modeEdit: boolean;
@@ -38,10 +35,6 @@ export class KernelEngine {
 	private static status: boolean;
 	private static timestampDelta: number;
 	private static timestampThen: number = performance.now();
-	private static touchDistanceActive: boolean;
-	private static touchDistanceOrig: number;
-	private static touchDistanceOrigX: number;
-	private static touchDistanceOrigY: number;
 
 	public static async initialize(
 		ctxBackground: OffscreenCanvasRenderingContext2D,
@@ -76,119 +69,11 @@ export class KernelEngine {
 		await UnderlayDrawEngine.initialize(ctxUnderlay);
 	}
 
-	private static tmpH: any;
-	private static tmpV: any;
-	public static inputKey(action: KeyAction): void {
-		if (KernelEngine.status && !KernelEngine.paused) {
-			if (!action.down) {
-				clearInterval(KernelEngine.tmpH);
-				clearInterval(KernelEngine.tmpV);
-			}
-
-			if (action.down && action.key === KeyCommon.DOWN) {
-				clearInterval(KernelEngine.tmpV);
-				CameraEngine.moveIncremental(0, 1);
-				KernelEngine.tmpV = setInterval(() => {
-					CameraEngine.moveIncremental(0, 1);
-				}, KernelEngine.fpmsCamera);
-			}
-			if (action.down && action.key === KeyCommon.LEFT) {
-				clearInterval(KernelEngine.tmpH);
-				CameraEngine.moveIncremental(-1, 0);
-				KernelEngine.tmpH = setInterval(() => {
-					CameraEngine.moveIncremental(-1, 0);
-				}, KernelEngine.fpmsCamera);
-			}
-			if (action.down && action.key === KeyCommon.RIGHT) {
-				clearInterval(KernelEngine.tmpH);
-				CameraEngine.moveIncremental(1, 0);
-				KernelEngine.tmpH = setInterval(() => {
-					CameraEngine.moveIncremental(1, 0);
-				}, KernelEngine.fpmsCamera);
-			}
-			if (action.down && action.key === KeyCommon.UP) {
-				clearInterval(KernelEngine.tmpV);
-				CameraEngine.moveIncremental(0, -1);
-				KernelEngine.tmpV = setInterval(() => {
-					CameraEngine.moveIncremental(0, -1);
-				}, KernelEngine.fpmsCamera);
-			}
-		}
-	}
-
-	public static inputMouse(action: MouseAction): void {
-		if (KernelEngine.status && !KernelEngine.paused) {
-			if (action.cmd == MouseCmd.LEFT_CLICK) {
-				if (MapDrawEngine.isPixelInMap(action.position.xRel, action.position.yRel)) {
-					MapDrawEngine.moveToPx(action.position.xRel, action.position.yRel);
-				}
-			}
-			if (action.cmd == MouseCmd.WHEEL) {
-				if (action.down) {
-					CameraEngine.zoom(false);
-				} else {
-					CameraEngine.zoom(true);
-				}
-			}
-		}
-	}
-
-	public static inputTouch(action: TouchAction): void {
-		if (KernelEngine.status && !KernelEngine.paused) {
-			if (action.cmd == TouchCmd.ZOOM) {
-				if (action.down) {
-					KernelEngine.touchDistanceActive = true;
-					KernelEngine.touchDistanceOrig = <number>action.positions[0].distance;
-					KernelEngine.touchDistanceOrigX = <number>action.positions[0].x;
-					KernelEngine.touchDistanceOrigY = <number>action.positions[0].y;
-				} else {
-					KernelEngine.touchDistanceActive = false;
-				}
-			} else if (action.cmd == TouchCmd.ZOOM_MOVE && KernelEngine.touchDistanceActive) {
-				let distance: number = <number>action.positions[0].distance,
-					x: number = <number>action.positions[0].x,
-					y: number = <number>action.positions[0].y,
-					absX: number = Math.abs(KernelEngine.touchDistanceOrigX - x),
-					absY: number = Math.abs(KernelEngine.touchDistanceOrigY - y),
-					absZoom: number = Math.abs(KernelEngine.touchDistanceOrig - distance);
-
-				// Move X
-				if (absX > 40) {
-					if (KernelEngine.touchDistanceOrigX - x > 0) {
-						CameraEngine.moveIncremental(1, 0);
-					} else {
-						CameraEngine.moveIncremental(-1, 0);
-					}
-					KernelEngine.touchDistanceOrigX = x;
-				}
-
-				// Move Y
-				if (absY > 40) {
-					if (KernelEngine.touchDistanceOrigY - y > 0) {
-						CameraEngine.moveIncremental(0, 1);
-					} else {
-						CameraEngine.moveIncremental(0, -1);
-					}
-					KernelEngine.touchDistanceOrigY = y;
-				}
-
-				// Zoom
-				if (absZoom > 40) {
-					if (KernelEngine.touchDistanceOrig - distance > 0) {
-						CameraEngine.zoom(false);
-					} else {
-						CameraEngine.zoom(true);
-					}
-					KernelEngine.touchDistanceOrig = distance;
-				}
-			}
-		}
-	}
-
 	private static loop(timestampNow: number): void {
 		if (!KernelEngine.status) {
 			return;
 		}
+		timestampNow |= 0;
 
 		// Start the request for the next frame
 		KernelEngine.requestFrame = requestAnimationFrame(KernelEngine.loop);
@@ -272,6 +157,7 @@ export class KernelEngine {
 			return;
 		}
 		KernelEngine.paused = true;
+		InputsCalcEngine.setPaused(true);
 	}
 
 	private static resetMapActive(): void {
@@ -297,6 +183,7 @@ export class KernelEngine {
 			return;
 		}
 		KernelEngine.paused = false;
+		InputsCalcEngine.setPaused(false);
 	}
 
 	public static async start(mapActive: MapActive): Promise<void> {
@@ -310,6 +197,7 @@ export class KernelEngine {
 		KernelEngine.status = true;
 		KernelEngine.historyUpdate(mapActive);
 		KernelEngine.resetMapActive();
+		InputsCalcEngine.setStatus(true);
 
 		// Reset camera
 		if (KernelEngine.ctxDimensionHeight && KernelEngine.ctxDimensionWidth) {
@@ -343,6 +231,7 @@ export class KernelEngine {
 		clearInterval(KernelEngine.framesInterval);
 		cancelAnimationFrame(KernelEngine.requestFrame);
 		KernelEngine.status = false;
+		InputsCalcEngine.setStatus(false);
 	}
 
 	public static setDimension(height: number, width: number): void {

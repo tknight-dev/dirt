@@ -1,4 +1,5 @@
 import { ClockCalcEngine } from '../../../calc/clock.calc.engine';
+import { InputsCalcEngine } from '../../../calc/inputs.calc.engine';
 import { MapActive } from '../../../models/map.model';
 
 /**
@@ -9,6 +10,10 @@ export class CalcPlayEngine {
 	private static mapActive: MapActive;
 
 	public static start(timestampDelta: number): void {
+		// First
+		InputsCalcEngine.start(timestampDelta);
+
+		// Normal
 		ClockCalcEngine.start(timestampDelta);
 	}
 

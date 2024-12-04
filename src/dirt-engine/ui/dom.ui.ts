@@ -4367,6 +4367,7 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
@@ -4421,6 +4422,7 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
@@ -4473,6 +4475,7 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
@@ -4525,6 +4528,7 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
@@ -4579,6 +4583,7 @@ export class DomUI {
 			view.style.display = 'flex';
 
 			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
@@ -4635,6 +4640,7 @@ export class DomUI {
 			view.style.display = 'none';
 
 			// Display all canvases
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
