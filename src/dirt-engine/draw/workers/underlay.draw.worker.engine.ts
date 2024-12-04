@@ -1,7 +1,6 @@
 import {
 	UnderlayDrawBusInputCmd,
 	UnderlayDrawBusInputPlayload,
-	UnderlayDrawBusInputPlayloadHorizon,
 	UnderlayDrawBusInputPlayloadInitial,
 	UnderlayDrawBusInputPlayloadResolution,
 	UnderlayDrawBusInputPlayloadTime,
@@ -19,9 +18,6 @@ self.onmessage = (event: MessageEvent) => {
 		case UnderlayDrawBusInputCmd.INITIALIZE:
 			UnderlayDrawWorkerEngine.initialize(self, <UnderlayDrawBusInputPlayloadInitial>payload.data);
 			break;
-		case UnderlayDrawBusInputCmd.SET_HORIZON:
-			UnderlayDrawWorkerEngine.inputSetHorizon(<UnderlayDrawBusInputPlayloadHorizon>payload.data);
-			break;
 		case UnderlayDrawBusInputCmd.SET_RESOLUTION:
 			UnderlayDrawWorkerEngine.inputSetResolution(<UnderlayDrawBusInputPlayloadResolution>payload.data);
 			break;
@@ -37,8 +33,6 @@ self.onmessage = (event: MessageEvent) => {
 class UnderlayDrawWorkerEngine {
 	private static canvas: OffscreenCanvas;
 	private static ctx: OffscreenCanvasRenderingContext2D;
-	private static drawIntervalInMs: number = 1000;
-	private static gHorizon: number = -1;
 	private static height: number = 0;
 	private static hourPreciseOfDayEff: number = -1;
 	private static initialized: boolean;
@@ -59,13 +53,9 @@ class UnderlayDrawWorkerEngine {
 		UnderlayDrawWorkerEngine.ctx.imageSmoothingEnabled = false;
 	}
 
-	public static inputSetHorizon(data: UnderlayDrawBusInputPlayloadHorizon): void {
-		UnderlayDrawWorkerEngine.gHorizon = data.gHorizon;
-	}
-
 	public static inputSetResolution(data: UnderlayDrawBusInputPlayloadResolution): void {
 		UnderlayDrawWorkerEngine.height = data.height;
-		UnderlayDrawWorkerEngine.width = data.width;
+		UnderlayDrawWorkerEngine.width = Math.round(data.width * 1.05); // parallaxing
 		UnderlayDrawWorkerEngine._draw();
 	}
 
@@ -86,13 +76,12 @@ class UnderlayDrawWorkerEngine {
 	private static _draw(): void {
 		let canvas: OffscreenCanvas = UnderlayDrawWorkerEngine.canvas,
 			ctx: OffscreenCanvasRenderingContext2D = UnderlayDrawWorkerEngine.ctx,
-			gHorizon: number = UnderlayDrawWorkerEngine.gHorizon,
 			height: number = UnderlayDrawWorkerEngine.height,
 			hourPreciseOfDayEff: number = UnderlayDrawWorkerEngine.hourPreciseOfDayEff,
 			width: number = UnderlayDrawWorkerEngine.width;
 
 		// is ready
-		if (gHorizon === -1 || height === 0 || hourPreciseOfDayEff === -1) {
+		if (height === 0 || hourPreciseOfDayEff === -1) {
 			return;
 		}
 
@@ -108,8 +97,32 @@ class UnderlayDrawWorkerEngine {
 		}
 
 		// draw
-		// ctx.fillStyle = "red";
-		// ctx.fillRect(0, 0, 40, 40);
+		const gradient = ctx.createLinearGradient(0, 0, 0, height);
+		gradient.addColorStop(0.25, 'black');
+		gradient.addColorStop(0.5, 'blue');
+		gradient.addColorStop(1, 'cyan');
+		ctx.fillStyle = gradient;
+		ctx.fillRect(0, 0, width, height);
+
+		for (let i = 0; i < Math.ceil(width / 40); i++) {
+			if (i % 3 === 0) {
+				ctx.fillStyle = 'blue';
+			} else if (i % 2 === 0) {
+				ctx.fillStyle = 'red';
+			} else {
+				ctx.fillStyle = 'green';
+			}
+			ctx.fillRect(40 * i, height - 40, 40, 40); // Bottom
+
+			ctx.fillRect(0, 40 * i, 40, 40); // Left
+
+			ctx.fillRect((width / 2) | 0, 40 * i, 40, 40); // Middle
+			ctx.fillRect(40 * i, (height / 2) | 0, 40, 40); // Middle
+
+			ctx.fillRect(width - 40, 40 * i, 40, 40); // Right
+
+			ctx.fillRect(40 * i, 0, 40, 40); // Top
+		}
 
 		// done
 		UnderlayDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());

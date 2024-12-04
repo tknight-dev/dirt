@@ -153,9 +153,7 @@ export class ImageBlockDrawEngine {
 				transform: boolean,
 				shadingQuality: VideoBusInputCmdSettingsShadingQuality = ImageBlockDrawEngine.shadingQuality,
 				startGx: number = camera.viewportGx,
-				startGxEff: number = startGx - 1,
 				startGy: number = camera.viewportGy,
-				startGyEff: number = startGy - 1,
 				stopGx: number = startGx + camera.viewportGwEff,
 				stopGy: number = startGy + camera.viewportGwEff,
 				x: number,
@@ -227,7 +225,7 @@ export class ImageBlockDrawEngine {
 					complexes = complexesByGx[j];
 					gx = Number(j);
 
-					if (gx < startGxEff) {
+					if (gx < startGx) {
 						continue;
 					} else if (gx > stopGx) {
 						break;
@@ -237,7 +235,7 @@ export class ImageBlockDrawEngine {
 
 					for (k in complexes) {
 						gy = complexes[k].value;
-						if (gy < startGyEff) {
+						if (gy < startGy) {
 							continue;
 						} else if (gy > stopGy) {
 							break;

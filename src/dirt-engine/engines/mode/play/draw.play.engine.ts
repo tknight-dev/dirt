@@ -56,7 +56,7 @@ export class DrawPlayEngine {
 		/*
 		 * Clear canvas
 		 */
-		// DrawEditEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxBackground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxForeground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxPrimary.clearRect(0, 0, camera.windowPw, camera.windowPh);

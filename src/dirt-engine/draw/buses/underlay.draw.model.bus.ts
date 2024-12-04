@@ -4,7 +4,6 @@
 
 export enum UnderlayDrawBusInputCmd {
 	INITIALIZE,
-	SET_HORIZON,
 	SET_RESOLUTION,
 	SET_TIME,
 	SET_TIME_FORCED,
@@ -12,11 +11,11 @@ export enum UnderlayDrawBusInputCmd {
 
 export interface UnderlayDrawBusInputPlayload {
 	cmd: UnderlayDrawBusInputCmd;
-	data: UnderlayDrawBusInputPlayloadInitial | UnderlayDrawBusInputPlayloadResolution | UnderlayDrawBusInputPlayloadTimeForced;
-}
-
-export interface UnderlayDrawBusInputPlayloadHorizon {
-	gHorizon: number;
+	data:
+		| UnderlayDrawBusInputPlayloadInitial
+		| UnderlayDrawBusInputPlayloadResolution
+		| UnderlayDrawBusInputPlayloadTime
+		| UnderlayDrawBusInputPlayloadTimeForced;
 }
 
 export interface UnderlayDrawBusInputPlayloadInitial {}

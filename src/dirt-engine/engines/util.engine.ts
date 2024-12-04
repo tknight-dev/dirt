@@ -130,15 +130,7 @@ export class UtilEngine {
 		return string;
 	}
 
-	public static scale(
-		input: number,
-		inputMax: number,
-		inputMin: number,
-		outputMax: number,
-		outputMin: number,
-		round: boolean = false,
-	): number {
-		let value: number = ((input - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin;
-		return round ? Math.round(value) : value;
+	public static scale(input: number, inputMax: number, inputMin: number, outputMax: number, outputMin: number): number {
+		return ((input - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin;
 	}
 }

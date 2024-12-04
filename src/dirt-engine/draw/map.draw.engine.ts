@@ -29,6 +29,7 @@ export class MapDrawEngine {
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapImage: ImageBitmap;
+	private static mapImageNew: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 	public static resolution: null | number;
@@ -51,8 +52,7 @@ export class MapDrawEngine {
 		await MapDrawEngineBus.initialize();
 		MapDrawEngineBus.setCallbackBitmap((imageBitmap: ImageBitmap) => {
 			MapDrawEngine.mapImage = imageBitmap;
-			MapDrawEngine.cacheBackgroundHashPh = -1;
-			MapDrawEngine.cacheBackgroundHashPw = -1;
+			MapDrawEngine.mapImageNew = true;
 		});
 	}
 
@@ -94,8 +94,11 @@ export class MapDrawEngine {
 		/*
 		 * Background
 		 */
-		if (MapDrawEngine.cacheBackgroundHashPh !== camera.windowPh || MapDrawEngine.cacheBackgroundHashPw !== camera.windowPw) {
-			MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
+		if (
+			MapDrawEngine.cacheBackgroundHashPh !== camera.windowPh ||
+			MapDrawEngine.cacheBackgroundHashPw !== camera.windowPw ||
+			MapDrawEngine.mapImageNew
+		) {
 			let ctx: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctx;
 
 			// Canvas
@@ -106,6 +109,18 @@ export class MapDrawEngine {
 				MapDrawEngine.cacheCanvas.height = MapDrawEngine.backgroundPh;
 				MapDrawEngine.cacheCanvas.width = MapDrawEngine.backgroundPw;
 			}
+
+			// Map Image
+			if (MapDrawEngine.mapImageNew) {
+				// Map image was updated
+				MapDrawEngine.mapImageNew = false;
+			} else {
+				// Map image isn't new, but the resolution has changed
+				MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
+			}
+
+			// Fixes left over lines from viewport outlining
+			ctx.reset();
 
 			// Background
 			ctx.fillStyle = 'rgba(0,0,0,.5)';

@@ -93,7 +93,7 @@ export class GridDrawEngine {
 					gEff = (g * gInPw - viewportPxEff) | 0;
 					ctx.moveTo(gEff, 0);
 					ctx.lineTo(gEff, windowPh);
-					ctx.fillText(String((g + viewportGx - 0.001) | 0), gEff, 5 * gInPh);
+					ctx.fillText(String((g + viewportGx) | 0), gEff, 5 * gInPh);
 				}
 				ctx.stroke();
 

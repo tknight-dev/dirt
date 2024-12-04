@@ -32,15 +32,6 @@ export class UnderlayDrawEngineBus {
 		};
 	}
 
-	public static outputHorizon(gHorizon: number): void {
-		UnderlayDrawEngineBus.worker.postMessage({
-			cmd: UnderlayDrawBusInputCmd.SET_HORIZON,
-			data: {
-				gHorizon: gHorizon,
-			},
-		});
-	}
-
 	/**
 	 * Size of map container
 	 */
