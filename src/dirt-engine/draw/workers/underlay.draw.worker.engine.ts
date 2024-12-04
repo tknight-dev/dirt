@@ -98,31 +98,12 @@ class UnderlayDrawWorkerEngine {
 
 		// draw
 		const gradient = ctx.createLinearGradient(0, 0, 0, height);
-		gradient.addColorStop(0.25, 'black');
+		gradient.addColorStop(0.1, 'black');
+		gradient.addColorStop(0.3, 'blue');
 		gradient.addColorStop(0.5, 'blue');
 		gradient.addColorStop(1, 'cyan');
 		ctx.fillStyle = gradient;
 		ctx.fillRect(0, 0, width, height);
-
-		for (let i = 0; i < Math.ceil(width / 40); i++) {
-			if (i % 3 === 0) {
-				ctx.fillStyle = 'blue';
-			} else if (i % 2 === 0) {
-				ctx.fillStyle = 'red';
-			} else {
-				ctx.fillStyle = 'green';
-			}
-			ctx.fillRect(40 * i, height - 40, 40, 40); // Bottom
-
-			ctx.fillRect(0, 40 * i, 40, 40); // Left
-
-			ctx.fillRect((width / 2) | 0, 40 * i, 40, 40); // Middle
-			ctx.fillRect(40 * i, (height / 2) | 0, 40, 40); // Middle
-
-			ctx.fillRect(width - 40, 40 * i, 40, 40); // Right
-
-			ctx.fillRect(40 * i, 0, 40, 40); // Top
-		}
 
 		// done
 		UnderlayDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());

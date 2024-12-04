@@ -38,7 +38,8 @@ export class UnderlayDrawEngine {
 			UnderlayDrawEngine.cache &&
 			UnderlayDrawEngine.mapActive.gridConfigActive.gHorizon > UnderlayDrawEngine.mapActive.camera.viewportGy
 		) {
-			let offsetMaxX: number = UnderlayDrawEngine.cache.width - UnderlayDrawEngine.width,
+			let height: number = UnderlayDrawEngine.mapActive.camera.gInPh * UnderlayDrawEngine.mapActive.gridConfigActive.gHorizon,
+				offsetMaxX: number = UnderlayDrawEngine.cache.width - UnderlayDrawEngine.width,
 				offsetX: number =
 					UtilEngine.scale(
 						UnderlayDrawEngine.mapActive.camera.gx,
@@ -49,10 +50,10 @@ export class UnderlayDrawEngine {
 					) | 0,
 				offsetY: number =
 					UtilEngine.scale(
-						UnderlayDrawEngine.mapActive.gridConfigActive.gHorizon,
 						UnderlayDrawEngine.mapActive.camera.viewportGy,
-						UnderlayDrawEngine.mapActive.camera.viewportGy + UnderlayDrawEngine.mapActive.camera.viewportGh,
-						UnderlayDrawEngine.mapActive.camera.windowPh / UnderlayDrawEngine.mapActive.camera.zoom,
+						UnderlayDrawEngine.mapActive.gridConfigActive.gHorizon,
+						0,
+						height,
 						0,
 					) | 0;
 
@@ -68,7 +69,7 @@ export class UnderlayDrawEngine {
 				0,
 				-offsetY,
 				UnderlayDrawEngine.mapActive.camera.windowPw,
-				UnderlayDrawEngine.mapActive.camera.windowPh,
+				height,
 			);
 			UnderlayDrawEngine.cleared = false;
 		} else if (!UnderlayDrawEngine.cleared) {

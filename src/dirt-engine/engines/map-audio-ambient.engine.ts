@@ -418,7 +418,7 @@ export class MapAudioAmbientEngine {
 								if (gridLight.assetIdAudioEffectAmbient) {
 									audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectAmbient, audioOptions);
 
-									if (audioBufferId) {
+									if (audioBufferId !== undefined) {
 										activeAudioLightAmbient[hash] = audioBufferId;
 										lightState.ambient = {
 											pan: pan,
@@ -458,7 +458,7 @@ export class MapAudioAmbientEngine {
 									if (gridLight.assetIdAudioEffectSwitchOff) {
 										audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOff, audioOptions);
 
-										if (audioBufferId) {
+										if (audioBufferId !== undefined) {
 											activeAudioLightSwitchOff[hash] = audioBufferId;
 											lightState.ambient = {
 												pan: pan,
@@ -499,7 +499,7 @@ export class MapAudioAmbientEngine {
 									if (gridLight.assetIdAudioEffectSwitchOn) {
 										audioBufferId = await AudioEngine.controlPlay(gridLight.assetIdAudioEffectSwitchOn, audioOptions);
 
-										if (audioBufferId) {
+										if (audioBufferId !== undefined) {
 											activeAudioLightSwitchOn[hash] = audioBufferId;
 											lightState.switchOn = {
 												pan: pan,
@@ -648,7 +648,7 @@ export class MapAudioAmbientEngine {
 									audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
 									position.activationCount++;
 
-									if (audioBufferId) {
+									if (audioBufferId !== undefined) {
 										activeAudioTag[hash] = audioBufferId;
 										tagStates[hash] = {
 											pan: pan,
@@ -659,7 +659,7 @@ export class MapAudioAmbientEngine {
 							} else {
 								audioBufferId = await AudioEngine.controlPlay(gridAudioTag.assetId, audioOptions);
 
-								if (audioBufferId) {
+								if (audioBufferId !== undefined) {
 									activeAudioTag[hash] = audioBufferId;
 									tagStates[hash] = {
 										pan: pan,

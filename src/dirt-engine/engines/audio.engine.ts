@@ -333,6 +333,7 @@ export class AudioEngine {
 			console.error('AudioEngine > controlPlay: no buffer available');
 			return undefined;
 		}
+		//console.log('buffer', bufferStack.id, 'taken');
 
 		// Options
 		if (!options) {
@@ -398,6 +399,7 @@ export class AudioEngine {
 
 		if (bufferStack) {
 			if (!bufferStack.audio.ended) {
+				//console.log('buffer', bufferStack.id, 'stop');
 				bufferStack.audio.loop = false;
 				bufferStack.audio.currentTime = bufferStack.audio.duration;
 				return true;
@@ -601,6 +603,7 @@ export class AudioEngine {
 
 				// Make available on complete
 				AudioEngine.buffers[id].audio.onended = () => {
+					//console.log('buffer', id, 'returned');
 					AudioEngine.buffersAvailable.pushEnd(AudioEngine.buffers[id]);
 				};
 			};
