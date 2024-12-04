@@ -153,9 +153,11 @@ export class ImageBlockDrawEngine {
 				transform: boolean,
 				shadingQuality: VideoBusInputCmdSettingsShadingQuality = ImageBlockDrawEngine.shadingQuality,
 				startGx: number = camera.viewportGx,
+				startGxEff: number = startGx | 0,
 				startGy: number = camera.viewportGy,
-				stopGx: number = startGx + camera.viewportGwEff,
-				stopGy: number = startGy + camera.viewportGwEff,
+				startGyEff: number = startGy | 0,
+				stopGxEff: number = Math.ceil(startGx + camera.viewportGwEff),
+				stopGyEff: number = Math.ceil(startGy + camera.viewportGhEff),
 				x: number,
 				y: number,
 				z: VideoBusInputCmdGameModeEditApplyZ,
@@ -225,9 +227,9 @@ export class ImageBlockDrawEngine {
 					complexes = complexesByGx[j];
 					gx = Number(j);
 
-					if (gx < startGx) {
+					if (gx < startGxEff) {
 						continue;
-					} else if (gx > stopGx) {
+					} else if (gx > stopGxEff) {
 						break;
 					}
 
@@ -235,9 +237,9 @@ export class ImageBlockDrawEngine {
 
 					for (k in complexes) {
 						gy = complexes[k].value;
-						if (gy < startGy) {
+						if (gy < startGyEff) {
 							continue;
-						} else if (gy > stopGy) {
+						} else if (gy > stopGyEff) {
 							break;
 						}
 						gridImageBlock = referenceHashes[complexes[k].hash].block;
@@ -478,9 +480,9 @@ export class ImageBlockDrawEngine {
 						complexes = complexesByGx[j];
 						gx = Number(j);
 
-						if (gx < startGx) {
+						if (gx < startGxEff) {
 							continue;
-						} else if (gx > stopGx) {
+						} else if (gx > stopGxEff) {
 							break;
 						}
 
@@ -494,9 +496,9 @@ export class ImageBlockDrawEngine {
 							}
 
 							gy = <number>gridLight.gy;
-							if (gy < startGy) {
+							if (gy < startGyEff) {
 								continue;
-							} else if (gy > stopGy) {
+							} else if (gy > stopGyEff) {
 								break;
 							}
 
@@ -566,9 +568,9 @@ export class ImageBlockDrawEngine {
 							complexes = complexesByGx[j];
 							gx = Number(j);
 
-							if (gx < startGx) {
+							if (gx < startGxEff) {
 								continue;
-							} else if (gx > stopGx) {
+							} else if (gx > stopGxEff) {
 								break;
 							}
 
@@ -578,9 +580,9 @@ export class ImageBlockDrawEngine {
 								gridAudioBlock = audioPrimaryBlockHashes[complexes[k].hash];
 
 								gy = <number>gridAudioBlock.gy;
-								if (gy < startGy) {
+								if (gy < startGyEff) {
 									continue;
-								} else if (gy > stopGy) {
+								} else if (gy > stopGyEff) {
 									break;
 								}
 
@@ -611,9 +613,9 @@ export class ImageBlockDrawEngine {
 							complexes = complexesByGx[j];
 							gx = Number(j);
 
-							if (gx < startGx) {
+							if (gx < startGxEff) {
 								continue;
-							} else if (gx > stopGx) {
+							} else if (gx > stopGxEff) {
 								break;
 							}
 
@@ -623,9 +625,9 @@ export class ImageBlockDrawEngine {
 								gridAudioTag = audioPrimaryTagHashes[complexes[k].hash];
 
 								gy = <number>gridAudioTag.gy;
-								if (gy < startGy) {
+								if (gy < startGyEff) {
 									continue;
-								} else if (gy > stopGy) {
+								} else if (gy > stopGyEff) {
 									break;
 								}
 
