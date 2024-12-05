@@ -28,20 +28,26 @@ export class InputsCalcEngine {
 		if (InputsCalcEngine.timestampDelta > 32) {
 			InputsCalcEngine.timestampDelta = 0;
 
-			let stateAction: { [key: number]: boolean } = InputsCalcEngine.stateAction,
+			let horizontal: number = 0,
+				stateAction: { [key: number]: boolean } = InputsCalcEngine.stateAction,
 				stateModifier: { [key: number]: boolean } = InputsCalcEngine.stateModifier,
-				stateMove: { [key: number]: boolean } = InputsCalcEngine.stateMove;
+				stateMove: { [key: number]: boolean } = InputsCalcEngine.stateMove,
+				vertical: number = 0;
 
 			if (stateMove[KeyCommon.DOWN]) {
-				CameraEngine.moveIncremental(0, 33);
+				vertical = 33;
 			} else if (stateMove[KeyCommon.UP]) {
-				CameraEngine.moveIncremental(0, -33);
+				vertical = -33;
 			}
 
 			if (stateMove[KeyCommon.LEFT]) {
-				CameraEngine.moveIncremental(-33, 0);
+				horizontal = -33;
 			} else if (stateMove[KeyCommon.RIGHT]) {
-				CameraEngine.moveIncremental(33, 0);
+				horizontal = 33;
+			}
+
+			if (horizontal || vertical) {
+				CameraEngine.moveIncremental(horizontal, vertical);
 			}
 		}
 	}
