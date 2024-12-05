@@ -1,4 +1,5 @@
 import { MapActive } from '../models/map.model';
+import { MapDrawEngine } from './map.draw.engine';
 import { UnderlayDrawEngineBus } from './buses/underlay.draw.engine.bus';
 import { UtilEngine } from '../engines/util.engine';
 
@@ -28,6 +29,7 @@ export class UnderlayDrawEngine {
 		await UnderlayDrawEngineBus.initialize();
 		UnderlayDrawEngineBus.setCallbackBitmap((imageBitmap: ImageBitmap) => {
 			UnderlayDrawEngine.cache = imageBitmap;
+			MapDrawEngine.setBackgroundSky(imageBitmap);
 		});
 	}
 

@@ -16,6 +16,8 @@ export class MapDrawEngine {
 	private static backgroundPx: number;
 	private static backgroundPy: number;
 	private static cacheBackground: ImageBitmap;
+	private static cacheBackgroundSky: ImageBitmap;
+	private static cacheBackgroundSkyNew: boolean;
 	private static cacheBackgroundHashPh: number;
 	private static cacheBackgroundHashPw: number;
 	private static cacheCameraLines: ImageBitmap;
@@ -97,6 +99,7 @@ export class MapDrawEngine {
 		if (
 			MapDrawEngine.cacheBackgroundHashPh !== camera.windowPh ||
 			MapDrawEngine.cacheBackgroundHashPw !== camera.windowPw ||
+			MapDrawEngine.cacheBackgroundSkyNew ||
 			MapDrawEngine.mapImageNew
 		) {
 			let ctx: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctx;
@@ -108,14 +111,6 @@ export class MapDrawEngine {
 			) {
 				MapDrawEngine.cacheCanvas.height = MapDrawEngine.backgroundPh;
 				MapDrawEngine.cacheCanvas.width = MapDrawEngine.backgroundPw;
-			}
-
-			// Map Image
-			if (MapDrawEngine.mapImageNew) {
-				// Map image was updated
-				MapDrawEngine.mapImageNew = false;
-			} else {
-				// Map image isn't new, but the resolution has changed
 				MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
 			}
 
@@ -123,10 +118,22 @@ export class MapDrawEngine {
 			ctx.reset();
 
 			// Background
-			ctx.fillStyle = 'rgba(0,0,0,.5)';
-			ctx.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 			if (MapDrawEngine.mapImage) {
+				if (MapDrawEngine.cacheBackgroundSky) {
+					ctx.drawImage(
+						MapDrawEngine.cacheBackgroundSky,
+						0,
+						0,
+						MapDrawEngine.backgroundPw,
+						MapDrawEngine.backgroundPh *
+							(MapDrawEngine.mapActive.gridConfigActive.gHorizon / MapDrawEngine.mapActive.gridConfigActive.gHeight),
+					);
+				}
+
 				ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
+			} else {
+				ctx.fillStyle = 'rgba(0,0,0,.5)';
+				ctx.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 			}
 
 			// Background Border
@@ -136,6 +143,8 @@ export class MapDrawEngine {
 			ctx.stroke();
 
 			// Cache it
+			MapDrawEngine.cacheBackgroundSkyNew = false;
+			MapDrawEngine.mapImageNew = false;
 			MapDrawEngine.cacheBackground = MapDrawEngine.cacheCanvas.transferToImageBitmap();
 			MapDrawEngine.cacheBackgroundHashPh = camera.windowPh;
 			MapDrawEngine.cacheBackgroundHashPw = camera.windowPw;
@@ -270,6 +279,11 @@ export class MapDrawEngine {
 		} else {
 			return false;
 		}
+	}
+
+	public static setBackgroundSky(backgroundSky: ImageBitmap) {
+		MapDrawEngine.cacheBackgroundSky = backgroundSky;
+		MapDrawEngine.cacheBackgroundSkyNew = true;
 	}
 
 	public static setMapActive(mapActive: MapActive) {
