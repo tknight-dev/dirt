@@ -63,6 +63,7 @@ export enum AssetImageType {
 	LOGO,
 	NULL,
 	SYSTEM,
+	UNDERLAY,
 }
 
 export interface AssetManifest {

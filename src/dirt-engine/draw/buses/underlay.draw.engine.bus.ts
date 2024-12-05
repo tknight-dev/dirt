@@ -5,11 +5,11 @@ import { UnderlayDrawBusInputCmd } from './underlay.draw.model.bus';
  */
 
 export class UnderlayDrawEngineBus {
-	private static callbackBitmap: (image: ImageBitmap) => void;
+	private static callbackBitmaps: (image: ImageBitmap[]) => void;
 	private static initialized: boolean;
 	private static worker: Worker;
 
-	public static async initialize(): Promise<void> {
+	public static async initialize(assetIds: string[], images: ImageBitmap[]): Promise<void> {
 		if (UnderlayDrawEngineBus.initialized) {
 			console.error('UnderlayDrawEngineBus > initialize: already initialized');
 			return;
@@ -20,16 +20,40 @@ export class UnderlayDrawEngineBus {
 		});
 		UnderlayDrawEngineBus.input();
 
-		UnderlayDrawEngineBus.worker.postMessage({
-			cmd: UnderlayDrawBusInputCmd.INITIALIZE,
-			data: {},
-		});
+		UnderlayDrawEngineBus.worker.postMessage(
+			{
+				cmd: UnderlayDrawBusInputCmd.INITIALIZE,
+				data: {
+					assetIds: assetIds,
+					images: images,
+				},
+			},
+			images,
+		);
 	}
 
 	private static input(): void {
 		UnderlayDrawEngineBus.worker.onmessage = (event: MessageEvent) => {
-			UnderlayDrawEngineBus.callbackBitmap(event.data);
+			UnderlayDrawEngineBus.callbackBitmaps(event.data);
 		};
+	}
+
+	public static outputHourPreciseOfDayEff(hourPreciseOfDayEff: number): void {
+		UnderlayDrawEngineBus.worker.postMessage({
+			cmd: UnderlayDrawBusInputCmd.SET_TIME,
+			data: {
+				hourPreciseOfDayEff: hourPreciseOfDayEff,
+			},
+		});
+	}
+
+	public static outputHourPreciseOfDayEffReset(hourPreciseOfDayEff: number): void {
+		UnderlayDrawEngineBus.worker.postMessage({
+			cmd: UnderlayDrawBusInputCmd.RESET_TIME,
+			data: {
+				hourPreciseOfDayEff: hourPreciseOfDayEff,
+			},
+		});
 	}
 
 	/**
@@ -49,25 +73,10 @@ export class UnderlayDrawEngineBus {
 		});
 	}
 
-	public static outputTime(hourPreciseOfDayEff: number): void {
-		UnderlayDrawEngineBus.worker.postMessage({
-			cmd: UnderlayDrawBusInputCmd.SET_TIME,
-			data: {
-				hourPreciseOfDayEff: hourPreciseOfDayEff,
-			},
-		});
-	}
-
-	public static outputTimeForced(forced: boolean): void {
-		UnderlayDrawEngineBus.worker.postMessage({
-			cmd: UnderlayDrawBusInputCmd.SET_TIME_FORCED,
-			data: {
-				forced: forced,
-			},
-		});
-	}
-
-	public static setCallbackBitmap(callbackBitmap: (image: ImageBitmap) => void): void {
-		UnderlayDrawEngineBus.callbackBitmap = callbackBitmap;
+	/**
+	 * @return [0] is sky, [1] is starfield
+	 */
+	public static setCallbackBitmaps(callbackBitmaps: (image: ImageBitmap[]) => void): void {
+		UnderlayDrawEngineBus.callbackBitmaps = callbackBitmaps;
 	}
 }

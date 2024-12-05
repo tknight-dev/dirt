@@ -17,6 +17,7 @@ export class MapDrawEngine {
 	private static backgroundPy: number;
 	private static cacheBackground: ImageBitmap;
 	private static cacheBackgroundSky: ImageBitmap;
+	private static cacheBackgroundStarfield: ImageBitmap;
 	private static cacheBackgroundSkyNew: boolean;
 	private static cacheBackgroundHashPh: number;
 	private static cacheBackgroundHashPw: number;
@@ -122,6 +123,14 @@ export class MapDrawEngine {
 				if (MapDrawEngine.cacheBackgroundSky) {
 					ctx.drawImage(
 						MapDrawEngine.cacheBackgroundSky,
+						0,
+						0,
+						MapDrawEngine.backgroundPw,
+						MapDrawEngine.backgroundPh *
+							(MapDrawEngine.mapActive.gridConfigActive.gHorizon / MapDrawEngine.mapActive.gridConfigActive.gHeight),
+					);
+					ctx.drawImage(
+						MapDrawEngine.cacheBackgroundStarfield,
 						0,
 						0,
 						MapDrawEngine.backgroundPw,
@@ -281,8 +290,9 @@ export class MapDrawEngine {
 		}
 	}
 
-	public static setBackgroundSky(backgroundSky: ImageBitmap) {
-		MapDrawEngine.cacheBackgroundSky = backgroundSky;
+	public static setBackgroundSky(imageBitmaps: ImageBitmap[]) {
+		MapDrawEngine.cacheBackgroundSky = imageBitmaps[0];
+		MapDrawEngine.cacheBackgroundStarfield = imageBitmaps[1];
 		MapDrawEngine.cacheBackgroundSkyNew = true;
 	}
 

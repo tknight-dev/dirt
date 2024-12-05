@@ -658,6 +658,26 @@ let imageManifest: AssetImage[] = [
 	{
 		gHeight: 1,
 		gWidth: 1,
+		id: 'STARS',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/underlay/stars_512_288.webp',
+			},
+		],
+		type: AssetImageType.UNDERLAY,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
 		id: 'STONE_DARK',
 		meta: {
 			author: 'tknight-dev',

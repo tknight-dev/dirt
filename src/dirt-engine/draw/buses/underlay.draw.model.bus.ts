@@ -4,21 +4,28 @@
 
 export enum UnderlayDrawBusInputCmd {
 	INITIALIZE,
+	RESET_TIME,
 	SET_RESOLUTION,
 	SET_TIME,
-	SET_TIME_FORCED,
 }
 
 export interface UnderlayDrawBusInputPlayload {
 	cmd: UnderlayDrawBusInputCmd;
 	data:
 		| UnderlayDrawBusInputPlayloadInitial
+		| UnderlayDrawBusInputPlayloadResetTime
 		| UnderlayDrawBusInputPlayloadResolution
-		| UnderlayDrawBusInputPlayloadTime
-		| UnderlayDrawBusInputPlayloadTimeForced;
+		| UnderlayDrawBusInputPlayloadTime;
 }
 
-export interface UnderlayDrawBusInputPlayloadInitial {}
+export interface UnderlayDrawBusInputPlayloadInitial {
+	assetIds: string[];
+	images: ImageBitmap[];
+}
+
+export interface UnderlayDrawBusInputPlayloadResetTime {
+	hourPreciseOfDayEff: number;
+}
 
 export interface UnderlayDrawBusInputPlayloadResolution {
 	height: number;
@@ -27,8 +34,4 @@ export interface UnderlayDrawBusInputPlayloadResolution {
 
 export interface UnderlayDrawBusInputPlayloadTime {
 	hourPreciseOfDayEff: number;
-}
-
-export interface UnderlayDrawBusInputPlayloadTimeForced {
-	forced: boolean;
 }

@@ -65,12 +65,22 @@ export class LightingEngine {
 			// Try to load target quality
 			for (let j in assetImage.srcs) {
 				if (assetImage.srcs[j].quality === imageQuality) {
-					cacheInstance = {
-						gHeight: assetImage.gHeight || 1,
-						gWidth: assetImage.gWidth || 1,
-						image: <ImageBitmap>(<AssetCache>AssetEngine.getAsset(assetImage.srcs[j].src)).imageBitmap,
-					};
-					break;
+					try {
+						cacheInstance = {
+							gHeight: assetImage.gHeight || 1,
+							gWidth: assetImage.gWidth || 1,
+							image: <ImageBitmap>(<AssetCache>AssetEngine.getAsset(assetImage.srcs[j].src)).imageBitmap,
+						};
+						break;
+					} catch (error: any) {
+						console.error(
+							"LightingEngine > buildBinaries: failed to load '" +
+								assetImage.id +
+								"' [quality=" +
+								AssetImageSrcQuality[imageQuality] +
+								']',
+						);
+					}
 				}
 			}
 
@@ -275,7 +285,7 @@ export class LightingEngine {
 						LightingEngine.lightingByHashByGridPrevious = undefined;
 					}
 					LightingCalcEngineBus.outputHourPreciseOfDayEff(LightingEngine.hourPreciseOfDayEff);
-					UnderlayDrawEngineBus.outputTime(LightingEngine.hourPreciseOfDayEff);
+					UnderlayDrawEngineBus.outputHourPreciseOfDayEff(LightingEngine.hourPreciseOfDayEff);
 				}
 			});
 		}
@@ -425,6 +435,7 @@ export class LightingEngine {
 
 		LightingCalcEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
 		LightingCalcEngineBus.outputHourPreciseOfDayEff(mapActive.hourOfDayEff + mapActive.minuteOfHourEff);
+		UnderlayDrawEngineBus.outputHourPreciseOfDayEffReset(mapActive.hourOfDayEff + mapActive.minuteOfHourEff);
 	}
 
 	private static setMapActiveInflate(gridId: string, reference: GridBlockTable<GridImageBlockReference>) {
