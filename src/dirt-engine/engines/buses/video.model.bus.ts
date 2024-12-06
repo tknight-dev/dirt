@@ -273,7 +273,7 @@ export interface VideoBusOutputCmdEditCameraUpdate {
 }
 
 export interface VideoBusOutputCmdMapAsset {
-	mapActive?: MapActive;
+	mapActive?: string;
 }
 
 export interface VideoBusOutputCmdMapLoadStatus {

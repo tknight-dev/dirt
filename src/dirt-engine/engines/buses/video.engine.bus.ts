@@ -7,6 +7,7 @@ import { AudioEngine } from '../audio.engine';
 import { AudioModulation } from '../../models/audio-modulation.model';
 import { KeyAction } from '../keyboard.engine';
 import { MapActive, MapConfig } from '../../models/map.model';
+import { MapEngine } from '../map.engine';
 import { MouseAction } from '../mouse.engine';
 import { TouchAction } from '../touch.engine';
 import { ResizeEngine } from '../resize.engine';
@@ -239,7 +240,13 @@ export class VideoEngineBus {
 					case VideoBusOutputCmd.MAP_ASSET:
 						videoBusOutputCmdMapAsset = <VideoBusOutputCmdMapAsset>videoBusWorkerPayload.data;
 						if (VideoEngineBus.callbackMapAsset !== undefined) {
-							VideoEngineBus.callbackMapAsset(videoBusOutputCmdMapAsset.mapActive);
+							if (videoBusOutputCmdMapAsset.mapActive) {
+								VideoEngineBus.callbackMapAsset(
+									MapEngine.loadFromFile(UtilEngine.mapDecode(videoBusOutputCmdMapAsset.mapActive)),
+								);
+							} else {
+								VideoEngineBus.callbackMapAsset(undefined);
+							}
 						} else {
 							console.error('VideoEngineBus > input: map asset callback not set');
 						}

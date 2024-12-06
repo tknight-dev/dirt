@@ -395,7 +395,9 @@ class VideoWorkerEngine {
 			{
 				cmd: VideoBusOutputCmd.MAP_ASSET,
 				data: {
-					mapActive: mapActive,
+					mapActive: mapActive
+						? UtilEngine.mapEncode(MapEditEngine.gridBlockTableDeflate(MapEditEngine.getMapActiveCloneNormalized(mapActive)))
+						: undefined,
 				},
 			},
 		]);
@@ -607,7 +609,9 @@ class VideoWorkerEngine {
 			{
 				cmd: VideoBusOutputCmd.MAP_SAVE,
 				data: {
-					data: UtilEngine.mapEncode(MapEditEngine.gridBlockTableDeflate(<MapActive>map)),
+					data: UtilEngine.mapEncode(
+						MapEditEngine.gridBlockTableDeflate(MapEditEngine.getMapActiveCloneNormalized(<MapActive>map)),
+					),
 					name: map.name,
 				},
 			},

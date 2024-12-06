@@ -1266,10 +1266,12 @@ export class MapEditEngine {
 		}
 	}
 
-	public static getMapActiveCloneNormalized(): MapActive {
+	public static getMapActiveCloneNormalized(mapActive?: MapActive): MapActive {
 		let mapActiveClone: MapActive;
 
-		if (MapEditEngine.modeUI) {
+		if (mapActive) {
+			mapActiveClone = JSON.parse(JSON.stringify(mapActive));
+		} else if (MapEditEngine.modeUI) {
 			mapActiveClone = JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI));
 		} else {
 			mapActiveClone = JSON.parse(JSON.stringify(KernelEngine.getMapActive()));
