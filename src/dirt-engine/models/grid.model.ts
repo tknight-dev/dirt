@@ -20,6 +20,8 @@ export class Grid {
 	imageBlocksPrimaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksPrimaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
 	imageBlocksPrimarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksRenderPipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } };
+	imageBlocksRenderPipelineGy: { [key: number]: number[] };
 	imageBlocksSecondaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
 	imageBlocksSecondaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksSecondaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
@@ -78,6 +80,16 @@ export class Grid {
 			lightsPrimary: this.lightsPrimary,
 		});
 	}
+}
+
+export interface GridBlockPipelineAsset {
+	asset: GridImageBlock;
+	assetLarge?: boolean;
+	audioBlock?: GridAudioBlock;
+	audioTag?: GridAudioTag;
+	ctx: OffscreenCanvasRenderingContext2D;
+	extends?: boolean;
+	light?: GridLight;
 }
 
 export interface GridBlockTable<T> {

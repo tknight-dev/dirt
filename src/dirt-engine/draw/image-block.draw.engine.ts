@@ -6,6 +6,7 @@ import {
 	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
+	GridBlockPipelineAsset,
 	GridBlockTable,
 	GridBlockTableComplex,
 	GridImageBlockReference,
@@ -29,19 +30,16 @@ interface ZGroup {
 }
 
 export class ImageBlockDrawEngine {
-	private static cacheBackground: ImageBitmap;
-	private static cacheCanvas: OffscreenCanvas;
-	private static cacheForeground: ImageBitmap;
-	private static cachePrimary: ImageBitmap;
-	private static cacheSecondary: ImageBitmap;
-	private static cacheVanishing: ImageBitmap;
+	private static caches: ImageBitmap[];
+	private static cacheCanvases: OffscreenCanvas[] = [];
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
 	private static cacheHashPh: number;
 	private static cacheHashPw: number;
 	private static cacheHourPrecise: number;
 	private static cacheZoom: number;
-	private static ctx: OffscreenCanvasRenderingContext2D;
+	private static ctxs: OffscreenCanvasRenderingContext2D[] = [];
+	private static ctxsFinal: OffscreenCanvasRenderingContext2D[] = [];
 	private static ctxBackground: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground: OffscreenCanvasRenderingContext2D;
 	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
@@ -74,9 +72,7 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxSecondary = ctxSecondary;
 		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
 
-		ImageBlockDrawEngine.cacheCanvas = new OffscreenCanvas(0, 0);
-		ImageBlockDrawEngine.ctx = <OffscreenCanvasRenderingContext2D>ImageBlockDrawEngine.cacheCanvas.getContext('2d');
-		ImageBlockDrawEngine.ctx.imageSmoothingEnabled = false;
+		ImageBlockDrawEngine.ctxsFinal = [ctxBackground, ctxSecondary, ctxPrimary, ctxForeground, ctxVanishing];
 
 		ImageBlockDrawEngine.zGroup = [
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
@@ -85,6 +81,22 @@ export class ImageBlockDrawEngine {
 			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
 			VideoBusInputCmdGameModeEditApplyZ.VANISHING,
 		];
+
+		// Caching System
+		let cacheCanvas: OffscreenCanvas;
+
+		ImageBlockDrawEngine.caches = new Array(ImageBlockDrawEngine.zGroup.length);
+		for (let i in ImageBlockDrawEngine.zGroup) {
+			cacheCanvas = new OffscreenCanvas(0, 0);
+
+			ImageBlockDrawEngine.cacheCanvases.push(cacheCanvas);
+			ImageBlockDrawEngine.ctxs.push(<OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d'));
+			ImageBlockDrawEngine.ctxs[ImageBlockDrawEngine.ctxs.length - 1].imageSmoothingEnabled = false;
+		}
+	}
+
+	public static getCTXs(): OffscreenCanvasRenderingContext2D[] {
+		return ImageBlockDrawEngine.ctxs;
 	}
 
 	public static cacheReset(): void {
@@ -92,8 +104,12 @@ export class ImageBlockDrawEngine {
 	}
 
 	public static start(): void {
-		let camera: Camera = ImageBlockDrawEngine.mapActiveCamera,
-			hourPreciseOfDayEff: number = LightingEngine.getHourPreciseOfDayEff();
+		let caches: ImageBitmap[] = ImageBlockDrawEngine.caches,
+			camera: Camera = ImageBlockDrawEngine.mapActiveCamera,
+			ctxsFinal: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.ctxsFinal,
+			hourPreciseOfDayEff: number = LightingEngine.getHourPreciseOfDayEff(),
+			i: string,
+			zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
 		if (
 			ImageBlockDrawEngine.cacheHashGx !== camera.gx ||
@@ -111,13 +127,16 @@ export class ImageBlockDrawEngine {
 				audioPrimaryTags: GridBlockTable<GridAudioTag> | undefined,
 				audioPrimaryTagHashes: { [key: number]: GridAudioTag },
 				brightness: number,
-				ctx: OffscreenCanvasRenderingContext2D = ImageBlockDrawEngine.ctx,
+				cacheCanvases: OffscreenCanvas[] = ImageBlockDrawEngine.cacheCanvases,
 				complexes: GridBlockTableComplex[],
 				complexesByGx: { [key: number]: GridBlockTableComplex[] },
+				ctx: OffscreenCanvasRenderingContext2D,
+				ctxs: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.ctxs,
 				drawGx: number,
 				drawGy: number,
 				editing: boolean = ImageBlockDrawEngine.editing,
-				extendedHash: { [key: number]: null },
+				extendedHash: { [key: number]: null } = {},
+				extendedHashes: { [key: number]: null }[] = [],
 				getCacheInstance = LightingEngine.getCacheInstance,
 				getCacheBrightness = LightingEngine.getCacheBrightness,
 				getCacheLitByBrightness = LightingEngine.getCacheLitByBrightness,
@@ -127,30 +146,34 @@ export class ImageBlockDrawEngine {
 				gInPw: number = camera.gInPw,
 				gInPwEff: number = 0,
 				gradient: CanvasGradient,
+				gridBlockPipelineAsset: GridBlockPipelineAsset,
+				gridBlockPipelineAssets: GridBlockPipelineAsset[],
 				grid: Grid = ImageBlockDrawEngine.mapActive.gridActive,
 				gridAudioBlock: GridAudioBlock,
 				gridAudioTag: GridAudioTag,
-				gridConfig: GridConfig = ImageBlockDrawEngine.mapActive.gridConfigActive,
 				gridImageBlock: GridImageBlock,
 				gridLight: GridLight,
 				gSizeHPrevious: number = -1,
 				gSizeWPrevious: number = -1,
 				gx: number,
+				gxString: string,
 				gy: number,
+				gys: number[],
 				imageBitmap: ImageBitmap,
 				imageBitmaps: ImageBitmap[],
 				imageBitmapsBlend: number = LightingEngine.getHourPreciseOfDayEff(),
-				lightHashes: { [key: number]: GridLight },
-				lights: GridBlockTable<GridLight> | undefined = undefined,
 				j: string,
 				k: string,
+				lightHashes: { [key: number]: GridLight },
+				lights: GridBlockTable<GridLight> | undefined = undefined,
 				night: boolean = UtilEngine.isLightNight(LightingEngine.getHourPreciseOfDayEff()),
-				outside: boolean = gridConfig.outside,
+				outside: boolean = ImageBlockDrawEngine.mapActive.gridConfigActive.outside,
+				pipelineAssetsByGy: { [key: number]: GridBlockPipelineAsset[] },
+				pipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } } =
+					grid.imageBlocksRenderPipelineAssetsByGyByGx,
+				pipelineGy: { [key: number]: number[] } = grid.imageBlocksRenderPipelineGy,
 				radius: number,
 				radius2: number,
-				reference: GridBlockTable<GridImageBlockReference>,
-				referenceHashes: { [key: number]: GridImageBlockReference },
-				transform: boolean,
 				shadingQuality: VideoBusInputCmdSettingsShadingQuality = ImageBlockDrawEngine.shadingQuality,
 				startGx: number = camera.viewportGx,
 				startGxEff: number = startGx | 0,
@@ -158,125 +181,86 @@ export class ImageBlockDrawEngine {
 				startGyEff: number = startGy | 0,
 				stopGxEff: number = Math.ceil(startGx + camera.viewportGwEff),
 				stopGyEff: number = Math.ceil(startGy + camera.viewportGhEff),
-				x: number,
-				y: number,
-				z: VideoBusInputCmdGameModeEditApplyZ,
-				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
+				transform: boolean = false,
+				z: VideoBusInputCmdGameModeEditApplyZ;
 
 			// Config
-			if (ImageBlockDrawEngine.cacheCanvas.height !== camera.windowPh || ImageBlockDrawEngine.cacheCanvas.width !== camera.windowPw) {
-				ImageBlockDrawEngine.cacheCanvas.height = camera.windowPh;
-				ImageBlockDrawEngine.cacheCanvas.width = camera.windowPw;
-			}
-			imageBitmapsBlend = Math.round((imageBitmapsBlend - Math.floor(imageBitmapsBlend)) * 1000) / 1000;
-			imageBitmapsBlend = Math.round((1 - imageBitmapsBlend) * 1000) / 1000;
-
+			imageBitmapsBlend = Math.round((1 - (imageBitmapsBlend - Math.floor(imageBitmapsBlend))) * 1000) / 1000;
 			radius = (((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom) | 0;
 			radius2 = radius * 2;
 
-			/*
-			 * Iterate through z layers
-			 */
-			for (let i in zGroup) {
-				// Config
-				z = zGroup[i];
-				switch (z) {
-					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						audioPrimaryBlocks = undefined;
-						audioPrimaryTags = undefined;
-						extendedHash = <any>new Object();
-						lights = undefined;
-						reference = grid.imageBlocksBackgroundReference;
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-						audioPrimaryBlocks = undefined;
-						audioPrimaryTags = undefined;
-						extendedHash = <any>new Object();
-						lights = grid.lightsForeground;
-						reference = grid.imageBlocksForegroundReference;
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						audioPrimaryBlocks = grid.audioPrimaryBlocks;
-						audioPrimaryTags = grid.audioPrimaryTags;
-						extendedHash = <any>new Object();
-						lights = grid.lightsPrimary;
-						reference = grid.imageBlocksPrimaryReference;
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-						audioPrimaryBlocks = undefined;
-						audioPrimaryTags = undefined;
-						extendedHash = <any>new Object();
-						lights = undefined;
-						reference = grid.imageBlocksSecondaryReference;
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-						audioPrimaryBlocks = undefined;
-						audioPrimaryTags = undefined;
-						extendedHash = <any>new Object();
-						lights = undefined;
-						reference = grid.imageBlocksVanishingReference;
-						break;
+			// Resize canvases
+			if (ImageBlockDrawEngine.cacheHashPh !== camera.windowPh || ImageBlockDrawEngine.cacheHashPw !== camera.windowPw) {
+				for (i in cacheCanvases) {
+					cacheCanvases[i].height = camera.windowPh;
+					cacheCanvases[i].width = camera.windowPw;
 				}
-				referenceHashes = reference.hashes;
+			}
 
-				// Applicable hashes
-				complexesByGx = <any>reference.hashesGyByGx;
+			for (gxString in pipelineAssetsByGyByGx) {
+				gx = Number(gxString);
 
-				// Image blocks
-				for (j in complexesByGx) {
-					complexes = complexesByGx[j];
-					gx = Number(j);
+				// Viewport check
+				if (gx < startGxEff) {
+					continue;
+				} else if (gx > stopGxEff) {
+					break;
+				}
 
-					if (gx < startGxEff) {
+				drawGx = ((gx - startGx) * gInPw) | 0;
+				gys = pipelineGy[gxString];
+				pipelineAssetsByGy = pipelineAssetsByGyByGx[gxString];
+				for (i in gys) {
+					gy = Number(gys[i]);
+
+					// Viewport check
+					if (gy < startGyEff) {
 						continue;
-					} else if (gx > stopGxEff) {
+					} else if (gy > stopGyEff) {
 						break;
 					}
 
-					drawGx = ((gx - startGx) * gInPw) | 0;
+					drawGy = ((gy - startGy) * gInPh) | 0;
+					gridBlockPipelineAssets = pipelineAssetsByGy[gy];
+					for (j in gridBlockPipelineAssets) {
+						gridBlockPipelineAsset = gridBlockPipelineAssets[j];
 
-					for (k in complexes) {
-						gy = complexes[k].value;
-						if (gy < startGyEff) {
+						// Is asset available on this z level?
+						if (!gridBlockPipelineAsset) {
 							continue;
-						} else if (gy > stopGyEff) {
-							break;
 						}
-						gridImageBlock = referenceHashes[complexes[k].hash].block;
+						gridImageBlock = gridBlockPipelineAsset.asset;
 
+						// Is it a drawable asset?
 						if (gridImageBlock.null && !editing) {
 							continue;
 						}
 
-						// Extended check
-						if (gridImageBlock.extends) {
-							if (gridImageBlock.extends) {
-								// extention block
-								gridImageBlock = referenceHashes[gridImageBlock.extends].block;
-							}
+						// Extensions
+						if (extendedHashes[j] === undefined) {
+							extendedHashes[j] = {};
+						}
+						extendedHash = extendedHashes[j];
 
-							if (extendedHash[gridImageBlock.hash] === null) {
-								// Skip block as its hash parent's image has already drawn over it
+						if (gridBlockPipelineAsset.assetLarge || gridBlockPipelineAsset.extends) {
+							if (extendedHash[gridBlockPipelineAsset.asset.hash] !== undefined) {
+								// Asset already drawn
 								continue;
-							} else {
-								// Draw large block
-								extendedHash[gridImageBlock.hash] = null;
-
-								if (gx !== <number>gridImageBlock.gx) {
-									gx = <number>gridImageBlock.gx;
-									drawGx = ((gx - startGx) * gInPw) | 0;
-								}
-								gy = <number>gridImageBlock.gy;
 							}
-						} else {
-							if (gx !== <number>gridImageBlock.gx) {
-								gx = <number>gridImageBlock.gx;
-								drawGx = ((gx - startGx) * gInPw) | 0;
+							extendedHash[gridBlockPipelineAsset.asset.hash] = null;
+						}
+						if (gridBlockPipelineAsset.extends) {
+							if (gridBlockPipelineAsset.asset.gx !== gx) {
+								drawGx = ((gridBlockPipelineAsset.asset.gx - startGx) * gInPw) | 0;
+							}
+							if (gridBlockPipelineAsset.asset.gy !== gy) {
+								drawGy = ((gridBlockPipelineAsset.asset.gy - startGy) * gInPh) | 0;
 							}
 						}
 
-						// Cache calculations
-						drawGy = ((gy - startGy) * gInPh) | 0;
+						// Config
+						ctx = gridBlockPipelineAsset.ctx;
+						z = zGroup[j];
 						if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 							gSizeHPrevious = gridImageBlock.gSizeH;
 							gInPhEff = (gInPh * gSizeHPrevious + 1) | 0;
@@ -297,8 +281,6 @@ export class ImageBlockDrawEngine {
 								drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
 								drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
 							);
-						} else {
-							transform = false;
 						}
 
 						if (outside) {
@@ -467,8 +449,51 @@ export class ImageBlockDrawEngine {
 						// Reset transforms
 						if (transform) {
 							ctx.setTransform(1, 0, 0, 1, 0, 0);
+							transform = false;
+						}
+
+						// Reset extension displacement
+						if (gridBlockPipelineAsset.extends) {
+							if (gridBlockPipelineAsset.asset.gx !== gx) {
+								drawGx = ((gx - startGx) * gInPw) | 0;
+							}
+							if (gridBlockPipelineAsset.asset.gy !== gy) {
+								drawGy = ((gy - startGy) * gInPh) | 0;
+							}
 						}
 					}
+				}
+			}
+
+			for (i in zGroup) {
+				ctx = ctxs[i];
+				z = zGroup[i];
+				switch (z) {
+					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+						audioPrimaryBlocks = undefined;
+						audioPrimaryTags = undefined;
+						lights = undefined;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
+						audioPrimaryBlocks = undefined;
+						audioPrimaryTags = undefined;
+						lights = grid.lightsForeground;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						audioPrimaryBlocks = grid.audioPrimaryBlocks;
+						audioPrimaryTags = grid.audioPrimaryTags;
+						lights = grid.lightsPrimary;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
+						audioPrimaryBlocks = undefined;
+						audioPrimaryTags = undefined;
+						lights = undefined;
+						break;
+					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
+						audioPrimaryBlocks = undefined;
+						audioPrimaryTags = undefined;
+						lights = undefined;
+						break;
 				}
 
 				// Lights
@@ -651,39 +676,25 @@ export class ImageBlockDrawEngine {
 					}
 				}
 
-				// CacheIt
-				switch (z) {
-					case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-						ImageBlockDrawEngine.cacheBackground = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-						ImageBlockDrawEngine.cacheForeground = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-						ImageBlockDrawEngine.cachePrimary = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-						ImageBlockDrawEngine.cacheSecondary = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
-						break;
-					case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-						if (ImageBlockDrawEngine.vanishingEnable) {
-							x = ((camera.gx - startGx) * gInPw) | 0;
-							y = ((camera.gy - startGy) * gInPh) | 0;
+				// Vanishing circle
+				if (z === VideoBusInputCmdGameModeEditApplyZ.VANISHING && ImageBlockDrawEngine.vanishingEnable) {
+					ctx = ctxs[i];
+					gx = ((camera.gx - startGx) * gInPw) | 0;
+					gy = ((camera.gy - startGy) * gInPh) | 0;
 
-							gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-							gradient.addColorStop(0, 'white');
-							gradient.addColorStop(0.75, 'white');
-							gradient.addColorStop(1, 'transparent');
+					gradient = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius);
+					gradient.addColorStop(0, 'white');
+					gradient.addColorStop(0.75, 'white');
+					gradient.addColorStop(1, 'transparent');
 
-							ctx.globalCompositeOperation = 'destination-out';
-							ctx.fillStyle = gradient;
-							ctx.fillRect(x - radius, y - radius, radius2, radius2);
-							ctx.globalCompositeOperation = 'source-over'; // restore default setting
-						}
-
-						ImageBlockDrawEngine.cacheVanishing = ImageBlockDrawEngine.cacheCanvas.transferToImageBitmap();
-						break;
+					ctx.globalCompositeOperation = 'destination-out';
+					ctx.fillStyle = gradient;
+					ctx.fillRect(gx - radius, gy - radius, radius2, radius2);
+					ctx.globalCompositeOperation = 'source-over'; // restore default setting
 				}
+
+				// CacheIt
+				caches[i] = cacheCanvases[i].transferToImageBitmap();
 			}
 
 			// Cache it
@@ -695,11 +706,9 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.cacheZoom = camera.zoom;
 		}
 
-		ImageBlockDrawEngine.ctxBackground.drawImage(ImageBlockDrawEngine.cacheBackground, 0, 0);
-		ImageBlockDrawEngine.ctxForeground.drawImage(ImageBlockDrawEngine.cacheForeground, 0, 0);
-		ImageBlockDrawEngine.ctxPrimary.drawImage(ImageBlockDrawEngine.cachePrimary, 0, 0);
-		ImageBlockDrawEngine.ctxSecondary.drawImage(ImageBlockDrawEngine.cacheSecondary, 0, 0);
-		ImageBlockDrawEngine.ctxVanishing.drawImage(ImageBlockDrawEngine.cacheVanishing, 0, 0);
+		for (i in zGroup) {
+			ctxsFinal[i].drawImage(caches[i], 0, 0);
+		}
 	}
 
 	public static setMapActive(mapActive: MapActive) {

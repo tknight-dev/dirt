@@ -6,6 +6,7 @@ import {
 	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
+	GridBlockPipelineAsset,
 	GridBlockTable,
 	GridBlockTableComplex,
 	GridConfig,
@@ -17,6 +18,7 @@ import {
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
+import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
 import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
@@ -265,6 +267,7 @@ export class MapEditEngine {
 
 		if (referenceMode) {
 			MapEditEngine.gridBlockTableInflateInstance(reference);
+			MapEditEngine.gridBlockTableInflatePipelines(grid);
 		} else {
 			MapEditEngine.gridBlockTableInflateInstance(blocks);
 		}
@@ -460,6 +463,7 @@ export class MapEditEngine {
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(reference);
+		MapEditEngine.gridBlockTableInflatePipelines(grid);
 
 		if (!MapEditEngine.modeUI) {
 			let assetId: string = (<any>apply).assetId,
@@ -678,6 +682,8 @@ export class MapEditEngine {
 
 			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground);
 			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary);
+
+			MapEditEngine.gridBlockTableInflatePipelines(grid);
 		});
 		return map;
 	}
@@ -736,6 +742,107 @@ export class MapEditEngine {
 				type: blocks[i].objectType,
 			};
 		}
+	}
+
+	private static gridBlockTableInflatePipelines(grid: Grid): void {
+		if (MapEditEngine.modeUI) {
+			return;
+		}
+		let complex: GridBlockTableComplex,
+			complexes: GridBlockTableComplex[],
+			ctx: OffscreenCanvasRenderingContext2D,
+			ctxs: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.getCTXs(),
+			gridImageBlockReference: GridImageBlockReference,
+			gx: number,
+			gxString: string,
+			gy: number,
+			hashes: { [key: number]: GridImageBlockReference },
+			hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
+			j: string,
+			reference: GridBlockTable<GridImageBlockReference>,
+			references: GridBlockTable<GridImageBlockReference>[] = [
+				grid.imageBlocksBackgroundReference,
+				grid.imageBlocksSecondaryReference,
+				grid.imageBlocksPrimaryReference,
+				grid.imageBlocksForegroundReference,
+				grid.imageBlocksVanishingReference,
+			],
+			referencesLength: number = references.length,
+			pipelineAssetsByGy: { [key: number]: GridBlockPipelineAsset[] },
+			pipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } } = {},
+			pipelineGy: { [key: number]: number[] } = {},
+			pipelineGyInstance: { [key: number]: null } = {},
+			pipelineGyByGx: { [key: number]: { [key: number]: null } } = {};
+
+		if (!ctxs.length) {
+			return;
+		}
+
+		for (let i in references) {
+			ctx = ctxs[i];
+			reference = references[i];
+			hashes = reference.hashes;
+			hashesGyByGx = <any>reference.hashesGyByGx;
+
+			for (gxString in hashesGyByGx) {
+				complexes = hashesGyByGx[gxString];
+
+				if (pipelineAssetsByGyByGx[gxString] === undefined) {
+					pipelineAssetsByGyByGx[gxString] = {};
+					pipelineGyByGx[gxString] = {};
+				}
+				pipelineAssetsByGy = pipelineAssetsByGyByGx[gxString];
+				pipelineGyInstance = pipelineGyByGx[gxString];
+
+				for (j in complexes) {
+					complex = complexes[j];
+					gridImageBlockReference = hashes[complex.hash];
+					gy = complex.value;
+
+					if (gridImageBlockReference.block.extends) {
+						continue;
+					}
+
+					pipelineGyInstance[gy] = null;
+					if (pipelineAssetsByGy[gy] === undefined) {
+						pipelineAssetsByGy[gy] = new Array(referencesLength);
+					}
+					pipelineAssetsByGy[gy][i] = {
+						asset: gridImageBlockReference.block,
+						ctx: ctx,
+					};
+
+					// Extension logic here
+					if (gridImageBlockReference.block.gSizeH !== 1 || gridImageBlockReference.block.gSizeW !== 1) {
+						pipelineAssetsByGy[gy][i].assetLarge = true;
+						gx = gridImageBlockReference.block.gx + gridImageBlockReference.block.gSizeW;
+						gy = gridImageBlockReference.block.gy + gridImageBlockReference.block.gSizeH;
+
+						if (pipelineAssetsByGyByGx[gx] === undefined) {
+							pipelineAssetsByGyByGx[gx] = {};
+							pipelineAssetsByGyByGx[gx][gy] = new Array(referencesLength);
+							pipelineGyByGx[gx] = {};
+						}
+
+						pipelineAssetsByGyByGx[gx][gy][i] = {
+							asset: gridImageBlockReference.block,
+							extends: true,
+							ctx: ctx,
+						};
+						pipelineGyByGx[gx][gy] = null;
+					}
+				}
+			}
+		}
+
+		for (gxString in pipelineGyByGx) {
+			pipelineGy[gxString] = Object.keys(pipelineGyByGx[gxString])
+				.map((v) => Number(v))
+				.sort((a: number, b: number) => a - b);
+		}
+
+		grid.imageBlocksRenderPipelineAssetsByGyByGx = pipelineAssetsByGyByGx;
+		grid.imageBlocksRenderPipelineGy = pipelineGy;
 	}
 
 	private static historyAdd(): void {
