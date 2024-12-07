@@ -177,6 +177,7 @@ class MapDrawWorkerEngine {
 			extendedHash: { [key: number]: null },
 			extendedHashes: { [key: number]: null }[],
 			extendedHashesLights: { [key: number]: null }[],
+			getCacheInstance = LightingEngine.getCacheInstance,
 			gInPhEff: number,
 			gInPwEff: number,
 			gradient: CanvasGradient,
@@ -201,6 +202,7 @@ class MapDrawWorkerEngine {
 			i: string,
 			imageBitmap: ImageBitmap,
 			j: string,
+			outputBitmap = MapDrawWorkerEngine.outputBitmap,
 			pipelineAssetsByGy: { [key: number]: GridBlockPipelineAsset[] },
 			pipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } },
 			pipelineGy: { [key: number]: number[] },
@@ -227,7 +229,9 @@ class MapDrawWorkerEngine {
 				ctx = MapDrawWorkerEngine.ctx;
 				ctxTmp = MapDrawWorkerEngine.ctxTmp;
 				ctxTmpVanishing = MapDrawWorkerEngine.ctxTmpVanishing;
-				(extendedHashes = new Array()), (extendedHashesLights = new Array()), (gInPhEff = 0);
+				extendedHashes = new Array();
+				extendedHashesLights = new Array();
+				gInPhEff = 0;
 				gInPwEff = 0;
 				grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId];
 				gridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId];
@@ -363,7 +367,7 @@ class MapDrawWorkerEngine {
 												);
 											}
 
-											imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
+											imageBitmap = getCacheInstance(gridImageBlock.assetId).image;
 											ctxTmpSelect.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
 
 											// Reset transforms
@@ -438,7 +442,7 @@ class MapDrawWorkerEngine {
 												);
 											}
 
-											imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
+											imageBitmap = getCacheInstance(gridLight.assetId).image;
 											ctxTmpSelect.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
 
 											// Reset transforms
@@ -463,8 +467,8 @@ class MapDrawWorkerEngine {
 						}
 
 						if (vanishingEnable) {
-							x = Math.floor((camera.gx - gWidth) * resolutionMultiple);
-							y = Math.floor((camera.gy - gHeight) * resolutionMultiple);
+							x = ((camera.gx - gWidth) * resolutionMultiple) | 0;
+							y = ((camera.gy - gHeight) * resolutionMultiple) | 0;
 
 							gradient = ctxTmpVanishing.createRadialGradient(x, y, 0, x, y, radius);
 							gradient.addColorStop(0, 'white');
@@ -504,7 +508,7 @@ class MapDrawWorkerEngine {
 				}
 
 				// Done
-				MapDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());
+				outputBitmap(canvas.transferToImageBitmap());
 			};
 
 		while (true) {

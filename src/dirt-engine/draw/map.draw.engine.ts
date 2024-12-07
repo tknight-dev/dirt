@@ -57,6 +57,9 @@ export class MapDrawEngine {
 			MapDrawEngine.mapImage = imageBitmap;
 			MapDrawEngine.mapImageNew = true;
 		});
+
+		// Last
+		MapDrawEngine.startBind();
 	}
 
 	public static cacheReset(): void {
@@ -71,203 +74,207 @@ export class MapDrawEngine {
 
 	public static moveToPx(xRel: number, yRel: number): void {
 		let camera: Camera = MapDrawEngine.mapActiveCamera,
-			px: number = Math.floor((camera.viewportPx + camera.viewportPw * xRel) * MapDrawEngine.devicePixelRatioEff),
-			py: number = Math.floor((camera.viewportPy + camera.viewportPh * yRel) * MapDrawEngine.devicePixelRatioEff);
+			px: number = ((camera.viewportPx + camera.viewportPw * xRel) * MapDrawEngine.devicePixelRatioEff) | 0,
+			py: number = ((camera.viewportPy + camera.viewportPh * yRel) * MapDrawEngine.devicePixelRatioEff) | 0;
 
 		xRel = (px - MapDrawEngine.backgroundPx) / MapDrawEngine.backgroundPw;
 		yRel = (py - MapDrawEngine.backgroundPy) / MapDrawEngine.backgroundPh;
 
 		CameraEngine.moveG(
-			Math.floor(MapDrawEngine.mapActive.gridConfigActive.gWidth * xRel * 1000) / 1000,
-			Math.floor(MapDrawEngine.mapActive.gridConfigActive.gHeight * yRel * 1000) / 1000,
+			Math.round(MapDrawEngine.mapActive.gridConfigActive.gWidth * xRel * 1000) / 1000,
+			Math.round(MapDrawEngine.mapActive.gridConfigActive.gHeight * yRel * 1000) / 1000,
 		);
 	}
 
-	public static start(): void {
-		// calcs
-		let camera: Camera = MapDrawEngine.mapActiveCamera;
+	// Function set by binder, this is just a placeholder
+	public static start(): void {}
 
-		MapDrawEngine.backgroundPh = Math.floor(camera.viewportPh * MapDrawEngine.backgroundRatio);
-		MapDrawEngine.backgroundPw = Math.floor(camera.viewportPw * MapDrawEngine.backgroundRatio);
-		MapDrawEngine.backgroundPx = Math.floor(
-			camera.viewportPx2 - MapDrawEngine.backgroundPw - UtilEngine.renderOverflowPEff / MapDrawEngine.scaler,
-		);
-		MapDrawEngine.backgroundPy = Math.floor(camera.viewportPy + UtilEngine.renderOverflowPEff / MapDrawEngine.scaler);
+	/**
+	 * This binding structure greatly reduces GC build up
+	 */
+	private static startBind(): void {
+		let backgroundRatio: number = MapDrawEngine.backgroundRatio,
+			cacheCanvas: OffscreenCanvas = MapDrawEngine.cacheCanvas,
+			camera: Camera,
+			ctx: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctx,
+			ctxOverlay: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctxOverlay,
+			ghRelScaled: number,
+			ghRelScaledEffB: number,
+			ghRelScaledEffL: number,
+			ghRelScaledEffR: number,
+			ghRelScaledEffT: number,
+			gwRelScaled: number,
+			gxRelScaled: number,
+			gxRelScaledEff: number,
+			gyRelScaled: number,
+			gyRelScaledEff: number,
+			gridConfig: GridConfig,
+			height: number,
+			outputResolution = MapDrawEngineBus.outputResolution,
+			renderOverflowPEff: number = UtilEngine.renderOverflowPEff,
+			scalerEff: number;
 
-		/*
-		 * Background
-		 */
-		if (
-			MapDrawEngine.cacheBackgroundHashPh !== camera.windowPh ||
-			MapDrawEngine.cacheBackgroundHashPw !== camera.windowPw ||
-			MapDrawEngine.cacheBackgroundSkyNew ||
-			MapDrawEngine.mapImageNew
-		) {
-			let ctx: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctx;
+		MapDrawEngine.start = () => {
+			camera = MapDrawEngine.mapActiveCamera;
+			gridConfig = MapDrawEngine.mapActive.gridConfigActive;
+			scalerEff = renderOverflowPEff / MapDrawEngine.scaler;
 
-			// Canvas
-			if (
-				MapDrawEngine.cacheCanvas.height !== MapDrawEngine.backgroundPh ||
-				MapDrawEngine.cacheCanvas.width !== MapDrawEngine.backgroundPw
-			) {
-				MapDrawEngine.cacheCanvas.height = MapDrawEngine.backgroundPh;
-				MapDrawEngine.cacheCanvas.width = MapDrawEngine.backgroundPw;
-				MapDrawEngineBus.outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
-			}
-
-			// Fixes left over lines from viewport outlining
-			ctx.reset();
-
-			// Background
-			if (MapDrawEngine.mapImage) {
-				let height: number =
-					(MapDrawEngine.backgroundPh *
-						(MapDrawEngine.mapActive.gridConfigActive.gHorizon / MapDrawEngine.mapActive.gridConfigActive.gHeight)) |
-					0;
-
-				if (MapDrawEngine.cacheBackgroundSky) {
-					ctx.drawImage(MapDrawEngine.cacheBackgroundSky, 0, 0, MapDrawEngine.backgroundPw, height);
-					ctx.drawImage(MapDrawEngine.cacheBackgroundStarfield, 0, 0, MapDrawEngine.backgroundPw, height);
-				}
-
-				ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
-			} else {
-				ctx.fillStyle = 'rgba(0,0,0,.5)';
-				ctx.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
-			}
-
-			// Background Border
-			ctx.lineWidth = 1;
-			ctx.rect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
-			ctx.strokeStyle = 'white';
-			ctx.stroke();
-
-			// Cache it
-			MapDrawEngine.cacheBackgroundSkyNew = false;
-			MapDrawEngine.mapImageNew = false;
-			MapDrawEngine.cacheBackground = MapDrawEngine.cacheCanvas.transferToImageBitmap();
-			MapDrawEngine.cacheBackgroundHashPh = camera.windowPh;
-			MapDrawEngine.cacheBackgroundHashPw = camera.windowPw;
-		}
-		// Draw from cache
-		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
-
-		/*
-		 * Camera Lines
-		 */
-		if (
-			MapDrawEngine.cacheCameraLinesHashGx !== camera.gx ||
-			MapDrawEngine.cacheCameraLinesHashGy !== camera.gy ||
-			MapDrawEngine.cacheCameraLinesHashPh !== camera.windowPh ||
-			MapDrawEngine.cacheCameraLinesHashPw !== camera.windowPw ||
-			MapDrawEngine.cacheZoom !== camera.zoom
-		) {
-			// Draw from scratch
-			let ctx: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctx,
-				gridConfig: GridConfig = MapDrawEngine.mapActive.gridConfigActive,
-				ghRelScaled: number,
-				ghRelScaledEffB: number,
-				ghRelScaledEffL: number,
-				ghRelScaledEffR: number,
-				ghRelScaledEffT: number,
-				gwRelScaled: number,
-				gxRelScaled: number,
-				gxRelScaledEff: number,
-				gyRelScaled: number,
-				gyRelScaledEff: number;
-
-			// Canvas
-			if (
-				MapDrawEngine.cacheCanvas.height !== MapDrawEngine.backgroundPh ||
-				MapDrawEngine.cacheCanvas.width !== MapDrawEngine.backgroundPw
-			) {
-				MapDrawEngine.cacheCanvas.height = MapDrawEngine.backgroundPh;
-				MapDrawEngine.cacheCanvas.width = MapDrawEngine.backgroundPw;
-			}
-
-			// Calc
-			ghRelScaled = (MapDrawEngine.backgroundPh * (camera.viewportGhEff / gridConfig.gHeight)) | 0;
-			gwRelScaled = (MapDrawEngine.backgroundPw * (camera.viewportGwEff / gridConfig.gWidth)) | 0;
-			gxRelScaled = (MapDrawEngine.backgroundPw * (camera.viewportGx / gridConfig.gWidth)) | 0;
-			gyRelScaled = (MapDrawEngine.backgroundPh * (camera.viewportGy / gridConfig.gHeight)) | 0;
-
-			// Calc eff
-			ghRelScaledEffB = (gyRelScaled + ghRelScaled * 0.3) | 0;
-			ghRelScaledEffL = (gxRelScaled + gwRelScaled * 0.16875) | 0;
-			ghRelScaledEffR = (gxRelScaled + gwRelScaled * 0.83125) | 0;
-			ghRelScaledEffT = (gyRelScaled + ghRelScaled * 0.7) | 0;
-			gxRelScaledEff = (gxRelScaled + gwRelScaled) | 0;
-			gyRelScaledEff = (gyRelScaled + ghRelScaled) | 0;
+			// Calcs
+			MapDrawEngine.backgroundPh = (camera.viewportPh * backgroundRatio) | 0;
+			MapDrawEngine.backgroundPw = (camera.viewportPw * backgroundRatio) | 0;
+			MapDrawEngine.backgroundPx = (camera.viewportPx2 - MapDrawEngine.backgroundPw - scalerEff) | 0;
+			MapDrawEngine.backgroundPy = (camera.viewportPy + scalerEff) | 0;
 
 			/*
-			 * viewport within Window
+			 * Background
 			 */
-			ctx.lineWidth = 1;
-			ctx.strokeStyle = 'white';
+			if (
+				MapDrawEngine.cacheBackgroundHashPh !== camera.windowPh ||
+				MapDrawEngine.cacheBackgroundHashPw !== camera.windowPw ||
+				MapDrawEngine.cacheBackgroundSkyNew ||
+				MapDrawEngine.mapImageNew
+			) {
+				// Canvas
+				if (cacheCanvas.height !== MapDrawEngine.backgroundPh || cacheCanvas.width !== MapDrawEngine.backgroundPw) {
+					cacheCanvas.height = MapDrawEngine.backgroundPh;
+					cacheCanvas.width = MapDrawEngine.backgroundPw;
+					outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
+				}
 
-			// top: left
-			ctx.beginPath();
-			ctx.moveTo(gxRelScaled, gyRelScaled);
-			ctx.lineTo(ghRelScaledEffL, gyRelScaled);
-			ctx.stroke();
+				// Fixes left over lines from viewport outlining
+				ctx.reset();
 
-			// top: right
-			ctx.beginPath();
-			ctx.lineTo(ghRelScaledEffR, gyRelScaled);
-			ctx.lineTo(gxRelScaledEff, gyRelScaled);
-			ctx.stroke();
+				// Background
+				if (MapDrawEngine.mapImage) {
+					height = (MapDrawEngine.backgroundPh * (gridConfig.gHorizon / gridConfig.gHeight)) | 0;
 
-			// right: top
-			ctx.beginPath();
-			ctx.lineTo(gxRelScaledEff, gyRelScaled);
-			ctx.lineTo(gxRelScaledEff, ghRelScaledEffB);
-			ctx.stroke();
+					if (MapDrawEngine.cacheBackgroundSky) {
+						ctx.drawImage(MapDrawEngine.cacheBackgroundSky, 0, 0, MapDrawEngine.backgroundPw, height);
+						ctx.drawImage(MapDrawEngine.cacheBackgroundStarfield, 0, 0, MapDrawEngine.backgroundPw, height);
+					}
 
-			// right: bottom
-			ctx.beginPath();
-			ctx.lineTo(gxRelScaledEff, ghRelScaledEffT);
-			ctx.lineTo(gxRelScaledEff, gyRelScaledEff);
-			ctx.stroke();
+					ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
+				} else {
+					ctx.fillStyle = 'rgba(0,0,0,.5)';
+					ctx.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
+				}
 
-			// bottom: right
-			ctx.beginPath();
-			ctx.lineTo(gxRelScaledEff, gyRelScaledEff);
-			ctx.lineTo(ghRelScaledEffR, gyRelScaledEff);
-			ctx.stroke();
+				// Background Border
+				ctx.lineWidth = 1;
+				ctx.rect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
+				ctx.strokeStyle = 'white';
+				ctx.stroke();
 
-			// bottom: left
-			ctx.beginPath();
-			ctx.lineTo(ghRelScaledEffL, gyRelScaledEff);
-			ctx.lineTo(gxRelScaled, gyRelScaledEff);
-			ctx.stroke();
+				// Cache it
+				MapDrawEngine.cacheBackgroundSkyNew = false;
+				MapDrawEngine.mapImageNew = false;
+				MapDrawEngine.cacheBackground = cacheCanvas.transferToImageBitmap();
+				MapDrawEngine.cacheBackgroundHashPh = camera.windowPh;
+				MapDrawEngine.cacheBackgroundHashPw = camera.windowPw;
+			}
+			// Draw from cache
+			ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 
-			// left: bottom
-			ctx.beginPath();
-			ctx.lineTo(gxRelScaled, gyRelScaled);
-			ctx.lineTo(gxRelScaled, ghRelScaledEffB);
-			ctx.stroke();
+			/*
+			 * Camera Lines
+			 */
+			if (
+				MapDrawEngine.cacheCameraLinesHashGx !== camera.gx ||
+				MapDrawEngine.cacheCameraLinesHashGy !== camera.gy ||
+				MapDrawEngine.cacheCameraLinesHashPh !== camera.windowPh ||
+				MapDrawEngine.cacheCameraLinesHashPw !== camera.windowPw ||
+				MapDrawEngine.cacheZoom !== camera.zoom
+			) {
+				// Canvas
+				if (cacheCanvas.height !== MapDrawEngine.backgroundPh || cacheCanvas.width !== MapDrawEngine.backgroundPw) {
+					cacheCanvas.height = MapDrawEngine.backgroundPh;
+					cacheCanvas.width = MapDrawEngine.backgroundPw;
+				}
 
-			// left: top
-			ctx.beginPath();
-			ctx.lineTo(gxRelScaled, ghRelScaledEffT);
-			ctx.lineTo(gxRelScaled, gyRelScaledEff);
-			ctx.stroke();
+				// Calc
+				ghRelScaled = (MapDrawEngine.backgroundPh * (camera.viewportGhEff / gridConfig.gHeight)) | 0;
+				gwRelScaled = (MapDrawEngine.backgroundPw * (camera.viewportGwEff / gridConfig.gWidth)) | 0;
+				gxRelScaled = (MapDrawEngine.backgroundPw * (camera.viewportGx / gridConfig.gWidth)) | 0;
+				gyRelScaled = (MapDrawEngine.backgroundPh * (camera.viewportGy / gridConfig.gHeight)) | 0;
 
-			// Cache it
-			MapDrawEngine.cacheCameraLines = MapDrawEngine.cacheCanvas.transferToImageBitmap();
-			MapDrawEngine.cacheCameraLinesHashGx = camera.gx;
-			MapDrawEngine.cacheCameraLinesHashGy = camera.gy;
-			MapDrawEngine.cacheCameraLinesHashPh = camera.windowPh;
-			MapDrawEngine.cacheCameraLinesHashPw = camera.windowPw;
-			MapDrawEngine.cacheZoom = camera.zoom;
-		}
-		MapDrawEngine.ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
+				// Calc eff
+				ghRelScaledEffB = (gyRelScaled + ghRelScaled * 0.3) | 0;
+				ghRelScaledEffL = (gxRelScaled + gwRelScaled * 0.16875) | 0;
+				ghRelScaledEffR = (gxRelScaled + gwRelScaled * 0.83125) | 0;
+				ghRelScaledEffT = (gyRelScaled + ghRelScaled * 0.7) | 0;
+				gxRelScaledEff = (gxRelScaled + gwRelScaled) | 0;
+				gyRelScaledEff = (gyRelScaled + ghRelScaled) | 0;
+
+				/*
+				 * viewport within Window
+				 */
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = 'white';
+
+				// top: left
+				ctx.beginPath();
+				ctx.moveTo(gxRelScaled, gyRelScaled);
+				ctx.lineTo(ghRelScaledEffL, gyRelScaled);
+				ctx.stroke();
+
+				// top: right
+				ctx.beginPath();
+				ctx.lineTo(ghRelScaledEffR, gyRelScaled);
+				ctx.lineTo(gxRelScaledEff, gyRelScaled);
+				ctx.stroke();
+
+				// right: top
+				ctx.beginPath();
+				ctx.lineTo(gxRelScaledEff, gyRelScaled);
+				ctx.lineTo(gxRelScaledEff, ghRelScaledEffB);
+				ctx.stroke();
+
+				// right: bottom
+				ctx.beginPath();
+				ctx.lineTo(gxRelScaledEff, ghRelScaledEffT);
+				ctx.lineTo(gxRelScaledEff, gyRelScaledEff);
+				ctx.stroke();
+
+				// bottom: right
+				ctx.beginPath();
+				ctx.lineTo(gxRelScaledEff, gyRelScaledEff);
+				ctx.lineTo(ghRelScaledEffR, gyRelScaledEff);
+				ctx.stroke();
+
+				// bottom: left
+				ctx.beginPath();
+				ctx.lineTo(ghRelScaledEffL, gyRelScaledEff);
+				ctx.lineTo(gxRelScaled, gyRelScaledEff);
+				ctx.stroke();
+
+				// left: bottom
+				ctx.beginPath();
+				ctx.lineTo(gxRelScaled, gyRelScaled);
+				ctx.lineTo(gxRelScaled, ghRelScaledEffB);
+				ctx.stroke();
+
+				// left: top
+				ctx.beginPath();
+				ctx.lineTo(gxRelScaled, ghRelScaledEffT);
+				ctx.lineTo(gxRelScaled, gyRelScaledEff);
+				ctx.stroke();
+
+				// Cache it
+				MapDrawEngine.cacheCameraLines = cacheCanvas.transferToImageBitmap();
+				MapDrawEngine.cacheCameraLinesHashGx = camera.gx;
+				MapDrawEngine.cacheCameraLinesHashGy = camera.gy;
+				MapDrawEngine.cacheCameraLinesHashPh = camera.windowPh;
+				MapDrawEngine.cacheCameraLinesHashPw = camera.windowPw;
+				MapDrawEngine.cacheZoom = camera.zoom;
+			}
+			ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
+		};
 	}
 
 	public static isPixelInMap(xRel: number, yRel: number): boolean {
 		let camera: Camera = MapDrawEngine.mapActiveCamera,
-			px: number = Math.floor((camera.viewportPx + camera.viewportPw * xRel) * MapDrawEngine.devicePixelRatioEff),
-			py: number = Math.floor((camera.viewportPy + camera.viewportPh * yRel) * MapDrawEngine.devicePixelRatioEff);
+			px: number = ((camera.viewportPx + camera.viewportPw * xRel) * MapDrawEngine.devicePixelRatioEff) | 0,
+			py: number = ((camera.viewportPy + camera.viewportPh * yRel) * MapDrawEngine.devicePixelRatioEff) | 0;
 
 		if (
 			px >= MapDrawEngine.backgroundPx &&
