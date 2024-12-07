@@ -158,12 +158,15 @@ class UnderlayDrawWorkerEngine {
 		gradientSky = ctxSky.createLinearGradient(0, 0, 0, height);
 		gradientStarfield = ctxStarfield.createLinearGradient(0, 0, 0, height);
 
-		if (hourOfDayEff < 6) {
+		if (hourOfDayEff === 1) {
 			// Small Hours
-			hourOfDayEffOutsideModifier = Math.max(0, Math.min(brightnessOutsideNightMax, 4 - hourOfDayEff));
-		} else if (hourOfDayEff < 10) {
+			hourOfDayEffOutsideModifier = 2;
+		} else if (hourOfDayEff < 6) {
+			// Small Hours
+			hourOfDayEffOutsideModifier = Math.max(0, Math.min(brightnessOutsideNightMax, 5 - hourOfDayEff));
+		} else if (hourOfDayEff < 11) {
 			// Morning
-			hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, hourOfDayEff - 4);
+			hourOfDayEffOutsideModifier = Math.min(brightnessOutsideDayMax, hourOfDayEff - 5);
 		} else if (hourOfDayEff < 18) {
 			// Afternoon
 			hourOfDayEffOutsideModifier = brightnessOutsideDayMax;
@@ -173,7 +176,6 @@ class UnderlayDrawWorkerEngine {
 		} else {
 			// Dusk
 			hourOfDayEffOutsideModifier = Math.min(brightnessOutsideNightMax, hourOfDayEff - 23);
-			hourOfDayEffOutsideModifier++;
 		}
 
 		if (hourOfDayEff < 6) {
