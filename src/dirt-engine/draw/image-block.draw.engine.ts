@@ -541,7 +541,7 @@ export class ImageBlockDrawEngine {
 
 								// Draw
 								audioModulation = audioModulations[gridAudioBlock.modulationId];
-								ctx.fillStyle = 'rgba(' + audioModulation.colorRGB + ',.25)';
+								ctx.fillStyle = 'rgba(' + audioModulation.colorRGB + ',.15)';
 								ctx.fillRect(drawGx, drawGy, gInPwEff, gInPhEff);
 							}
 

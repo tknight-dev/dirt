@@ -183,13 +183,16 @@ class UnderlayDrawWorkerEngine {
 				brightnessOutsideNightMax,
 				0,
 				0.5,
-				0.99,
+				1,
 			);
 
 			// Small Hours
 			gradientSky.addColorStop(0, 'black');
 			gradientSky.addColorStop(scratch, 'black');
-			gradientSky.addColorStop(1, 'rgb(47,132,199)');
+
+			if(scratch !== 1) {
+				gradientSky.addColorStop(1, 'rgb(47,132,199)');
+			}
 
 			gradientStarfield.addColorStop(scratch, 'white');
 			gradientStarfield.addColorStop(1, 'transparent');
@@ -271,12 +274,15 @@ class UnderlayDrawWorkerEngine {
 			gradientStarfield.addColorStop(1, 'transparent');
 		} else {
 			fine = true;
-			scratch = UtilEngine.scale(hourOfDayEffOutsideModifier + minuteOfDayEffPercentage, brightnessOutsideNightMax, 0, 0.5, 0.99);
+			scratch = UtilEngine.scale(hourOfDayEffOutsideModifier + minuteOfDayEffPercentage, brightnessOutsideNightMax, 0, 0.5, 1);
 
 			// Small Hours
 			gradientSky.addColorStop(0, 'black');
 			gradientSky.addColorStop(scratch, 'black');
-			gradientSky.addColorStop(1, 'rgb(47,132,199)');
+
+			if(scratch !== 1) {
+				gradientSky.addColorStop(1, 'rgb(47,132,199)');
+			}
 
 			gradientStarfield.addColorStop(scratch, 'white');
 			gradientStarfield.addColorStop(1, 'transparent');
@@ -353,15 +359,6 @@ class UnderlayDrawWorkerEngine {
 		} else {
 			ctxStarfield.drawImage(imageBitmapStars, 0, 0);
 		}
-
-		// ctxStarfield.fillStyle = 'red';
-		// ctxStarfield.fillRect(0, 0, widthStarfield / 3, height);
-
-		// ctxStarfield.fillStyle = 'green';
-		// ctxStarfield.fillRect(widthStarfield / 3, 0, widthStarfield / 3, height);
-
-		// ctxStarfield.fillStyle = 'blue';
-		// ctxStarfield.fillRect(widthStarfield * 2 / 3, 0, widthStarfield / 3, height);
 
 		ctxStarfield.globalCompositeOperation = 'source-over';
 		imageBitmapStarfield = canvasStarfield.transferToImageBitmap();
