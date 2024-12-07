@@ -190,7 +190,7 @@ class UnderlayDrawWorkerEngine {
 			gradientSky.addColorStop(0, 'black');
 			gradientSky.addColorStop(scratch, 'black');
 
-			if(scratch !== 1) {
+			if (scratch !== 1) {
 				gradientSky.addColorStop(1, 'rgb(47,132,199)');
 			}
 
@@ -280,7 +280,7 @@ class UnderlayDrawWorkerEngine {
 			gradientSky.addColorStop(0, 'black');
 			gradientSky.addColorStop(scratch, 'black');
 
-			if(scratch !== 1) {
+			if (scratch !== 1) {
 				gradientSky.addColorStop(1, 'rgb(47,132,199)');
 			}
 

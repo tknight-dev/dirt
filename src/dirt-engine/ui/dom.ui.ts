@@ -1676,6 +1676,8 @@ export class DomUI {
 						type: GridLightType.DOWN,
 					},
 				],
+				flipH: undefined,
+				flipV: undefined,
 				gRadiusAudioEffect: 5,
 				gSizeH: 1,
 				gSizeW: 1,
@@ -1979,6 +1981,38 @@ export class DomUI {
 				},
 			);
 		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// FlipH
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Horizontal';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipH;
+		input.oninput = (event: any) => {
+			applicationProperties.flipH = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// FlipV
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Flip Vertical';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = applicationProperties.flipV;
+		input.oninput = (event: any) => {
+			applicationProperties.flipV = Boolean(event.target.checked);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 

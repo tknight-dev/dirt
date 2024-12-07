@@ -501,6 +501,19 @@ export class ImageBlockDrawEngine {
 									gInPwEff = (gInPw * gSizeWPrevious + 1) | 0;
 								}
 
+								// Transforms
+								if (gridLight.flipH || gridLight.flipV) {
+									transform = true;
+									ctx.setTransform(
+										gridLight.flipH ? -1 : 1,
+										0,
+										0,
+										gridLight.flipV ? -1 : 1,
+										(drawGx + (gridLight.flipH ? gInPwEff : 0)) | 0,
+										(drawGy + (gridLight.flipV ? gInPhEff : 0)) | 0,
+									);
+								}
+
 								// Get pre-rendered asset variation based on hash
 								if (gridLight.nightOnly && !night) {
 									imageBitmaps = getCacheLitOutside(gridLight.assetId, grid.id, gridLight.hash, z);
@@ -510,6 +523,12 @@ export class ImageBlockDrawEngine {
 									imageBitmap = getCacheInstance(gridLight.assetId).image;
 
 									ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+								}
+
+								// Reset transforms
+								if (transform) {
+									ctx.setTransform(1, 0, 0, 1, 0, 0);
+									transform = false;
 								}
 
 								// Reset extension displacement

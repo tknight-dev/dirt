@@ -1,13 +1,5 @@
 import { AssetImageSrcQuality } from '../../models/asset.model';
-import {
-	Grid,
-	GridConfig,
-	GridBlockTable,
-	GridBlockTableComplex,
-	GridImageBlock,
-	GridImageBlockReference,
-	GridLight,
-} from '../../models/grid.model';
+import { Grid, GridConfig, GridImageBlock, GridLight, GridBlockPipelineAsset } from '../../models/grid.model';
 import { LightingEngine } from '../../engines/lighting.engine';
 import { MapActive } from '../../models/map.model';
 import { MapEditEngine } from '../../engines/map-edit.engine';
@@ -24,7 +16,6 @@ import {
 	MapDrawBusInputPlayloadTimeForced,
 } from '../buses/map.draw.model.bus';
 import { UtilEngine } from '../../engines/util.engine';
-import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
@@ -64,12 +55,14 @@ self.onmessage = (event: MessageEvent) => {
 class MapDrawWorkerEngine {
 	private static canvas: OffscreenCanvas;
 	private static canvasTmp: OffscreenCanvas;
+	private static canvasTmpVanishing: OffscreenCanvas;
 	private static canvasTmpGh: number = 1080;
 	private static canvasTmpGw: number = 1920;
 	private static camera: MapDrawBusInputPlayloadCamera;
 	private static ctx: OffscreenCanvasRenderingContext2D;
 	private static ctxTmp: OffscreenCanvasRenderingContext2D;
-	private static drawIntervalInMs: number = 1000;
+	private static ctxTmpVanishing: OffscreenCanvasRenderingContext2D;
+	private static drawIntervalInMs: number = 250;
 	private static gridActiveId: string;
 	private static grids: { [key: string]: Grid };
 	private static gridConfigs: { [key: string]: GridConfig };
@@ -80,13 +73,6 @@ class MapDrawWorkerEngine {
 	private static vanishingEnable: boolean;
 	private static vanishingPercentageOfViewport: number;
 	private static width: number;
-	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[] = [
-		VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
-		VideoBusInputCmdGameModeEditApplyZ.SECONDARY,
-		VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
-		VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
-		VideoBusInputCmdGameModeEditApplyZ.VANISHING,
-	];
 
 	public static async initialize(self: Window & typeof globalThis, data: MapDrawBusInputPlayloadInitial): Promise<void> {
 		if (MapDrawWorkerEngine.initialized) {
@@ -100,10 +86,13 @@ class MapDrawWorkerEngine {
 
 		MapDrawWorkerEngine.canvas = new OffscreenCanvas(1, 1);
 		MapDrawWorkerEngine.canvasTmp = new OffscreenCanvas(1, 1);
+		MapDrawWorkerEngine.canvasTmpVanishing = new OffscreenCanvas(1, 1);
 		MapDrawWorkerEngine.ctx = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvas.getContext('2d');
 		MapDrawWorkerEngine.ctx.imageSmoothingEnabled = false;
 		MapDrawWorkerEngine.ctxTmp = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvasTmp.getContext('2d');
 		MapDrawWorkerEngine.ctxTmp.imageSmoothingEnabled = false;
+		MapDrawWorkerEngine.ctxTmpVanishing = <OffscreenCanvasRenderingContext2D>MapDrawWorkerEngine.canvasTmpVanishing.getContext('2d');
+		MapDrawWorkerEngine.ctxTmpVanishing.imageSmoothingEnabled = false;
 
 		// Done
 		MapDrawWorkerEngine._draw();
@@ -165,8 +154,10 @@ class MapDrawWorkerEngine {
 
 	/**
 	 * 1g = 1px
+	 *
+	 * Rendering logic is largely a copy-n-paste from image-block.draw.engine.ts
 	 */
-	private static _draw(): void {
+	private static async _draw(): Promise<void> {
 		let camera: MapDrawBusInputPlayloadCamera,
 			canvas: OffscreenCanvas = MapDrawWorkerEngine.canvas,
 			canvasHeight: number,
@@ -175,14 +166,17 @@ class MapDrawWorkerEngine {
 			canvasTmpGhEff: number,
 			canvasTmpGw: number,
 			canvasTmpGwEff: number,
+			canvasTmpVanishing: OffscreenCanvas = MapDrawWorkerEngine.canvasTmpVanishing,
 			canvasWidth: number,
 			ctx: OffscreenCanvasRenderingContext2D,
 			ctxTmp: OffscreenCanvasRenderingContext2D,
-			complexes: GridBlockTableComplex[],
-			complexesByGx: { [key: number]: GridBlockTableComplex[] },
+			ctxTmpSelect: OffscreenCanvasRenderingContext2D,
+			ctxTmpVanishing: OffscreenCanvasRenderingContext2D,
 			drawGx: number,
 			drawGy: number,
 			extendedHash: { [key: number]: null },
+			extendedHashes: { [key: number]: null }[],
+			extendedHashesLights: { [key: number]: null }[],
 			gInPhEff: number,
 			gInPwEff: number,
 			gradient: CanvasGradient,
@@ -192,6 +186,8 @@ class MapDrawWorkerEngine {
 			gHeight: number,
 			gHeightMax: number,
 			gHeightMaxEff: number,
+			gridBlockPipelineAsset: GridBlockPipelineAsset,
+			gridBlockPipelineAssets: GridBlockPipelineAsset[],
 			gridLight: GridLight,
 			gSizeHPrevious: number,
 			gSizeWPrevious: number,
@@ -199,251 +195,227 @@ class MapDrawWorkerEngine {
 			gWidthMax: number,
 			gWidthMaxEff: number,
 			gx: number,
+			gxString: string,
 			gy: number,
+			gys: number[],
 			i: string,
 			imageBitmap: ImageBitmap,
 			j: string,
-			k: string,
-			lightHashes: { [key: number]: GridLight },
-			lights: GridBlockTable<GridLight> | undefined,
+			pipelineAssetsByGy: { [key: number]: GridBlockPipelineAsset[] },
+			pipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } },
+			pipelineGy: { [key: number]: number[] },
 			radius: number,
 			radius2: number,
-			reference: GridBlockTable<GridImageBlockReference>,
-			referenceHashes: { [key: number]: GridImageBlockReference },
 			resolutionMultiple: number = 4,
 			scaledImageHeight: number,
 			scaledImageWidth: number,
+			skip: boolean,
+			start: number,
 			stopGx: number,
 			stopGy: number,
+			transform: boolean,
 			vanishingEnable: boolean,
 			vanishingPercentageOfViewport: number,
 			x: number,
 			y: number,
-			z: VideoBusInputCmdGameModeEditApplyZ,
-			zBitmapBackground: ImageBitmap,
-			zBitmapForeground: ImageBitmap,
-			zBitmapPrimary: ImageBitmap,
-			zBitmapSecondary: ImageBitmap,
-			zBitmapVanishing: ImageBitmap,
-			zGroup: VideoBusInputCmdGameModeEditApplyZ[] = MapDrawWorkerEngine.zGroup;
+			__draw = () => {
+				camera = MapDrawWorkerEngine.camera;
+				canvasHeight = MapDrawWorkerEngine.height;
+				canvasTmpGh = MapDrawWorkerEngine.canvasTmpGh;
+				canvasTmpGw = MapDrawWorkerEngine.canvasTmpGw;
+				canvasWidth = MapDrawWorkerEngine.width;
+				ctx = MapDrawWorkerEngine.ctx;
+				ctxTmp = MapDrawWorkerEngine.ctxTmp;
+				ctxTmpVanishing = MapDrawWorkerEngine.ctxTmpVanishing;
+				(extendedHashes = new Array()), (extendedHashesLights = new Array()), (gInPhEff = 0);
+				gInPwEff = 0;
+				grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId];
+				gridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId];
+				pipelineAssetsByGyByGx = grid.imageBlocksRenderPipelineAssetsByGyByGx;
+				pipelineGy = grid.imageBlocksRenderPipelineGy;
+				gHeightMax = gridConfig.gHeight;
+				gSizeHPrevious = 0;
+				gSizeWPrevious = 0;
+				gWidthMax = gridConfig.gWidth;
+				scaledImageHeight = (canvasHeight * (canvasTmpGh / gHeightMax)) | 0;
+				scaledImageWidth = (canvasWidth * (canvasTmpGw / gWidthMax)) | 0;
+				vanishingEnable = MapDrawWorkerEngine.vanishingEnable;
+				vanishingPercentageOfViewport = MapDrawWorkerEngine.vanishingPercentageOfViewport;
 
-		// Draw interval
-		UtilEngine.setInterval(() => {
-			if (MapDrawWorkerEngine.mapVisible) {
-				try {
-					camera = MapDrawWorkerEngine.camera;
-					canvasHeight = MapDrawWorkerEngine.height;
-					canvasTmpGh = MapDrawWorkerEngine.canvasTmpGh;
-					canvasTmpGw = MapDrawWorkerEngine.canvasTmpGw;
-					canvasWidth = MapDrawWorkerEngine.width;
-					ctx = MapDrawWorkerEngine.ctx;
-					ctxTmp = MapDrawWorkerEngine.ctxTmp;
-					gInPhEff = 0;
-					gInPwEff = 0;
-					grid = MapDrawWorkerEngine.grids[MapDrawWorkerEngine.gridActiveId];
-					gridConfig = MapDrawWorkerEngine.gridConfigs[MapDrawWorkerEngine.gridActiveId];
-					gHeightMax = gridConfig.gHeight;
-					gSizeHPrevious = 0;
-					gSizeWPrevious = 0;
-					gWidthMax = gridConfig.gWidth;
-					lights = undefined;
-					scaledImageHeight = (canvasHeight * (canvasTmpGh / gHeightMax)) | 0;
-					scaledImageWidth = (canvasWidth * (canvasTmpGw / gWidthMax)) | 0;
-					vanishingEnable = MapDrawWorkerEngine.vanishingEnable;
-					vanishingPercentageOfViewport = MapDrawWorkerEngine.vanishingPercentageOfViewport;
-					zBitmapBackground = canvas.transferToImageBitmap();
-					zBitmapForeground = canvas.transferToImageBitmap();
-					zBitmapPrimary = canvas.transferToImageBitmap();
-					zBitmapSecondary = canvas.transferToImageBitmap();
-					zBitmapVanishing = canvas.transferToImageBitmap();
+				// Config
+				canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
+				canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
+				gHeightMaxEff = gHeightMax * resolutionMultiple;
+				gWidthMaxEff = gWidthMax * resolutionMultiple;
+				radius = ((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple) | 0;
+				radius2 = radius * 2;
 
-					// Config
-					if (canvas.height !== canvasHeight || canvas.width !== canvasWidth) {
-						canvas.height = canvasHeight;
-						canvas.width = canvasWidth;
-					}
-					canvasTmp.height = canvasTmpGh * resolutionMultiple;
-					canvasTmp.width = canvasTmpGw * resolutionMultiple;
+				// Config - Canvas
+				if (canvas.height !== canvasHeight || canvas.width !== canvasWidth) {
+					canvas.height = canvasHeight;
+					canvas.width = canvasWidth;
+				}
+				if (canvasTmp.height !== canvasTmpGhEff || canvasTmp.width !== canvasTmpGwEff) {
+					canvasTmp.height = canvasTmpGhEff;
+					canvasTmp.width = canvasTmpGwEff;
+					canvasTmpVanishing.height = canvasTmpGhEff;
+					canvasTmpVanishing.width = canvasTmpGwEff;
+				}
 
-					canvasTmpGhEff = canvasTmpGh * resolutionMultiple;
-					canvasTmpGwEff = canvasTmpGw * resolutionMultiple;
-					gHeightMaxEff = gHeightMax * resolutionMultiple;
-					gWidthMaxEff = gWidthMax * resolutionMultiple;
-					radius = ((((camera.viewportGh / 2) * vanishingPercentageOfViewport) / camera.zoom) * resolutionMultiple) | 0;
-					radius2 = radius * 2;
+				for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
+					for (gHeight = 0; gHeight < gHeightMax; gHeight += canvasTmpGh) {
+						stopGx = gWidth + canvasTmpGw;
+						stopGy = gHeight + canvasTmpGh;
 
-					for (gWidth = 0; gWidth < gWidthMax; gWidth += canvasTmpGw) {
-						for (gHeight = 0; gHeight < gHeightMax; gHeight += canvasTmpGh) {
-							for (i in zGroup) {
-								z = zGroup[i];
-								switch (z) {
-									case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-										extendedHash = <any>new Object();
-										lights = undefined;
-										reference = grid.imageBlocksBackgroundReference;
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-										extendedHash = <any>new Object();
-										lights = grid.lightsForeground;
-										reference = grid.imageBlocksForegroundReference;
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-										extendedHash = <any>new Object();
-										lights = grid.lightsPrimary;
-										reference = grid.imageBlocksPrimaryReference;
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-										extendedHash = <any>new Object();
-										lights = undefined;
-										reference = grid.imageBlocksSecondaryReference;
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-										extendedHash = <any>new Object();
-										lights = undefined;
-										reference = grid.imageBlocksVanishingReference;
-										break;
+						for (gxString in pipelineAssetsByGyByGx) {
+							gx = Number(gxString);
+
+							// Viewport check
+							if (gx < gWidth) {
+								continue;
+							} else if (gx > stopGx) {
+								break;
+							}
+
+							drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
+							gys = pipelineGy[gxString];
+							pipelineAssetsByGy = pipelineAssetsByGyByGx[gxString];
+							for (i in gys) {
+								gy = Number(gys[i]);
+
+								// Viewport check
+								if (gy < gHeight) {
+									continue;
+								} else if (gy > stopGy) {
+									break;
 								}
-								referenceHashes = reference.hashes;
 
-								// Prepare
-								stopGx = gWidth + canvasTmpGw;
-								stopGy = gHeight + canvasTmpGh;
+								drawGy = ((gy - gHeight) * resolutionMultiple) | 0;
+								gridBlockPipelineAssets = pipelineAssetsByGy[gy];
 
-								// Applicable hashes
-								complexesByGx = <any>reference.hashesGyByGx;
+								for (j in gridBlockPipelineAssets) {
+									gridBlockPipelineAsset = gridBlockPipelineAssets[j];
 
-								// Image Blocks
-								for (j in complexesByGx) {
-									complexes = complexesByGx[j];
-									gx = Number(j);
-
-									if (gx < gWidth || gx > stopGx) {
+									// Is asset available on this z level?
+									if (!gridBlockPipelineAsset) {
 										continue;
 									}
 
-									drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
-
-									for (k in complexes) {
-										gy = complexes[k].value;
-										if (gy < gHeight || gy > stopGy) {
-											continue;
-										}
-										gridImageBlock = referenceHashes[complexes[k].hash].block;
-
-										if (gridImageBlock.null) {
-											continue;
-										}
-
-										// Extended check
-										if (gridImageBlock.extends) {
-											if (gridImageBlock.extends) {
-												// extention block
-												gridImageBlock = referenceHashes[gridImageBlock.extends].block;
-											}
-
-											if (extendedHash[gridImageBlock.hash] === null) {
-												// Skip block as its hash parent's image has already drawn over it
-												continue;
-											} else {
-												// Draw large block
-												extendedHash[gridImageBlock.hash] = null;
-												if (gx !== <number>gridImageBlock.gx) {
-													gx = <number>gridImageBlock.gx;
-													drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
-												}
-												gy = <number>gridImageBlock.gy;
-											}
-										} else {
-											if (gx !== <number>gridImageBlock.gx) {
-												gx = <number>gridImageBlock.gx;
-												drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
-											}
-										}
-
-										// Cache calculations
-										drawGy = ((gy - gHeight) * resolutionMultiple) | 0;
-										if (gSizeHPrevious !== gridImageBlock.gSizeH) {
-											gSizeHPrevious = gridImageBlock.gSizeH;
-											gInPhEff = (resolutionMultiple * gridImageBlock.gSizeH) | 0;
-										}
-										if (gSizeWPrevious !== gridImageBlock.gSizeW) {
-											gSizeWPrevious = gridImageBlock.gSizeW;
-											gInPwEff = (resolutionMultiple * gridImageBlock.gSizeW) | 0;
-										}
-
-										// Transforms
-										ctx.setTransform(
-											gridImageBlock.flipH ? -1 : 1,
-											0,
-											0,
-											gridImageBlock.flipV ? -1 : 1,
-											drawGx + (gridImageBlock.flipH ? gInPwEff : 0),
-											drawGy + (gridImageBlock.flipV ? gInPhEff : 0),
-										);
-
-										imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
-										ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+									// Config
+									if (j === '4') {
+										ctxTmpSelect = ctxTmpVanishing;
+									} else {
+										ctxTmpSelect = ctxTmp;
 									}
-								}
-								// Reset transforms
-								ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-								// Lights
-								if (lights && lights.hashesGyByGx) {
-									complexesByGx = lights.hashesGyByGx;
-									lightHashes = lights.hashes;
+									/**
+									 * Draw: Image Blocks
+									 */
+									if (gridBlockPipelineAsset.asset && !gridBlockPipelineAsset.asset.null) {
+										gridImageBlock = gridBlockPipelineAsset.asset;
+										skip = false;
 
-									for (j in complexesByGx) {
-										complexes = complexesByGx[j];
-										gx = Number(j);
+										// Extensions
+										if (extendedHashes[j] === undefined) {
+											extendedHashes[j] = {};
+										}
+										extendedHash = extendedHashes[j];
 
-										if (gx < gWidth || gx > stopGx) {
-											continue;
+										if (gridBlockPipelineAsset.assetLarge || gridBlockPipelineAsset.extends) {
+											if (extendedHash[gridBlockPipelineAsset.asset.hash] !== undefined) {
+												// Asset already drawn
+												skip = true;
+											} else {
+												extendedHash[gridBlockPipelineAsset.asset.hash] = null;
+											}
 										}
 
-										drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
-
-										for (k in complexes) {
-											gridLight = lightHashes[complexes[k].hash];
-
-											if (gridLight.null) {
-												continue;
+										if (!skip) {
+											if (gridBlockPipelineAsset.extends) {
+												if (gridBlockPipelineAsset.asset.gx !== gx) {
+													drawGx = ((gridBlockPipelineAsset.asset.gx - gWidth) * resolutionMultiple) | 0;
+												}
+												if (gridBlockPipelineAsset.asset.gy !== gy) {
+													drawGy = ((gridBlockPipelineAsset.asset.gy - gHeight) * resolutionMultiple) | 0;
+												}
 											}
 
-											gy = <number>gridLight.gy;
-											if (gy < gHeight || gy > stopGy) {
-												continue;
+											// Config
+											if (gSizeHPrevious !== gridImageBlock.gSizeH) {
+												gSizeHPrevious = gridImageBlock.gSizeH;
+												gInPhEff = (resolutionMultiple * gridImageBlock.gSizeH) | 0;
+											}
+											if (gSizeWPrevious !== gridImageBlock.gSizeW) {
+												gSizeWPrevious = gridImageBlock.gSizeW;
+												gInPwEff = (resolutionMultiple * gridImageBlock.gSizeW) | 0;
 											}
 
-											// Extended check
-											if (gridLight.extends) {
-												if (gridLight.extends) {
-													// extention block
-													gridLight = lightHashes[gridLight.extends];
-												}
+											// Transforms
+											if (gridImageBlock.flipH || gridImageBlock.flipV) {
+												transform = true;
+												ctxTmpSelect.setTransform(
+													gridImageBlock.flipH ? -1 : 1,
+													0,
+													0,
+													gridImageBlock.flipV ? -1 : 1,
+													(drawGx + (gridImageBlock.flipH ? gInPwEff : 0)) | 0,
+													(drawGy + (gridImageBlock.flipV ? gInPhEff : 0)) | 0,
+												);
+											}
 
-												if (extendedHash[gridLight.hash] === null) {
-													// Skip block as its hash parent's image has already drawn over it
-													continue;
-												} else {
-													// Draw large block
-													extendedHash[gridLight.hash] = null;
+											imageBitmap = LightingEngine.getCacheInstance(gridImageBlock.assetId).image;
+											ctxTmpSelect.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
 
-													if (gx !== <number>gridLight.gx) {
-														gx = <number>gridLight.gx;
-														drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
-													}
-													gy = <number>gridLight.gy;
-												}
-											} else {
-												if (gx !== <number>gridLight.gx) {
-													gx = <number>gridLight.gx;
+											// Reset transforms
+											if (transform) {
+												ctxTmpSelect.setTransform(1, 0, 0, 1, 0, 0);
+												transform = false;
+											}
+
+											// Reset extension displacement
+											if (gridBlockPipelineAsset.extends) {
+												if (gridBlockPipelineAsset.asset.gx !== gx) {
 													drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
 												}
+												if (gridBlockPipelineAsset.asset.gy !== gy) {
+													drawGy = ((gy - gHeight) * resolutionMultiple) | 0;
+												}
+											}
+										}
+									}
+
+									/**
+									 * Draw: Lights
+									 */
+									if (gridBlockPipelineAsset.light) {
+										gridLight = gridBlockPipelineAsset.light;
+										skip = false;
+
+										// Extensions
+										if (extendedHashesLights[j] === undefined) {
+											extendedHashesLights[j] = {};
+										}
+										extendedHash = extendedHashesLights[j];
+
+										if (gridBlockPipelineAsset.lightLarge || gridBlockPipelineAsset.lightExtends) {
+											if (extendedHash[gridLight.hash] !== undefined) {
+												// Asset already drawn
+												skip = true;
+											} else {
+												extendedHash[gridLight.hash] = null;
+											}
+										}
+										if (!skip) {
+											if (gridBlockPipelineAsset.extends) {
+												if (gridLight.gx !== gx) {
+													drawGx = ((gridLight.gx - gWidth) * resolutionMultiple) | 0;
+												}
+												if (gridLight.gy !== gy) {
+													drawGy = ((gridLight.gy - gHeight) * resolutionMultiple) | 0;
+												}
 											}
 
-											// Cache calculations
-											drawGy = Math.floor((gy - gHeight) * resolutionMultiple);
+											// Config
 											if (gSizeHPrevious !== gridLight.gSizeH) {
 												gSizeHPrevious = gridLight.gSizeH;
 												gInPhEff = (resolutionMultiple * gridLight.gSizeH) | 0;
@@ -453,79 +425,101 @@ class MapDrawWorkerEngine {
 												gInPwEff = (resolutionMultiple * gridLight.gSizeW) | 0;
 											}
 
+											// Transforms
+											if (gridLight.flipH || gridLight.flipV) {
+												transform = true;
+												ctxTmpSelect.setTransform(
+													gridLight.flipH ? -1 : 1,
+													0,
+													0,
+													gridLight.flipV ? -1 : 1,
+													(drawGx + (gridLight.flipH ? gInPwEff : 0)) | 0,
+													(drawGy + (gridLight.flipV ? gInPhEff : 0)) | 0,
+												);
+											}
+
 											imageBitmap = LightingEngine.getCacheInstance(gridLight.assetId).image;
-											ctxTmp.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+											ctxTmpSelect.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
+
+											// Reset transforms
+											if (transform) {
+												ctxTmpSelect.setTransform(1, 0, 0, 1, 0, 0);
+												transform = false;
+											}
+
+											// Reset extension displacement
+											if (gridBlockPipelineAsset.extends) {
+												if (gridLight.gx !== gx) {
+													drawGx = ((gx - gWidth) * resolutionMultiple) | 0;
+												}
+												if (gridLight.gy !== gy) {
+													drawGy = ((gy - gHeight) * resolutionMultiple) | 0;
+												}
+											}
 										}
 									}
 								}
-
-								switch (z) {
-									case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
-										zBitmapBackground = canvasTmp.transferToImageBitmap();
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.FOREGROUND:
-										zBitmapForeground = canvasTmp.transferToImageBitmap();
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
-										zBitmapPrimary = canvasTmp.transferToImageBitmap();
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.SECONDARY:
-										zBitmapSecondary = canvasTmp.transferToImageBitmap();
-										break;
-									case VideoBusInputCmdGameModeEditApplyZ.VANISHING:
-										if (vanishingEnable) {
-											x = Math.floor((camera.gx - gWidth) * resolutionMultiple);
-											y = Math.floor((camera.gy - gHeight) * resolutionMultiple);
-
-											gradient = ctxTmp.createRadialGradient(x, y, 0, x, y, radius);
-											gradient.addColorStop(0, 'white');
-											gradient.addColorStop(0.75, 'white');
-											gradient.addColorStop(1, 'transparent');
-
-											ctxTmp.globalCompositeOperation = 'destination-out';
-											ctxTmp.fillStyle = gradient;
-											ctxTmp.fillRect(x - radius, y - radius, radius2, radius2);
-											ctxTmp.globalCompositeOperation = 'source-over'; // restore default setting
-										}
-
-										zBitmapVanishing = canvasTmp.transferToImageBitmap();
-										break;
-								}
-							}
-
-							// Build final cut of the map
-							ctxTmp.drawImage(zBitmapBackground, 0, 0);
-							ctxTmp.drawImage(zBitmapSecondary, 0, 0);
-							ctxTmp.drawImage(zBitmapPrimary, 0, 0);
-							ctxTmp.drawImage(zBitmapForeground, 0, 0);
-							ctxTmp.drawImage(zBitmapVanishing, 0, 0);
-
-							if (canvasTmpGw > canvasWidth) {
-								// Resize to correct size
-								ctx.drawImage(canvasTmp, 0, 0, gWidthMaxEff, gHeightMaxEff, 0, 0, canvasWidth, canvasHeight);
-							} else {
-								// Resize & offset to correct size
-								ctx.drawImage(
-									canvasTmp,
-									0,
-									0,
-									canvasTmpGwEff,
-									canvasTmpGhEff,
-									(canvasWidth * (gWidth / gWidthMax)) | 0,
-									(canvasHeight * (gHeight / gHeightMax)) | 0,
-									scaledImageWidth,
-									scaledImageHeight,
-								);
 							}
 						}
-					}
 
-					// Done
-					MapDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());
+						if (vanishingEnable) {
+							x = Math.floor((camera.gx - gWidth) * resolutionMultiple);
+							y = Math.floor((camera.gy - gHeight) * resolutionMultiple);
+
+							gradient = ctxTmpVanishing.createRadialGradient(x, y, 0, x, y, radius);
+							gradient.addColorStop(0, 'white');
+							gradient.addColorStop(0.75, 'white');
+							gradient.addColorStop(1, 'transparent');
+
+							ctxTmpVanishing.globalCompositeOperation = 'destination-out';
+							ctxTmpVanishing.fillStyle = gradient;
+							ctxTmpVanishing.fillRect(x - radius, y - radius, radius2, radius2);
+							ctxTmpVanishing.globalCompositeOperation = 'source-over'; // restore default setting
+						}
+
+						// Build final cut of the map
+						ctxTmp.drawImage(canvasTmpVanishing, 0, 0);
+
+						if (canvasTmpGw > canvasWidth) {
+							// Resize to correct size
+							ctx.drawImage(canvasTmp, 0, 0, gWidthMaxEff, gHeightMaxEff, 0, 0, canvasWidth, canvasHeight);
+						} else {
+							// Resize & offset to correct size
+							ctx.drawImage(
+								canvasTmp,
+								0,
+								0,
+								canvasTmpGwEff,
+								canvasTmpGhEff,
+								(canvasWidth * (gWidth / gWidthMax)) | 0,
+								(canvasHeight * (gHeight / gHeightMax)) | 0,
+								scaledImageWidth,
+								scaledImageHeight,
+							);
+						}
+
+						ctxTmp.clearRect(0, 0, canvasTmp.width, canvasTmp.height);
+						ctxTmpVanishing.clearRect(0, 0, canvasTmpVanishing.width, canvasTmpVanishing.height);
+					}
+				}
+
+				// Done
+				MapDrawWorkerEngine.outputBitmap(canvas.transferToImageBitmap());
+			};
+
+		while (true) {
+			start = performance.now();
+
+			if (MapDrawWorkerEngine.mapVisible) {
+				try {
+					__draw();
 				} catch (e: any) {
-					//console.error('e', e);
+					// console.error('e', e);
 				}
 			}
-		}, MapDrawWorkerEngine.drawIntervalInMs);
+
+			// Offset delay by duration of draw function to more consistently equal the drawIntervalInMs setpoint by cycle
+			await UtilEngine.delayInMs(Math.max(0, MapDrawWorkerEngine.drawIntervalInMs - (performance.now() - start)));
+		}
 	}
 }

@@ -234,6 +234,8 @@ export interface GridLight extends GridObject {
 	directionOmniBrightness?: number;
 	directionOmniGRadius?: number;
 	directions?: GridLightDirection[];
+	flipH?: boolean;
+	flipV?: boolean;
 	gRadiusAudioEffect?: number;
 	nightOnly?: boolean;
 	rounded?: boolean;
