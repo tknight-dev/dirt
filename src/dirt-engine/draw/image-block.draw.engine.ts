@@ -23,14 +23,20 @@ import { UtilEngine } from '../engines/util.engine';
 export class ImageBlockDrawEngine {
 	private static caches: ImageBitmap[];
 	private static cacheCanvases: OffscreenCanvas[] = [];
+	private static cacheEditing: boolean;
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
 	private static cacheHashPh: number;
 	private static cacheHashPw: number;
 	private static cacheHourPrecise: number;
 	private static cacheZoom: number;
+	private static ctxBackground: OffscreenCanvasRenderingContext2D;
+	private static ctxForeground: OffscreenCanvasRenderingContext2D;
+	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
 	private static ctxs: OffscreenCanvasRenderingContext2D[] = [];
-	private static ctxsFinal: OffscreenCanvasRenderingContext2D[] = [];
+	private static ctxSecondary: OffscreenCanvasRenderingContext2D;
+	private static ctxsOptimized: OffscreenCanvasRenderingContext2D[] = [];
+	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static editing: boolean;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
@@ -52,7 +58,11 @@ export class ImageBlockDrawEngine {
 			return;
 		}
 		ImageBlockDrawEngine.initialized = true;
-		ImageBlockDrawEngine.ctxsFinal = [ctxBackground, ctxSecondary, ctxPrimary, ctxForeground, ctxVanishing];
+		ImageBlockDrawEngine.ctxBackground = ctxBackground;
+		ImageBlockDrawEngine.ctxSecondary = ctxSecondary;
+		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
+		ImageBlockDrawEngine.ctxForeground = ctxForeground;
+		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
 
 		ImageBlockDrawEngine.zGroup = [
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
@@ -73,6 +83,13 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.ctxs.push(<OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d'));
 			ImageBlockDrawEngine.ctxs[ImageBlockDrawEngine.ctxs.length - 1].imageSmoothingEnabled = false;
 		}
+		ImageBlockDrawEngine.ctxsOptimized = [
+			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
+			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
+			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
+			ImageBlockDrawEngine.ctxs[3], // Write to just one foreground canvas
+			ImageBlockDrawEngine.ctxs[4], // Write to just one foreground canvas
+		];
 	}
 
 	public static cacheReset(): void {
@@ -82,10 +99,11 @@ export class ImageBlockDrawEngine {
 	public static start(): void {
 		let caches: ImageBitmap[] = ImageBlockDrawEngine.caches,
 			camera: Camera = ImageBlockDrawEngine.mapActiveCamera,
-			ctxsFinal: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.ctxsFinal,
+			editing: boolean = ImageBlockDrawEngine.editing,
 			hourPreciseOfDayEff: number = LightingEngine.getHourPreciseOfDayEff();
 
 		if (
+			ImageBlockDrawEngine.cacheEditing !== editing ||
 			ImageBlockDrawEngine.cacheHashGx !== camera.gx ||
 			ImageBlockDrawEngine.cacheHashGy !== camera.gy ||
 			ImageBlockDrawEngine.cacheHashPh !== camera.windowPh ||
@@ -99,10 +117,9 @@ export class ImageBlockDrawEngine {
 				brightness: number,
 				cacheCanvases: OffscreenCanvas[] = ImageBlockDrawEngine.cacheCanvases,
 				ctx: OffscreenCanvasRenderingContext2D,
-				ctxs: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.ctxs,
+				ctxs: OffscreenCanvasRenderingContext2D[],
 				drawGx: number,
 				drawGy: number,
-				editing: boolean = ImageBlockDrawEngine.editing,
 				extendedHash: { [key: number]: null } = {},
 				extendedHashes: { [key: number]: null }[] = [],
 				extendedHashesLights: { [key: number]: null }[] = [],
@@ -154,6 +171,12 @@ export class ImageBlockDrawEngine {
 				zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
 			// Config
+			if (editing) {
+				ctxs = ImageBlockDrawEngine.ctxs;
+			} else {
+				ctxs = ImageBlockDrawEngine.ctxsOptimized;
+			}
+
 			imageBitmapsBlend = Math.round((1 - (imageBitmapsBlend - Math.floor(imageBitmapsBlend))) * 1000) / 1000;
 			radius = (((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom) | 0;
 			radius2 = radius * 2;
@@ -203,7 +226,7 @@ export class ImageBlockDrawEngine {
 						}
 
 						// Config
-						ctx = gridBlockPipelineAsset.ctx;
+						ctx = ctxs[j];
 						z = zGroup[j];
 
 						/**
@@ -572,13 +595,25 @@ export class ImageBlockDrawEngine {
 			/**
 			 * Canvas to cache
 			 */
-			caches[0] = cacheCanvases[0].transferToImageBitmap();
-			caches[1] = cacheCanvases[1].transferToImageBitmap();
-			caches[2] = cacheCanvases[2].transferToImageBitmap();
-			caches[3] = cacheCanvases[3].transferToImageBitmap();
-			caches[4] = cacheCanvases[4].transferToImageBitmap();
+			if (editing) {
+				caches[0] = cacheCanvases[0].transferToImageBitmap();
+				caches[1] = cacheCanvases[1].transferToImageBitmap();
+				caches[2] = cacheCanvases[2].transferToImageBitmap();
+				caches[3] = cacheCanvases[3].transferToImageBitmap();
+				caches[4] = cacheCanvases[4].transferToImageBitmap();
+			} else {
+				// 0-2 written to 0 when not editing
+				caches[0] = cacheCanvases[0].transferToImageBitmap();
+
+				// 3-4 written to 3 when not editing
+				ctxs[3].drawImage(cacheCanvases[4], 0, 0);
+				ctxs[4].clearRect(0, 0, camera.windowPw, camera.windowPh);
+
+				caches[3] = cacheCanvases[3].transferToImageBitmap();
+			}
 
 			// Cache misc
+			ImageBlockDrawEngine.cacheEditing = editing;
 			ImageBlockDrawEngine.cacheHashGx = camera.gx;
 			ImageBlockDrawEngine.cacheHashGy = camera.gy;
 			ImageBlockDrawEngine.cacheHashPh = camera.windowPh;
@@ -587,15 +622,19 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.cacheZoom = camera.zoom;
 		}
 
-		ctxsFinal[0].drawImage(caches[0], 0, 0);
-		ctxsFinal[1].drawImage(caches[1], 0, 0);
-		ctxsFinal[2].drawImage(caches[2], 0, 0);
-		ctxsFinal[3].drawImage(caches[3], 0, 0);
-		ctxsFinal[4].drawImage(caches[4], 0, 0);
-	}
+		if (editing) {
+			ImageBlockDrawEngine.ctxBackground.drawImage(caches[0], 0, 0);
+			ImageBlockDrawEngine.ctxSecondary.drawImage(caches[1], 0, 0);
+			ImageBlockDrawEngine.ctxPrimary.drawImage(caches[2], 0, 0);
+			ImageBlockDrawEngine.ctxForeground.drawImage(caches[3], 0, 0);
+			ImageBlockDrawEngine.ctxVanishing.drawImage(caches[4], 0, 0);
+		} else {
+			// 0-2 written to 0 when not editing
+			ImageBlockDrawEngine.ctxBackground.drawImage(caches[0], 0, 0);
 
-	public static getCTXs(): OffscreenCanvasRenderingContext2D[] {
-		return ImageBlockDrawEngine.ctxs;
+			// 3-4 written to 3 when not editing
+			ImageBlockDrawEngine.ctxForeground.drawImage(caches[3], 0, 0);
+		}
 	}
 
 	public static setMapActive(mapActive: MapActive) {

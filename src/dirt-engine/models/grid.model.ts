@@ -87,7 +87,6 @@ export interface GridBlockPipelineAsset {
 	assetLarge?: boolean;
 	audioBlock?: GridAudioBlock;
 	audioTag?: GridAudioTag;
-	ctx: OffscreenCanvasRenderingContext2D;
 	extends?: boolean;
 	light?: GridLight;
 	lightExtends?: boolean;

@@ -761,8 +761,6 @@ export class MapEditEngine {
 			],
 			complex: GridBlockTableComplex,
 			complexes: GridBlockTableComplex[],
-			ctx: OffscreenCanvasRenderingContext2D,
-			ctxs: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.getCTXs(),
 			gridObject: GridObject,
 			gridImageBlockReference: GridImageBlockReference,
 			gridLight: GridLight,
@@ -789,15 +787,10 @@ export class MapEditEngine {
 			pipelineGyByGx: { [key: number]: { [key: number]: null } } = {},
 			z: number;
 
-		if (!ctxs.length) {
-			return;
-		}
-
 		/**
 		 * References
 		 */
 		for (i in references) {
-			ctx = ctxs[i];
 			reference = references[i];
 			hashes = reference.hashes;
 			hashesGyByGx = <any>reference.hashesGyByGx;
@@ -827,7 +820,6 @@ export class MapEditEngine {
 					}
 					pipelineAssetsByGy[gy][i] = {
 						asset: gridImageBlockReference.block,
-						ctx: ctx,
 					};
 
 					// Extension logic here
@@ -857,7 +849,6 @@ export class MapEditEngine {
 							pipelineAssetsByGyByGx[gx][gy][i] = {
 								asset: gridImageBlockReference.block,
 								extends: true,
-								ctx: ctx,
 							};
 						} else {
 							pipelineAssetsByGyByGx[gx][gy][i].asset = gridImageBlockReference.block;
@@ -873,16 +864,6 @@ export class MapEditEngine {
 		 * Blocks
 		 */
 		for (i in blockTables) {
-			switch (i) {
-				case '2':
-					// Foreground
-					ctx = ctxs[3];
-					break;
-				default:
-					// Primary
-					ctx = ctxs[2];
-					break;
-			}
 			blockTable = blockTables[i];
 
 			blockTableHashes = blockTable.hashes;
@@ -917,7 +898,6 @@ export class MapEditEngine {
 						if (pipelineAssetsByGy[gy][2] === undefined) {
 							pipelineAssetsByGy[gy][2] = {
 								audioBlock: <GridAudioBlock>gridObject,
-								ctx: ctx,
 							};
 						} else {
 							pipelineAssetsByGy[gy][2].audioBlock = <GridAudioBlock>gridObject;
@@ -927,7 +907,6 @@ export class MapEditEngine {
 						if (pipelineAssetsByGy[gy][2] === undefined) {
 							pipelineAssetsByGy[gy][2] = {
 								audioTag: <GridAudioTag>gridObject,
-								ctx: ctx,
 							};
 						} else {
 							pipelineAssetsByGy[gy][2].audioTag = <GridAudioTag>gridObject;
@@ -946,7 +925,6 @@ export class MapEditEngine {
 						if (pipelineAssetsByGy[gy][z] === undefined) {
 							pipelineAssetsByGy[gy][z] = {
 								light: gridLight,
-								ctx: ctx,
 							};
 						} else {
 							pipelineAssetsByGy[gy][z].light = gridLight;
@@ -979,7 +957,6 @@ export class MapEditEngine {
 								pipelineAssetsByGyByGx[gx][gy][z] = {
 									light: gridLight,
 									lightExtends: true,
-									ctx: ctx,
 								};
 							} else {
 								pipelineAssetsByGyByGx[gx][gy][z].light = gridLight;
