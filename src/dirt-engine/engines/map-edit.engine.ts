@@ -121,6 +121,7 @@ export class MapEditEngine {
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryBlocks);
+		MapEditEngine.gridBlockTableInflatePipelines(grid);
 	}
 
 	private static applyAudioTag(apply: VideoBusInputCmdGameModeEditApplyAudioTag): void {
@@ -161,6 +162,7 @@ export class MapEditEngine {
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(grid.audioPrimaryTags);
+		MapEditEngine.gridBlockTableInflatePipelines(grid);
 	}
 
 	private static applyErase(apply: VideoBusInputCmdGameModeEditApplyErase): void {
@@ -556,6 +558,7 @@ export class MapEditEngine {
 		}
 
 		MapEditEngine.gridBlockTableInflateInstance(blocks);
+		MapEditEngine.gridBlockTableInflatePipelines(mapActive.gridActive);
 
 		if (!MapEditEngine.modeUI) {
 			let assetId: string = (<any>apply).assetId,
@@ -748,16 +751,27 @@ export class MapEditEngine {
 		if (MapEditEngine.modeUI) {
 			return;
 		}
-		let complex: GridBlockTableComplex,
+		let blockTable: GridBlockTable<GridObject>,
+			blockTableHashes: { [key: number]: GridObject },
+			blockTables: GridBlockTable<GridObject>[] = [
+				grid.audioPrimaryBlocks,
+				grid.audioPrimaryTags,
+				grid.lightsForeground,
+				grid.lightsPrimary,
+			],
+			complex: GridBlockTableComplex,
 			complexes: GridBlockTableComplex[],
 			ctx: OffscreenCanvasRenderingContext2D,
 			ctxs: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.getCTXs(),
+			gridObject: GridObject,
 			gridImageBlockReference: GridImageBlockReference,
+			gridLight: GridLight,
 			gx: number,
 			gxString: string,
 			gy: number,
 			hashes: { [key: number]: GridImageBlockReference },
 			hashesGyByGx: { [key: number]: GridBlockTableComplex[] },
+			i: string,
 			j: string,
 			reference: GridBlockTable<GridImageBlockReference>,
 			references: GridBlockTable<GridImageBlockReference>[] = [
@@ -772,13 +786,17 @@ export class MapEditEngine {
 			pipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } } = {},
 			pipelineGy: { [key: number]: number[] } = {},
 			pipelineGyInstance: { [key: number]: null } = {},
-			pipelineGyByGx: { [key: number]: { [key: number]: null } } = {};
+			pipelineGyByGx: { [key: number]: { [key: number]: null } } = {},
+			z: number;
 
 		if (!ctxs.length) {
 			return;
 		}
 
-		for (let i in references) {
+		/**
+		 * References
+		 */
+		for (i in references) {
 			ctx = ctxs[i];
 			reference = references[i];
 			hashes = reference.hashes;
@@ -818,18 +836,157 @@ export class MapEditEngine {
 						gx = gridImageBlockReference.block.gx + gridImageBlockReference.block.gSizeW;
 						gy = gridImageBlockReference.block.gy + gridImageBlockReference.block.gSizeH;
 
+						if (
+							pipelineAssetsByGyByGx[gx] !== undefined &&
+							pipelineAssetsByGyByGx[gx][gy] !== undefined &&
+							pipelineAssetsByGyByGx[gx][gy][i] !== undefined
+						) {
+							// Already extended
+							continue;
+						}
+
 						if (pipelineAssetsByGyByGx[gx] === undefined) {
 							pipelineAssetsByGyByGx[gx] = {};
 							pipelineAssetsByGyByGx[gx][gy] = new Array(referencesLength);
 							pipelineGyByGx[gx] = {};
+						} else if (pipelineAssetsByGyByGx[gx][gy] === undefined) {
+							pipelineAssetsByGyByGx[gx][gy] = new Array(referencesLength);
 						}
 
-						pipelineAssetsByGyByGx[gx][gy][i] = {
-							asset: gridImageBlockReference.block,
-							extends: true,
-							ctx: ctx,
-						};
+						if (pipelineAssetsByGyByGx[gx][gy][i] === undefined) {
+							pipelineAssetsByGyByGx[gx][gy][i] = {
+								asset: gridImageBlockReference.block,
+								extends: true,
+								ctx: ctx,
+							};
+						} else {
+							pipelineAssetsByGyByGx[gx][gy][i].asset = gridImageBlockReference.block;
+							pipelineAssetsByGyByGx[gx][gy][i].extends = true;
+						}
 						pipelineGyByGx[gx][gy] = null;
+					}
+				}
+			}
+		}
+
+		/**
+		 * Blocks
+		 */
+		for (i in blockTables) {
+			switch (i) {
+				case '2':
+					// Foreground
+					ctx = ctxs[3];
+					break;
+				default:
+					// Primary
+					ctx = ctxs[2];
+					break;
+			}
+			blockTable = blockTables[i];
+
+			blockTableHashes = blockTable.hashes;
+			hashesGyByGx = <any>blockTable.hashesGyByGx;
+
+			for (gxString in hashesGyByGx) {
+				complexes = hashesGyByGx[gxString];
+
+				if (pipelineAssetsByGyByGx[gxString] === undefined) {
+					pipelineAssetsByGyByGx[gxString] = {};
+					pipelineGyByGx[gxString] = {};
+				}
+				pipelineAssetsByGy = pipelineAssetsByGyByGx[gxString];
+				pipelineGyInstance = pipelineGyByGx[gxString];
+
+				for (j in complexes) {
+					complex = complexes[j];
+					gridObject = blockTableHashes[complex.hash];
+					gy = complex.value;
+
+					if (gridObject.extends) {
+						continue;
+					}
+
+					pipelineGyInstance[gy] = null;
+					if (pipelineAssetsByGy[gy] === undefined) {
+						pipelineAssetsByGy[gy] = new Array(referencesLength);
+					}
+
+					if (i === '0') {
+						// 2 is primary
+						if (pipelineAssetsByGy[gy][2] === undefined) {
+							pipelineAssetsByGy[gy][2] = {
+								audioBlock: <GridAudioBlock>gridObject,
+								ctx: ctx,
+							};
+						} else {
+							pipelineAssetsByGy[gy][2].audioBlock = <GridAudioBlock>gridObject;
+						}
+					} else if (i === '1') {
+						// 2 is primary
+						if (pipelineAssetsByGy[gy][2] === undefined) {
+							pipelineAssetsByGy[gy][2] = {
+								audioTag: <GridAudioTag>gridObject,
+								ctx: ctx,
+							};
+						} else {
+							pipelineAssetsByGy[gy][2].audioTag = <GridAudioTag>gridObject;
+						}
+					} else {
+						gridLight = <GridLight>gridObject;
+
+						if (i === '2') {
+							// 3 is foreground
+							z = 3;
+						} else {
+							// 2 is primary
+							z = 2;
+						}
+
+						if (pipelineAssetsByGy[gy][z] === undefined) {
+							pipelineAssetsByGy[gy][z] = {
+								light: gridLight,
+								ctx: ctx,
+							};
+						} else {
+							pipelineAssetsByGy[gy][z].light = gridLight;
+						}
+
+						// Extension logic here
+						if (gridLight.gSizeH !== 1 || gridLight.gSizeW !== 1) {
+							pipelineAssetsByGy[gy][z].lightLarge = true;
+							gx = gridLight.gx + gridLight.gSizeW;
+							gy = gridLight.gy + gridLight.gSizeH;
+
+							if (
+								pipelineAssetsByGyByGx[gx] !== undefined &&
+								pipelineAssetsByGyByGx[gx][gy] !== undefined &&
+								pipelineAssetsByGyByGx[gx][gy][z] !== undefined
+							) {
+								// Already extended
+								continue;
+							}
+
+							if (pipelineAssetsByGyByGx[gx] === undefined) {
+								pipelineAssetsByGyByGx[gx] = {};
+								pipelineAssetsByGyByGx[gx][gy] = new Array(referencesLength);
+								pipelineGyByGx[gx] = {};
+							} else if (pipelineAssetsByGyByGx[gx][gy] === undefined) {
+								pipelineAssetsByGyByGx[gx][gy] = new Array(referencesLength);
+							}
+
+							if (pipelineAssetsByGyByGx[gx][gy][z] === undefined) {
+								pipelineAssetsByGyByGx[gx][gy][z] = {
+									light: gridLight,
+									lightExtends: true,
+									ctx: ctx,
+								};
+							} else {
+								pipelineAssetsByGyByGx[gx][gy][z].light = gridLight;
+								pipelineAssetsByGyByGx[gx][gy][z].lightExtends = true;
+							}
+							pipelineGyByGx[gx][gy] = null;
+						}
 					}
 				}
 			}

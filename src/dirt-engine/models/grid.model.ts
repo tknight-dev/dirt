@@ -83,13 +83,15 @@ export class Grid {
 }
 
 export interface GridBlockPipelineAsset {
-	asset: GridImageBlock;
+	asset?: GridImageBlock;
 	assetLarge?: boolean;
 	audioBlock?: GridAudioBlock;
 	audioTag?: GridAudioTag;
 	ctx: OffscreenCanvasRenderingContext2D;
 	extends?: boolean;
 	light?: GridLight;
+	lightExtends?: boolean;
+	lightLarge?: boolean;
 }
 
 export interface GridBlockTable<T> {

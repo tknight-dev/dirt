@@ -120,23 +120,14 @@ export class MapDrawEngine {
 
 			// Background
 			if (MapDrawEngine.mapImage) {
+				let height: number =
+					(MapDrawEngine.backgroundPh *
+						(MapDrawEngine.mapActive.gridConfigActive.gHorizon / MapDrawEngine.mapActive.gridConfigActive.gHeight)) |
+					0;
+
 				if (MapDrawEngine.cacheBackgroundSky) {
-					ctx.drawImage(
-						MapDrawEngine.cacheBackgroundSky,
-						0,
-						0,
-						MapDrawEngine.backgroundPw,
-						MapDrawEngine.backgroundPh *
-							(MapDrawEngine.mapActive.gridConfigActive.gHorizon / MapDrawEngine.mapActive.gridConfigActive.gHeight),
-					);
-					ctx.drawImage(
-						MapDrawEngine.cacheBackgroundStarfield,
-						0,
-						0,
-						MapDrawEngine.backgroundPw,
-						MapDrawEngine.backgroundPh *
-							(MapDrawEngine.mapActive.gridConfigActive.gHorizon / MapDrawEngine.mapActive.gridConfigActive.gHeight),
-					);
+					ctx.drawImage(MapDrawEngine.cacheBackgroundSky, 0, 0, MapDrawEngine.backgroundPw, height);
+					ctx.drawImage(MapDrawEngine.cacheBackgroundStarfield, 0, 0, MapDrawEngine.backgroundPw, height);
 				}
 
 				ctx.drawImage(MapDrawEngine.mapImage, 0, 0);

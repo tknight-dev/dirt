@@ -53,7 +53,7 @@ export class CameraDrawEngine {
 		CameraDrawEngine.cacheGInPCheck = camera.gInPh;
 		if (!CameraDrawEngine.cache || CameraDrawEngine.cacheGInP !== CameraDrawEngine.cacheGInPCheck) {
 			// Draw from scratch
-			sizeEff = Math.round((camera.gInPh / 4) * 1000) / 1000;
+			sizeEff = (camera.gInPh / 4) | 0;
 			let ctx: OffscreenCanvasRenderingContext2D = CameraDrawEngine.ctx;
 
 			// Canvas
@@ -64,7 +64,7 @@ export class CameraDrawEngine {
 			ctx.lineWidth = 2;
 			ctx.fillStyle = 'rgba(255,255,255,.25)';
 			ctx.strokeStyle = 'white';
-			ctx.arc(sizeEff, sizeEff, sizeEff / 2, 0, 2 * Math.PI);
+			ctx.arc(sizeEff, sizeEff, (sizeEff / 2) | 0, 0, 2 * Math.PI);
 			ctx.fill();
 			ctx.stroke();
 
@@ -82,36 +82,30 @@ export class CameraDrawEngine {
 		) {
 			// Calc from scratch
 			if (!sizeEff) {
-				sizeEff = Math.round((camera.gInPh / 4) * 1000) / 1000;
+				sizeEff = (camera.gInPh / 4) | 0;
 			}
 
 			if (camera.viewportGx === 0) {
 				// Left
-				CameraDrawEngine.cachePositionPx = (camera.gx * camera.gInPw) | 0;
+				CameraDrawEngine.cachePositionPx = camera.gx * camera.gInPw;
 			} else if (camera.viewportGx + camera.viewportGwEff === CameraDrawEngine.mapActive.gridConfigActive.gWidth) {
 				// Right
 				CameraDrawEngine.cachePositionPx =
-					(camera.viewportPx +
-						camera.viewportPw / 2 +
-						(camera.gx - (camera.viewportGx + camera.viewportGwEff / 2)) * camera.gInPw) |
-					0;
+					camera.viewportPx + camera.viewportPw / 2 + (camera.gx - (camera.viewportGx + camera.viewportGwEff / 2)) * camera.gInPw;
 			} else {
-				CameraDrawEngine.cachePositionPx = (camera.viewportPx + camera.viewportPw / 2) | 0;
+				CameraDrawEngine.cachePositionPx = camera.viewportPx + camera.viewportPw / 2;
 			}
-			CameraDrawEngine.cachePositionPx -= sizeEff; // Offset to circle center
+			CameraDrawEngine.cachePositionPx = (CameraDrawEngine.cachePositionPx - sizeEff) | 0; // Offset to circle center
 
 			if (camera.viewportGy === 0) {
-				CameraDrawEngine.cachePositionPy = (camera.gy * camera.gInPh) | 0;
+				CameraDrawEngine.cachePositionPy = camera.gy * camera.gInPh;
 			} else if (camera.viewportGy + camera.viewportGhEff === CameraDrawEngine.mapActive.gridConfigActive.gHeight) {
 				CameraDrawEngine.cachePositionPy =
-					(camera.viewportPy +
-						camera.viewportPh / 2 +
-						(camera.gy - (camera.viewportGy + camera.viewportGhEff / 2)) * camera.gInPh) |
-					0;
+					camera.viewportPy + camera.viewportPh / 2 + (camera.gy - (camera.viewportGy + camera.viewportGhEff / 2)) * camera.gInPh;
 			} else {
-				CameraDrawEngine.cachePositionPy = (camera.viewportPy + camera.viewportPh / 2) | 0;
+				CameraDrawEngine.cachePositionPy = camera.viewportPy + camera.viewportPh / 2;
 			}
-			CameraDrawEngine.cachePositionPy -= sizeEff; // Offset to circle center
+			CameraDrawEngine.cachePositionPy = (CameraDrawEngine.cachePositionPy - sizeEff) | 0; // Offset to circle center
 
 			CameraDrawEngine.cachePositionHashG = CameraDrawEngine.cachePositionHashCheckG;
 			CameraDrawEngine.cachePositionHashPh = camera.windowPh;
