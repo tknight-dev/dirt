@@ -139,7 +139,6 @@ export class ImageBlockDrawEngine {
 			gridBlockPipelineAssets: GridBlockPipelineAsset[],
 			grid: Grid,
 			gridAnimation: GridAnimation,
-			gridAnimationCalc: GridAnimationCalc,
 			gridAudioBlock: GridAudioBlock,
 			gridAudioTag: GridAudioTag,
 			gridImageBlock: GridImageBlock,

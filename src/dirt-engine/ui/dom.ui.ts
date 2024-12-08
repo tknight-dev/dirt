@@ -769,7 +769,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gRadius;
+		input.value = String(applicationProperties.gRadius || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -923,7 +923,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gRadius;
+		input.value = String(applicationProperties.gRadius || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -982,7 +982,7 @@ export class DomUI {
 		};
 		input.step = '.1';
 		input.type = 'range';
-		input.value = applicationProperties.volumePercentage;
+		input.value = String(applicationProperties.volumePercentage || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1036,6 +1036,7 @@ export class DomUI {
 				passthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
+				transparency: 0,
 			},
 			input: HTMLInputElement,
 			playing: boolean,
@@ -1239,7 +1240,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeH;
+		input.value = String(applicationProperties.gSizeH || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1259,7 +1260,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeW;
+		input.value = String(applicationProperties.gSizeW || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1374,7 +1375,7 @@ export class DomUI {
 			};
 			input.step = '1';
 			input.type = 'range';
-			input.value = applicationProperties.strengthToDamangeInN;
+			input.value = String(applicationProperties.strengthToDamangeInN || 0);
 			td.appendChild(input);
 			tr.appendChild(td);
 			t.appendChild(tr);
@@ -1395,11 +1396,31 @@ export class DomUI {
 			};
 			input.step = '1';
 			input.type = 'range';
-			input.value = applicationProperties.strengthToDestroyInN;
+			input.value = String(applicationProperties.strengthToDestroyInN || 0);
 			td.appendChild(input);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
+
+		// // Transparency
+		// tr = document.createElement('tr');
+		// td = document.createElement('td');
+		// td.innerText = 'Transparency';
+		// tr.appendChild(td);
+		// td = document.createElement('td');
+		// input = document.createElement('input');
+		// input.autocomplete = 'off';
+		// input.max = '1';
+		// input.min = '0';
+		// input.oninput = (event: any) => {
+		// 	applicationProperties.transparency = Number(event.target.value);
+		// };
+		// input.step = '.01';
+		// input.type = 'range';
+		// input.value = String(applicationProperties.transparency || 0);
+		// td.appendChild(input);
+		// tr.appendChild(td);
+		// t.appendChild(tr);
 
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
@@ -1448,6 +1469,7 @@ export class DomUI {
 				halved: GridImageBlockHalved.NONE,
 				nullBlocking: undefined,
 				passthroughLight: undefined,
+				transparency: 0,
 				viscocity: 1,
 			},
 			input: HTMLInputElement,
@@ -1646,7 +1668,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeH;
+		input.value = String(applicationProperties.gSizeH || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1666,7 +1688,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeW;
+		input.value = String(applicationProperties.gSizeW || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1731,6 +1753,26 @@ export class DomUI {
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
+
+		// // Transparency
+		// tr = document.createElement('tr');
+		// td = document.createElement('td');
+		// td.innerText = 'Transparency';
+		// tr.appendChild(td);
+		// td = document.createElement('td');
+		// input = document.createElement('input');
+		// input.autocomplete = 'off';
+		// input.max = '1';
+		// input.min = '0';
+		// input.oninput = (event: any) => {
+		// 	applicationProperties.transparency = Number(event.target.value);
+		// };
+		// input.step = '.01';
+		// input.type = 'range';
+		// input.value = String(applicationProperties.transparency || 0);
+		// td.appendChild(input);
+		// tr.appendChild(td);
+		// t.appendChild(tr);
 
 		// Viscocity
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
@@ -1804,6 +1846,7 @@ export class DomUI {
 				passthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
+				transparency: 0,
 			},
 			input: HTMLInputElement,
 			playing: boolean,
@@ -2007,7 +2050,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeH;
+		input.value = String(applicationProperties.gSizeH || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2027,7 +2070,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeW;
+		input.value = String(applicationProperties.gSizeW || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2142,7 +2185,7 @@ export class DomUI {
 			};
 			input.step = '1';
 			input.type = 'range';
-			input.value = applicationProperties.strengthToDamangeInN;
+			input.value = String(applicationProperties.strengthToDamangeInN || 0);
 			td.appendChild(input);
 			tr.appendChild(td);
 			t.appendChild(tr);
@@ -2163,11 +2206,31 @@ export class DomUI {
 			};
 			input.step = '1';
 			input.type = 'range';
-			input.value = applicationProperties.strengthToDestroyInN;
+			input.value = String(applicationProperties.strengthToDestroyInN || 0);
 			td.appendChild(input);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
+
+		// // Transparency
+		// tr = document.createElement('tr');
+		// td = document.createElement('td');
+		// td.innerText = 'Transparency';
+		// tr.appendChild(td);
+		// td = document.createElement('td');
+		// input = document.createElement('input');
+		// input.autocomplete = 'off';
+		// input.max = '1';
+		// input.min = '0';
+		// input.oninput = (event: any) => {
+		// 	applicationProperties.transparency = Number(event.target.value);
+		// };
+		// input.step = '.01';
+		// input.type = 'range';
+		// input.value = String(applicationProperties.transparency || 0);
+		// td.appendChild(input);
+		// tr.appendChild(td);
+		// t.appendChild(tr);
 
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
@@ -2454,7 +2517,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.directionOmniBrightness;
+		input.value = String(applicationProperties.directionOmniBrightness || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2474,7 +2537,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.directionOmniGRadius;
+		input.value = String(applicationProperties.directionOmniGRadius || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2494,7 +2557,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.directions[0].brightness;
+		input.value = String(applicationProperties.directions[0].brightness || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2514,7 +2577,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.directions[0].gRadius;
+		input.value = String(applicationProperties.directions[0].gRadius || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2596,7 +2659,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gRadiusAudioEffect;
+		input.value = String(applicationProperties.gRadius || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2616,7 +2679,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeH;
+		input.value = String(applicationProperties.gSizeH || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2636,7 +2699,7 @@ export class DomUI {
 		};
 		input.step = '1';
 		input.type = 'range';
-		input.value = applicationProperties.gSizeW;
+		input.value = String(applicationProperties.gSizeW || 0);
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2688,7 +2751,7 @@ export class DomUI {
 			};
 			input.step = '1';
 			input.type = 'range';
-			input.value = applicationProperties.strengthToDestroyInN;
+			input.value = String(applicationProperties.strengthToDestroyInN || 0);
 			td.appendChild(input);
 			tr.appendChild(td);
 			t.appendChild(tr);

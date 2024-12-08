@@ -1326,6 +1326,9 @@ export class MapEditEngine {
 		if (!data.passthroughLight) {
 			delete data.passthroughLight;
 		}
+		if (!data.transparency) {
+			delete data.transparency;
+		}
 
 		// Set base configs outside of the properties object
 		data.objectType = GridObjectType.IMAGE_BLOCK_FOLIAGE;
@@ -1392,6 +1395,9 @@ export class MapEditEngine {
 		}
 		if (!data.passthroughLight) {
 			delete data.passthroughLight;
+		}
+		if (!data.transparency) {
+			delete data.transparency;
 		}
 
 		// Set base configs outside of the properties object
@@ -1479,6 +1485,9 @@ export class MapEditEngine {
 		}
 		if (!data.passthroughLight) {
 			delete data.passthroughLight;
+		}
+		if (!data.transparency) {
+			delete data.transparency;
 		}
 
 		// Set base configs outside of the properties object

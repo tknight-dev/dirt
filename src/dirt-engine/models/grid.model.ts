@@ -200,6 +200,7 @@ export interface GridImageBlock extends GridImageTransform, GridObject {
 	halved?: GridImageBlockHalved;
 	nullBlocking?: boolean;
 	passthroughLight?: boolean;
+	transparency?: number;
 }
 
 export enum GridImageBlockHalved {
