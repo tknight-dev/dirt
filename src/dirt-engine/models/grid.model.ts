@@ -91,7 +91,9 @@ export interface GridAnimation {
 	calc?: GridAnimationCalc;
 	finishOnLastFrame?: boolean;
 	frameDurationInMs: number;
+	indexInitial?: number;
 	loopCount?: number; // 0 is Inf
+	reverse?: boolean;
 }
 
 export interface GridAnimationCalc {

@@ -58,12 +58,23 @@ export class AnimationsCalcEngine {
 							animationUpdate = true;
 						}
 						gridAnimationCalc.durationInMs = 0;
-						gridAnimationCalc.index++;
 
-						// Loop index?
-						if (gridAnimationCalc.index === gridAnimation.assetIds.length) {
-							gridAnimationCalc.count++;
-							gridAnimationCalc.index = 0;
+						if (gridAnimation.reverse) {
+							gridAnimationCalc.index--;
+
+							// Loop index?
+							if (gridAnimationCalc.index === -1) {
+								gridAnimationCalc.count++;
+								gridAnimationCalc.index = gridAnimation.assetIds.length - 1;
+							}
+						} else {
+							gridAnimationCalc.index++;
+
+							// Loop index?
+							if (gridAnimationCalc.index === gridAnimation.assetIds.length) {
+								gridAnimationCalc.count++;
+								gridAnimationCalc.index = 0;
+							}
 						}
 
 						// Ended?

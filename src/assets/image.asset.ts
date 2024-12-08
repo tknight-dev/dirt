@@ -816,6 +816,126 @@ let imageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_LIQUID,
 	},
 	{
+		id: 'WATERFALL_1',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/waterfall_16_16_1.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/waterfall_32_32_1.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/waterfall_64_64_1.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		id: 'WATERFALL_2',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/waterfall_16_16_2.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/waterfall_32_32_2.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/waterfall_64_64_2.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		id: 'WATERFALL_3',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/waterfall_16_16_3.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/waterfall_32_32_3.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/waterfall_64_64_3.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
+		id: 'WATERFALL_4',
+		gHeight: 1,
+		gWidth: 1,
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/liquids/waterfall_16_16_4.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/liquids/waterfall_32_32_4.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/liquids/waterfall_64_64_4.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_LIQUID,
+	},
+	{
 		gHeight: 1,
 		gWidth: 1,
 		id: 'WOOD',

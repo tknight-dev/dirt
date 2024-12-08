@@ -206,6 +206,7 @@ export class DomUI {
 			imageBitmap: ImageBitmap,
 			imageSrc: AssetImageSrc | undefined,
 			input: HTMLInputElement,
+			inputIndexInitial: HTMLInputElement,
 			interval: ReturnType<typeof setInterval>,
 			modal = DomUI.domElementsUIEdit['application-palette-animation-modal'],
 			modalApply = DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons-apply'],
@@ -341,10 +342,18 @@ export class DomUI {
 				}
 
 				if (!gridAnimationCalc.ended) {
-					gridAnimationCalc.index++;
-					if (gridAnimationCalc.index === animationUpdated.assetIds.length) {
-						gridAnimationCalc.index = 0;
-						gridAnimationCalc.count++;
+					if (animationUpdated.reverse) {
+						gridAnimationCalc.index--;
+						if (gridAnimationCalc.index === -1) {
+							gridAnimationCalc.index = animationUpdated.assetIds.length - 1;
+							gridAnimationCalc.count++;
+						}
+					} else {
+						gridAnimationCalc.index++;
+						if (gridAnimationCalc.index === animationUpdated.assetIds.length) {
+							gridAnimationCalc.index = 0;
+							gridAnimationCalc.count++;
+						}
 					}
 
 					if (animationUpdated.loopCount && gridAnimationCalc.count === animationUpdated.loopCount) {
@@ -400,9 +409,13 @@ export class DomUI {
 		button.onclick = () => {
 			animationUpdated.assetIds.push(valuesImage[0].id);
 			animationUpdated.assetOptions.push({});
+
+			inputIndexInitial.max = String(animationUpdated.assetIds.length - 1);
+
 			(<any>animationUpdated.calc).count = 0;
 			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = 0;
+			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+
 			frameLogic();
 		};
 		td.appendChild(button);
@@ -411,15 +424,47 @@ export class DomUI {
 		button.innerText = 'Remove';
 		button.onclick = () => {
 			if (animationUpdated.assetIds.length > 1) {
-				(<any>animationUpdated.calc).count = 0;
-				(<any>animationUpdated.calc).ended = false;
-				(<any>animationUpdated.calc).index = 0;
 				animationUpdated.assetIds.pop();
 				animationUpdated.assetOptions.pop();
+
+				animationUpdated.indexInitial = Math.min(animationUpdated.indexInitial || 0, animationUpdated.assetIds.length - 1);
+				inputIndexInitial.max = String(animationUpdated.assetIds.length - 1);
+				inputIndexInitial.value = String(animationUpdated.indexInitial || 0);
+
+				(<any>animationUpdated.calc).count = 0;
+				(<any>animationUpdated.calc).ended = false;
+				(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+
 				frameLogic();
 			}
 		};
 		td.appendChild(button);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		// Index Initial
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Index Initial';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		inputIndexInitial = document.createElement('input');
+		inputIndexInitial.max = String(animationUpdated.assetIds.length - 1);
+		inputIndexInitial.min = '0';
+		inputIndexInitial.step = '1';
+		inputIndexInitial.value = String(animationUpdated.indexInitial || 0);
+		inputIndexInitial.oninput = (event: any) => {
+			animationUpdated.indexInitial = Number(event.target.value);
+
+			clearInterval(interval);
+			(<any>animationUpdated.calc).count = 0;
+			(<any>animationUpdated.calc).ended = false;
+			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+			intervalLogic();
+		};
+		inputIndexInitial.type = 'range';
+		td.appendChild(inputIndexInitial);
 		tr.appendChild(td);
 		modalContent.appendChild(tr);
 
@@ -437,8 +482,9 @@ export class DomUI {
 			clearInterval(interval);
 			(<any>animationUpdated.calc).count = 0;
 			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = 0;
+			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
 			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+			intervalLogic();
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -462,8 +508,9 @@ export class DomUI {
 			clearInterval(interval);
 			(<any>animationUpdated.calc).count = 0;
 			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = 0;
+			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
 			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+			intervalLogic();
 		};
 		input.type = 'range';
 		td.appendChild(input);
@@ -488,10 +535,34 @@ export class DomUI {
 			clearInterval(interval);
 			(<any>animationUpdated.calc).count = 0;
 			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = 0;
+			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
 			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+			intervalLogic();
 		};
 		input.type = 'range';
+		td.appendChild(input);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		// Reverse
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Reverse';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = !!animationUpdated.reverse;
+		input.oninput = (event: any) => {
+			animationUpdated.reverse = Boolean(event.target.checked);
+
+			clearInterval(interval);
+			(<any>animationUpdated.calc).count = 0;
+			(<any>animationUpdated.calc).ended = false;
+			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+			intervalLogic();
+		};
+		input.type = 'checkbox';
 		td.appendChild(input);
 		tr.appendChild(td);
 		modalContent.appendChild(tr);
@@ -517,6 +588,7 @@ export class DomUI {
 		// Logic
 		frameLogic();
 		interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+		intervalLogic();
 
 		//Done
 		modal.style.display = 'flex';
@@ -936,6 +1008,7 @@ export class DomUI {
 					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
+					indexInitial: 0,
 					loopCount: undefined,
 				},
 				assetId: valuesImage[0].id,
@@ -1345,6 +1418,7 @@ export class DomUI {
 					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
+					indexInitial: 0,
 					loopCount: undefined,
 				},
 				assetId: valuesImage[0].id,
@@ -1692,6 +1766,7 @@ export class DomUI {
 					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
+					indexInitial: 0,
 					loopCount: undefined,
 				},
 				assetId: valuesImage[0].id,
@@ -2101,6 +2176,7 @@ export class DomUI {
 					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
+					indexInitial: 0,
 					loopCount: undefined,
 				},
 				assetId: valuesImage[0].id,

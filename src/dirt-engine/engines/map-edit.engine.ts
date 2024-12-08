@@ -853,7 +853,7 @@ export class MapEditEngine {
 							count: 0,
 							durationInMs: 0,
 							ended: false,
-							index: 0,
+							index: gridAnimation.indexInitial || 0,
 						};
 						animationsCalcPipelineAnimations.pushEnd(gridAnimation);
 					}
@@ -973,7 +973,7 @@ export class MapEditEngine {
 								count: 0,
 								durationInMs: 0,
 								ended: false,
-								index: 0,
+								index: gridAnimation.indexInitial || 0,
 							};
 							animationsCalcPipelineAnimations.pushEnd(gridAnimation);
 						}
@@ -1263,6 +1263,19 @@ export class MapEditEngine {
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
 			delete data.assetAnimation;
 		} else {
+			delete data.assetAnimation.calc;
+			if (!data.assetAnimation.finishOnLastFrame) {
+				delete data.assetAnimation.finishOnLastFrame;
+			}
+			if (!data.assetAnimation.indexInitial) {
+				delete data.assetAnimation.indexInitial;
+			}
+			if (!data.assetAnimation.loopCount) {
+				delete data.assetAnimation.loopCount;
+			}
+			if (!data.assetAnimation.reverse) {
+				delete data.assetAnimation.reverse;
+			}
 			for (let i in data.assetAnimation.assetOptions) {
 				if (!data.assetAnimation.assetOptions[i].flipH) {
 					delete data.assetAnimation.assetOptions[i].flipH;
@@ -1332,6 +1345,19 @@ export class MapEditEngine {
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
 			delete data.assetAnimation;
 		} else {
+			delete data.assetAnimation.calc;
+			if (!data.assetAnimation.finishOnLastFrame) {
+				delete data.assetAnimation.finishOnLastFrame;
+			}
+			if (!data.assetAnimation.indexInitial) {
+				delete data.assetAnimation.indexInitial;
+			}
+			if (!data.assetAnimation.loopCount) {
+				delete data.assetAnimation.loopCount;
+			}
+			if (!data.assetAnimation.reverse) {
+				delete data.assetAnimation.reverse;
+			}
 			for (let i in data.assetAnimation.assetOptions) {
 				if (!data.assetAnimation.assetOptions[i].flipH) {
 					delete data.assetAnimation.assetOptions[i].flipH;
@@ -1386,6 +1412,19 @@ export class MapEditEngine {
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
 			delete data.assetAnimation;
 		} else {
+			delete data.assetAnimation.calc;
+			if (!data.assetAnimation.finishOnLastFrame) {
+				delete data.assetAnimation.finishOnLastFrame;
+			}
+			if (!data.assetAnimation.indexInitial) {
+				delete data.assetAnimation.indexInitial;
+			}
+			if (!data.assetAnimation.loopCount) {
+				delete data.assetAnimation.loopCount;
+			}
+			if (!data.assetAnimation.reverse) {
+				delete data.assetAnimation.reverse;
+			}
 			for (let i in data.assetAnimation.assetOptions) {
 				if (!data.assetAnimation.assetOptions[i].flipH) {
 					delete data.assetAnimation.assetOptions[i].flipH;
@@ -1473,6 +1512,19 @@ export class MapEditEngine {
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
 			delete data.assetAnimation;
 		} else {
+			delete data.assetAnimation.calc;
+			if (!data.assetAnimation.finishOnLastFrame) {
+				delete data.assetAnimation.finishOnLastFrame;
+			}
+			if (!data.assetAnimation.indexInitial) {
+				delete data.assetAnimation.indexInitial;
+			}
+			if (!data.assetAnimation.loopCount) {
+				delete data.assetAnimation.loopCount;
+			}
+			if (!data.assetAnimation.reverse) {
+				delete data.assetAnimation.reverse;
+			}
 			for (let i in data.assetAnimation.assetOptions) {
 				if (!data.assetAnimation.assetOptions[i].flipH) {
 					delete data.assetAnimation.assetOptions[i].flipH;
