@@ -603,6 +603,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.AUDIO_BLOCK) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// Modulation
@@ -669,6 +673,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.AUDIO_TAG) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// Activation
@@ -723,7 +731,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = valuesAudio[0].id;
+		td.innerText = applicationProperties.assetId;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
@@ -848,6 +856,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.AUDIO_TAG) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// AlwaysOn
@@ -873,7 +885,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = valuesAudio[0].id;
+		td.innerText = applicationProperties.assetId;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				true,
@@ -1031,6 +1043,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// Animation
@@ -1056,7 +1072,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = valuesImage[0].id;
+		td.innerText = applicationProperties.assetId;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
@@ -1101,7 +1117,7 @@ export class DomUI {
 						};
 					}),
 					(assetId: string) => {
-						event.target.innerText = assetId || 'None';
+						event.target.innerText = assetId || 'NONE';
 						applicationProperties.assetIdDamagedImage = assetId;
 					},
 				);
@@ -1133,7 +1149,7 @@ export class DomUI {
 						};
 					}),
 					(assetId: string) => {
-						event.target.innerText = assetId || 'None';
+						event.target.innerText = assetId || 'NONE';
 						applicationProperties.assetIdamagedWalkedOnAudioEffect = assetId;
 					},
 				);
@@ -1165,7 +1181,7 @@ export class DomUI {
 						};
 					}),
 					(assetId: string) => {
-						event.target.innerText = assetId || 'None';
+						event.target.innerText = assetId || 'NONE';
 						applicationProperties.assetIdWalkedOnAudioEffect = assetId;
 					},
 				);
@@ -1439,6 +1455,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// Animation
@@ -1464,7 +1484,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = valuesImage[0].id;
+		td.innerText = applicationProperties.assetId;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
@@ -1509,7 +1529,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectAmbient = assetId;
 				},
 			);
@@ -1539,7 +1559,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectSwim = assetId;
 				},
 			);
@@ -1569,7 +1589,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectTread = assetId;
 				},
 			);
@@ -1791,6 +1811,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// Animation
@@ -1816,7 +1840,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = valuesImage[0].id;
+		td.innerText = applicationProperties.assetId;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
@@ -1861,7 +1885,7 @@ export class DomUI {
 						};
 					}),
 					(assetId: string) => {
-						event.target.innerText = assetId || 'None';
+						event.target.innerText = assetId || 'NONE';
 						applicationProperties.assetIdDamaged = assetId;
 					},
 				);
@@ -1893,7 +1917,7 @@ export class DomUI {
 						};
 					}),
 					(assetId: string) => {
-						event.target.innerText = assetId || 'None';
+						event.target.innerText = assetId || 'NONE';
 						applicationProperties.assetIdAudioEffectWalkedOnDamaged = assetId;
 					},
 				);
@@ -1925,7 +1949,7 @@ export class DomUI {
 						};
 					}),
 					(assetId: string) => {
-						event.target.innerText = assetId || 'None';
+						event.target.innerText = assetId || 'NONE';
 						applicationProperties.assetIdAudioEffectWalkedOn = assetId;
 					},
 				);
@@ -2209,6 +2233,10 @@ export class DomUI {
 			td: HTMLElement,
 			tr: HTMLElement;
 
+		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.LIGHT) {
+			applicationProperties = DomUI.uiEditApplicationProperties;
+		}
+
 		t.textContent = '';
 
 		// Animation
@@ -2234,7 +2262,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = valuesImage[0].id;
+		td.innerText = applicationProperties.assetId;
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
@@ -2279,7 +2307,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectAmbient = assetId;
 				},
 			);
@@ -2309,7 +2337,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectDestroyed = assetId;
 				},
 			);
@@ -2339,7 +2367,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectSwitchOff = assetId;
 				},
 			);
@@ -2369,7 +2397,7 @@ export class DomUI {
 					};
 				}),
 				(assetId: string) => {
-					event.target.innerText = assetId || 'None';
+					event.target.innerText = assetId || 'NONE';
 					applicationProperties.assetIdAudioEffectSwitchOn = assetId;
 				},
 			);
