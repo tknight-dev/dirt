@@ -1,8 +1,9 @@
-import { AudioModulation } from '../models/audio-modulation.model';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import { Camera } from '../models/camera.model';
 import {
 	Grid,
+	GridAnimation,
+	GridAnimationCalc,
 	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
@@ -18,7 +19,6 @@ import {
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
-import { ImageBlockDrawEngine } from '../draw/image-block.draw.engine';
 import { KernelEngine } from './kernel.engine';
 import { MapActive, MapConfig } from '../models/map.model';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
@@ -751,7 +751,8 @@ export class MapEditEngine {
 		if (MapEditEngine.modeUI) {
 			return;
 		}
-		let blockTable: GridBlockTable<GridObject>,
+		let animationsCalcPipelineAnimations: DoubleLinkedList<GridAnimationCalc> = new DoubleLinkedList<GridAnimationCalc>(),
+			blockTable: GridBlockTable<GridObject>,
 			blockTableHashes: { [key: number]: GridObject },
 			blockTables: GridBlockTable<GridObject>[] = [
 				grid.audioPrimaryBlocks,
@@ -821,6 +822,17 @@ export class MapEditEngine {
 					pipelineAssetsByGy[gy][i] = {
 						asset: gridImageBlockReference.block,
 					};
+
+					// Animation logic here
+					if (gridImageBlockReference.block.assetAnimated) {
+						animationsCalcPipelineAnimations.pushEnd({
+							animation: <GridAnimation>gridImageBlockReference.block.assetAnimation,
+							count: 0,
+							durationInMs: 0,
+							ended: false,
+							index: 0,
+						});
+					}
 
 					// Extension logic here
 					if (gridImageBlockReference.block.gSizeH !== 1 || gridImageBlockReference.block.gSizeW !== 1) {
@@ -930,6 +942,17 @@ export class MapEditEngine {
 							pipelineAssetsByGy[gy][z].light = gridLight;
 						}
 
+						// Animation logic here
+						if (gridLight.assetAnimated) {
+							animationsCalcPipelineAnimations.pushEnd({
+								animation: <GridAnimation>gridLight.assetAnimation,
+								count: 0,
+								durationInMs: 0,
+								ended: false,
+								index: 0,
+							});
+						}
+
 						// Extension logic here
 						if (gridLight.gSizeH !== 1 || gridLight.gSizeW !== 1) {
 							pipelineAssetsByGy[gy][z].lightLarge = true;
@@ -969,12 +992,16 @@ export class MapEditEngine {
 			}
 		}
 
+		/**
+		 * GY Sort
+		 */
 		for (gxString in pipelineGyByGx) {
 			pipelineGy[gxString] = Object.keys(pipelineGyByGx[gxString])
 				.map((v) => Number(v))
 				.sort((a: number, b: number) => a - b);
 		}
 
+		grid.imageBlocksCalcPipelineAnimations = animationsCalcPipelineAnimations;
 		grid.imageBlocksRenderPipelineAssetsByGyByGx = pipelineAssetsByGyByGx;
 		grid.imageBlocksRenderPipelineGy = pipelineGy;
 	}
@@ -1208,6 +1235,12 @@ export class MapEditEngine {
 	): VideoBusInputCmdGameModeEditApplyImageBlockFoliage {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlockFoliage = <VideoBusInputCmdGameModeEditApplyImageBlockFoliage>properties;
 
+		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
+			delete data.assetAnimated;
+			delete data.assetAnimation;
+		} else {
+			data.assetAnimated = true;
+		}
 		delete data.extends; // calculated field only
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			if (!data.damageable) {
@@ -1265,6 +1298,12 @@ export class MapEditEngine {
 	): VideoBusInputCmdGameModeEditApplyImageBlockLiquid {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlockLiquid = <VideoBusInputCmdGameModeEditApplyImageBlockLiquid>properties;
 
+		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
+			delete data.assetAnimated;
+			delete data.assetAnimation;
+		} else {
+			data.assetAnimated = true;
+		}
 		if (z !== VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			delete data.assetIdAudioEffectSwim;
 			delete data.assetIdAudioEffectTread;
@@ -1307,6 +1346,12 @@ export class MapEditEngine {
 	): VideoBusInputCmdGameModeEditApplyImageBlockSolid {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlockSolid = <VideoBusInputCmdGameModeEditApplyImageBlockSolid>properties;
 
+		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
+			delete data.assetAnimated;
+			delete data.assetAnimation;
+		} else {
+			data.assetAnimated = true;
+		}
 		delete data.extends; // calculated field only
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			// Clean
@@ -1382,6 +1427,12 @@ export class MapEditEngine {
 			delete data.strengthToDestroyInN;
 		}
 
+		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
+			delete data.assetAnimated;
+			delete data.assetAnimation;
+		} else {
+			data.assetAnimated = true;
+		}
 		if (!data.assetIdAudioEffectAmbient) {
 			delete data.assetIdAudioEffectAmbient;
 		}

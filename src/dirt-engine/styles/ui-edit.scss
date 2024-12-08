@@ -458,6 +458,36 @@ $dirt-engine-ui-edit-button-width: 40px;
 		}
 	}
 
+	&.palette-animation-modal {
+		.content {
+			.body {
+				height: 100%;
+				overflow-y: auto;
+
+				.animation-window {
+					text-align: center !important;
+				}
+
+				.button {
+					color: white;
+					height: 40px;
+					width: 100% !important;
+
+					&.small {
+						display: inline-block;
+						width: 50% !important;
+					}
+				}
+			}
+			.buttons {
+				.button {
+				}
+			}
+			.header {
+			}
+		}
+	}
+
 	&.palette-modal {
 		.content {
 			.body {

@@ -14,9 +14,11 @@ import { AudioEngine } from '../engines/audio.engine';
 import { AudioModulation } from '../models/audio-modulation.model';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import {
-	GridConfig,
+	GridAnimation,
+	GridAnimationCalc,
 	GridAudioTagActivationType,
 	GridAudioTagType,
+	GridConfig,
 	GridCoordinate,
 	GridLightType,
 	GridImageBlockHalved,
@@ -186,6 +188,280 @@ export class DomUI {
 		});
 	}
 
+	private static detailsModalSelectorAnimation(
+		animation: GridAnimation,
+		assetIdOriginal: string,
+		valuesImage: AssetImage[],
+		callback: (value: GridAnimation) => void,
+	): void {
+		let animationUpdated: GridAnimation = JSON.parse(JSON.stringify(animation)),
+			gridAnimationCalc: GridAnimationCalc = {
+				animation: animationUpdated,
+				count: 0,
+				durationInMs: 0,
+				ended: false,
+				index: 0,
+			},
+			button: HTMLButtonElement,
+			canvas: HTMLCanvasElement,
+			ctx: CanvasRenderingContext2D,
+			frameT: HTMLTableElement,
+			frameTd: HTMLTableCellElement,
+			frameTr: HTMLTableRowElement,
+			imageBitmap: ImageBitmap,
+			imageSrc: AssetImageSrc | undefined,
+			input: HTMLInputElement,
+			interval: ReturnType<typeof setInterval>,
+			modal = DomUI.domElementsUIEdit['application-palette-animation-modal'],
+			modalApply = DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons-apply'],
+			modalCancel = DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons-cancel'],
+			modalContent = DomUI.domElementsUIEdit['application-palette-animation-modal-content-body-table'],
+			td: HTMLTableCellElement,
+			tr: HTMLTableRowElement,
+			frameLogic = () => {
+				// Clear
+				frameT.textContent = '';
+
+				animationUpdated.assetIds.forEach((value: string, index: number) => {
+					frameTr = document.createElement('tr');
+
+					frameTd = document.createElement('td');
+					frameTd.innerText = '[' + index + ']';
+					frameTr.appendChild(frameTd);
+
+					frameTd = document.createElement('td');
+					if (index === 0) {
+						frameTd.innerText = value;
+					} else {
+						frameTd.className = 'button right-arrow';
+						frameTd.innerText = animationUpdated.assetIds[index] || valuesImage[0].id;
+						frameTd.onclick = (event: any) => {
+							DomUI.detailsModalSelector(
+								false,
+								true,
+								true,
+								false,
+								valuesImage.map((v) => {
+									return {
+										name: v.id,
+										value: v.id,
+									};
+								}),
+								(assetId: string) => {
+									event.target.innerText = assetId;
+									animationUpdated.assetIds[index] = assetId;
+								},
+							);
+						};
+					}
+					frameTr.appendChild(frameTd);
+
+					frameT.appendChild(frameTr);
+				});
+			},
+			intervalLogic = () => {
+				if (gridAnimationCalc.ended) {
+					if (animationUpdated.finishOnLastFrame) {
+						gridAnimationCalc.index = animationUpdated.assetIds.length - 1;
+					} else {
+						gridAnimationCalc.index = 0;
+					}
+				}
+
+				imageSrc = undefined;
+				DomUI.assetManifestMaster.images[animationUpdated.assetIds[gridAnimationCalc.index]].srcs.forEach(
+					(assetImageSrc: AssetImageSrc) => {
+						// Grab the highest available quality
+						if (assetImageSrc.collection === AssetCollection.SHARED) {
+							if (!imageSrc || imageSrc.quality < assetImageSrc.quality) {
+								imageSrc = assetImageSrc;
+							}
+						}
+					},
+				);
+
+				if (imageSrc) {
+					// Clear the canvas
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+					// Draw asset
+					imageBitmap = <ImageBitmap>(<any>AssetEngine.getAsset((<any>imageSrc).src)).imageBitmap;
+					ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+				} else {
+					ctx.fillStyle = 'red';
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+				}
+
+				if (!gridAnimationCalc.ended) {
+					gridAnimationCalc.index++;
+					if (gridAnimationCalc.index === animationUpdated.assetIds.length) {
+						gridAnimationCalc.index = 0;
+						gridAnimationCalc.count++;
+					}
+
+					if (animationUpdated.loopCount && gridAnimationCalc.count === animationUpdated.loopCount) {
+						gridAnimationCalc.ended = true;
+					}
+				}
+			};
+
+		// Clear
+		modalContent.textContent = '';
+
+		// Animation Window
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.className = 'animation-window';
+		td.colSpan = 2;
+		canvas = document.createElement('canvas');
+		canvas.height = 128;
+		canvas.width = 128;
+		ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
+		td.appendChild(canvas);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		// Frames Container
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.className = 'frames-container';
+		td.colSpan = 2;
+		frameT = document.createElement('table');
+		td.appendChild(frameT);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		// Frames Control
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Frames Control';
+		tr.appendChild(td);
+		td = document.createElement('td');
+
+		button = document.createElement('button');
+		button.className = 'button small green';
+		button.innerText = 'Add';
+		button.onclick = () => {
+			animationUpdated.assetIds.push(valuesImage[0].id);
+			gridAnimationCalc.count = 0;
+			gridAnimationCalc.ended = false;
+			gridAnimationCalc.index = 0;
+			frameLogic();
+		};
+		td.appendChild(button);
+		button = document.createElement('button');
+		button.className = 'button small red';
+		button.innerText = 'Remove';
+		button.onclick = () => {
+			if (animationUpdated.assetIds.length > 1) {
+				gridAnimationCalc.count = 0;
+				gridAnimationCalc.ended = false;
+				gridAnimationCalc.index = 0;
+				animationUpdated.assetIds.pop();
+				frameLogic();
+			}
+		};
+		td.appendChild(button);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		// Finish On Last Frame
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Finish On Last Frame';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.checked = !!animationUpdated.finishOnLastFrame;
+		input.oninput = (event: any) => {
+			animationUpdated.finishOnLastFrame = Boolean(event.target.checked);
+
+			clearInterval(interval);
+			gridAnimationCalc.count = 0;
+			gridAnimationCalc.ended = false;
+			gridAnimationCalc.index = 0;
+			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+		};
+		input.type = 'checkbox';
+		td.appendChild(input);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		// Loop Count
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Loop Count';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.max = '10';
+		input.min = '0';
+		input.step = '1';
+		input.value = String(animationUpdated.loopCount || 0);
+		input.oninput = (event: any) => {
+			animationUpdated.loopCount = Number(event.target.value);
+
+			clearInterval(interval);
+			gridAnimationCalc.count = 0;
+			gridAnimationCalc.ended = false;
+			gridAnimationCalc.index = 0;
+			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+		};
+		input.type = 'range';
+		td.appendChild(input);
+		tr.appendChild(td);
+
+		modalContent.appendChild(tr);
+
+		// Duration
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Duration In MS';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.max = '10000';
+		input.min = '50';
+		input.step = '10';
+		input.value = String(animationUpdated.frameDurationInMs);
+		input.oninput = (event: any) => {
+			animationUpdated.frameDurationInMs = Number(event.target.value);
+
+			clearInterval(interval);
+			gridAnimationCalc.count = 0;
+			gridAnimationCalc.ended = false;
+			gridAnimationCalc.index = 0;
+			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+		};
+		input.type = 'range';
+		td.appendChild(input);
+		tr.appendChild(td);
+		modalContent.appendChild(tr);
+
+		//Buttons
+		modalApply.onclick = () => {
+			clearInterval(interval);
+			callback(animationUpdated);
+			modal.style.display = 'none';
+		};
+		modalCancel.onclick = () => {
+			if (JSON.stringify(animation) !== JSON.stringify(animationUpdated) && !confirm('Are you sure?')) {
+				return;
+			}
+
+			clearInterval(interval);
+			callback(animation);
+			modal.style.display = 'none';
+		};
+
+		// Logic
+		frameLogic();
+		interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+
+		//Done
+		modal.style.display = 'flex';
+	}
+
 	private static detailsModalAudioBlock(): void {
 		let applicationProperties: any = {
 				modulationId: AudioModulation.valuesWithoutNone[0].id,
@@ -332,6 +608,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
+					applicationProperties.animation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -481,6 +758,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
+					applicationProperties.animation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -588,6 +866,12 @@ export class DomUI {
 				(v) => v.type === AssetImageType.GRID_BLOCK_FOLIAGE,
 			),
 			applicationProperties: any = {
+				animation: {
+					assetIds: [valuesImage[0].id],
+					finishOnLastFrame: undefined,
+					frameDurationInMs: 100,
+					loopCount: undefined,
+				},
 				assetId: valuesImage[0].id,
 				assetIdDamagedImage: undefined,
 				damageable: undefined,
@@ -609,6 +893,27 @@ export class DomUI {
 			tr: HTMLElement;
 
 		t.textContent = '';
+
+		// Animation
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Animation';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'Edit';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelectorAnimation(
+				applicationProperties.animation,
+				applicationProperties.assetId,
+				valuesImage,
+				(gridAnimation: GridAnimation) => {
+					applicationProperties.animation = gridAnimation;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Asset
 		tr = document.createElement('tr');
@@ -633,6 +938,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
+					applicationProperties.animation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -966,6 +1272,12 @@ export class DomUI {
 				(v) => v.type === AssetImageType.GRID_BLOCK_LIQUID,
 			),
 			applicationProperties: any = {
+				animation: {
+					assetIds: [valuesImage[0].id],
+					finishOnLastFrame: undefined,
+					frameDurationInMs: 100,
+					loopCount: undefined,
+				},
 				assetId: valuesImage[0].id,
 				assetIdAudioEffectAmbient: undefined,
 				assetIdAudioEffectSwim: undefined,
@@ -985,6 +1297,27 @@ export class DomUI {
 			tr: HTMLElement;
 
 		t.textContent = '';
+
+		// Animation
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Animation';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'Edit';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelectorAnimation(
+				applicationProperties.animation,
+				applicationProperties.assetId,
+				valuesImage,
+				(gridAnimation: GridAnimation) => {
+					applicationProperties.animation = gridAnimation;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Asset
 		tr = document.createElement('tr');
@@ -1009,6 +1342,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
+					applicationProperties.animation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -1282,6 +1616,12 @@ export class DomUI {
 				(v) => v.type === AssetImageType.GRID_BLOCK_SOLID,
 			),
 			applicationProperties: any = {
+				animation: {
+					assetIds: [valuesImage[0].id],
+					finishOnLastFrame: undefined,
+					frameDurationInMs: 100,
+					loopCount: undefined,
+				},
 				assetId: valuesImage[0].id,
 				assetIdDamaged: undefined,
 				assetIdAudioEffectWalkedOn: undefined,
@@ -1306,6 +1646,27 @@ export class DomUI {
 
 		t.textContent = '';
 
+		// Animation
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Animation';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'Edit';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelectorAnimation(
+				applicationProperties.animation,
+				applicationProperties.assetId,
+				valuesImage,
+				(gridAnimation: GridAnimation) => {
+					applicationProperties.animation = gridAnimation;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// Asset
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -1329,6 +1690,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
+					applicationProperties.animation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -1660,6 +2022,12 @@ export class DomUI {
 			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter((v) => v.type === AssetImageType.GRID_LIGHT),
 			valuesType: GridLightType[] = <any>Object.values(GridLightType).filter((v) => typeof v === 'number'),
 			applicationProperties: any = {
+				animation: {
+					assetIds: [valuesImage[0].id],
+					finishOnLastFrame: undefined,
+					frameDurationInMs: 100,
+					loopCount: undefined,
+				},
 				assetId: valuesImage[0].id,
 				assetIdAudioEffectAmbient: undefined,
 				assetIdAudioEffectDestroyed: undefined,
@@ -1692,6 +2060,27 @@ export class DomUI {
 
 		t.textContent = '';
 
+		// Animation
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Animation';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		td.className = 'button right-arrow';
+		td.innerText = 'Edit';
+		td.onclick = (event: any) => {
+			DomUI.detailsModalSelectorAnimation(
+				applicationProperties.animation,
+				applicationProperties.assetId,
+				valuesImage,
+				(gridAnimation: GridAnimation) => {
+					applicationProperties.animation = gridAnimation;
+				},
+			);
+		};
+		tr.appendChild(td);
+		t.appendChild(tr);
+
 		// Asset
 		tr = document.createElement('tr');
 		td = document.createElement('td');
@@ -1715,6 +2104,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
+					applicationProperties.animation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -3527,6 +3917,13 @@ export class DomUI {
 			paletteModalContentBodyButtonsApply: HTMLElement,
 			paletteModalContentBodyButtonsCancel: HTMLElement,
 			paletteModalContentHeader: HTMLElement,
+			paletteModalAnimation: HTMLElement,
+			paletteModalAnimationContent: HTMLElement,
+			paletteModalAnimationContentBody: HTMLElement,
+			paletteModalAnimationContentBodyButton: HTMLElement,
+			paletteModalAnimationContentBodyButtons: HTMLElement,
+			paletteModalAnimationContentBodyButtonsApply: HTMLElement,
+			paletteModalAnimationContentBodyButtonsCancel: HTMLElement,
 			redo: HTMLElement,
 			redoButton: HTMLElement,
 			save: HTMLElement,
@@ -4924,6 +5321,55 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-palette-modal-content-buttons-apply'] = paletteModalContentBodyButtonsApply;
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'] = paletteModalContentBodyButtonsApply;
 		paletteModalContentBodyButtons.appendChild(paletteModalContentBodyButtonsApply);
+
+		/*
+		 * Pallete: Modal Animation
+		 */
+		paletteModalAnimation = document.createElement('div');
+		paletteModalAnimation.className = 'dirt-engine-ui-edit palette-animation-modal modal';
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal'] = paletteModalAnimation;
+		DomUI.domElementsUIEdit['application-palette-animation-modal'] = paletteModalAnimation;
+		domFeedFitted.appendChild(paletteModalAnimation);
+
+		paletteModalAnimationContent = document.createElement('div');
+		paletteModalAnimationContent.className = 'content';
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal-content'] = paletteModalAnimationContent;
+		DomUI.domElementsUIEdit['application-palette-animation-modal-content'] = paletteModalAnimationContent;
+		paletteModalAnimation.appendChild(paletteModalAnimationContent);
+
+		paletteModalAnimationContentBody = document.createElement('div');
+		paletteModalAnimationContentBody.className = 'body buttoned';
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal-content-body'] = paletteModalAnimationContentBody;
+		DomUI.domElementsUIEdit['application-palette-animation-modal-content-body'] = paletteModalAnimationContentBody;
+		paletteModalAnimationContent.appendChild(paletteModalAnimationContentBody);
+
+		// Table
+		t = document.createElement('table');
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal-content-body-table'] = t;
+		DomUI.domElementsUIEdit['application-palette-animation-modal-content-body-table'] = t;
+		paletteModalAnimationContentBody.appendChild(t);
+
+		// Cancel/Save
+		paletteModalAnimationContentBodyButtons = document.createElement('div');
+		paletteModalAnimationContentBodyButtons.className = 'buttons';
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal-content-buttons'] = paletteModalAnimationContentBodyButtons;
+		DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons'] = paletteModalAnimationContentBodyButtons;
+		paletteModalAnimationContent.appendChild(paletteModalAnimationContentBodyButtons);
+
+		paletteModalAnimationContentBodyButtonsCancel = document.createElement('div');
+		paletteModalAnimationContentBodyButtonsCancel.className = 'button red';
+		paletteModalAnimationContentBodyButtonsCancel.innerText = 'Cancel';
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal-content-buttons-cancel'] = paletteModalAnimationContentBodyButtonsCancel;
+		DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons-cancel'] =
+			paletteModalAnimationContentBodyButtonsCancel;
+		paletteModalAnimationContentBodyButtons.appendChild(paletteModalAnimationContentBodyButtonsCancel);
+
+		paletteModalAnimationContentBodyButtonsApply = document.createElement('div');
+		paletteModalAnimationContentBodyButtonsApply.className = 'button green';
+		paletteModalAnimationContentBodyButtonsApply.innerText = 'Apply';
+		DomUI.domElements['feed-fitted-ui-palette-animation-modal-content-buttons-apply'] = paletteModalAnimationContentBodyButtonsApply;
+		DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons-apply'] = paletteModalAnimationContentBodyButtonsApply;
+		paletteModalAnimationContentBodyButtons.appendChild(paletteModalAnimationContentBodyButtonsApply);
 
 		/*
 		 * Select: Modal
