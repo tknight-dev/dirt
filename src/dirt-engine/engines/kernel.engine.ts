@@ -1,3 +1,4 @@
+import { AnimationsCalcEngine } from '../calc/animations.calc.engine';
 import { CalcEditEngine } from './mode/edit/calc.edit.engine';
 import { CalcPlayEngine } from './mode/play/calc.play.engine';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
@@ -60,6 +61,11 @@ export class KernelEngine {
 
 		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxSecondary, ctxUnderlay, ctxVanishing);
 		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxSecondary, ctxUnderlay, ctxVanishing);
+
+		// Calcs
+		await AnimationsCalcEngine.initialize();
+		await ClockCalcEngine.initialize();
+		await InputsCalcEngine.initialize();
 
 		// Extended
 		await CameraDrawEngine.initialize(ctxPrimary);
@@ -131,9 +137,12 @@ export class KernelEngine {
 		DrawEditEngine.setMapActive(mapActive);
 		DrawPlayEngine.setMapActive(mapActive);
 
-		// Load into extended engines
-		CameraDrawEngine.setMapActive(mapActive);
+		// Load into calc engines
 		ClockCalcEngine.setMapActive(mapActive);
+		AnimationsCalcEngine.setMapActive(mapActive);
+
+		// Load into draw engines
+		CameraDrawEngine.setMapActive(mapActive);
 		GridDrawEngine.setMapActive(mapActive);
 		ImageBlockDrawEngine.setMapActive(mapActive);
 		LightingEngine.setMapActive(mapActive);
@@ -259,7 +268,9 @@ export class KernelEngine {
 
 		// Load into engines
 
-		// Load into extended engines
+		// Load into calc engines
+
+		// Load into draw engines
 	}
 
 	public static updateGridActive(id: string): void {

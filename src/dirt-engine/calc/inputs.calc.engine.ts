@@ -9,6 +9,7 @@ import { TouchAction, TouchCmd } from '../engines/touch.engine';
  */
 
 export class InputsCalcEngine {
+	private static initialized: boolean;
 	private static mapVisible: boolean;
 	private static paused: boolean;
 	private static stateAction: { [key: number]: boolean } = {};
@@ -21,35 +22,57 @@ export class InputsCalcEngine {
 	private static touchDistanceOrigX: number;
 	private static touchDistanceOrigY: number;
 
-	public static start(timestampDelta: number): void {
-		InputsCalcEngine.timestampDelta += timestampDelta;
-
-		// Limit input changes to Xms
-		if (InputsCalcEngine.timestampDelta > 32) {
-			InputsCalcEngine.timestampDelta = 0;
-
-			let horizontal: number = 0,
-				stateAction: { [key: number]: boolean } = InputsCalcEngine.stateAction,
-				stateModifier: { [key: number]: boolean } = InputsCalcEngine.stateModifier,
-				stateMove: { [key: number]: boolean } = InputsCalcEngine.stateMove,
-				vertical: number = 0;
-
-			if (stateMove[KeyCommon.DOWN]) {
-				vertical = 33;
-			} else if (stateMove[KeyCommon.UP]) {
-				vertical = -33;
-			}
-
-			if (stateMove[KeyCommon.LEFT]) {
-				horizontal = -33;
-			} else if (stateMove[KeyCommon.RIGHT]) {
-				horizontal = 33;
-			}
-
-			if (horizontal || vertical) {
-				CameraEngine.moveIncremental(horizontal, vertical);
-			}
+	public static async initialize(): Promise<void> {
+		if (InputsCalcEngine.initialized) {
+			console.error('InputsCalcEngine > initialize: already initialized');
+			return;
 		}
+		InputsCalcEngine.initialized = true;
+
+		// Last
+		InputsCalcEngine.startBind();
+	}
+
+	// Function set by binder, this is just a placeholder
+	public static start(timestampDelta: number): void {}
+
+	/**
+	 * This binding structure greatly reduces GC build up
+	 */
+	private static startBind(): void {
+		let horizontal: number,
+			stateAction: { [key: number]: boolean } = InputsCalcEngine.stateAction,
+			stateModifier: { [key: number]: boolean } = InputsCalcEngine.stateModifier,
+			stateMove: { [key: number]: boolean } = InputsCalcEngine.stateMove,
+			vertical: number;
+
+		InputsCalcEngine.start = (timestampDelta: number) => {
+			InputsCalcEngine.timestampDelta += timestampDelta;
+
+			// Limit input changes to Xms
+			if (InputsCalcEngine.timestampDelta > 32) {
+				InputsCalcEngine.timestampDelta = 0;
+
+				horizontal = 0;
+				vertical = 0;
+
+				if (stateMove[KeyCommon.DOWN]) {
+					vertical = 33;
+				} else if (stateMove[KeyCommon.UP]) {
+					vertical = -33;
+				}
+
+				if (stateMove[KeyCommon.LEFT]) {
+					horizontal = -33;
+				} else if (stateMove[KeyCommon.RIGHT]) {
+					horizontal = 33;
+				}
+
+				if (horizontal || vertical) {
+					CameraEngine.moveIncremental(horizontal, vertical);
+				}
+			}
+		};
 	}
 
 	public static inputKey(action: KeyAction): void {

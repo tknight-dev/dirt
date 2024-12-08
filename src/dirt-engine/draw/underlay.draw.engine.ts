@@ -96,36 +96,39 @@ export class UnderlayDrawEngine {
 				) {
 					cacheSky = UnderlayDrawEngine.cacheSky;
 					cacheStarfield = UnderlayDrawEngine.cacheStarfield;
-					camera = UnderlayDrawEngine.mapActive.camera;
-					height = camera.gInPh * gridConfigActive.gHorizon;
-					offsetMaxX = cacheSky.width - UnderlayDrawEngine.width;
-					offsetX =
-						scale(
-							camera.gx,
-							(camera.viewportGw / 2) | 0,
-							(gridConfigActive.gWidth - camera.viewportGw / 2) | 0,
-							0,
-							offsetMaxX,
-						) | 0;
 
-					offsetX = Math.max(0, Math.min(offsetMaxX, offsetX));
-					offsetY = scale(camera.viewportGy, gridConfigActive.gHorizon, 0, height, 0) | 0;
+					if (cacheSky && cacheStarfield) {
+						camera = UnderlayDrawEngine.mapActive.camera;
+						height = camera.gInPh * gridConfigActive.gHorizon;
+						offsetMaxX = cacheSky.width - UnderlayDrawEngine.width;
+						offsetX =
+							scale(
+								camera.gx,
+								(camera.viewportGw / 2) | 0,
+								(gridConfigActive.gWidth - camera.viewportGw / 2) | 0,
+								0,
+								offsetMaxX,
+							) | 0;
 
-					if (cacheCanvas.height !== camera.windowPh || cacheCanvas.width !== camera.windowPw) {
-						cacheCanvas.height = camera.windowPh;
-						cacheCanvas.width = camera.windowPw;
+						offsetX = Math.max(0, Math.min(offsetMaxX, offsetX));
+						offsetY = scale(camera.viewportGy, gridConfigActive.gHorizon, 0, height, 0) | 0;
+
+						if (cacheCanvas.height !== camera.windowPh || cacheCanvas.width !== camera.windowPw) {
+							cacheCanvas.height = camera.windowPh;
+							cacheCanvas.width = camera.windowPw;
+						}
+
+						// Cache it
+						ctx.drawImage(cacheSky, offsetX, 0, camera.windowPw, camera.windowPh, 0, -offsetY, camera.windowPw, height);
+						ctx.drawImage(cacheStarfield, 0, 0, camera.windowPw, camera.windowPh, 0, -offsetY, camera.windowPw, height);
+						UnderlayDrawEngine.cache = cacheCanvas.transferToImageBitmap();
+
+						// Done
+						cacheCheckCameraGx = camera.gx;
+						cacheCheckCameraGy = camera.gy;
+						cacheCheckCameraZoom = camera.zoom;
+						UnderlayDrawEngine.cacheNew = false;
 					}
-
-					// Cache it
-					ctx.drawImage(cacheSky, offsetX, 0, camera.windowPw, camera.windowPh, 0, -offsetY, camera.windowPw, height);
-					ctx.drawImage(cacheStarfield, 0, 0, camera.windowPw, camera.windowPh, 0, -offsetY, camera.windowPw, height);
-					UnderlayDrawEngine.cache = cacheCanvas.transferToImageBitmap();
-
-					// Done
-					cacheCheckCameraGx = camera.gx;
-					cacheCheckCameraGy = camera.gy;
-					cacheCheckCameraZoom = camera.zoom;
-					UnderlayDrawEngine.cacheNew = false;
 				}
 
 				if (UnderlayDrawEngine.cache) {

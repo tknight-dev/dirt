@@ -103,6 +103,12 @@ export class LightingEngine {
 			grids: { [key: string]: Grid } = LightingEngine.mapActive.grids,
 			processor = (imageBlockReferences: { [key: number]: GridImageBlockReference }) => {
 				for (let i in imageBlockReferences) {
+					if (imageBlockReferences[i].block.assetAnimation) {
+						for (let j in imageBlockReferences[i].block.assetAnimation.assetIds) {
+							assetIds[imageBlockReferences[i].block.assetAnimation.assetIds[j]] = null;
+						}
+					}
+
 					if (!imageBlockReferences[i].block.extends) {
 						assetIds[imageBlockReferences[i].block.assetId] = null;
 					}
@@ -110,6 +116,12 @@ export class LightingEngine {
 			},
 			processorLights = (imageLights: { [key: number]: GridLight }) => {
 				for (let i in imageLights) {
+					if (imageLights[i].assetAnimation) {
+						for (let j in imageLights[i].assetAnimation.assetIds) {
+							assetIds[imageLights[i].assetAnimation.assetIds[j]] = null;
+						}
+					}
+
 					if (!imageLights[i].extends) {
 						assetIds[imageLights[i].assetId] = null;
 					}
@@ -132,15 +144,20 @@ export class LightingEngine {
 		return Object.keys(assetIds);
 	}
 
-	public static cacheAdd(assetImageId: string) {
-		if (!LightingEngine.cache[assetImageId]) {
-			// Build the cache(s)
-			LightingEngine.buildBinaries([assetImageId]);
-			LightingEngine.draw(assetImageId);
+	public static cacheAdd(assetImageIds: string[]) {
+		let cache: { [key: string]: LightingCacheInstance } = LightingEngine.cache;
 
-			setTimeout(() => {
-				MapDrawEngineBus.outputAssets(<{ [key: string]: MapDrawBusInputPlayloadAsset }>LightingEngine.cache);
-			});
+		for (let i in assetImageIds) {
+			if (!cache[assetImageIds[i]]) {
+				// Build the cache(s)
+				LightingEngine.buildBinaries(assetImageIds);
+				LightingEngine.draw(assetImageIds);
+
+				setTimeout(() => {
+					MapDrawEngineBus.outputAssets(<{ [key: string]: MapDrawBusInputPlayloadAsset }>LightingEngine.cache);
+				});
+				break;
+			}
 		}
 	}
 
@@ -163,13 +180,13 @@ export class LightingEngine {
 		LightingEngine.cache = Object.assign(LightingEngine.cache || {}, assets);
 	}
 
-	private static draw(assetImageId?: string): void {
+	private static draw(assetImageIds?: string[]): void {
 		if (LightingEngine.disableShading) {
 			return;
 		}
 
 		let assetId: string,
-			assetIds: string[] = assetImageId ? [assetImageId] : Object.keys(LightingEngine.cache),
+			assetIds: string[] = assetImageIds ? assetImageIds : Object.keys(LightingEngine.cache),
 			brightness: string,
 			cache: { [key: string]: LightingCacheInstance } = LightingEngine.cache,
 			cacheOutsideDay: { [key: string]: ImageBitmap[] } = LightingEngine.cacheOutsideDay,

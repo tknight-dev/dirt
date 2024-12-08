@@ -22,6 +22,7 @@ import {
 	GridCoordinate,
 	GridLightType,
 	GridImageBlockHalved,
+	GridImageTransform,
 	GridObject,
 	GridObjectType,
 } from '../models/grid.model';
@@ -190,24 +191,18 @@ export class DomUI {
 
 	private static detailsModalSelectorAnimation(
 		animation: GridAnimation,
-		assetIdOriginal: string,
 		valuesImage: AssetImage[],
 		callback: (value: GridAnimation) => void,
 	): void {
 		let animationUpdated: GridAnimation = JSON.parse(JSON.stringify(animation)),
-			gridAnimationCalc: GridAnimationCalc = {
-				animation: animationUpdated,
-				count: 0,
-				durationInMs: 0,
-				ended: false,
-				index: 0,
-			},
 			button: HTMLButtonElement,
 			canvas: HTMLCanvasElement,
 			ctx: CanvasRenderingContext2D,
 			frameT: HTMLTableElement,
 			frameTd: HTMLTableCellElement,
 			frameTr: HTMLTableRowElement,
+			gridAnimationCalc: GridAnimationCalc,
+			gridImageTransform: GridImageTransform,
 			imageBitmap: ImageBitmap,
 			imageSrc: AssetImageSrc | undefined,
 			input: HTMLInputElement,
@@ -218,6 +213,7 @@ export class DomUI {
 			modalContent = DomUI.domElementsUIEdit['application-palette-animation-modal-content-body-table'],
 			td: HTMLTableCellElement,
 			tr: HTMLTableRowElement,
+			transform: boolean,
 			frameLogic = () => {
 				// Clear
 				frameT.textContent = '';
@@ -255,11 +251,45 @@ export class DomUI {
 						};
 					}
 					frameTr.appendChild(frameTd);
-
 					frameT.appendChild(frameTr);
+
+					if (index !== 0) {
+						// FlipH
+						frameTr = document.createElement('tr');
+						frameTd = document.createElement('td');
+						frameTd.innerText = 'Flip Horizontal [' + index + ']';
+						frameTr.appendChild(frameTd);
+						frameTd = document.createElement('td');
+						input = document.createElement('input');
+						input.checked = !!animationUpdated.assetOptions[index].flipH;
+						input.oninput = (event: any) => {
+							animationUpdated.assetOptions[index].flipH = Boolean(event.target.checked);
+						};
+						input.type = 'checkbox';
+						frameTd.appendChild(input);
+						frameTr.appendChild(frameTd);
+						frameT.appendChild(frameTr);
+
+						// FlipV
+						frameTr = document.createElement('tr');
+						frameTd = document.createElement('td');
+						frameTd.innerText = 'Flip Vertical [' + index + ']';
+						frameTr.appendChild(frameTd);
+						frameTd = document.createElement('td');
+						input = document.createElement('input');
+						input.checked = !!animationUpdated.assetOptions[index].flipV;
+						input.oninput = (event: any) => {
+							animationUpdated.assetOptions[index].flipV = Boolean(event.target.checked);
+						};
+						input.type = 'checkbox';
+						frameTd.appendChild(input);
+						frameTr.appendChild(frameTd);
+						frameT.appendChild(frameTr);
+					}
 				});
 			},
 			intervalLogic = () => {
+				gridAnimationCalc = <any>animationUpdated.calc;
 				if (gridAnimationCalc.ended) {
 					if (animationUpdated.finishOnLastFrame) {
 						gridAnimationCalc.index = animationUpdated.assetIds.length - 1;
@@ -284,9 +314,27 @@ export class DomUI {
 					// Clear the canvas
 					ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+					gridImageTransform = animationUpdated.assetOptions[gridAnimationCalc.index];
+					if (gridImageTransform.flipH || gridImageTransform.flipV) {
+						transform = true;
+						ctx.setTransform(
+							gridImageTransform.flipH ? -1 : 1,
+							0,
+							0,
+							gridImageTransform.flipV ? -1 : 1,
+							(gridImageTransform.flipH ? canvas.width : 0) | 0,
+							(gridImageTransform.flipV ? canvas.height : 0) | 0,
+						);
+					}
+
 					// Draw asset
 					imageBitmap = <ImageBitmap>(<any>AssetEngine.getAsset((<any>imageSrc).src)).imageBitmap;
 					ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+
+					if (transform) {
+						ctx.setTransform(1, 0, 0, 1, 0, 0);
+						transform = false;
+					}
 				} else {
 					ctx.fillStyle = 'red';
 					ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -304,6 +352,14 @@ export class DomUI {
 					}
 				}
 			};
+
+		// Config
+		animationUpdated.calc = {
+			count: 0,
+			durationInMs: 0,
+			ended: false,
+			index: 0,
+		};
 
 		// Clear
 		modalContent.textContent = '';
@@ -343,9 +399,10 @@ export class DomUI {
 		button.innerText = 'Add';
 		button.onclick = () => {
 			animationUpdated.assetIds.push(valuesImage[0].id);
-			gridAnimationCalc.count = 0;
-			gridAnimationCalc.ended = false;
-			gridAnimationCalc.index = 0;
+			animationUpdated.assetOptions.push({});
+			(<any>animationUpdated.calc).count = 0;
+			(<any>animationUpdated.calc).ended = false;
+			(<any>animationUpdated.calc).index = 0;
 			frameLogic();
 		};
 		td.appendChild(button);
@@ -354,10 +411,11 @@ export class DomUI {
 		button.innerText = 'Remove';
 		button.onclick = () => {
 			if (animationUpdated.assetIds.length > 1) {
-				gridAnimationCalc.count = 0;
-				gridAnimationCalc.ended = false;
-				gridAnimationCalc.index = 0;
+				(<any>animationUpdated.calc).count = 0;
+				(<any>animationUpdated.calc).ended = false;
+				(<any>animationUpdated.calc).index = 0;
 				animationUpdated.assetIds.pop();
+				animationUpdated.assetOptions.pop();
 				frameLogic();
 			}
 		};
@@ -377,9 +435,9 @@ export class DomUI {
 			animationUpdated.finishOnLastFrame = Boolean(event.target.checked);
 
 			clearInterval(interval);
-			gridAnimationCalc.count = 0;
-			gridAnimationCalc.ended = false;
-			gridAnimationCalc.index = 0;
+			(<any>animationUpdated.calc).count = 0;
+			(<any>animationUpdated.calc).ended = false;
+			(<any>animationUpdated.calc).index = 0;
 			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
 		};
 		input.type = 'checkbox';
@@ -402,9 +460,9 @@ export class DomUI {
 			animationUpdated.loopCount = Number(event.target.value);
 
 			clearInterval(interval);
-			gridAnimationCalc.count = 0;
-			gridAnimationCalc.ended = false;
-			gridAnimationCalc.index = 0;
+			(<any>animationUpdated.calc).count = 0;
+			(<any>animationUpdated.calc).ended = false;
+			(<any>animationUpdated.calc).index = 0;
 			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
 		};
 		input.type = 'range';
@@ -428,9 +486,9 @@ export class DomUI {
 			animationUpdated.frameDurationInMs = Number(event.target.value);
 
 			clearInterval(interval);
-			gridAnimationCalc.count = 0;
-			gridAnimationCalc.ended = false;
-			gridAnimationCalc.index = 0;
+			(<any>animationUpdated.calc).count = 0;
+			(<any>animationUpdated.calc).ended = false;
+			(<any>animationUpdated.calc).index = 0;
 			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
 		};
 		input.type = 'range';
@@ -441,6 +499,7 @@ export class DomUI {
 		//Buttons
 		modalApply.onclick = () => {
 			clearInterval(interval);
+			delete animationUpdated.calc;
 			callback(animationUpdated);
 			modal.style.display = 'none';
 		};
@@ -450,6 +509,7 @@ export class DomUI {
 			}
 
 			clearInterval(interval);
+			delete animationUpdated.calc;
 			callback(animation);
 			modal.style.display = 'none';
 		};
@@ -608,7 +668,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
-					applicationProperties.animation.assetIds[0] = assetId;
+					applicationProperties.assetAnimation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -758,7 +818,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
-					applicationProperties.animation.assetIds[0] = assetId;
+					applicationProperties.assetAnimation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -866,8 +926,14 @@ export class DomUI {
 				(v) => v.type === AssetImageType.GRID_BLOCK_FOLIAGE,
 			),
 			applicationProperties: any = {
-				animation: {
+				assetAnimation: {
 					assetIds: [valuesImage[0].id],
+					assetOptions: [
+						{
+							flipH: undefined,
+							flipV: undefined,
+						},
+					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
 					loopCount: undefined,
@@ -903,14 +969,9 @@ export class DomUI {
 		td.className = 'button right-arrow';
 		td.innerText = 'Edit';
 		td.onclick = (event: any) => {
-			DomUI.detailsModalSelectorAnimation(
-				applicationProperties.animation,
-				applicationProperties.assetId,
-				valuesImage,
-				(gridAnimation: GridAnimation) => {
-					applicationProperties.animation = gridAnimation;
-				},
-			);
+			DomUI.detailsModalSelectorAnimation(applicationProperties.assetAnimation, valuesImage, (gridAnimation: GridAnimation) => {
+				applicationProperties.assetAnimation = gridAnimation;
+			});
 		};
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -938,7 +999,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
-					applicationProperties.animation.assetIds[0] = assetId;
+					applicationProperties.assetAnimation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -1050,6 +1111,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipH;
 		input.oninput = (event: any) => {
 			applicationProperties.flipH = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipH = applicationProperties.flipH;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -1066,6 +1128,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipV;
 		input.oninput = (event: any) => {
 			applicationProperties.flipV = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipV = applicationProperties.flipV;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -1272,8 +1335,14 @@ export class DomUI {
 				(v) => v.type === AssetImageType.GRID_BLOCK_LIQUID,
 			),
 			applicationProperties: any = {
-				animation: {
+				assetAnimation: {
 					assetIds: [valuesImage[0].id],
+					assetOptions: [
+						{
+							flipH: undefined,
+							flipV: undefined,
+						},
+					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
 					loopCount: undefined,
@@ -1307,14 +1376,9 @@ export class DomUI {
 		td.className = 'button right-arrow';
 		td.innerText = 'Edit';
 		td.onclick = (event: any) => {
-			DomUI.detailsModalSelectorAnimation(
-				applicationProperties.animation,
-				applicationProperties.assetId,
-				valuesImage,
-				(gridAnimation: GridAnimation) => {
-					applicationProperties.animation = gridAnimation;
-				},
-			);
+			DomUI.detailsModalSelectorAnimation(applicationProperties.assetAnimation, valuesImage, (gridAnimation: GridAnimation) => {
+				applicationProperties.assetAnimation = gridAnimation;
+			});
 		};
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1342,7 +1406,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
-					applicationProperties.animation.assetIds[0] = assetId;
+					applicationProperties.assetAnimation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -1449,6 +1513,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipH;
 		input.oninput = (event: any) => {
 			applicationProperties.flipH = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipH = applicationProperties.flipH;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -1465,6 +1530,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipV;
 		input.oninput = (event: any) => {
 			applicationProperties.flipV = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipV = applicationProperties.flipV;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -1616,8 +1682,14 @@ export class DomUI {
 				(v) => v.type === AssetImageType.GRID_BLOCK_SOLID,
 			),
 			applicationProperties: any = {
-				animation: {
+				assetAnimation: {
 					assetIds: [valuesImage[0].id],
+					assetOptions: [
+						{
+							flipH: undefined,
+							flipV: undefined,
+						},
+					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
 					loopCount: undefined,
@@ -1655,14 +1727,9 @@ export class DomUI {
 		td.className = 'button right-arrow';
 		td.innerText = 'Edit';
 		td.onclick = (event: any) => {
-			DomUI.detailsModalSelectorAnimation(
-				applicationProperties.animation,
-				applicationProperties.assetId,
-				valuesImage,
-				(gridAnimation: GridAnimation) => {
-					applicationProperties.animation = gridAnimation;
-				},
-			);
+			DomUI.detailsModalSelectorAnimation(applicationProperties.assetAnimation, valuesImage, (gridAnimation: GridAnimation) => {
+				applicationProperties.assetAnimation = gridAnimation;
+			});
 		};
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -1690,7 +1757,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
-					applicationProperties.animation.assetIds[0] = assetId;
+					applicationProperties.assetAnimation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -1802,6 +1869,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipH;
 		input.oninput = (event: any) => {
 			applicationProperties.flipH = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipH = applicationProperties.flipH;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -1818,6 +1886,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipV;
 		input.oninput = (event: any) => {
 			applicationProperties.flipV = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipV = applicationProperties.flipV;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -2022,8 +2091,14 @@ export class DomUI {
 			valuesImage: AssetImage[] = Object.values(DomUI.assetManifestMaster.images).filter((v) => v.type === AssetImageType.GRID_LIGHT),
 			valuesType: GridLightType[] = <any>Object.values(GridLightType).filter((v) => typeof v === 'number'),
 			applicationProperties: any = {
-				animation: {
+				assetAnimation: {
 					assetIds: [valuesImage[0].id],
+					assetOptions: [
+						{
+							flipH: undefined,
+							flipV: undefined,
+						},
+					],
 					finishOnLastFrame: undefined,
 					frameDurationInMs: 100,
 					loopCount: undefined,
@@ -2069,14 +2144,9 @@ export class DomUI {
 		td.className = 'button right-arrow';
 		td.innerText = 'Edit';
 		td.onclick = (event: any) => {
-			DomUI.detailsModalSelectorAnimation(
-				applicationProperties.animation,
-				applicationProperties.assetId,
-				valuesImage,
-				(gridAnimation: GridAnimation) => {
-					applicationProperties.animation = gridAnimation;
-				},
-			);
+			DomUI.detailsModalSelectorAnimation(applicationProperties.assetAnimation, valuesImage, (gridAnimation: GridAnimation) => {
+				applicationProperties.assetAnimation = gridAnimation;
+			});
 		};
 		tr.appendChild(td);
 		t.appendChild(tr);
@@ -2104,7 +2174,7 @@ export class DomUI {
 				(assetId: string) => {
 					event.target.innerText = assetId;
 					applicationProperties.assetId = assetId;
-					applicationProperties.animation.assetIds[0] = assetId;
+					applicationProperties.assetAnimation.assetIds[0] = assetId;
 				},
 			);
 		};
@@ -2384,6 +2454,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipH;
 		input.oninput = (event: any) => {
 			applicationProperties.flipH = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipH = applicationProperties.flipH;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
@@ -2400,6 +2471,7 @@ export class DomUI {
 		input.checked = applicationProperties.flipV;
 		input.oninput = (event: any) => {
 			applicationProperties.flipV = Boolean(event.target.checked);
+			applicationProperties.assetAnimation.assetOptions[0].flipV = applicationProperties.flipV;
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);

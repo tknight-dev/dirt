@@ -14,7 +14,7 @@ export class Grid {
 	imageBlocksBackgroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksBackgroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
 	imageBlocksBackgroundSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
-	imageBlocksCalcPipelineAnimations: DoubleLinkedList<GridAnimationCalc>;
+	imageBlocksCalcPipelineAnimations: DoubleLinkedList<GridAnimation>;
 	imageBlocksForegroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
 	imageBlocksForegroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksForegroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
@@ -85,10 +85,24 @@ export class Grid {
 	}
 }
 
+export interface GridAnimation {
+	assetIds: string[]; // first frame is assetId from parent definition
+	assetOptions: GridImageTransform[]; // first frame options are set by parent definition
+	calc?: GridAnimationCalc;
+	finishOnLastFrame?: boolean;
+	frameDurationInMs: number;
+	loopCount?: number; // 0 is Inf
+}
+
+export interface GridAnimationCalc {
+	count: number;
+	durationInMs: number;
+	ended: boolean;
+	index: number;
+}
+
 export interface GridBlockPipelineAsset {
 	asset?: GridImageBlock;
-	assetAnimated?: boolean;
-	assetAnimation?: GridAnimationCalc;
 	assetLarge?: boolean;
 	audioBlock?: GridAudioBlock;
 	audioTag?: GridAudioTag;
@@ -123,21 +137,6 @@ export interface GridConfig {
 	startGxPlayer: number; // Precision 3
 	startGyPlayer: number; // Precision 3
 	zoomDefault: number; // defaulted by MapEngine
-}
-
-export interface GridAnimation {
-	assetIds: string[]; // first frame is assetId from parent definition
-	finishOnLastFrame?: boolean;
-	frameDurationInMs: number;
-	loopCount?: number; // 0 is Inf
-}
-
-export interface GridAnimationCalc {
-	animation: GridAnimation;
-	count: number;
-	durationInMs: number;
-	ended: boolean;
-	index: number;
 }
 
 export interface GridAudioBlock extends GridObject {
@@ -193,13 +192,10 @@ export interface GridCoordinate {
 	gy: number; // Precision 3
 }
 
-export interface GridImageBlock extends GridObject {
-	assetAnimated?: boolean;
+export interface GridImageBlock extends GridImageTransform, GridObject {
 	assetAnimation?: GridAnimation;
 	assetId: string;
 	halved?: GridImageBlockHalved;
-	flipH?: boolean;
-	flipV?: boolean;
 	nullBlocking?: boolean;
 	passthroughLight?: boolean;
 }
@@ -245,8 +241,12 @@ export interface GridImageBlockSolid extends GridImageBlock {
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 }
 
-export interface GridLight extends GridObject {
-	assetAnimated?: boolean;
+export interface GridImageTransform {
+	flipH?: boolean;
+	flipV?: boolean;
+}
+
+export interface GridLight extends GridImageTransform, GridObject {
 	assetAnimation?: GridAnimation;
 	assetId: string;
 	assetIdAudioEffectAmbient?: string;
@@ -258,8 +258,6 @@ export interface GridLight extends GridObject {
 	directionOmniBrightness?: number;
 	directionOmniGRadius?: number;
 	directions?: GridLightDirection[];
-	flipH?: boolean;
-	flipV?: boolean;
 	gRadiusAudioEffect?: number;
 	nightOnly?: boolean;
 	rounded?: boolean;

@@ -468,17 +468,28 @@ export class MapEditEngine {
 		MapEditEngine.gridBlockTableInflatePipelines(grid);
 
 		if (!MapEditEngine.modeUI) {
-			let assetId: string = (<any>apply).assetId,
+			let assetAnimation: GridAnimation = (<any>apply).assetAnimation,
+				assetId: string = (<any>apply).assetId,
 				assetIdDamaged: string = (<any>apply).assetIdDamaged,
 				assetUpdate: { [key: string]: LightingCacheInstance } = {};
 
-			LightingEngine.cacheAdd(assetId);
-			assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+			if (assetAnimation) {
+				for (let i in assetAnimation.assetIds) {
+					assetId = assetAnimation.assetIds[i];
+
+					if (assetUpdate[assetId] === undefined) {
+						assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+					}
+				}
+			} else {
+				assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+			}
 
 			if (assetIdDamaged) {
-				LightingEngine.cacheAdd(assetIdDamaged);
 				assetUpdate[assetIdDamaged] = LightingEngine.getCacheInstance(assetIdDamaged);
 			}
+
+			LightingEngine.cacheAdd(Object.keys(assetUpdate));
 
 			MapDrawEngineBus.outputAssets(assetUpdate);
 			KernelEngine.updateMap();
@@ -561,17 +572,28 @@ export class MapEditEngine {
 		MapEditEngine.gridBlockTableInflatePipelines(mapActive.gridActive);
 
 		if (!MapEditEngine.modeUI) {
-			let assetId: string = (<any>apply).assetId,
+			let assetAnimation: GridAnimation = (<any>apply).assetAnimation,
+				assetId: string = (<any>apply).assetId,
 				assetIdDamaged: string = (<any>apply).assetIdDamaged,
 				assetUpdate: { [key: string]: LightingCacheInstance } = {};
 
-			LightingEngine.cacheAdd(assetId);
-			assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+			if (assetAnimation) {
+				for (let i in assetAnimation.assetIds) {
+					assetId = assetAnimation.assetIds[i];
+
+					if (assetUpdate[assetId] === undefined) {
+						assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+					}
+				}
+			} else {
+				assetUpdate[assetId] = LightingEngine.getCacheInstance(assetId);
+			}
 
 			if (assetIdDamaged) {
-				LightingEngine.cacheAdd(assetIdDamaged);
 				assetUpdate[assetIdDamaged] = LightingEngine.getCacheInstance(assetIdDamaged);
 			}
+
+			LightingEngine.cacheAdd(Object.keys(assetUpdate));
 
 			MapDrawEngineBus.outputAssets(assetUpdate);
 			KernelEngine.updateMap();
@@ -751,7 +773,7 @@ export class MapEditEngine {
 		if (MapEditEngine.modeUI) {
 			return;
 		}
-		let animationsCalcPipelineAnimations: DoubleLinkedList<GridAnimationCalc> = new DoubleLinkedList<GridAnimationCalc>(),
+		let animationsCalcPipelineAnimations: DoubleLinkedList<GridAnimation> = new DoubleLinkedList<GridAnimation>(),
 			blockTable: GridBlockTable<GridObject>,
 			blockTableHashes: { [key: number]: GridObject },
 			blockTables: GridBlockTable<GridObject>[] = [
@@ -762,6 +784,7 @@ export class MapEditEngine {
 			],
 			complex: GridBlockTableComplex,
 			complexes: GridBlockTableComplex[],
+			gridAnimation: GridAnimation,
 			gridObject: GridObject,
 			gridImageBlockReference: GridImageBlockReference,
 			gridLight: GridLight,
@@ -824,14 +847,15 @@ export class MapEditEngine {
 					};
 
 					// Animation logic here
-					if (gridImageBlockReference.block.assetAnimated) {
-						animationsCalcPipelineAnimations.pushEnd({
-							animation: <GridAnimation>gridImageBlockReference.block.assetAnimation,
+					if (gridImageBlockReference.block.assetAnimation) {
+						gridAnimation = <GridAnimation>gridImageBlockReference.block.assetAnimation;
+						gridAnimation.calc = {
 							count: 0,
 							durationInMs: 0,
 							ended: false,
 							index: 0,
-						});
+						};
+						animationsCalcPipelineAnimations.pushEnd(gridAnimation);
 					}
 
 					// Extension logic here
@@ -943,14 +967,15 @@ export class MapEditEngine {
 						}
 
 						// Animation logic here
-						if (gridLight.assetAnimated) {
-							animationsCalcPipelineAnimations.pushEnd({
-								animation: <GridAnimation>gridLight.assetAnimation,
+						if (gridLight.assetAnimation) {
+							gridAnimation = <GridAnimation>gridLight.assetAnimation;
+							gridAnimation.calc = {
 								count: 0,
 								durationInMs: 0,
 								ended: false,
 								index: 0,
-							});
+							};
+							animationsCalcPipelineAnimations.pushEnd(gridAnimation);
 						}
 
 						// Extension logic here
@@ -1236,10 +1261,16 @@ export class MapEditEngine {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlockFoliage = <VideoBusInputCmdGameModeEditApplyImageBlockFoliage>properties;
 
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
-			delete data.assetAnimated;
 			delete data.assetAnimation;
 		} else {
-			data.assetAnimated = true;
+			for (let i in data.assetAnimation.assetOptions) {
+				if (!data.assetAnimation.assetOptions[i].flipH) {
+					delete data.assetAnimation.assetOptions[i].flipH;
+				}
+				if (!data.assetAnimation.assetOptions[i].flipV) {
+					delete data.assetAnimation.assetOptions[i].flipV;
+				}
+			}
 		}
 		delete data.extends; // calculated field only
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
@@ -1299,10 +1330,16 @@ export class MapEditEngine {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlockLiquid = <VideoBusInputCmdGameModeEditApplyImageBlockLiquid>properties;
 
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
-			delete data.assetAnimated;
 			delete data.assetAnimation;
 		} else {
-			data.assetAnimated = true;
+			for (let i in data.assetAnimation.assetOptions) {
+				if (!data.assetAnimation.assetOptions[i].flipH) {
+					delete data.assetAnimation.assetOptions[i].flipH;
+				}
+				if (!data.assetAnimation.assetOptions[i].flipV) {
+					delete data.assetAnimation.assetOptions[i].flipV;
+				}
+			}
 		}
 		if (z !== VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
 			delete data.assetIdAudioEffectSwim;
@@ -1347,10 +1384,16 @@ export class MapEditEngine {
 		let data: VideoBusInputCmdGameModeEditApplyImageBlockSolid = <VideoBusInputCmdGameModeEditApplyImageBlockSolid>properties;
 
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
-			delete data.assetAnimated;
 			delete data.assetAnimation;
 		} else {
-			data.assetAnimated = true;
+			for (let i in data.assetAnimation.assetOptions) {
+				if (!data.assetAnimation.assetOptions[i].flipH) {
+					delete data.assetAnimation.assetOptions[i].flipH;
+				}
+				if (!data.assetAnimation.assetOptions[i].flipV) {
+					delete data.assetAnimation.assetOptions[i].flipV;
+				}
+			}
 		}
 		delete data.extends; // calculated field only
 		if (z === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
@@ -1428,10 +1471,16 @@ export class MapEditEngine {
 		}
 
 		if (!data.assetAnimation || data.assetAnimation.assetIds.length < 2) {
-			delete data.assetAnimated;
 			delete data.assetAnimation;
 		} else {
-			data.assetAnimated = true;
+			for (let i in data.assetAnimation.assetOptions) {
+				if (!data.assetAnimation.assetOptions[i].flipH) {
+					delete data.assetAnimation.assetOptions[i].flipH;
+				}
+				if (!data.assetAnimation.assetOptions[i].flipV) {
+					delete data.assetAnimation.assetOptions[i].flipV;
+				}
+			}
 		}
 		if (!data.assetIdAudioEffectAmbient) {
 			delete data.assetIdAudioEffectAmbient;

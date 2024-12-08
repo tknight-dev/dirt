@@ -3,12 +3,15 @@ import { Camera } from '../models/camera.model';
 import { LightingEngine } from '../engines/lighting.engine';
 import {
 	Grid,
+	GridAnimation,
+	GridAnimationCalc,
 	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
 	GridBlockPipelineAsset,
 	GridImageBlock,
 	GridImageBlockHalved,
+	GridImageTransform,
 	GridLight,
 } from '../models/grid.model';
 import { MapActive } from '../models/map.model';
@@ -21,6 +24,7 @@ import { UtilEngine } from '../engines/util.engine';
  */
 
 export class ImageBlockDrawEngine {
+	private static animationUpdate: boolean;
 	private static caches: ImageBitmap[];
 	private static cacheCanvases: OffscreenCanvas[] = [];
 	private static cacheEditing: boolean;
@@ -106,7 +110,8 @@ export class ImageBlockDrawEngine {
 	 * This binding structure greatly reduces GC build up
 	 */
 	private static startBind(): void {
-		let audioModulation: AudioModulation,
+		let assetId: string,
+			audioModulation: AudioModulation,
 			audioModulations: { [key: string]: AudioModulation },
 			brightness: number,
 			cacheCanvases: OffscreenCanvas[],
@@ -133,9 +138,12 @@ export class ImageBlockDrawEngine {
 			gridBlockPipelineAsset: GridBlockPipelineAsset,
 			gridBlockPipelineAssets: GridBlockPipelineAsset[],
 			grid: Grid,
+			gridAnimation: GridAnimation,
+			gridAnimationCalc: GridAnimationCalc,
 			gridAudioBlock: GridAudioBlock,
 			gridAudioTag: GridAudioTag,
 			gridImageBlock: GridImageBlock,
+			gridImageTransform: GridImageTransform,
 			gridLight: GridLight,
 			gSizeHPrevious: number,
 			gSizeWPrevious: number,
@@ -145,6 +153,7 @@ export class ImageBlockDrawEngine {
 			gys: number[],
 			hourPreciseOfDayEff: number,
 			i: string,
+			index: number,
 			imageBitmap: ImageBitmap,
 			imageBitmaps: ImageBitmap[],
 			imageBitmapsBlend: number,
@@ -175,13 +184,14 @@ export class ImageBlockDrawEngine {
 			hourPreciseOfDayEff = getHourPreciseOfDayEff();
 
 			if (
-				ImageBlockDrawEngine.cacheEditing !== editing ||
+				ImageBlockDrawEngine.animationUpdate ||
+				ImageBlockDrawEngine.cacheHourPrecise !== hourPreciseOfDayEff ||
 				ImageBlockDrawEngine.cacheHashGx !== camera.gx ||
 				ImageBlockDrawEngine.cacheHashGy !== camera.gy ||
+				ImageBlockDrawEngine.cacheZoom !== camera.zoom ||
 				ImageBlockDrawEngine.cacheHashPh !== camera.windowPh ||
 				ImageBlockDrawEngine.cacheHashPw !== camera.windowPw ||
-				ImageBlockDrawEngine.cacheHourPrecise !== hourPreciseOfDayEff ||
-				ImageBlockDrawEngine.cacheZoom !== camera.zoom
+				ImageBlockDrawEngine.cacheEditing !== editing
 			) {
 				// Draw cache
 				audioModulations = AudioModulation.valuesWithoutNoneMap;
@@ -294,12 +304,25 @@ export class ImageBlockDrawEngine {
 									}
 
 									if (!skip) {
+										// Animated?
+										if (gridImageBlock.assetAnimation) {
+											gridAnimation = gridImageBlock.assetAnimation;
+											index = (<any>gridAnimation.calc).index;
+
+											assetId = gridAnimation.assetIds[index];
+											gridImageTransform = gridAnimation.assetOptions[index];
+										} else {
+											assetId = gridImageBlock.assetId;
+											gridImageTransform = gridImageBlock;
+										}
+
+										// Extension?
 										if (gridBlockPipelineAsset.extends) {
-											if (gridBlockPipelineAsset.asset.gx !== gx) {
-												drawGx = ((gridBlockPipelineAsset.asset.gx - startGx) * gInPw) | 0;
+											if (gridImageBlock.gx !== gx) {
+												drawGx = ((gridImageBlock.gx - startGx) * gInPw) | 0;
 											}
-											if (gridBlockPipelineAsset.asset.gy !== gy) {
-												drawGy = ((gridBlockPipelineAsset.asset.gy - startGy) * gInPh) | 0;
+											if (gridImageBlock.gy !== gy) {
+												drawGy = ((gridImageBlock.gy - startGy) * gInPh) | 0;
 											}
 										}
 
@@ -314,21 +337,21 @@ export class ImageBlockDrawEngine {
 										}
 
 										// Transforms
-										if (gridImageBlock.flipH || gridImageBlock.flipV) {
+										if (gridImageTransform.flipH || gridImageTransform.flipV) {
 											transform = true;
 											ctx.setTransform(
-												gridImageBlock.flipH ? -1 : 1,
+												gridImageTransform.flipH ? -1 : 1,
 												0,
 												0,
-												gridImageBlock.flipV ? -1 : 1,
-												(drawGx + (gridImageBlock.flipH ? gInPwEff : 0)) | 0,
-												(drawGy + (gridImageBlock.flipV ? gInPhEff : 0)) | 0,
+												gridImageTransform.flipV ? -1 : 1,
+												(drawGx + (gridImageTransform.flipH ? gInPwEff : 0)) | 0,
+												(drawGy + (gridImageTransform.flipV ? gInPhEff : 0)) | 0,
 											);
 										}
 
 										if (outside) {
 											// Get pre-rendered asset variation based on hash
-											imageBitmaps = getCacheLitOutside(gridImageBlock.assetId, grid.id, gridImageBlock.hash, z);
+											imageBitmaps = getCacheLitOutside(assetId, grid.id, gridImageBlock.hash, z);
 
 											// Draw current image
 											imageBitmap = imageBitmaps[0];
@@ -472,7 +495,7 @@ export class ImageBlockDrawEngine {
 										} else {
 											// Get pre-rendered asset variation based on hash
 											brightness = getCacheBrightness(grid.id, gridImageBlock.hash, z);
-											imageBitmap = getCacheLitByBrightness(gridImageBlock.assetId, brightness);
+											imageBitmap = getCacheLitByBrightness(assetId, brightness);
 
 											if (transform) {
 												ctx.drawImage(imageBitmap, 0, 0, gInPwEff, gInPhEff);
@@ -522,6 +545,19 @@ export class ImageBlockDrawEngine {
 									}
 								}
 								if (!skip) {
+									// Animated?
+									if (gridLight.assetAnimation) {
+										gridAnimation = gridLight.assetAnimation;
+										index = (<any>gridAnimation.calc).index;
+
+										assetId = gridAnimation.assetIds[index];
+										gridImageTransform = gridAnimation.assetOptions[index];
+									} else {
+										assetId = gridLight.assetId;
+										gridImageTransform = gridLight;
+									}
+
+									// Extension?
 									if (gridBlockPipelineAsset.lightExtends) {
 										if (gridLight.gx !== gx) {
 											drawGx = ((gridLight.gx - startGx) * gInPw) | 0;
@@ -542,25 +578,25 @@ export class ImageBlockDrawEngine {
 									}
 
 									// Transforms
-									if (gridLight.flipH || gridLight.flipV) {
+									if (gridImageTransform.flipH || gridImageTransform.flipV) {
 										transform = true;
 										ctx.setTransform(
-											gridLight.flipH ? -1 : 1,
+											gridImageTransform.flipH ? -1 : 1,
 											0,
 											0,
-											gridLight.flipV ? -1 : 1,
-											(drawGx + (gridLight.flipH ? gInPwEff : 0)) | 0,
-											(drawGy + (gridLight.flipV ? gInPhEff : 0)) | 0,
+											gridImageTransform.flipV ? -1 : 1,
+											(drawGx + (gridImageTransform.flipH ? gInPwEff : 0)) | 0,
+											(drawGy + (gridImageTransform.flipV ? gInPhEff : 0)) | 0,
 										);
 									}
 
 									// Get pre-rendered asset variation based on hash
 									if (gridLight.nightOnly && !night) {
-										imageBitmaps = getCacheLitOutside(gridLight.assetId, grid.id, gridLight.hash, z);
+										imageBitmaps = getCacheLitOutside(assetId, grid.id, gridLight.hash, z);
 
 										ctx.drawImage(imageBitmaps[0], drawGx, drawGy, gInPwEff, gInPhEff);
 									} else {
-										imageBitmap = getCacheInstance(gridLight.assetId).image;
+										imageBitmap = getCacheInstance(assetId).image;
 
 										ctx.drawImage(imageBitmap, drawGx, drawGy, gInPwEff, gInPhEff);
 									}
@@ -672,6 +708,7 @@ export class ImageBlockDrawEngine {
 				}
 
 				// Cache misc
+				ImageBlockDrawEngine.animationUpdate = false;
 				ImageBlockDrawEngine.cacheEditing = editing;
 				ImageBlockDrawEngine.cacheHashGx = camera.gx;
 				ImageBlockDrawEngine.cacheHashGy = camera.gy;
@@ -697,14 +734,18 @@ export class ImageBlockDrawEngine {
 		};
 	}
 
-	public static setMapActive(mapActive: MapActive) {
-		ImageBlockDrawEngine.mapActive = mapActive;
-		ImageBlockDrawEngine.mapActiveCamera = mapActive.camera;
-		ImageBlockDrawEngine.cacheReset();
+	public static setAnimationUpdate(animationUpdate: boolean) {
+		ImageBlockDrawEngine.animationUpdate = animationUpdate;
 	}
 
 	public static setEditing(editing: boolean) {
 		ImageBlockDrawEngine.editing = editing;
+		ImageBlockDrawEngine.cacheReset();
+	}
+
+	public static setMapActive(mapActive: MapActive) {
+		ImageBlockDrawEngine.mapActive = mapActive;
+		ImageBlockDrawEngine.mapActiveCamera = mapActive.camera;
 		ImageBlockDrawEngine.cacheReset();
 	}
 
