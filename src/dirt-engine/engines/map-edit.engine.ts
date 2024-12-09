@@ -1034,6 +1034,13 @@ export class MapEditEngine {
 
 	private static historyAdd(): void {
 		let mapActiveClone: MapActive = MapEditEngine.getMapActiveCloneNormalized();
+
+		// Rebuild references
+		for (let i in mapActiveClone.grids) {
+			mapActiveClone.grids[i] = JSON.parse(<any>mapActiveClone.grids[i]);
+		}
+		mapActiveClone = MapEditEngine.gridBlockTableInflate(mapActiveClone);
+
 		MapEditEngine.mapHistoryUndo.pushEnd(mapActiveClone);
 
 		MapEditEngine.mapHistoryRedo.clear();
@@ -1054,17 +1061,11 @@ export class MapEditEngine {
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryRedo.popEnd();
 
-		// Rebuild references
-		for (let i in mapActive.grids) {
-			mapActive.grids[i] = JSON.parse(<any>mapActive.grids[i]);
-		}
-		mapActive = MapEditEngine.gridBlockTableInflate(mapActive);
-
 		if (!MapEditEngine.modeUI) {
-			MapEditEngine.mapHistoryUndo.pushEnd(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
+			MapEditEngine.mapHistoryUndo.pushEnd(KernelEngine.getMapActive());
 			KernelEngine.historyUpdate(mapActive);
 		} else {
-			MapEditEngine.mapHistoryUndo.pushEnd(JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI)));
+			MapEditEngine.mapHistoryUndo.pushEnd(MapEditEngine.mapActiveUI);
 			MapEditEngine.mapActiveUI = mapActive;
 		}
 
@@ -1082,17 +1083,11 @@ export class MapEditEngine {
 		}
 		let mapActive: MapActive = <MapActive>MapEditEngine.mapHistoryUndo.popEnd();
 
-		// Rebuild references
-		for (let i in mapActive.grids) {
-			mapActive.grids[i] = JSON.parse(<any>mapActive.grids[i]);
-		}
-		mapActive = MapEditEngine.gridBlockTableInflate(mapActive);
-
 		if (!MapEditEngine.modeUI) {
-			MapEditEngine.mapHistoryRedo.pushEnd(JSON.parse(JSON.stringify(KernelEngine.getMapActive())));
+			MapEditEngine.mapHistoryRedo.pushEnd(KernelEngine.getMapActive());
 			KernelEngine.historyUpdate(mapActive);
 		} else {
-			MapEditEngine.mapHistoryRedo.pushEnd(JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI)));
+			MapEditEngine.mapHistoryRedo.pushEnd(MapEditEngine.mapActiveUI);
 			MapEditEngine.mapActiveUI = mapActive;
 		}
 
