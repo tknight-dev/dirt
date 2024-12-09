@@ -165,7 +165,7 @@ export class MapEditEngine {
 		MapEditEngine.gridBlockTableInflatePipelines(grid);
 	}
 
-	private static applyErase(apply: VideoBusInputCmdGameModeEditApplyErase): void {
+	private static applyErase(apply: VideoBusInputCmdGameModeEditApplyErase, quick?: boolean): void {
 		let blocks: GridBlockTable<GridObject> = <any>{},
 			blockHashes: { [key: number]: GridObject } = {},
 			gCoordinate: GridCoordinate,
@@ -267,25 +267,27 @@ export class MapEditEngine {
 			}
 		}
 
-		if (referenceMode) {
-			MapEditEngine.gridBlockTableInflateInstance(reference);
-			MapEditEngine.gridBlockTableInflatePipelines(grid);
-		} else {
-			MapEditEngine.gridBlockTableInflateInstance(blocks);
-		}
+		if (!quick) {
+			if (referenceMode) {
+				MapEditEngine.gridBlockTableInflateInstance(reference);
+				MapEditEngine.gridBlockTableInflatePipelines(grid);
+			} else {
+				MapEditEngine.gridBlockTableInflateInstance(blocks);
+			}
 
-		if (!MapEditEngine.modeUI) {
-			KernelEngine.updateMap();
+			if (!MapEditEngine.modeUI) {
+				KernelEngine.updateMap();
+			}
 		}
 	}
 
 	private static applyImageBlock(apply: VideoBusInputCmdGameModeEditApplyImageBlock): void {
 		let blocks: { [key: number]: GridImageBlock } = {},
+			erase: number[] = [],
 			gCoordinate: GridCoordinate,
 			gHash: number,
 			gHashEff: number,
 			gHashes: number[] = apply.gHashes,
-			gHashesOverwritten: number[],
 			grid: Grid,
 			mapActive: MapActive,
 			objectType: GridObjectType,
@@ -384,6 +386,39 @@ export class MapEditEngine {
 		}
 		referenceHashes = reference.hashes;
 
+		// Erase
+		for (let i = 0; i < gHashes.length; i++) {
+			gHash = gHashes[i];
+			gCoordinate = UtilEngine.gridHashFrom(gHash);
+
+			// Overwrite, delete all blocks associated with
+			if (properties.gSizeH === 1 && properties.gSizeW === 1) {
+				if (referenceHashes[gHash]) {
+					erase.push(gHash);
+				}
+			} else {
+				for (x = 0; x < properties.gSizeW; x++) {
+					for (y = 0; y < properties.gSizeH; y++) {
+						gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
+
+						if (referenceHashes[gHashEff]) {
+							erase.push(gHash);
+						}
+					}
+				}
+			}
+		}
+		if (erase.length) {
+			MapEditEngine.applyErase(
+				<any>{
+					gHashes: erase,
+					type: apply.applyType,
+					z: z,
+				},
+				true,
+			);
+		}
+
 		// Clean
 		delete properties.applyType;
 		delete properties.gHashes;
@@ -393,37 +428,6 @@ export class MapEditEngine {
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
 			gCoordinate = UtilEngine.gridHashFrom(gHash);
-
-			// Overwrite, delete all blocks associated with
-			if (properties.gSizeH === 1 && properties.gSizeW === 1) {
-				if (referenceHashes[gHash]) {
-					MapEditEngine.applyErase(<any>{
-						gHashes: [gHash],
-						type: apply.applyType,
-						z: z,
-					});
-				}
-			} else {
-				gHashesOverwritten = new Array();
-
-				for (x = 0; x < properties.gSizeW; x++) {
-					for (y = 0; y < properties.gSizeH; y++) {
-						gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
-
-						if (referenceHashes[gHashEff]) {
-							gHashesOverwritten.push(gHashEff);
-						}
-					}
-				}
-
-				if (gHashesOverwritten.length) {
-					MapEditEngine.applyErase(<any>{
-						gHashes: gHashesOverwritten,
-						type: apply.applyType,
-						z: z,
-					});
-				}
-			}
 
 			// Origin block
 			properties.hash = gHash;
@@ -499,6 +503,7 @@ export class MapEditEngine {
 	private static applyLight(apply: VideoBusInputCmdGameModeEditApplyLight): void {
 		let blockHashes: { [key: number]: GridLight },
 			blocks: GridBlockTable<GridLight>,
+			erase: number[] = [],
 			gCoordinate: GridCoordinate,
 			gHash: number,
 			gHashEff: number,
@@ -523,6 +528,25 @@ export class MapEditEngine {
 		}
 		blockHashes = blocks.hashes;
 
+		// Erase
+		for (let i = 0; i < gHashes.length; i++) {
+			gHash = gHashes[i];
+
+			if (blockHashes[gHash]) {
+				erase.push(gHash);
+			}
+		}
+		if (erase.length) {
+			MapEditEngine.applyErase(
+				<any>{
+					gHashes: erase,
+					type: apply.applyType,
+					z: z,
+				},
+				true,
+			);
+		}
+
 		// Clean
 		delete properties.applyType;
 		delete properties.gHashes;
@@ -532,15 +556,6 @@ export class MapEditEngine {
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
 			gCoordinate = UtilEngine.gridHashFrom(gHash);
-
-			// Overwrite, delete all blocks associated with
-			if (blockHashes[gHash]) {
-				MapEditEngine.applyErase(<any>{
-					gHashes: [gHash],
-					type: apply.applyType,
-					z: z,
-				});
-			}
 
 			// Origin block
 			properties.hash = gHash;
