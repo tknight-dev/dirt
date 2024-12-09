@@ -185,7 +185,7 @@ class UnderlayDrawWorkerEngine {
 					Math.max(0, hourOfDayEffOutsideModifier + minuteOfDayEffPercentage),
 					brightnessOutsideNightMax,
 					0,
-					0.3,
+					0.1,
 					1,
 				);
 			} else if (hourOfDayEff === 5) {
@@ -195,7 +195,7 @@ class UnderlayDrawWorkerEngine {
 					Math.max(0, hourOfDayEffOutsideModifier - minuteOfDayEffPercentage),
 					brightnessOutsideNightMax,
 					0,
-					0.3,
+					0.1,
 					1,
 				);
 			}
@@ -290,7 +290,7 @@ class UnderlayDrawWorkerEngine {
 			gradientStarfield.addColorStop(1, 'transparent');
 		} else {
 			fine = true;
-			scratch = UtilEngine.scale(hourOfDayEffOutsideModifier + minuteOfDayEffPercentage, brightnessOutsideNightMax, 0, 0.3, 1);
+			scratch = UtilEngine.scale(hourOfDayEffOutsideModifier + minuteOfDayEffPercentage, brightnessOutsideNightMax, 0, 0.1, 1);
 
 			// Small Hours
 			gradientSky.addColorStop(0, 'black');
