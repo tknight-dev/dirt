@@ -3,6 +3,7 @@ import { KeyAction, KeyCommon } from '../engines/keyboard.engine';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MouseAction, MouseCmd } from '../engines/mouse.engine';
 import { TouchAction, TouchCmd } from '../engines/touch.engine';
+import { VideoBusInputCmdSettingsFPS } from '../engines/buses/video.model.bus';
 
 /**
  * @author tknight-dev
@@ -16,7 +17,6 @@ export class InputsCalcEngine {
 	private static stateModifier: { [key: number]: boolean } = {};
 	private static stateMove: { [key: number]: boolean } = {};
 	private static status: boolean;
-	private static timestampDelta: number = 0;
 	private static touchDistanceActive: boolean;
 	private static touchDistanceOrig: number;
 	private static touchDistanceOrigX: number;
@@ -47,30 +47,23 @@ export class InputsCalcEngine {
 			vertical: number;
 
 		InputsCalcEngine.start = (timestampDelta: number) => {
-			InputsCalcEngine.timestampDelta += timestampDelta;
+			horizontal = 0;
+			vertical = 0;
 
-			// Limit input changes to Xms
-			if (InputsCalcEngine.timestampDelta > 32) {
-				InputsCalcEngine.timestampDelta = 0;
+			if (stateMove[KeyCommon.DOWN]) {
+				vertical = timestampDelta;
+			} else if (stateMove[KeyCommon.UP]) {
+				vertical = -timestampDelta;
+			}
 
-				horizontal = 0;
-				vertical = 0;
+			if (stateMove[KeyCommon.LEFT]) {
+				horizontal = -timestampDelta;
+			} else if (stateMove[KeyCommon.RIGHT]) {
+				horizontal = timestampDelta;
+			}
 
-				if (stateMove[KeyCommon.DOWN]) {
-					vertical = 33;
-				} else if (stateMove[KeyCommon.UP]) {
-					vertical = -33;
-				}
-
-				if (stateMove[KeyCommon.LEFT]) {
-					horizontal = -33;
-				} else if (stateMove[KeyCommon.RIGHT]) {
-					horizontal = 33;
-				}
-
-				if (horizontal || vertical) {
-					CameraEngine.moveIncremental(horizontal, vertical);
-				}
+			if (horizontal || vertical) {
+				CameraEngine.moveIncremental(horizontal, vertical);
 			}
 		};
 	}
