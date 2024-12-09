@@ -45,12 +45,9 @@ export class CameraEngine {
 		CameraEngine.loopPositionGy = gy;
 	}
 
-	/**
-	 * Solve smooth moving... and remove this function?
-	 */
 	public static moveIncremental(gx: number, gy: number): void {
-		CameraEngine.loopPositionGx += Math.round(gx * 11) / 1000;
-		CameraEngine.loopPositionGy += Math.round(gy * 11) / 1000;
+		CameraEngine.loopPositionGx += Math.round(gx * 9) / 1000;
+		CameraEngine.loopPositionGy += Math.round(gy * 9) / 1000;
 	}
 
 	public static reset(): void {

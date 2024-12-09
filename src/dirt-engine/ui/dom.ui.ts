@@ -5684,7 +5684,7 @@ export class DomUI {
 		settingsModalContentBodyClockSpeed.autocomplete = 'off';
 		settingsModalContentBodyClockSpeed.className = 'input';
 		settingsModalContentBodyClockSpeed.max = '86400';
-		settingsModalContentBodyClockSpeed.min = '0';
+		settingsModalContentBodyClockSpeed.min = '1';
 		settingsModalContentBodyClockSpeed.step = '1';
 		settingsModalContentBodyClockSpeed.type = 'range';
 		DomUI.domElements['feed-fitted-ui-settings-modal-content-body-clock-speed'] = settingsModalContentBodyClockSpeed;
