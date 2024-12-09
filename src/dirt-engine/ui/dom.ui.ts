@@ -1402,25 +1402,25 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// // Transparency
-		// tr = document.createElement('tr');
-		// td = document.createElement('td');
-		// td.innerText = 'Transparency';
-		// tr.appendChild(td);
-		// td = document.createElement('td');
-		// input = document.createElement('input');
-		// input.autocomplete = 'off';
-		// input.max = '1';
-		// input.min = '0';
-		// input.oninput = (event: any) => {
-		// 	applicationProperties.transparency = Number(event.target.value);
-		// };
-		// input.step = '.01';
-		// input.type = 'range';
-		// input.value = String(applicationProperties.transparency || 0);
-		// td.appendChild(input);
-		// tr.appendChild(td);
-		// t.appendChild(tr);
+		// Transparency
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Transparency';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '1';
+		input.min = '0';
+		input.oninput = (event: any) => {
+			applicationProperties.transparency = Number(event.target.value);
+		};
+		input.step = '.01';
+		input.type = 'range';
+		input.value = String(applicationProperties.transparency || 0);
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');
@@ -1754,25 +1754,25 @@ export class DomUI {
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// // Transparency
-		// tr = document.createElement('tr');
-		// td = document.createElement('td');
-		// td.innerText = 'Transparency';
-		// tr.appendChild(td);
-		// td = document.createElement('td');
-		// input = document.createElement('input');
-		// input.autocomplete = 'off';
-		// input.max = '1';
-		// input.min = '0';
-		// input.oninput = (event: any) => {
-		// 	applicationProperties.transparency = Number(event.target.value);
-		// };
-		// input.step = '.01';
-		// input.type = 'range';
-		// input.value = String(applicationProperties.transparency || 0);
-		// td.appendChild(input);
-		// tr.appendChild(td);
-		// t.appendChild(tr);
+		// Transparency
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Transparency';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '1';
+		input.min = '0';
+		input.oninput = (event: any) => {
+			applicationProperties.transparency = Number(event.target.value);
+		};
+		input.step = '.01';
+		input.type = 'range';
+		input.value = String(applicationProperties.transparency || 0);
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Viscocity
 		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
@@ -2212,25 +2212,25 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// // Transparency
-		// tr = document.createElement('tr');
-		// td = document.createElement('td');
-		// td.innerText = 'Transparency';
-		// tr.appendChild(td);
-		// td = document.createElement('td');
-		// input = document.createElement('input');
-		// input.autocomplete = 'off';
-		// input.max = '1';
-		// input.min = '0';
-		// input.oninput = (event: any) => {
-		// 	applicationProperties.transparency = Number(event.target.value);
-		// };
-		// input.step = '.01';
-		// input.type = 'range';
-		// input.value = String(applicationProperties.transparency || 0);
-		// td.appendChild(input);
-		// tr.appendChild(td);
-		// t.appendChild(tr);
+		// Transparency
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Transparency';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		input = document.createElement('input');
+		input.autocomplete = 'off';
+		input.max = '1';
+		input.min = '0';
+		input.oninput = (event: any) => {
+			applicationProperties.transparency = Number(event.target.value);
+		};
+		input.step = '.01';
+		input.type = 'range';
+		input.value = String(applicationProperties.transparency || 0);
+		td.appendChild(input);
+		tr.appendChild(td);
+		t.appendChild(tr);
 
 		// Show the cancel/apply buttons
 		DomUI.domElementsUIEdit['application-palette-modal-content-body'].classList.add('buttoned');

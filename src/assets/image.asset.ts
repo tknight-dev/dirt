@@ -968,6 +968,36 @@ let imageManifest: AssetImage[] = [
 	{
 		gHeight: 1,
 		gWidth: 1,
+		id: 'WINDOW',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/grid-objects/windows/window_16_16.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/grid-objects/windows/window_32_32.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/grid-objects/windows/window_64_64.webp',
+			},
+		],
+		type: AssetImageType.GRID_BLOCK_SOLID,
+	},
+	{
+		gHeight: 1,
+		gWidth: 1,
 		id: 'WOOD_ROTATED',
 		meta: {
 			author: 'tknight-dev',

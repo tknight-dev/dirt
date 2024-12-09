@@ -180,13 +180,25 @@ class UnderlayDrawWorkerEngine {
 
 		if (hourOfDayEff < 6) {
 			fine = true;
-			scratch = UtilEngine.scale(
-				Math.max(0, hourOfDayEffOutsideModifier - minuteOfDayEffPercentage),
-				brightnessOutsideNightMax,
-				0,
-				0.5,
-				1,
-			);
+			if (hourOfDayEff === 1) {
+				scratch = UtilEngine.scale(
+					Math.max(0, hourOfDayEffOutsideModifier + minuteOfDayEffPercentage),
+					brightnessOutsideNightMax,
+					0,
+					0.3,
+					1,
+				);
+			} else if (hourOfDayEff === 5) {
+				scratch = 1;
+			} else {
+				scratch = UtilEngine.scale(
+					Math.max(0, hourOfDayEffOutsideModifier - minuteOfDayEffPercentage),
+					brightnessOutsideNightMax,
+					0,
+					0.3,
+					1,
+				);
+			}
 
 			// Small Hours
 			gradientSky.addColorStop(0, 'black');
@@ -197,7 +209,9 @@ class UnderlayDrawWorkerEngine {
 			}
 
 			gradientStarfield.addColorStop(scratch, 'white');
-			gradientStarfield.addColorStop(1, 'transparent');
+			if (scratch !== 1) {
+				gradientStarfield.addColorStop(1, 'transparent');
+			}
 		} else if (hourOfDayEff < 7) {
 			scratch = UtilEngine.scale(minuteOfDayEffPercentage, 1, 0, 0.5, 1);
 
@@ -276,7 +290,7 @@ class UnderlayDrawWorkerEngine {
 			gradientStarfield.addColorStop(1, 'transparent');
 		} else {
 			fine = true;
-			scratch = UtilEngine.scale(hourOfDayEffOutsideModifier + minuteOfDayEffPercentage, brightnessOutsideNightMax, 0, 0.5, 1);
+			scratch = UtilEngine.scale(hourOfDayEffOutsideModifier + minuteOfDayEffPercentage, brightnessOutsideNightMax, 0, 0.3, 1);
 
 			// Small Hours
 			gradientSky.addColorStop(0, 'black');
@@ -287,7 +301,9 @@ class UnderlayDrawWorkerEngine {
 			}
 
 			gradientStarfield.addColorStop(scratch, 'white');
-			gradientStarfield.addColorStop(1, 'transparent');
+			if (scratch !== 1) {
+				gradientStarfield.addColorStop(1, 'transparent');
+			}
 		}
 
 		// draw

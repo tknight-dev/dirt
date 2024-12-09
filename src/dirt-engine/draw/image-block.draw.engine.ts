@@ -156,6 +156,7 @@ export class ImageBlockDrawEngine {
 			imageBitmap: ImageBitmap,
 			imageBitmaps: ImageBitmap[],
 			imageBitmapsBlend: number,
+			imageBitmapsBlendEff: number,
 			isLightNight = UtilEngine.isLightNight,
 			j: string,
 			night: boolean,
@@ -227,6 +228,7 @@ export class ImageBlockDrawEngine {
 				}
 
 				imageBitmapsBlend = Math.round((1 - (hourPreciseOfDayEff - (hourPreciseOfDayEff | 0))) * 1000) / 1000;
+				imageBitmapsBlendEff = imageBitmapsBlend;
 				radius = (((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom) | 0;
 				radius2 = radius * 2;
 
@@ -348,6 +350,12 @@ export class ImageBlockDrawEngine {
 											);
 										}
 
+										// Transparency
+										if (gridImageBlock.transparency) {
+											ctx.globalAlpha = 1 - gridImageBlock.transparency;
+											imageBitmapsBlendEff -= gridImageBlock.transparency;
+										}
+
 										if (outside) {
 											// Get pre-rendered asset variation based on hash
 											imageBitmaps = getCacheLitOutside(assetId, grid.id, gridImageBlock.hash, z);
@@ -423,6 +431,7 @@ export class ImageBlockDrawEngine {
 											) {
 												imageBitmap = imageBitmaps[1];
 												ctx.globalAlpha = imageBitmapsBlend;
+												ctx.globalCompositeOperation = 'source-atop';
 
 												// Draw previous image (blended) [6:00 - 100%, 6:30 - 50%, 6:55 - 8%]
 												// Provides smooth shading transitions
@@ -490,6 +499,7 @@ export class ImageBlockDrawEngine {
 
 												// Done
 												ctx.globalAlpha = 1;
+												ctx.globalCompositeOperation = 'source-over'; // restore default setting
 											}
 										} else {
 											// Get pre-rendered asset variation based on hash
@@ -507,6 +517,12 @@ export class ImageBlockDrawEngine {
 										if (transform) {
 											ctx.setTransform(1, 0, 0, 1, 0, 0);
 											transform = false;
+										}
+
+										// Reset transparency
+										if (gridImageBlock.transparency) {
+											ctx.globalAlpha = 1;
+											imageBitmapsBlendEff = imageBitmapsBlend;
 										}
 
 										// Reset extension displacement
@@ -589,6 +605,11 @@ export class ImageBlockDrawEngine {
 										);
 									}
 
+									// Transparency
+									if (gridImageBlock.transparency) {
+										ctx.globalAlpha = 1 - gridImageBlock.transparency;
+									}
+
 									// Get pre-rendered asset variation based on hash
 									if (gridLight.nightOnly && !night) {
 										imageBitmaps = getCacheLitOutside(assetId, grid.id, gridLight.hash, z);
@@ -604,6 +625,11 @@ export class ImageBlockDrawEngine {
 									if (transform) {
 										ctx.setTransform(1, 0, 0, 1, 0, 0);
 										transform = false;
+									}
+
+									// Reset transparency
+									if (gridImageBlock.transparency) {
+										ctx.globalAlpha = 1;
 									}
 
 									// Reset extension displacement
