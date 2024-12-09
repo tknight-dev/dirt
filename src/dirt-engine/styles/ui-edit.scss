@@ -494,8 +494,14 @@ $dirt-engine-ui-edit-button-width: 40px;
 				overflow-y: auto;
 
 				.button {
+					color: white;
 					height: 40px;
 					width: 100% !important;
+
+					&.small {
+						display: inline-block;
+						width: 50% !important;
+					}
 				}
 			}
 			.buttons {

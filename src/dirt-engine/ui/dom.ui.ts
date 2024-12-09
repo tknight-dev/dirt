@@ -1046,6 +1046,20 @@ export class DomUI {
 
 		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_FOLIAGE) {
 			applicationProperties = DomUI.uiEditApplicationProperties;
+
+			applicationProperties.assetAnimation = applicationProperties.assetAnimation || {
+				assetIds: [applicationProperties.assetId],
+				assetOptions: [
+					{
+						flipH: applicationProperties.flipH,
+						flipV: applicationProperties.flipV,
+					},
+				],
+				finishOnLastFrame: undefined,
+				frameDurationInMs: 100,
+				indexInitial: 0,
+				loopCount: undefined,
+			};
 		}
 
 		t.textContent = '';
@@ -1479,6 +1493,20 @@ export class DomUI {
 
 		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_LIQUID) {
 			applicationProperties = DomUI.uiEditApplicationProperties;
+
+			applicationProperties.assetAnimation = applicationProperties.assetAnimation || {
+				assetIds: [applicationProperties.assetId],
+				assetOptions: [
+					{
+						flipH: applicationProperties.flipH,
+						flipV: applicationProperties.flipV,
+					},
+				],
+				finishOnLastFrame: undefined,
+				frameDurationInMs: 100,
+				indexInitial: 0,
+				loopCount: undefined,
+			};
 		}
 
 		t.textContent = '';
@@ -1856,6 +1884,20 @@ export class DomUI {
 
 		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.IMAGE_BLOCK_SOLID) {
 			applicationProperties = DomUI.uiEditApplicationProperties;
+
+			applicationProperties.assetAnimation = applicationProperties.assetAnimation || {
+				assetIds: [applicationProperties.assetId],
+				assetOptions: [
+					{
+						flipH: applicationProperties.flipH,
+						flipV: applicationProperties.flipV,
+					},
+				],
+				finishOnLastFrame: undefined,
+				frameDurationInMs: 100,
+				indexInitial: 0,
+				loopCount: undefined,
+			};
 		}
 
 		t.textContent = '';
@@ -2291,13 +2333,114 @@ export class DomUI {
 				rounded: true,
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
 			},
+			button: HTMLButtonElement,
 			input: HTMLInputElement,
+			inputOmni: HTMLInputElement,
+			omniOn: HTMLElement[] = [],
+			omniOff: HTMLElement[] = [],
 			t: HTMLElement = DomUI.domElementsUIEdit['application-palette-modal-content-body-table'],
+			tDirections: HTMLElement,
 			td: HTMLElement,
-			tr: HTMLElement;
+			tr: HTMLElement,
+			directions = () => {
+				// Clean
+				tDirections.textContent = '';
+
+				applicationProperties.directions.forEach((direction: any, index: number) => {
+					// Direction: brightness
+					tr = document.createElement('tr');
+					td = document.createElement('td');
+					td.innerText = 'Brightness [' + index + ']';
+					tr.appendChild(td);
+					td = document.createElement('td');
+					input = document.createElement('input');
+					input.autocomplete = 'off';
+					input.max = '6';
+					input.min = '1';
+					input.oninput = (event: any) => {
+						applicationProperties.directions[index].brightness = Number(event.target.value);
+					};
+					input.step = '1';
+					input.type = 'range';
+					input.value = String(applicationProperties.directions[index].brightness || 0);
+					td.appendChild(input);
+					tr.appendChild(td);
+					tDirections.appendChild(tr);
+
+					// Direction: gRadius
+					tr = document.createElement('tr');
+					td = document.createElement('td');
+					td.innerText = 'G Radius [' + index + ']';
+					tr.appendChild(td);
+					td = document.createElement('td');
+					input = document.createElement('input');
+					input.autocomplete = 'off';
+					input.max = '10';
+					input.min = '1';
+					input.oninput = (event: any) => {
+						applicationProperties.directions[index].gRadius = Number(event.target.value);
+					};
+					input.step = '1';
+					input.type = 'range';
+					input.value = String(applicationProperties.directions[index].gRadius || 0);
+					td.appendChild(input);
+					tr.appendChild(td);
+					tDirections.appendChild(tr);
+
+					// Direction: Type
+					tr = document.createElement('tr');
+					td = document.createElement('td');
+					td.innerText = 'Type [' + index + ']';
+					tr.appendChild(td);
+					td = document.createElement('td');
+					td.className = 'button right-arrow';
+					td.innerText = GridLightType[applicationProperties.directions[index].type];
+					td.onclick = (event: any) => {
+						DomUI.detailsModalSelector(
+							false,
+							false,
+							false,
+							false,
+							valuesType.map((v) => {
+								return {
+									name: GridLightType[v],
+									value: v,
+								};
+							}),
+							(type: string) => {
+								event.target.innerText = type ? GridLightType[<any>type] : 'None';
+								applicationProperties.directions[index].type = type;
+							},
+						);
+					};
+					tr.appendChild(td);
+					tDirections.appendChild(tr);
+				});
+			};
 
 		if (DomUI.uiEditApplicationProperties && DomUI.uiEditApplyType === VideoBusInputCmdGameModeEditApplyType.LIGHT) {
 			applicationProperties = DomUI.uiEditApplicationProperties;
+
+			applicationProperties.assetAnimation = applicationProperties.assetAnimation || {
+				assetIds: [applicationProperties.assetId],
+				assetOptions: [
+					{
+						flipH: applicationProperties.flipH,
+						flipV: applicationProperties.flipV,
+					},
+				],
+				finishOnLastFrame: undefined,
+				frameDurationInMs: 100,
+				indexInitial: 0,
+				loopCount: undefined,
+			};
+			applicationProperties.directions = applicationProperties.directions || [
+				{
+					brightness: 1,
+					gRadius: 4,
+					type: GridLightType.DOWN,
+				},
+			];
 		}
 
 		t.textContent = '';
@@ -2486,23 +2629,41 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// Direction: Omni
+		// Omni
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		td.innerText = 'Direction Omni';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.checked = applicationProperties.directionOmni;
-		input.oninput = (event: any) => {
-			applicationProperties.directionOmni = Boolean(event.target.checked);
+		inputOmni = document.createElement('input');
+		inputOmni.checked = applicationProperties.directionOmni;
+		inputOmni.oninput = (event?: any) => {
+			if (event) {
+				applicationProperties.directionOmni = Boolean(event.target.checked);
+			}
+
+			if (applicationProperties.directionOmni) {
+				for (let i in omniOff) {
+					omniOff[i].style.display = 'none';
+				}
+				for (let i in omniOn) {
+					omniOn[i].style.display = 'table-row';
+				}
+			} else {
+				for (let i in omniOff) {
+					omniOff[i].style.display = 'table-row';
+				}
+				for (let i in omniOn) {
+					omniOn[i].style.display = 'none';
+				}
+			}
 		};
-		input.type = 'checkbox';
-		td.appendChild(input);
+		inputOmni.type = 'checkbox';
+		td.appendChild(inputOmni);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// Direction: brightness
+		// Omni: brightness
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		td.innerText = 'Direction Omni Brightness';
@@ -2521,8 +2682,9 @@ export class DomUI {
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
+		omniOn.push(tr);
 
-		// Direction: gRadius
+		// Omni: gRadius
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		td.innerText = 'Direction Omni G Radius';
@@ -2541,75 +2703,49 @@ export class DomUI {
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
+		omniOn.push(tr);
 
-		// Direction[0]: brightness
+		// Directions
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Direction[0] Brightness';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '6';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.directions[0].brightness = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.directions[0].brightness || 0);
-		td.appendChild(input);
+		tDirections = document.createElement('table');
+		td.appendChild(tDirections);
+		(<HTMLTableCellElement>td).colSpan = 2;
 		tr.appendChild(td);
 		t.appendChild(tr);
+		omniOff.push(tr);
 
-		// Direction[0]: gRadius
+		// Directions: Buttons
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Direction[0] G Radius';
+		td.innerText = '';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.directions[0].gRadius = Number(event.target.value);
+		button = document.createElement('button');
+		button.className = 'button small green';
+		button.innerText = 'Add';
+		button.onclick = () => {
+			applicationProperties.directions.push({
+				brightness: 1,
+				gRadius: 4,
+				type: GridLightType.DOWN,
+			});
+			directions();
 		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.directions[0].gRadius || 0);
-		td.appendChild(input);
+		td.appendChild(button);
+		button = document.createElement('button');
+		button.className = 'button small red';
+		button.innerText = 'Remove';
+		button.onclick = () => {
+			if (applicationProperties.directions.length > 1) {
+				applicationProperties.directions.pop();
+				directions();
+			}
+		};
+		td.appendChild(button);
 		tr.appendChild(td);
 		t.appendChild(tr);
-
-		// Direction[0]: Type
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Direction[0] Type';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		td.className = 'button right-arrow';
-		td.innerText = GridLightType[applicationProperties.directions[0].type];
-		td.onclick = (event: any) => {
-			DomUI.detailsModalSelector(
-				false,
-				false,
-				false,
-				false,
-				valuesType.map((v) => {
-					return {
-						name: GridLightType[v],
-						value: v,
-					};
-				}),
-				(type: string) => {
-					event.target.innerText = type ? GridLightType[<any>type] : 'None';
-					applicationProperties.directions[0].type = type;
-				},
-			);
-		};
-		tr.appendChild(td);
-		t.appendChild(tr);
+		omniOff.push(tr);
 
 		// FlipH
 		tr = document.createElement('tr');
@@ -2765,6 +2901,8 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Light';
 
 		// Apply
+		inputOmni.oninput(<any>undefined);
+		directions();
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;

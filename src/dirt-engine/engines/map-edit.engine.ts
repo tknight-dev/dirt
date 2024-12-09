@@ -389,7 +389,6 @@ export class MapEditEngine {
 		// Erase
 		for (let i = 0; i < gHashes.length; i++) {
 			gHash = gHashes[i];
-			gCoordinate = UtilEngine.gridHashFrom(gHash);
 
 			// Overwrite, delete all blocks associated with
 			if (properties.gSizeH === 1 && properties.gSizeW === 1) {
@@ -397,6 +396,7 @@ export class MapEditEngine {
 					erase.push(gHash);
 				}
 			} else {
+				gCoordinate = UtilEngine.gridHashFrom(gHash);
 				for (x = 0; x < properties.gSizeW; x++) {
 					for (y = 0; y < properties.gSizeH; y++) {
 						gHashEff = UtilEngine.gridHashTo(gCoordinate.gx + x, gCoordinate.gy + y);
