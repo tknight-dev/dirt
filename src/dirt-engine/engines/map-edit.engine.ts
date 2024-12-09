@@ -708,6 +708,7 @@ export class MapEditEngine {
 			MapEditEngine.gridBlockTableInflateInstance(grid.lightsForeground);
 			MapEditEngine.gridBlockTableInflateInstance(grid.lightsPrimary);
 
+			// Last
 			MapEditEngine.gridBlockTableInflatePipelines(grid);
 		});
 		return map;
@@ -1671,16 +1672,24 @@ export class MapEditEngine {
 	public static getMapActiveCloneNormalized(mapActive?: MapActive): MapActive {
 		let mapActiveClone: MapActive;
 
-		if (mapActive) {
-			mapActiveClone = JSON.parse(JSON.stringify(mapActive));
-		} else if (MapEditEngine.modeUI) {
-			mapActiveClone = JSON.parse(JSON.stringify(MapEditEngine.mapActiveUI));
-		} else {
-			mapActiveClone = JSON.parse(JSON.stringify(KernelEngine.getMapActive()));
+		if (!mapActive) {
+			if (MapEditEngine.modeUI) {
+				mapActive = MapEditEngine.mapActiveUI;
+			} else {
+				mapActive = KernelEngine.getMapActive();
+			}
 		}
 
-		delete (<any>mapActiveClone).gridActive;
-		delete (<any>mapActiveClone).gridConfigActive;
+		// Prepare
+		delete (<any>mapActive).gridActive;
+		delete (<any>mapActive).gridConfigActive;
+
+		// Clone
+		mapActiveClone = JSON.parse(JSON.stringify(mapActive));
+
+		// Repair
+		mapActive.gridActive = mapActive.grids[mapActive.gridActiveId];
+		mapActive.gridConfigActive = mapActive.gridConfigs[mapActive.gridActiveId];
 
 		return mapActiveClone;
 	}

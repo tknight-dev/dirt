@@ -293,6 +293,7 @@ export class KernelEngine {
 			return;
 		}
 		if (settings.fps === 1) {
+			// Unlimited*
 			KernelEngine.fpms = 1;
 		} else {
 			KernelEngine.fpms = (1000 / settings.fps) | 0;
