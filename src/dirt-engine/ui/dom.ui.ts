@@ -3779,6 +3779,11 @@ export class DomUI {
 		option.value = String(VideoBusInputCmdSettingsFPS._120);
 		select.appendChild(option);
 
+		option = document.createElement('option');
+		option.innerText = 'Unlimited';
+		option.value = String(VideoBusInputCmdSettingsFPS._UNLIMITED);
+		select.appendChild(option);
+
 		td.appendChild(select);
 		tr.appendChild(td);
 		t.appendChild(tr);

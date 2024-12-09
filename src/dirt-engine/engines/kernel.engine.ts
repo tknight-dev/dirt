@@ -292,7 +292,11 @@ export class KernelEngine {
 			console.error('KernelEngine > updateSettings: not initialized');
 			return;
 		}
-		KernelEngine.fpms = Math.floor(1000 / settings.fps);
+		if (settings.fps === 1) {
+			KernelEngine.fpms = 1;
+		} else {
+			KernelEngine.fpms = (1000 / settings.fps) | 0;
+		}
 
 		// Primary
 		DrawEditEngine.mapVisible = settings.mapVisible;
