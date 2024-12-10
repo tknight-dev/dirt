@@ -15,20 +15,20 @@ export class MapDrawEngine {
 	private static backgroundPw: number;
 	private static backgroundPx: number;
 	private static backgroundPy: number;
-	private static cacheBackground: ImageBitmap;
+	private static cacheBackgroundCanvas: OffscreenCanvas;
 	private static cacheBackgroundSky: ImageBitmap;
 	private static cacheBackgroundStarfield: ImageBitmap;
 	private static cacheBackgroundSkyNew: boolean;
 	private static cacheBackgroundHashPh: number;
 	private static cacheBackgroundHashPw: number;
-	private static cacheCameraLines: ImageBitmap;
+	private static cacheCameraLinesCanvas: OffscreenCanvas;
 	private static cacheCameraLinesHashGx: number;
 	private static cacheCameraLinesHashGy: number;
 	private static cacheCameraLinesHashPh: number;
 	private static cacheCameraLinesHashPw: number;
-	private static cacheCanvas: OffscreenCanvas;
 	private static cacheZoom: number;
-	private static ctx: OffscreenCanvasRenderingContext2D;
+	private static ctxBackground: OffscreenCanvasRenderingContext2D;
+	private static ctxCameraLines: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapImage: ImageBitmap;
@@ -48,9 +48,13 @@ export class MapDrawEngine {
 		MapDrawEngine.initialized = true;
 		MapDrawEngine.ctxOverlay = ctxOverlay;
 
-		MapDrawEngine.cacheCanvas = new OffscreenCanvas(0, 0);
-		MapDrawEngine.ctx = <OffscreenCanvasRenderingContext2D>MapDrawEngine.cacheCanvas.getContext('2d');
-		MapDrawEngine.ctx.imageSmoothingEnabled = false;
+		MapDrawEngine.cacheBackgroundCanvas = new OffscreenCanvas(0, 0);
+		MapDrawEngine.ctxBackground = <OffscreenCanvasRenderingContext2D>MapDrawEngine.cacheBackgroundCanvas.getContext('2d');
+		MapDrawEngine.ctxBackground.imageSmoothingEnabled = false;
+
+		MapDrawEngine.cacheCameraLinesCanvas = new OffscreenCanvas(0, 0);
+		MapDrawEngine.ctxCameraLines = <OffscreenCanvasRenderingContext2D>MapDrawEngine.cacheCameraLinesCanvas.getContext('2d');
+		MapDrawEngine.ctxCameraLines.imageSmoothingEnabled = false;
 
 		await MapDrawEngineBus.initialize();
 		MapDrawEngineBus.setCallbackBitmap((imageBitmap: ImageBitmap) => {
@@ -94,9 +98,11 @@ export class MapDrawEngine {
 	 */
 	private static startBind(): void {
 		let backgroundRatio: number = MapDrawEngine.backgroundRatio,
-			cacheCanvas: OffscreenCanvas = MapDrawEngine.cacheCanvas,
+			cacheBackgroundCanvas: OffscreenCanvas = MapDrawEngine.cacheBackgroundCanvas,
+			cacheCameraLinesCanvas: OffscreenCanvas = MapDrawEngine.cacheCameraLinesCanvas,
 			camera: Camera,
-			ctx: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctx,
+			ctxBackground: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctxBackground,
+			ctxCameraLines: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctxCameraLines,
 			ctxOverlay: OffscreenCanvasRenderingContext2D = MapDrawEngine.ctxOverlay,
 			ghRelScaled: number,
 			ghRelScaledEffB: number,
@@ -135,45 +141,46 @@ export class MapDrawEngine {
 				MapDrawEngine.mapImageNew
 			) {
 				// Canvas
-				if (cacheCanvas.height !== MapDrawEngine.backgroundPh || cacheCanvas.width !== MapDrawEngine.backgroundPw) {
-					cacheCanvas.height = MapDrawEngine.backgroundPh;
-					cacheCanvas.width = MapDrawEngine.backgroundPw;
+				if (
+					cacheBackgroundCanvas.height !== MapDrawEngine.backgroundPh ||
+					cacheBackgroundCanvas.width !== MapDrawEngine.backgroundPw
+				) {
+					cacheBackgroundCanvas.height = MapDrawEngine.backgroundPh;
+					cacheBackgroundCanvas.width = MapDrawEngine.backgroundPw;
 					outputResolution(MapDrawEngine.backgroundPh, MapDrawEngine.backgroundPw);
+				} else {
+					ctxBackground.clearRect(0, 0, cacheBackgroundCanvas.width, cacheBackgroundCanvas.height);
 				}
-
-				// Fixes left over lines from viewport outlining
-				ctx.reset();
 
 				// Background
 				if (MapDrawEngine.mapImage) {
 					height = (MapDrawEngine.backgroundPh * (gridConfig.gHorizon / gridConfig.gHeight)) | 0;
 
 					if (MapDrawEngine.cacheBackgroundSky) {
-						ctx.drawImage(MapDrawEngine.cacheBackgroundSky, 0, 0, MapDrawEngine.backgroundPw, height);
-						ctx.drawImage(MapDrawEngine.cacheBackgroundStarfield, 0, 0, MapDrawEngine.backgroundPw, height);
+						ctxBackground.drawImage(MapDrawEngine.cacheBackgroundSky, 0, 0, MapDrawEngine.backgroundPw, height);
+						ctxBackground.drawImage(MapDrawEngine.cacheBackgroundStarfield, 0, 0, MapDrawEngine.backgroundPw, height);
 					}
 
-					ctx.drawImage(MapDrawEngine.mapImage, 0, 0);
+					ctxBackground.drawImage(MapDrawEngine.mapImage, 0, 0);
 				} else {
-					ctx.fillStyle = 'rgba(0,0,0,.5)';
-					ctx.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
+					ctxBackground.fillStyle = 'rgba(0,0,0,.5)';
+					ctxBackground.fillRect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
 				}
 
 				// Background Border
-				ctx.lineWidth = 1;
-				ctx.rect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
-				ctx.strokeStyle = 'white';
-				ctx.stroke();
+				ctxBackground.lineWidth = 1;
+				ctxBackground.rect(0, 0, MapDrawEngine.backgroundPw, MapDrawEngine.backgroundPh);
+				ctxBackground.strokeStyle = 'white';
+				ctxBackground.stroke();
 
 				// Cache it
 				MapDrawEngine.cacheBackgroundSkyNew = false;
 				MapDrawEngine.mapImageNew = false;
-				MapDrawEngine.cacheBackground = cacheCanvas.transferToImageBitmap();
 				MapDrawEngine.cacheBackgroundHashPh = camera.windowPh;
 				MapDrawEngine.cacheBackgroundHashPw = camera.windowPw;
 			}
 			// Draw from cache
-			ctxOverlay.drawImage(MapDrawEngine.cacheBackground, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
+			ctxOverlay.drawImage(cacheBackgroundCanvas, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 
 			/*
 			 * Camera Lines
@@ -186,9 +193,14 @@ export class MapDrawEngine {
 				MapDrawEngine.cacheZoom !== camera.zoom
 			) {
 				// Canvas
-				if (cacheCanvas.height !== MapDrawEngine.backgroundPh || cacheCanvas.width !== MapDrawEngine.backgroundPw) {
-					cacheCanvas.height = MapDrawEngine.backgroundPh;
-					cacheCanvas.width = MapDrawEngine.backgroundPw;
+				if (
+					cacheCameraLinesCanvas.height !== MapDrawEngine.backgroundPh ||
+					cacheCameraLinesCanvas.width !== MapDrawEngine.backgroundPw
+				) {
+					cacheCameraLinesCanvas.height = MapDrawEngine.backgroundPh;
+					cacheCameraLinesCanvas.width = MapDrawEngine.backgroundPw;
+				} else {
+					ctxCameraLines.clearRect(0, 0, cacheCameraLinesCanvas.width, cacheCameraLinesCanvas.height);
 				}
 
 				// Calc
@@ -208,66 +220,65 @@ export class MapDrawEngine {
 				/*
 				 * viewport within Window
 				 */
-				ctx.lineWidth = 1;
-				ctx.strokeStyle = 'white';
+				ctxCameraLines.lineWidth = 1;
+				ctxCameraLines.strokeStyle = 'white';
 
 				// top: left
-				ctx.beginPath();
-				ctx.moveTo(gxRelScaled, gyRelScaled);
-				ctx.lineTo(ghRelScaledEffL, gyRelScaled);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.moveTo(gxRelScaled, gyRelScaled);
+				ctxCameraLines.lineTo(ghRelScaledEffL, gyRelScaled);
+				ctxCameraLines.stroke();
 
 				// top: right
-				ctx.beginPath();
-				ctx.lineTo(ghRelScaledEffR, gyRelScaled);
-				ctx.lineTo(gxRelScaledEff, gyRelScaled);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(ghRelScaledEffR, gyRelScaled);
+				ctxCameraLines.lineTo(gxRelScaledEff, gyRelScaled);
+				ctxCameraLines.stroke();
 
 				// right: top
-				ctx.beginPath();
-				ctx.lineTo(gxRelScaledEff, gyRelScaled);
-				ctx.lineTo(gxRelScaledEff, ghRelScaledEffB);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(gxRelScaledEff, gyRelScaled);
+				ctxCameraLines.lineTo(gxRelScaledEff, ghRelScaledEffB);
+				ctxCameraLines.stroke();
 
 				// right: bottom
-				ctx.beginPath();
-				ctx.lineTo(gxRelScaledEff, ghRelScaledEffT);
-				ctx.lineTo(gxRelScaledEff, gyRelScaledEff);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(gxRelScaledEff, ghRelScaledEffT);
+				ctxCameraLines.lineTo(gxRelScaledEff, gyRelScaledEff);
+				ctxCameraLines.stroke();
 
 				// bottom: right
-				ctx.beginPath();
-				ctx.lineTo(gxRelScaledEff, gyRelScaledEff);
-				ctx.lineTo(ghRelScaledEffR, gyRelScaledEff);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(gxRelScaledEff, gyRelScaledEff);
+				ctxCameraLines.lineTo(ghRelScaledEffR, gyRelScaledEff);
+				ctxCameraLines.stroke();
 
 				// bottom: left
-				ctx.beginPath();
-				ctx.lineTo(ghRelScaledEffL, gyRelScaledEff);
-				ctx.lineTo(gxRelScaled, gyRelScaledEff);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(ghRelScaledEffL, gyRelScaledEff);
+				ctxCameraLines.lineTo(gxRelScaled, gyRelScaledEff);
+				ctxCameraLines.stroke();
 
 				// left: bottom
-				ctx.beginPath();
-				ctx.lineTo(gxRelScaled, gyRelScaled);
-				ctx.lineTo(gxRelScaled, ghRelScaledEffB);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(gxRelScaled, gyRelScaled);
+				ctxCameraLines.lineTo(gxRelScaled, ghRelScaledEffB);
+				ctxCameraLines.stroke();
 
 				// left: top
-				ctx.beginPath();
-				ctx.lineTo(gxRelScaled, ghRelScaledEffT);
-				ctx.lineTo(gxRelScaled, gyRelScaledEff);
-				ctx.stroke();
+				ctxCameraLines.beginPath();
+				ctxCameraLines.lineTo(gxRelScaled, ghRelScaledEffT);
+				ctxCameraLines.lineTo(gxRelScaled, gyRelScaledEff);
+				ctxCameraLines.stroke();
 
 				// Cache it
-				MapDrawEngine.cacheCameraLines = cacheCanvas.transferToImageBitmap();
 				MapDrawEngine.cacheCameraLinesHashGx = camera.gx;
 				MapDrawEngine.cacheCameraLinesHashGy = camera.gy;
 				MapDrawEngine.cacheCameraLinesHashPh = camera.windowPh;
 				MapDrawEngine.cacheCameraLinesHashPw = camera.windowPw;
 				MapDrawEngine.cacheZoom = camera.zoom;
 			}
-			ctxOverlay.drawImage(MapDrawEngine.cacheCameraLines, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
+			ctxOverlay.drawImage(cacheCameraLinesCanvas, MapDrawEngine.backgroundPx, MapDrawEngine.backgroundPy);
 		};
 	}
 

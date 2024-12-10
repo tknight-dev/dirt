@@ -12,7 +12,6 @@ import { UtilEngine } from '../engines/util.engine';
  */
 
 export class UnderlayDrawEngine {
-	private static cache: ImageBitmap;
 	private static cacheCanvas: OffscreenCanvas;
 	private static cacheNew: boolean;
 	private static cacheSky: ImageBitmap;
@@ -116,12 +115,13 @@ export class UnderlayDrawEngine {
 						if (cacheCanvas.height !== camera.windowPh || cacheCanvas.width !== camera.windowPw) {
 							cacheCanvas.height = camera.windowPh;
 							cacheCanvas.width = camera.windowPw;
+						} else {
+							ctx.clearRect(0, 0, cacheCanvas.width, cacheCanvas.height);
 						}
 
 						// Cache it
 						ctx.drawImage(cacheSky, offsetX, 0, camera.windowPw, camera.windowPh, 0, -offsetY, camera.windowPw, height);
 						ctx.drawImage(cacheStarfield, 0, 0, camera.windowPw, camera.windowPh, 0, -offsetY, camera.windowPw, height);
-						UnderlayDrawEngine.cache = cacheCanvas.transferToImageBitmap();
 
 						// Done
 						cacheCheckCameraGx = camera.gx;
@@ -131,10 +131,10 @@ export class UnderlayDrawEngine {
 					}
 				}
 
-				if (UnderlayDrawEngine.cache) {
+				if (cleared) {
 					cleared = false;
-					ctxUnderlay.drawImage(UnderlayDrawEngine.cache, 0, 0);
 				}
+				ctxUnderlay.drawImage(cacheCanvas, 0, 0);
 			} else if (!cleared) {
 				camera = UnderlayDrawEngine.mapActive.camera;
 				cleared = true;

@@ -4,7 +4,6 @@ import { LightingEngine } from '../engines/lighting.engine';
 import {
 	Grid,
 	GridAnimation,
-	GridAnimationCalc,
 	GridAudioBlock,
 	GridAudioTag,
 	GridAudioTagType,
@@ -120,7 +119,6 @@ export class ImageBlockDrawEngine {
 			audioModulations: { [key: string]: AudioModulation },
 			brightness: number,
 			cacheCanvases: OffscreenCanvas[],
-			caches: ImageBitmap[] = ImageBlockDrawEngine.caches,
 			camera: Camera,
 			ctx: OffscreenCanvasRenderingContext2D,
 			ctxs: OffscreenCanvasRenderingContext2D[],
@@ -240,6 +238,10 @@ export class ImageBlockDrawEngine {
 					for (i in cacheCanvases) {
 						cacheCanvases[i].height = camera.windowPh;
 						cacheCanvases[i].width = camera.windowPw;
+					}
+				} else {
+					for (i in ctxs) {
+						ctxs[i].clearRect(0, 0, camera.windowPw, camera.windowPh);
 					}
 				}
 
@@ -715,22 +717,8 @@ export class ImageBlockDrawEngine {
 				/**
 				 * Canvas to cache
 				 */
-				if (editing) {
-					caches[0] = cacheCanvases[0].transferToImageBitmap(); // Background
-					caches[1] = cacheCanvases[1].transferToImageBitmap(); // Secondary
-					caches[2] = cacheCanvases[2].transferToImageBitmap(); // Primary
-					caches[3] = cacheCanvases[3].transferToImageBitmap(); // Foreground
-					caches[4] = cacheCanvases[4].transferToImageBitmap(); // Top
-					caches[5] = cacheCanvases[5].transferToImageBitmap(); // Vanishing
-				} else {
-					// 0-2 written to 0 when not editing
-					caches[0] = cacheCanvases[0].transferToImageBitmap();
-
-					// 3 & 5 written to 3 when not editing
+				if (!editing) {
 					ctxs[3].drawImage(cacheCanvases[5], 0, 0);
-					ctxs[5].clearRect(0, 0, camera.windowPw, camera.windowPh);
-
-					caches[3] = cacheCanvases[3].transferToImageBitmap();
 				}
 
 				// Cache misc
@@ -745,18 +733,18 @@ export class ImageBlockDrawEngine {
 			}
 
 			if (editing) {
-				ImageBlockDrawEngine.ctxBackground1.drawImage(caches[0], 0, 0);
-				ImageBlockDrawEngine.ctxBackground2.drawImage(caches[1], 0, 0);
-				ImageBlockDrawEngine.ctxInteractive.drawImage(caches[2], 0, 0);
-				ImageBlockDrawEngine.ctxForeground1.drawImage(caches[3], 0, 0);
-				ImageBlockDrawEngine.ctxForeground2.drawImage(caches[4], 0, 0);
-				ImageBlockDrawEngine.ctxVanishing.drawImage(caches[5], 0, 0);
+				ImageBlockDrawEngine.ctxBackground1.drawImage(cacheCanvases[0], 0, 0);
+				ImageBlockDrawEngine.ctxBackground2.drawImage(cacheCanvases[1], 0, 0);
+				ImageBlockDrawEngine.ctxInteractive.drawImage(cacheCanvases[2], 0, 0);
+				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[3], 0, 0);
+				ImageBlockDrawEngine.ctxForeground2.drawImage(cacheCanvases[4], 0, 0);
+				ImageBlockDrawEngine.ctxVanishing.drawImage(cacheCanvases[5], 0, 0);
 			} else {
 				// 0-2 written to 0 when not editing
-				ImageBlockDrawEngine.ctxBackground1.drawImage(caches[0], 0, 0);
+				ImageBlockDrawEngine.ctxBackground1.drawImage(cacheCanvases[0], 0, 0);
 
 				// 3-5 written to 3 when not editing
-				ImageBlockDrawEngine.ctxForeground1.drawImage(caches[3], 0, 0);
+				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[3], 0, 0);
 			}
 		};
 	}

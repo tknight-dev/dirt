@@ -7,7 +7,6 @@ import { MapActive } from '../models/map.model';
  */
 
 export class CameraDrawEngine {
-	private static cache: ImageBitmap;
 	private static cacheCanvas: OffscreenCanvas;
 	private static cacheGInP: number;
 	private static cachePositionHashGx: number;
@@ -65,7 +64,7 @@ export class CameraDrawEngine {
 		CameraDrawEngine.start = () => {
 			camera = CameraDrawEngine.mapActiveCamera;
 
-			if (!CameraDrawEngine.cache || CameraDrawEngine.cacheGInP !== camera.gInPh) {
+			if (CameraDrawEngine.cacheGInP !== camera.gInPh) {
 				// Draw from scratch
 				sizeEff = (camera.gInPh / 4) | 0;
 
@@ -74,6 +73,8 @@ export class CameraDrawEngine {
 				if (cacheCanvas.height !== height) {
 					cacheCanvas.height = height;
 					cacheCanvas.width = height;
+				} else {
+					ctx.clearRect(0, 0, cacheCanvas.width, cacheCanvas.height);
 				}
 
 				ctx.beginPath();
@@ -85,7 +86,6 @@ export class CameraDrawEngine {
 				ctx.stroke();
 
 				// Cache It
-				CameraDrawEngine.cache = cacheCanvas.transferToImageBitmap();
 				CameraDrawEngine.cacheGInP = camera.gInPh;
 			}
 
@@ -133,7 +133,7 @@ export class CameraDrawEngine {
 				CameraDrawEngine.cacheZoom = camera.zoom;
 			}
 
-			ctxInteractive.drawImage(CameraDrawEngine.cache, cachePositionPx, cachePositionPy);
+			ctxInteractive.drawImage(cacheCanvas, cachePositionPx, cachePositionPy);
 		};
 	}
 

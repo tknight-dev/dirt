@@ -8,7 +8,6 @@ import { MapActive } from '../models/map.model';
  */
 
 export class GridDrawEngine {
-	private static cache: ImageBitmap;
 	private static cacheCanvas: OffscreenCanvas;
 	private static cacheHashGx: number;
 	private static cacheHashGy: number;
@@ -96,6 +95,8 @@ export class GridDrawEngine {
 					if (cacheCanvas.height !== windowPh || cacheCanvas.width !== windowPw) {
 						cacheCanvas.height = windowPh;
 						cacheCanvas.width = windowPw;
+					} else {
+						ctx.clearRect(0, 0, cacheCanvas.width, cacheCanvas.height);
 					}
 
 					// Perimeter
@@ -123,7 +124,6 @@ export class GridDrawEngine {
 					ctx.stroke();
 
 					// Cache it
-					GridDrawEngine.cache = cacheCanvas.transferToImageBitmap();
 					GridDrawEngine.cacheHashGx = camera.gx;
 					GridDrawEngine.cacheHashGy = camera.gy;
 					GridDrawEngine.cacheHashPh = windowPh;
@@ -131,7 +131,7 @@ export class GridDrawEngine {
 					GridDrawEngine.cacheZoom = camera.zoom;
 				}
 
-				ctxOverlay.drawImage(GridDrawEngine.cache, 0, 0);
+				ctxOverlay.drawImage(cacheCanvas, 0, 0);
 			}
 		};
 	}
