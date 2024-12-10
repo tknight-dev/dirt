@@ -38,6 +38,7 @@ export class ImageBlockDrawEngine {
 	private static ctxForeground1: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground2: OffscreenCanvasRenderingContext2D;
 	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
+	private static ctxMiddleground: OffscreenCanvasRenderingContext2D;
 	private static ctxs: OffscreenCanvasRenderingContext2D[] = [];
 	private static ctxsOptimized: OffscreenCanvasRenderingContext2D[] = [];
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
@@ -56,6 +57,7 @@ export class ImageBlockDrawEngine {
 		ctxForeground1: OffscreenCanvasRenderingContext2D,
 		ctxForeground2: OffscreenCanvasRenderingContext2D,
 		ctxInteractive: OffscreenCanvasRenderingContext2D,
+		ctxMiddleground: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (ImageBlockDrawEngine.initialized) {
@@ -68,11 +70,13 @@ export class ImageBlockDrawEngine {
 		ImageBlockDrawEngine.ctxForeground1 = ctxForeground1;
 		ImageBlockDrawEngine.ctxForeground2 = ctxForeground2;
 		ImageBlockDrawEngine.ctxInteractive = ctxInteractive;
+		ImageBlockDrawEngine.ctxMiddleground = ctxMiddleground;
 		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
 
 		ImageBlockDrawEngine.zGroup = [
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1,
 			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2,
+			VideoBusInputCmdGameModeEditApplyZ.MIDDLEGROUND,
 			VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE,
 			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND1,
 			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND2,
@@ -94,9 +98,10 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
 			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
 			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
-			ImageBlockDrawEngine.ctxs[3], // Write to just one foreground canvas
-			ImageBlockDrawEngine.ctxs[3], // Write to just one foreground canvas
-			ImageBlockDrawEngine.ctxs[5], // Write to just one vanishing canvas
+			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
+			ImageBlockDrawEngine.ctxs[4], // Write to just one foreground canvas
+			ImageBlockDrawEngine.ctxs[4], // Write to just one foreground canvas
+			ImageBlockDrawEngine.ctxs[6], // Write to just one vanishing canvas
 		];
 
 		// Last
@@ -699,7 +704,7 @@ export class ImageBlockDrawEngine {
 				 * Vanishing circle
 				 */
 				if (ImageBlockDrawEngine.vanishingEnable) {
-					ctx = ctxs[5];
+					ctx = ctxs[6];
 					gx = ((camera.gx - startGx) * gInPw) | 0;
 					gy = ((camera.gy - startGy) * gInPh) | 0;
 
@@ -718,7 +723,7 @@ export class ImageBlockDrawEngine {
 				 * Canvas to cache
 				 */
 				if (!editing) {
-					ctxs[3].drawImage(cacheCanvases[5], 0, 0);
+					ctxs[4].drawImage(cacheCanvases[6], 0, 0);
 				}
 
 				// Cache misc
@@ -735,16 +740,17 @@ export class ImageBlockDrawEngine {
 			if (editing) {
 				ImageBlockDrawEngine.ctxBackground1.drawImage(cacheCanvases[0], 0, 0);
 				ImageBlockDrawEngine.ctxBackground2.drawImage(cacheCanvases[1], 0, 0);
-				ImageBlockDrawEngine.ctxInteractive.drawImage(cacheCanvases[2], 0, 0);
-				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[3], 0, 0);
-				ImageBlockDrawEngine.ctxForeground2.drawImage(cacheCanvases[4], 0, 0);
-				ImageBlockDrawEngine.ctxVanishing.drawImage(cacheCanvases[5], 0, 0);
+				ImageBlockDrawEngine.ctxMiddleground.drawImage(cacheCanvases[2], 0, 0);
+				ImageBlockDrawEngine.ctxInteractive.drawImage(cacheCanvases[3], 0, 0);
+				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[4], 0, 0);
+				ImageBlockDrawEngine.ctxForeground2.drawImage(cacheCanvases[5], 0, 0);
+				ImageBlockDrawEngine.ctxVanishing.drawImage(cacheCanvases[6], 0, 0);
 			} else {
-				// 0-2 written to 0 when not editing
+				// 0-3 written to 0 when not editing
 				ImageBlockDrawEngine.ctxBackground1.drawImage(cacheCanvases[0], 0, 0);
 
-				// 3-5 written to 3 when not editing
-				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[3], 0, 0);
+				// 4-6 written to 4 when not editing
+				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[4], 0, 0);
 			}
 		};
 	}

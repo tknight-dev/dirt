@@ -133,6 +133,7 @@ export class DirtEngine extends DomUI {
 			DirtEngine.domElementsCanvas['feed-overflow-streams-foreground1-data'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-foreground2-data'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-interactive-data'],
+			DirtEngine.domElementsCanvas['feed-overflow-streams-middleground-data'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-overlay-data'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-underlay-data'],
 			DirtEngine.domElementsCanvas['feed-overflow-streams-vanishing-data'],

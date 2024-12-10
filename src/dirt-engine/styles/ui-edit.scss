@@ -541,7 +541,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.redo {
 		border-radius: 5px;
 		height: 40px;
-		right: calc(50% - 200px);
+		right: calc(50% - 220px);
 		top: 20px;
 		width: 40px;
 
@@ -651,7 +651,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 		border: none;
 		border-radius: 5px;
 		height: 40px;
-		left: calc(50% - 280px);
+		left: calc(50% - 300px);
 		pointer-events: none;
 		top: 20px;
 		width: 60px;
@@ -660,7 +660,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.undo {
 		border-radius: 5px;
 		height: 40px;
-		right: calc(50% + 160px);
+		right: calc(50% + 180px);
 		top: 20px;
 		width: 40px;
 
@@ -773,6 +773,15 @@ $dirt-engine-ui-edit-button-width: 40px;
 				&.active {
 					&::after {
 						content: 'Interactive';
+						top: $dirt-engine-ui-edit-button-height + 5px;
+					}
+				}
+			}
+
+			&.middleground {
+				&.active {
+					&::after {
+						content: 'Middleground';
 						top: $dirt-engine-ui-edit-button-height + 5px;
 					}
 				}

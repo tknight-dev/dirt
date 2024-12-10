@@ -13,6 +13,7 @@ export class DrawPlayEngine {
 	private static ctxForeground1: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground2: OffscreenCanvasRenderingContext2D;
 	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
+	private static ctxMiddleground: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
@@ -28,6 +29,7 @@ export class DrawPlayEngine {
 		ctxForeground1: OffscreenCanvasRenderingContext2D,
 		ctxForeground2: OffscreenCanvasRenderingContext2D,
 		ctxInteractive: OffscreenCanvasRenderingContext2D,
+		ctxMiddleground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
@@ -44,6 +46,7 @@ export class DrawPlayEngine {
 		DrawPlayEngine.ctxForeground1 = ctxForeground1;
 		DrawPlayEngine.ctxForeground2 = ctxForeground2;
 		DrawPlayEngine.ctxInteractive = ctxInteractive;
+		DrawPlayEngine.ctxMiddleground = ctxMiddleground;
 		DrawPlayEngine.ctxOverlay = ctxOverlay;
 		DrawPlayEngine.ctxUnderlay = ctxUnderlay;
 		DrawPlayEngine.ctxVanishing = ctxVanishing;
@@ -65,6 +68,7 @@ export class DrawPlayEngine {
 		DrawPlayEngine.ctxForeground1.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxForeground2.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxInteractive.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxMiddleground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxOverlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxVanishing.clearRect(0, 0, camera.windowPw, camera.windowPh);
 

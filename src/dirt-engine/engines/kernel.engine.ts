@@ -43,6 +43,7 @@ export class KernelEngine {
 		ctxForeground1: OffscreenCanvasRenderingContext2D,
 		ctxForeground2: OffscreenCanvasRenderingContext2D,
 		ctxInteractive: OffscreenCanvasRenderingContext2D,
+		ctxMiddleground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
@@ -58,6 +59,7 @@ export class KernelEngine {
 		ctxForeground1.imageSmoothingEnabled = false;
 		ctxForeground2.imageSmoothingEnabled = false;
 		ctxInteractive.imageSmoothingEnabled = false;
+		ctxMiddleground.imageSmoothingEnabled = false;
 		ctxOverlay.imageSmoothingEnabled = false;
 		ctxUnderlay.imageSmoothingEnabled = false;
 		ctxVanishing.imageSmoothingEnabled = false;
@@ -68,6 +70,7 @@ export class KernelEngine {
 			ctxForeground1,
 			ctxForeground2,
 			ctxInteractive,
+			ctxMiddleground,
 			ctxOverlay,
 			ctxUnderlay,
 			ctxVanishing,
@@ -78,6 +81,7 @@ export class KernelEngine {
 			ctxForeground1,
 			ctxForeground2,
 			ctxInteractive,
+			ctxMiddleground,
 			ctxOverlay,
 			ctxUnderlay,
 			ctxVanishing,
@@ -91,7 +95,15 @@ export class KernelEngine {
 		// Extended
 		await CameraDrawEngine.initialize(ctxInteractive);
 		await GridDrawEngine.initialize(ctxOverlay);
-		await ImageBlockDrawEngine.initialize(ctxBackground1, ctxBackground2, ctxForeground1, ctxForeground2, ctxInteractive, ctxVanishing);
+		await ImageBlockDrawEngine.initialize(
+			ctxBackground1,
+			ctxBackground2,
+			ctxForeground1,
+			ctxForeground2,
+			ctxInteractive,
+			ctxMiddleground,
+			ctxVanishing,
+		);
 		await MapDrawEngine.initialize(ctxOverlay);
 		await UnderlayDrawEngine.initialize(ctxUnderlay);
 	}

@@ -141,6 +141,7 @@ class VideoWorkerEngine {
 			data.canvasOffscreenForeground1,
 			data.canvasOffscreenForeground2,
 			data.canvasOffscreenInteractive,
+			data.canvasOffscreenMiddleground,
 			data.canvasOffscreenOverlay,
 			data.canvasOffscreenUnderlay,
 			data.canvasOffscreenVanishing,
@@ -155,6 +156,7 @@ class VideoWorkerEngine {
 			<any>data.canvasOffscreenForeground1.getContext('2d'),
 			<any>data.canvasOffscreenForeground2.getContext('2d'),
 			<any>data.canvasOffscreenInteractive.getContext('2d'),
+			<any>data.canvasOffscreenMiddleground.getContext('2d'),
 			<any>data.canvasOffscreenOverlay.getContext('2d'),
 			<any>data.canvasOffscreenUnderlay.getContext('2d', { alpha: false }),
 			<any>data.canvasOffscreenVanishing.getContext('2d'),
@@ -173,6 +175,7 @@ class VideoWorkerEngine {
 			VideoWorkerEngine.canvasesContext[5],
 			VideoWorkerEngine.canvasesContext[6],
 			VideoWorkerEngine.canvasesContext[7],
+			VideoWorkerEngine.canvasesContext[8],
 		);
 		await LightingEngine.initialize();
 		await MapEngine.initialize();

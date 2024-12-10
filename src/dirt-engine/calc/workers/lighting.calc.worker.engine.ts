@@ -278,6 +278,7 @@ class LightingCalcWorkerEngine {
 							brightnessOutsideByHash = brightnessOutsideByHashGroup;
 							referenceNoFoliage = _calcProcessReferences(
 								[
+									grid.imageBlocksMiddlegroundReference.hashes,
 									grid.imageBlocksInteractiveReference.hashes,
 									grid.imageBlocksForeground1Reference.hashes,
 									grid.imageBlocksForeground2Reference.hashes,
@@ -344,6 +345,7 @@ class LightingCalcWorkerEngine {
 							_calcProcessFoliage(grid.imageBlocksBackground1Foliage),
 							_calcProcessFoliage(grid.imageBlocksBackground2Foliage),
 							_calcProcessFoliage(grid.imageBlocksInteractiveFoliage),
+							_calcProcessFoliage(grid.imageBlocksMiddlegroundFoliage),
 							_calcProcessFoliage(grid.imageBlocksForeground1Foliage),
 							_calcProcessFoliage(grid.imageBlocksForeground2Foliage),
 							_calcProcessFoliage(grid.imageBlocksVanishingFoliage),

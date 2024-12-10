@@ -306,7 +306,7 @@ class MapDrawWorkerEngine {
 									}
 
 									// Config
-									if (j === '5') {
+									if (j === '6') {
 										ctxTmpSelect = ctxTmpVanishing;
 									} else {
 										ctxTmpSelect = ctxTmp;

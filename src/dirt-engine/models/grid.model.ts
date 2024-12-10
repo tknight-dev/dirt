@@ -31,6 +31,10 @@ export class Grid {
 	imageBlocksInteractiveLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksInteractiveReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
 	imageBlocksInteractiveSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksMiddlegroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksMiddlegroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksMiddlegroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksMiddlegroundSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	imageBlocksRenderPipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } };
 	imageBlocksRenderPipelineGy: { [key: number]: number[] };
 	imageBlocksVanishingFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
@@ -39,14 +43,6 @@ export class Grid {
 	imageBlocksVanishingSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	lightsForeground1: GridBlockTable<GridLight>; // (gx,gy), Precision 3
 	lightsInteractive: GridBlockTable<GridLight>; // (gx,gy), Precision 3
-
-	audioPrimaryBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
-	audioPrimaryTags: GridBlockTable<GridAudioTag>; // (gx,gy), Precision 3
-	imageBlocksPrimaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
-	imageBlocksPrimaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
-	imageBlocksPrimaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
-	imageBlocksPrimarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
-	lightsPrimary: GridBlockTable<GridLight>; // (gx,gy), Precision 3
 
 	constructor(data: any) {
 		this.audioInteractiveBlocks = data.audioInteractiveBlocks;
@@ -67,18 +63,14 @@ export class Grid {
 		this.imageBlocksInteractiveFoliage = data.imageBlocksInteractiveFoliage;
 		this.imageBlocksInteractiveLiquid = data.imageBlocksInteractiveLiquid;
 		this.imageBlocksInteractiveSolid = data.imageBlocksInteractiveSolid;
+		this.imageBlocksMiddlegroundFoliage = data.imageBlocksMiddlegroundFoliage;
+		this.imageBlocksMiddlegroundLiquid = data.imageBlocksMiddlegroundLiquid;
+		this.imageBlocksMiddlegroundSolid = data.imageBlocksMiddlegroundSolid;
 		this.imageBlocksVanishingFoliage = data.imageBlocksVanishingFoliage;
 		this.imageBlocksVanishingLiquid = data.imageBlocksVanishingLiquid;
 		this.imageBlocksVanishingSolid = data.imageBlocksVanishingSolid;
 		this.lightsForeground1 = data.lightsForeground1;
 		this.lightsInteractive = data.lightsInteractive;
-
-		this.audioPrimaryBlocks = data.audioPrimaryBlocks;
-		this.audioPrimaryTags = data.audioPrimaryTags;
-		this.imageBlocksPrimaryFoliage = data.imageBlocksPrimaryFoliage;
-		this.imageBlocksPrimaryLiquid = data.imageBlocksPrimaryLiquid;
-		this.imageBlocksPrimarySolid = data.imageBlocksPrimarySolid;
-		this.lightsPrimary = data.lightsPrimary;
 	}
 
 	toJSON(): string {
@@ -101,18 +93,14 @@ export class Grid {
 			imageBlocksInteractiveFoliage: this.imageBlocksInteractiveFoliage,
 			imageBlocksInteractiveLiquid: this.imageBlocksInteractiveLiquid,
 			imageBlocksInteractiveSolid: this.imageBlocksInteractiveSolid,
+			imageBlocksMiddlegroundFoliage: this.imageBlocksMiddlegroundFoliage,
+			imageBlocksMiddlegroundLiquid: this.imageBlocksMiddlegroundLiquid,
+			imageBlocksMiddlegroundSolid: this.imageBlocksMiddlegroundSolid,
 			imageBlocksVanishingFoliage: this.imageBlocksVanishingFoliage,
 			imageBlocksVanishingLiquid: this.imageBlocksVanishingLiquid,
 			imageBlocksVanishingSolid: this.imageBlocksVanishingSolid,
 			lightsForeground1: this.lightsForeground1,
 			lightsInteractive: this.lightsInteractive,
-
-			audioPrimaryBlocks: this.audioPrimaryBlocks,
-			audioPrimaryTags: this.audioPrimaryTags,
-			imageBlocksPrimaryFoliage: this.imageBlocksPrimaryFoliage,
-			imageBlocksPrimaryLiquid: this.imageBlocksPrimaryLiquid,
-			imageBlocksPrimarySolid: this.imageBlocksPrimarySolid,
-			lightsPrimary: this.lightsPrimary,
 		});
 	}
 }

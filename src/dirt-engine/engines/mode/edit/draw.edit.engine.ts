@@ -16,6 +16,7 @@ export class DrawEditEngine {
 	private static ctxForeground1: OffscreenCanvasRenderingContext2D;
 	private static ctxForeground2: OffscreenCanvasRenderingContext2D;
 	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
+	private static ctxMiddleground: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
@@ -30,6 +31,7 @@ export class DrawEditEngine {
 		ctxForeground1: OffscreenCanvasRenderingContext2D,
 		ctxForeground2: OffscreenCanvasRenderingContext2D,
 		ctxInteractive: OffscreenCanvasRenderingContext2D,
+		ctxMiddleground: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
@@ -46,6 +48,7 @@ export class DrawEditEngine {
 		DrawEditEngine.ctxForeground1 = ctxForeground1;
 		DrawEditEngine.ctxForeground2 = ctxForeground2;
 		DrawEditEngine.ctxInteractive = ctxInteractive;
+		DrawEditEngine.ctxMiddleground = ctxMiddleground;
 		DrawEditEngine.ctxOverlay = ctxOverlay;
 		DrawEditEngine.ctxUnderlay = ctxUnderlay;
 		DrawEditEngine.ctxVanishing = ctxVanishing;
@@ -67,6 +70,7 @@ export class DrawEditEngine {
 		DrawEditEngine.ctxForeground1.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxForeground2.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxInteractive.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawEditEngine.ctxMiddleground.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxOverlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawEditEngine.ctxVanishing.clearRect(0, 0, camera.windowPw, camera.windowPh);
 
