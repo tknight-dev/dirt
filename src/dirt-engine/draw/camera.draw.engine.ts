@@ -16,18 +16,18 @@ export class CameraDrawEngine {
 	private static cachePositionHashPh: number;
 	private static cacheZoom: number;
 	private static ctx: OffscreenCanvasRenderingContext2D;
-	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 	private static mapActiveCamera: Camera;
 
-	public static async initialize(ctxPrimary: OffscreenCanvasRenderingContext2D): Promise<void> {
+	public static async initialize(ctxInteractive: OffscreenCanvasRenderingContext2D): Promise<void> {
 		if (CameraDrawEngine.initialized) {
 			console.error('CameraDrawEngine > initialize: already initialized');
 			return;
 		}
 		CameraDrawEngine.initialized = true;
-		CameraDrawEngine.ctxPrimary = ctxPrimary;
+		CameraDrawEngine.ctxInteractive = ctxInteractive;
 
 		CameraDrawEngine.cacheCanvas = new OffscreenCanvas(0, 0);
 		CameraDrawEngine.ctx = <OffscreenCanvasRenderingContext2D>CameraDrawEngine.cacheCanvas.getContext('2d');
@@ -56,7 +56,7 @@ export class CameraDrawEngine {
 			cachePositionPx: number,
 			cachePositionPy: number,
 			ctx: OffscreenCanvasRenderingContext2D = CameraDrawEngine.ctx,
-			ctxPrimary: OffscreenCanvasRenderingContext2D = CameraDrawEngine.ctxPrimary,
+			ctxInteractive: OffscreenCanvasRenderingContext2D = CameraDrawEngine.ctxInteractive,
 			camera: Camera,
 			gridConfig: GridConfig,
 			height: number,
@@ -133,7 +133,7 @@ export class CameraDrawEngine {
 				CameraDrawEngine.cacheZoom = camera.zoom;
 			}
 
-			ctxPrimary.drawImage(CameraDrawEngine.cache, cachePositionPx, cachePositionPy);
+			ctxInteractive.drawImage(CameraDrawEngine.cache, cachePositionPx, cachePositionPy);
 		};
 	}
 

@@ -75,8 +75,8 @@ class LightingCalcWorkerEngine {
 	private static now: number = performance.now();
 	private static self: Window & typeof globalThis;
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[] = [
-		VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
-		VideoBusInputCmdGameModeEditApplyZ.PRIMARY, // Last
+		VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1,
+		VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE, // Last
 	];
 
 	public static async initialize(self: Window & typeof globalThis): Promise<void> {
@@ -265,21 +265,22 @@ class LightingCalcWorkerEngine {
 					 * Day/Night Illumination (foliage ignored)
 					 */
 					switch (z) {
-						case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND:
+						case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1:
+						case VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2:
 							brightnessOutsideByHash = brightnessOutsideByHashBackground;
 							referenceNoFoliage = _calcProcessReferences(
-								[grid.imageBlocksBackgroundReference.hashes],
+								[grid.imageBlocksBackground1Reference.hashes, grid.imageBlocksBackground2Reference.hashes],
 								GridObjectType.IMAGE_BLOCK_FOLIAGE,
 							);
 							break;
 						default:
-						case VideoBusInputCmdGameModeEditApplyZ.PRIMARY:
+						case VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE:
 							brightnessOutsideByHash = brightnessOutsideByHashGroup;
 							referenceNoFoliage = _calcProcessReferences(
 								[
-									grid.imageBlocksSecondaryReference.hashes,
-									grid.imageBlocksPrimaryReference.hashes,
-									grid.imageBlocksForegroundReference.hashes,
+									grid.imageBlocksInteractiveReference.hashes,
+									grid.imageBlocksForeground1Reference.hashes,
+									grid.imageBlocksForeground2Reference.hashes,
 									grid.imageBlocksVanishingReference.hashes,
 								],
 								GridObjectType.IMAGE_BLOCK_FOLIAGE,
@@ -340,10 +341,11 @@ class LightingCalcWorkerEngine {
 					 */
 					if (foliageGyByGxAll === undefined) {
 						foliageGyByGxAll = [
-							_calcProcessFoliage(grid.imageBlocksBackgroundFoliage),
-							_calcProcessFoliage(grid.imageBlocksSecondaryFoliage),
-							_calcProcessFoliage(grid.imageBlocksPrimaryFoliage),
-							_calcProcessFoliage(grid.imageBlocksForegroundFoliage),
+							_calcProcessFoliage(grid.imageBlocksBackground1Foliage),
+							_calcProcessFoliage(grid.imageBlocksBackground2Foliage),
+							_calcProcessFoliage(grid.imageBlocksInteractiveFoliage),
+							_calcProcessFoliage(grid.imageBlocksForeground1Foliage),
+							_calcProcessFoliage(grid.imageBlocksForeground2Foliage),
 							_calcProcessFoliage(grid.imageBlocksVanishingFoliage),
 						];
 					}
@@ -454,15 +456,15 @@ class LightingCalcWorkerEngine {
 				 */
 				_calcProcessLights(
 					lightNight,
-					grid.lightsPrimary,
-					grid.imageBlocksPrimaryReference.hashes,
+					grid.lightsInteractive,
+					grid.imageBlocksInteractiveReference.hashes,
 					brightnessByHashBackground,
 					brightnessByHashGroup,
 				);
 				_calcProcessLights(
 					lightNight,
-					grid.lightsForeground,
-					grid.imageBlocksForegroundReference.hashes,
+					grid.lightsForeground1,
+					grid.imageBlocksForeground1Reference.hashes,
 					brightnessByHashBackground,
 					brightnessByHashGroup,
 				);

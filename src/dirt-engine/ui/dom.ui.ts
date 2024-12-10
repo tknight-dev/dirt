@@ -215,6 +215,7 @@ export class DomUI {
 			td: HTMLTableCellElement,
 			tr: HTMLTableRowElement,
 			transform: boolean,
+			valuesHalved: GridImageBlockHalved[] = <any>Object.values(GridImageBlockHalved).filter((v) => typeof v === 'number'),
 			frameLogic = () => {
 				// Clear
 				frameT.textContent = '';
@@ -286,6 +287,35 @@ export class DomUI {
 						frameTd.appendChild(input);
 						frameTr.appendChild(frameTd);
 						frameT.appendChild(frameTr);
+
+						// Halved
+						frameTr = document.createElement('tr');
+						frameTd = document.createElement('td');
+						frameTd.innerText = 'Halved [' + index + ']';
+						frameTr.appendChild(frameTd);
+						frameTd = document.createElement('td');
+						frameTd.className = 'button right-arrow';
+						frameTd.innerText = GridImageBlockHalved[animationUpdated.assetOptions[index].halved || GridImageBlockHalved.NONE];
+						frameTd.onclick = (event: any) => {
+							DomUI.detailsModalSelector(
+								false,
+								false,
+								false,
+								false,
+								valuesHalved.map((v) => {
+									return {
+										name: GridImageBlockHalved[v],
+										value: v,
+									};
+								}),
+								(type: string) => {
+									event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
+									(<any>animationUpdated.assetOptions[index].halved) = type;
+								},
+							);
+						};
+						frameTr.appendChild(frameTd);
+						frameT.appendChild(frameTr);
 					}
 				});
 			},
@@ -330,7 +360,16 @@ export class DomUI {
 
 					// Draw asset
 					imageBitmap = <ImageBitmap>(<any>AssetEngine.getAsset((<any>imageSrc).src)).imageBitmap;
-					ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+
+					if (gridImageTransform.halved !== undefined && gridImageTransform.halved !== GridImageBlockHalved.NONE) {
+						if (gridImageTransform.halved === GridImageBlockHalved.DOWN) {
+							ctx.drawImage(imageBitmap, 0, (canvas.height / 2) | 0, canvas.width, canvas.height);
+						} else {
+							ctx.drawImage(imageBitmap, 0, 0, canvas.width, (canvas.height / 2) | 0);
+						}
+					} else {
+						ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+					}
 
 					if (transform) {
 						ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1016,6 +1055,7 @@ export class DomUI {
 						{
 							flipH: undefined,
 							flipV: undefined,
+							halved: undefined,
 						},
 					],
 					finishOnLastFrame: undefined,
@@ -1032,7 +1072,7 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
-				nullBlocking: undefined,
+				passthroughCharacter: undefined,
 				passthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
@@ -1053,6 +1093,7 @@ export class DomUI {
 					{
 						flipH: applicationProperties.flipH,
 						flipV: applicationProperties.flipV,
+						halved: applicationProperties.halved,
 					},
 				],
 				finishOnLastFrame: undefined,
@@ -1111,7 +1152,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Asset - Damaged
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Damaged';
@@ -1142,7 +1183,7 @@ export class DomUI {
 		}
 
 		// Asset - Damaged Walked On
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Audio Effect Walked On Damaged';
@@ -1174,7 +1215,7 @@ export class DomUI {
 		}
 
 		// Asset - Walked On
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Audio Effect Walked On';
@@ -1286,7 +1327,7 @@ export class DomUI {
 		tr.appendChild(td);
 		td = document.createElement('td');
 		td.className = 'button right-arrow';
-		td.innerText = GridImageBlockHalved[applicationProperties.halved];
+		td.innerText = GridImageBlockHalved[applicationProperties.halved || GridImageBlockHalved.NONE];
 		td.onclick = (event: any) => {
 			DomUI.detailsModalSelector(
 				false,
@@ -1302,6 +1343,7 @@ export class DomUI {
 				(type: string) => {
 					event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
 					applicationProperties.halved = type;
+					applicationProperties.assetAnimation.assetOptions[0].halved = type;
 				},
 			);
 		};
@@ -1309,7 +1351,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Damageable
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Damageable';
@@ -1342,23 +1384,23 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// Null: blocking
+		// passthrough character
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Null: Blocking';
+		td.innerText = 'Passthrough Character';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
-		input.checked = applicationProperties.nullBlocking;
+		input.checked = applicationProperties.passthroughCharacter;
 		input.oninput = (event: any) => {
-			applicationProperties.nullBlocking = Boolean(event.target.checked);
+			applicationProperties.passthroughCharacter = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// light passthrough
+		// passthrough light
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		td.innerText = 'Passthrough Light';
@@ -1375,7 +1417,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// strengthToDamangeInN
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Damange In N';
@@ -1396,7 +1438,7 @@ export class DomUI {
 		}
 
 		// strengthToDestroyInN
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Destroy In N';
@@ -1465,6 +1507,7 @@ export class DomUI {
 						{
 							flipH: undefined,
 							flipV: undefined,
+							halved: undefined,
 						},
 					],
 					finishOnLastFrame: undefined,
@@ -1481,7 +1524,6 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
-				nullBlocking: undefined,
 				passthroughLight: undefined,
 				transparency: 0,
 				viscocity: 1,
@@ -1500,6 +1542,7 @@ export class DomUI {
 					{
 						flipH: applicationProperties.flipH,
 						flipV: applicationProperties.flipV,
+						halved: applicationProperties.halved,
 					},
 				],
 				finishOnLastFrame: undefined,
@@ -1744,25 +1787,10 @@ export class DomUI {
 				(type: string) => {
 					event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
 					applicationProperties.halved = type;
+					applicationProperties.assetAnimation.assetOptions[0].halved = type;
 				},
 			);
 		};
-		tr.appendChild(td);
-		t.appendChild(tr);
-
-		// Null: blocking
-		tr = document.createElement('tr');
-		td = document.createElement('td');
-		td.innerText = 'Null: Blocking';
-		tr.appendChild(td);
-		td = document.createElement('td');
-		input = document.createElement('input');
-		input.checked = applicationProperties.nullBlocking;
-		input.oninput = (event: any) => {
-			applicationProperties.nullBlocking = Boolean(event.target.checked);
-		};
-		input.type = 'checkbox';
-		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1803,7 +1831,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Viscocity
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Viscocity';
@@ -1852,6 +1880,7 @@ export class DomUI {
 						{
 							flipH: undefined,
 							flipV: undefined,
+							halved: undefined,
 						},
 					],
 					finishOnLastFrame: undefined,
@@ -1870,7 +1899,7 @@ export class DomUI {
 				gSizeH: 1,
 				gSizeW: 1,
 				halved: GridImageBlockHalved.NONE,
-				nullBlocking: undefined,
+				passthroughCharacter: undefined,
 				passthroughLight: undefined,
 				strengthToDamangeInN: undefined, // newtons of force required to destroy
 				strengthToDestroyInN: undefined, // newtons of force required to destroy
@@ -1891,6 +1920,7 @@ export class DomUI {
 					{
 						flipH: applicationProperties.flipH,
 						flipV: applicationProperties.flipV,
+						halved: applicationProperties.halved,
 					},
 				],
 				finishOnLastFrame: undefined,
@@ -1949,7 +1979,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Asset - Damaged
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Damaged';
@@ -1980,7 +2010,7 @@ export class DomUI {
 		}
 
 		// Asset - Damaged Walked On
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Audio Effect Walked On Damaged';
@@ -2012,7 +2042,7 @@ export class DomUI {
 		}
 
 		// Asset - Walked On
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Asset Audio Effect Walked On';
@@ -2140,6 +2170,7 @@ export class DomUI {
 				(type: string) => {
 					event.target.innerText = type ? GridImageBlockHalved[<any>type] : 'None';
 					applicationProperties.halved = type;
+					applicationProperties.assetAnimation.assetOptions[0].halved = type;
 				},
 			);
 		};
@@ -2147,7 +2178,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Damageable
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Damageable';
@@ -2180,23 +2211,23 @@ export class DomUI {
 			t.appendChild(tr);
 		}
 
-		// Null: blocking
+		// passthrough character
 		tr = document.createElement('tr');
 		td = document.createElement('td');
-		td.innerText = 'Null: Blocking';
+		td.innerText = 'Passthrough Character';
 		tr.appendChild(td);
 		td = document.createElement('td');
 		input = document.createElement('input');
-		input.checked = applicationProperties.nullBlocking;
+		input.checked = applicationProperties.passthroughCharacter;
 		input.oninput = (event: any) => {
-			applicationProperties.nullBlocking = Boolean(event.target.checked);
+			applicationProperties.passthroughCharacter = Boolean(event.target.checked);
 		};
 		input.type = 'checkbox';
 		td.appendChild(input);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
-		// light passthrough
+		// passthrough light
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		td.innerText = 'Passthrough Light';
@@ -2213,7 +2244,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// strengthToDamangeInN
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Damange In N';
@@ -2234,7 +2265,7 @@ export class DomUI {
 		}
 
 		// strengthToDestroyInN
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Destroy In N';
@@ -2301,6 +2332,7 @@ export class DomUI {
 						{
 							flipH: undefined,
 							flipV: undefined,
+							halved: undefined,
 						},
 					],
 					finishOnLastFrame: undefined,
@@ -2427,6 +2459,7 @@ export class DomUI {
 					{
 						flipH: applicationProperties.flipH,
 						flipV: applicationProperties.flipV,
+						halved: applicationProperties.halved,
 					},
 				],
 				finishOnLastFrame: undefined,
@@ -2612,7 +2645,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// Destructible
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Destructible';
@@ -2873,7 +2906,7 @@ export class DomUI {
 		t.appendChild(tr);
 
 		// strengthToDestroyInN
-		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 			tr = document.createElement('tr');
 			td = document.createElement('td');
 			td.innerText = 'Strength to Destroy In N';
@@ -3639,7 +3672,7 @@ export class DomUI {
 			DomUI.domElementsUIEdit['map'].click();
 			DomUI.domElementsUIEdit['mode-menu-image'].click();
 
-			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.PRIMARY;
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE;
 			DomUI.domElementsUIEdit['z-global'].click();
 		} else {
 			DomUI.domElements['feed-fitted'].removeEventListener('mousemove', DomUI.editCursorMove);
@@ -4160,7 +4193,7 @@ export class DomUI {
 		DomUI.domElements['feed-overflow-streams'] = domFeedOverflowStreams;
 
 		let streamName: string = '';
-		for (let i = 0; i < 7; i++) {
+		for (let i = 0; i < 8; i++) {
 			// Stream
 			domFeedOverflowStreamsStream = document.createElement('div');
 
@@ -4169,26 +4202,30 @@ export class DomUI {
 					streamName = 'underlay';
 					break;
 				case 1:
-					streamName = 'background';
+					streamName = 'background1';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 2:
-					streamName = 'secondary';
+					streamName = 'background2';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 3:
-					streamName = 'primary';
+					streamName = 'interactive';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 4:
-					streamName = 'foreground';
+					streamName = 'foreground1';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 5:
-					streamName = 'vanishing';
+					streamName = 'foreground2';
 					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
 					break;
 				case 6:
+					streamName = 'vanishing';
+					DomUI.domUIRumbleAnimationStreams.push(domFeedOverflowStreamsStream);
+					break;
+				case 7:
 					streamName = 'overlay';
 					break;
 			}
@@ -4339,11 +4376,12 @@ export class DomUI {
 			viewMenuImage: HTMLElement,
 			viewMenuLight: HTMLElement,
 			z: HTMLElement,
-			zBackground: HTMLElement,
-			zForeground: HTMLElement,
+			zBackground1: HTMLElement,
+			zBackground2: HTMLElement,
+			zForeground1: HTMLElement,
+			zForeground2: HTMLElement,
 			zGlobal: HTMLElement,
-			zPrimary: HTMLElement,
-			zSecondary: HTMLElement,
+			zInteractive: HTMLElement,
 			zVanishing: HTMLElement;
 
 		/*
@@ -5033,10 +5071,11 @@ export class DomUI {
 			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.remove('active');
 
-			zBackground.classList.add('disabled');
-			zForeground.classList.add('disabled');
-			zPrimary.classList.remove('disabled');
-			zSecondary.classList.add('disabled');
+			zBackground1.classList.add('disabled');
+			zBackground2.classList.add('disabled');
+			zForeground1.classList.add('disabled');
+			zForeground2.classList.add('disabled');
+			zInteractive.classList.remove('disabled');
 			zVanishing.classList.add('disabled');
 
 			view.classList.add('overlay-text');
@@ -5049,8 +5088,8 @@ export class DomUI {
 			application.style.display = 'none';
 			applicationTypePixelSize.style.display = 'none';
 
-			if (DomUI.uiEditZ !== VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
-				zPrimary.click();
+			if (DomUI.uiEditZ !== VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
+				zInteractive.click();
 			}
 		};
 		DomUI.domElements['feed-fitted-ui-view-menu-audio'] = viewMenuAudio;
@@ -5066,10 +5105,11 @@ export class DomUI {
 			viewMenuImage.classList.add('active');
 			viewMenuLight.classList.remove('active');
 
-			zBackground.classList.remove('disabled');
-			zForeground.classList.remove('disabled');
-			zPrimary.classList.remove('disabled');
-			zSecondary.classList.remove('disabled');
+			zBackground1.classList.remove('disabled');
+			zBackground2.classList.remove('disabled');
+			zForeground1.classList.remove('disabled');
+			zForeground2.classList.remove('disabled');
+			zInteractive.classList.remove('disabled');
 			zVanishing.classList.remove('disabled');
 
 			view.classList.add('overlay-text');
@@ -5095,10 +5135,11 @@ export class DomUI {
 			viewMenuImage.classList.remove('active');
 			viewMenuLight.classList.add('active');
 
-			zBackground.classList.add('disabled');
-			zForeground.classList.remove('disabled');
-			zPrimary.classList.remove('disabled');
-			zSecondary.classList.add('disabled');
+			zBackground1.classList.add('disabled');
+			zBackground2.classList.add('disabled');
+			zForeground1.classList.remove('disabled');
+			zForeground2.classList.add('disabled');
+			zInteractive.classList.remove('disabled');
 			zVanishing.classList.add('disabled');
 
 			view.classList.add('overlay-text');
@@ -5112,10 +5153,10 @@ export class DomUI {
 			applicationTypePixelSize.style.display = 'none';
 
 			if (
-				DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND ||
+				DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1 ||
 				DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.VANISHING
 			) {
-				zPrimary.click();
+				zInteractive.click();
 			}
 		};
 		DomUI.domElements['feed-fitted-ui-view-menu-light'] = viewMenuLight;
@@ -5166,11 +5207,11 @@ export class DomUI {
 		DomUI.domElementsUIEdit['z'] = z;
 		domFeedFitted.appendChild(z);
 
-		zBackground = document.createElement('div');
-		zBackground.className = 'button background';
-		zBackground.innerText = 'B';
-		zBackground.onclick = () => {
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+		zBackground1 = document.createElement('div');
+		zBackground1.className = 'button background1';
+		zBackground1.innerText = 'B1';
+		zBackground1.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1) {
 				return;
 			}
 			// Display Applications
@@ -5181,17 +5222,18 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.2';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -5209,23 +5251,24 @@ export class DomUI {
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.BACKGROUND;
-			zBackground.classList.add('active');
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1;
+			zBackground1.classList.add('active');
+			zBackground2.classList.remove('active');
 			zGlobal.classList.remove('active');
-			zForeground.classList.remove('active');
-			zPrimary.classList.remove('active');
-			zSecondary.classList.remove('active');
+			zForeground1.classList.remove('active');
+			zForeground2.classList.remove('active');
+			zInteractive.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
-		DomUI.domElements['feed-fitted-ui-z-background'] = zBackground;
-		DomUI.domElementsUIEdit['z-background'] = zBackground;
-		z.appendChild(zBackground);
+		DomUI.domElements['feed-fitted-ui-z-background1'] = zBackground1;
+		DomUI.domElementsUIEdit['z-background1'] = zBackground1;
+		z.appendChild(zBackground1);
 
-		zSecondary = document.createElement('div');
-		zSecondary.className = 'button secondary active';
-		zSecondary.innerText = 'S';
-		zSecondary.onclick = () => {
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.SECONDARY) {
+		zBackground2 = document.createElement('div');
+		zBackground2.className = 'button background2';
+		zBackground2.innerText = 'B2';
+		zBackground2.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2) {
 				return;
 			}
 			// Display Applications
@@ -5236,10 +5279,11 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.2';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '0';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
@@ -5262,23 +5306,24 @@ export class DomUI {
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.SECONDARY;
-			zBackground.classList.remove('active');
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2;
+			zBackground1.classList.remove('active');
+			zBackground2.classList.add('active');
 			zGlobal.classList.remove('active');
-			zForeground.classList.remove('active');
-			zPrimary.classList.remove('active');
-			zSecondary.classList.add('active');
+			zForeground1.classList.remove('active');
+			zForeground2.classList.remove('active');
+			zInteractive.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
-		DomUI.domElements['feed-fitted-ui-z-secondary'] = zSecondary;
-		DomUI.domElementsUIEdit['z-secondary'] = zSecondary;
-		z.appendChild(zSecondary);
+		DomUI.domElements['feed-fitted-ui-z-background2'] = zBackground2;
+		DomUI.domElementsUIEdit['z-background2'] = zBackground2;
+		z.appendChild(zBackground2);
 
-		zPrimary = document.createElement('div');
-		zPrimary.className = 'button primary active';
-		zPrimary.innerText = 'P';
-		zPrimary.onclick = () => {
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+		zInteractive = document.createElement('div');
+		zInteractive.className = 'button interactive active';
+		zInteractive.innerText = 'I';
+		zInteractive.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 				return;
 			}
 			// Display Applications
@@ -5289,10 +5334,11 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '.2';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '0';
 
 			// Hide application
@@ -5315,23 +5361,24 @@ export class DomUI {
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.PRIMARY;
-			zBackground.classList.remove('active');
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE;
+			zBackground1.classList.remove('active');
+			zBackground2.classList.remove('active');
 			zGlobal.classList.remove('active');
-			zForeground.classList.remove('active');
-			zPrimary.classList.add('active');
-			zSecondary.classList.remove('active');
+			zForeground1.classList.remove('active');
+			zForeground2.classList.remove('active');
+			zInteractive.classList.add('active');
 			zVanishing.classList.remove('active');
 		};
-		DomUI.domElements['feed-fitted-ui-z-primary'] = zPrimary;
-		DomUI.domElementsUIEdit['z-primary'] = zPrimary;
-		z.appendChild(zPrimary);
+		DomUI.domElements['feed-fitted-ui-z-interactive'] = zInteractive;
+		DomUI.domElementsUIEdit['z-interactive'] = zInteractive;
+		z.appendChild(zInteractive);
 
-		zForeground = document.createElement('div');
-		zForeground.className = 'button foreground';
-		zForeground.innerText = 'F';
-		zForeground.onclick = () => {
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND) {
+		zForeground1 = document.createElement('div');
+		zForeground1.className = 'button foreground1';
+		zForeground1.innerText = 'F1';
+		zForeground1.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND1) {
 				return;
 			}
 			// Display Applications
@@ -5342,17 +5389,18 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '.2';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '.2';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -5370,17 +5418,75 @@ export class DomUI {
 			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
-			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.FOREGROUND;
-			zBackground.classList.remove('active');
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.FOREGROUND1;
+			zBackground1.classList.remove('active');
+			zBackground2.classList.remove('active');
 			zGlobal.classList.remove('active');
-			zForeground.classList.add('active');
-			zPrimary.classList.remove('active');
-			zSecondary.classList.remove('active');
+			zForeground1.classList.add('active');
+			zForeground2.classList.remove('active');
+			zInteractive.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
-		DomUI.domElements['feed-fitted-ui-z-foreground'] = zForeground;
-		DomUI.domElementsUIEdit['z-foreground'] = zForeground;
-		z.appendChild(zForeground);
+		DomUI.domElements['feed-fitted-ui-z-foreground1'] = zForeground1;
+		DomUI.domElementsUIEdit['z-foreground1'] = zForeground1;
+		z.appendChild(zForeground1);
+
+		zForeground2 = document.createElement('div');
+		zForeground2.className = 'button foreground2';
+		zForeground2.innerText = 'F2';
+		zForeground2.onclick = () => {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.FOREGROUND2) {
+				return;
+			}
+			// Display Applications
+			copy.style.display = 'flex';
+			inspect.style.display = 'flex';
+			palette.style.display = 'flex';
+			view.style.display = 'flex';
+
+			// Display specific canvas
+			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '.2';
+
+			// Hide application
+			DomUI.domElementsUIEdit['application'].style.display = 'none';
+			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
+
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
+				// Remove application cursor
+				DomUI.uiEditCursorReady = false;
+				feedFitted.classList.remove('dirt-engine-cursor-pencil');
+				feedFitted.classList.remove('dirt-engine-cursor-paintbrush');
+				feedFitted.classList.remove('dirt-engine-cursor-fill');
+				feedFitted.classList.remove('dirt-engine-cursor-eraser');
+				feedFitted.classList.remove('dirt-engine-cursor-stamp');
+				DomUI.editCursor();
+			}
+
+			// Draw Options
+			DomUI.uiEditDraw.editing = true;
+			DomUI.uiEditDraw.grid = true;
+			DomUI.uiEditDraw.vanishingEnable = false;
+			VideoEngineBus.outputGameModeEditDraw(DomUI.uiEditDraw);
+			VideoEngineBus.outputGameModeEditTimeForced(true);
+
+			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.FOREGROUND2;
+			zBackground1.classList.remove('active');
+			zBackground2.classList.remove('active');
+			zGlobal.classList.remove('active');
+			zForeground1.classList.remove('active');
+			zForeground2.classList.add('active');
+			zInteractive.classList.remove('active');
+			zVanishing.classList.remove('active');
+		};
+		DomUI.domElements['feed-fitted-ui-z-top'] = zForeground2;
+		DomUI.domElementsUIEdit['z-top'] = zForeground2;
+		z.appendChild(zForeground2);
 
 		zVanishing = document.createElement('div');
 		zVanishing.className = 'button vanishing';
@@ -5397,17 +5503,18 @@ export class DomUI {
 
 			// Display specific canvas
 			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '0';
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '.5';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '.5';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '.5';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '1';
 
 			// Hide application
 			DomUI.domElementsUIEdit['application'].style.display = 'none';
 			DomUI.domElementsUIEdit['application-pixel-size'].style.display = 'none';
 
-			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.PRIMARY) {
+			if (DomUI.uiEditZ === VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE) {
 				// Remove application cursor
 				DomUI.uiEditCursorReady = false;
 				feedFitted.classList.remove('dirt-engine-cursor-pencil');
@@ -5426,11 +5533,12 @@ export class DomUI {
 			VideoEngineBus.outputGameModeEditTimeForced(true);
 
 			DomUI.uiEditZ = VideoBusInputCmdGameModeEditApplyZ.VANISHING;
-			zBackground.classList.remove('active');
+			zBackground1.classList.remove('active');
+			zBackground2.classList.remove('active');
 			zGlobal.classList.remove('active');
-			zForeground.classList.remove('active');
-			zPrimary.classList.remove('active');
-			zSecondary.classList.remove('active');
+			zForeground1.classList.remove('active');
+			zForeground2.classList.remove('active');
+			zInteractive.classList.remove('active');
 			zVanishing.classList.add('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-vanishing'] = zVanishing;
@@ -5454,10 +5562,11 @@ export class DomUI {
 
 			// Display all canvases
 			DomUI.domElements['feed-overflow-streams-underlay'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-background'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-secondary'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-primary'].style.opacity = '1';
-			DomUI.domElements['feed-overflow-streams-foreground'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-background1'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-background2'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-interactive'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground1'].style.opacity = '1';
+			DomUI.domElements['feed-overflow-streams-foreground2'].style.opacity = '1';
 			DomUI.domElements['feed-overflow-streams-vanishing'].style.opacity = '1';
 
 			// Remove application cursor
@@ -5481,11 +5590,12 @@ export class DomUI {
 			DomUI.uiEditZ = undefined;
 			copy.classList.remove('active');
 			inspect.classList.remove('active');
-			zBackground.classList.remove('active');
+			zBackground1.classList.remove('active');
+			zBackground2.classList.remove('active');
 			zGlobal.classList.add('active');
-			zForeground.classList.remove('active');
-			zPrimary.classList.remove('active');
-			zSecondary.classList.remove('active');
+			zForeground1.classList.remove('active');
+			zForeground2.classList.remove('active');
+			zInteractive.classList.remove('active');
 			zVanishing.classList.remove('active');
 		};
 		DomUI.domElements['feed-fitted-ui-z-global'] = zGlobal;

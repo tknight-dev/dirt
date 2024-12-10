@@ -122,7 +122,7 @@ export class MapAudioAmbientEngine {
 			/**
 			 * Audio Blocks/Tags
 			 */
-			tagHashes = grid.audioPrimaryTags.hashes;
+			tagHashes = grid.audioInteractiveTags.hashes;
 			tagMeta = tagMetaByGrid[grid.id];
 			for (j in tagHashes) {
 				gridAudioTag = tagHashes[j];
@@ -147,7 +147,7 @@ export class MapAudioAmbientEngine {
 			/**
 			 * Lights
 			 */
-			lights = [grid.lightsForeground, grid.lightsPrimary];
+			lights = [grid.lightsForeground1, grid.lightsInteractive];
 			for (j in lights) {
 				lightHashes = lights[j].hashes;
 
@@ -222,9 +222,9 @@ export class MapAudioAmbientEngine {
 					audioBufferIdSwitchOn: number | undefined,
 					audioOptions: AudioOptions,
 					mapActive: MapActive = MapAudioAmbientEngine.mapActive,
-					audioPrimaryBlocks: GridBlockTable<GridAudioBlock> = mapActive.gridActive.audioPrimaryBlocks,
-					audioPrimaryTags: GridBlockTable<GridAudioTag> = mapActive.gridActive.audioPrimaryTags,
-					audioPrimaryTagsHashes: { [key: number]: GridAudioTag } = audioPrimaryTags.hashes,
+					audioInteractiveBlocks: GridBlockTable<GridAudioBlock> = mapActive.gridActive.audioInteractiveBlocks,
+					audioInteractiveTags: GridBlockTable<GridAudioTag> = mapActive.gridActive.audioInteractiveTags,
+					audioInteractiveTagsHashes: { [key: number]: GridAudioTag } = audioInteractiveTags.hashes,
 					cameraHash: number = UtilEngine.gridHashTo(mapActive.camera.gx, mapActive.camera.gy),
 					complex: GridBlockTableComplex,
 					distance: number = 0,
@@ -243,7 +243,7 @@ export class MapAudioAmbientEngine {
 					lightForeground: boolean,
 					lightHashes: { [key: number]: GridLight },
 					lightHashesGy: GridBlockTableComplex[],
-					lightHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
+					lightHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioInteractiveTags.hashesGyByGx,
 					lightForegroundMeta: { [key: number]: LightMeta } =
 						MapAudioAmbientEngine.lightForegroundMetaByGrid[mapActive.gridActiveId],
 					lightForegroundTagStates: { [key: number]: LightState } =
@@ -253,7 +253,7 @@ export class MapAudioAmbientEngine {
 					lightPrimaryMeta: { [key: number]: LightMeta } = MapAudioAmbientEngine.lightPrimaryMetaByGrid[mapActive.gridActiveId],
 					lightPrimaryTagStates: { [key: number]: LightState } =
 						MapAudioAmbientEngine.lightPrimaryTagStatesByGrid[mapActive.gridActiveId],
-					lights: GridBlockTable<GridLight>[] = [mapActive.gridActive.lightsForeground, mapActive.gridActive.lightsPrimary],
+					lights: GridBlockTable<GridLight>[] = [mapActive.gridActive.lightsForeground1, mapActive.gridActive.lightsInteractive],
 					lightState: LightState,
 					pan: number,
 					panIgnored: boolean,
@@ -261,7 +261,7 @@ export class MapAudioAmbientEngine {
 					position: TagMeta,
 					state: State,
 					tagHashesGy: GridBlockTableComplex[],
-					tagHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioPrimaryTags.hashesGyByGx,
+					tagHashesGyByGx: { [key: number]: GridBlockTableComplex[] } = <any>audioInteractiveTags.hashesGyByGx,
 					tagStates: { [key: number]: TagState } = MapAudioAmbientEngine.tagStatesByGrid[mapActive.gridActiveId],
 					tagMeta: { [key: number]: TagMeta } = MapAudioAmbientEngine.tagMetaByGrid[mapActive.gridActiveId],
 					timingResolution: number = MapAudioAmbientEngine.timingResolution,
@@ -386,7 +386,7 @@ export class MapAudioAmbientEngine {
 								pan: pan,
 								volumePercentage: volumePercentage,
 							};
-							gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
+							gridAudioBlock = audioInteractiveBlocks.hashes[cameraHash];
 							if (gridAudioBlock) {
 								audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
 							}
@@ -524,7 +524,7 @@ export class MapAudioAmbientEngine {
 						hash = complex.hash;
 
 						audioBufferId = activeAudioTag[hash];
-						gridAudioTag = audioPrimaryTagsHashes[hash];
+						gridAudioTag = audioInteractiveTagsHashes[hash];
 						gRadius = gridAudioTag.gRadius;
 						panIgnored = !!gridAudioTag.panIgnored;
 
@@ -596,7 +596,7 @@ export class MapAudioAmbientEngine {
 								volumePercentage: volumePercentage,
 							};
 
-							gridAudioBlock = audioPrimaryBlocks.hashes[cameraHash];
+							gridAudioBlock = audioInteractiveBlocks.hashes[cameraHash];
 							if (gridAudioBlock) {
 								audioOptions.modulation = AudioModulation.find(gridAudioBlock.modulationId) || AudioModulation.NONE;
 							}

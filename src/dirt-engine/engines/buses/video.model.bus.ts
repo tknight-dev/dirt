@@ -52,11 +52,12 @@ export interface VideoBusInputCmdAudioBufferIds {
 
 export interface VideoBusInputCmdInit extends VideoBusInputCmdResize, VideoBusInputCmdSettings {
 	assetDeclarations: AssetDeclarations;
-	canvasOffscreenBackground: OffscreenCanvas;
-	canvasOffscreenForeground: OffscreenCanvas;
+	canvasOffscreenBackground1: OffscreenCanvas;
+	canvasOffscreenBackground2: OffscreenCanvas;
+	canvasOffscreenForeground1: OffscreenCanvas;
+	canvasOffscreenForeground2: OffscreenCanvas;
+	canvasOffscreenInteractive: OffscreenCanvas;
 	canvasOffscreenOverlay: OffscreenCanvas;
-	canvasOffscreenPrimary: OffscreenCanvas;
-	canvasOffscreenSecondary: OffscreenCanvas;
 	canvasOffscreenUnderlay: OffscreenCanvas;
 	canvasOffscreenVanishing: OffscreenCanvas;
 }
@@ -127,10 +128,11 @@ export enum VideoBusInputCmdGameModeEditApplyType {
 }
 
 export enum VideoBusInputCmdGameModeEditApplyZ {
-	BACKGROUND,
-	FOREGROUND,
-	PRIMARY,
-	SECONDARY,
+	BACKGROUND1,
+	BACKGROUND2,
+	FOREGROUND1,
+	FOREGROUND2,
+	INTERACTIVE,
 	VANISHING,
 }
 

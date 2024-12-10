@@ -38,11 +38,12 @@ export class KernelEngine {
 	private static timestampThen: number = performance.now();
 
 	public static async initialize(
-		ctxBackground: OffscreenCanvasRenderingContext2D,
-		ctxForeground: OffscreenCanvasRenderingContext2D,
+		ctxBackground1: OffscreenCanvasRenderingContext2D,
+		ctxBackground2: OffscreenCanvasRenderingContext2D,
+		ctxForeground1: OffscreenCanvasRenderingContext2D,
+		ctxForeground2: OffscreenCanvasRenderingContext2D,
+		ctxInteractive: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
-		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxSecondary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
@@ -52,15 +53,35 @@ export class KernelEngine {
 		}
 		KernelEngine.initialized = true;
 
-		ctxBackground.imageSmoothingEnabled = false;
-		ctxForeground.imageSmoothingEnabled = false;
+		ctxBackground1.imageSmoothingEnabled = false;
+		ctxBackground2.imageSmoothingEnabled = false;
+		ctxForeground1.imageSmoothingEnabled = false;
+		ctxForeground2.imageSmoothingEnabled = false;
+		ctxInteractive.imageSmoothingEnabled = false;
 		ctxOverlay.imageSmoothingEnabled = false;
-		ctxPrimary.imageSmoothingEnabled = false;
 		ctxUnderlay.imageSmoothingEnabled = false;
 		ctxVanishing.imageSmoothingEnabled = false;
 
-		await DrawEditEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxSecondary, ctxUnderlay, ctxVanishing);
-		await DrawPlayEngine.initialize(ctxBackground, ctxForeground, ctxOverlay, ctxPrimary, ctxSecondary, ctxUnderlay, ctxVanishing);
+		await DrawEditEngine.initialize(
+			ctxBackground1,
+			ctxBackground2,
+			ctxForeground1,
+			ctxForeground2,
+			ctxInteractive,
+			ctxOverlay,
+			ctxUnderlay,
+			ctxVanishing,
+		);
+		await DrawPlayEngine.initialize(
+			ctxBackground1,
+			ctxBackground2,
+			ctxForeground1,
+			ctxForeground2,
+			ctxInteractive,
+			ctxOverlay,
+			ctxUnderlay,
+			ctxVanishing,
+		);
 
 		// Calcs
 		await AnimationsCalcEngine.initialize();
@@ -68,9 +89,9 @@ export class KernelEngine {
 		await InputsCalcEngine.initialize();
 
 		// Extended
-		await CameraDrawEngine.initialize(ctxPrimary);
+		await CameraDrawEngine.initialize(ctxInteractive);
 		await GridDrawEngine.initialize(ctxOverlay);
-		await ImageBlockDrawEngine.initialize(ctxBackground, ctxForeground, ctxPrimary, ctxSecondary, ctxVanishing);
+		await ImageBlockDrawEngine.initialize(ctxBackground1, ctxBackground2, ctxForeground1, ctxForeground2, ctxInteractive, ctxVanishing);
 		await MapDrawEngine.initialize(ctxOverlay);
 		await UnderlayDrawEngine.initialize(ctxUnderlay);
 	}

@@ -7,79 +7,111 @@ import { DoubleLinkedList } from '../models/double-linked-list.model';
  */
 
 export class Grid {
-	audioPrimaryBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
-	audioPrimaryTags: GridBlockTable<GridAudioTag>; // (gx,gy), Precision 3
+	audioInteractiveBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
+	audioInteractiveTags: GridBlockTable<GridAudioTag>; // (gx,gy), Precision 3
 	id: string;
-	imageBlocksBackgroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
-	imageBlocksBackgroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
-	imageBlocksBackgroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
-	imageBlocksBackgroundSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksBackground1Foliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksBackground1Liquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksBackground1Reference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksBackground1Solid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksBackground2Foliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksBackground2Liquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksBackground2Reference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksBackground2Solid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	imageBlocksCalcPipelineAnimations: DoubleLinkedList<GridAnimation>;
-	imageBlocksForegroundFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
-	imageBlocksForegroundLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
-	imageBlocksForegroundReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
-	imageBlocksForegroundSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
-	imageBlocksPrimaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
-	imageBlocksPrimaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
-	imageBlocksPrimaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
-	imageBlocksPrimarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksForeground1Foliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksForeground1Liquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksForeground1Reference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksForeground1Solid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksForeground2Foliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksForeground2Liquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksForeground2Reference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksForeground2Solid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
+	imageBlocksInteractiveFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksInteractiveLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksInteractiveReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksInteractiveSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	imageBlocksRenderPipelineAssetsByGyByGx: { [key: number]: { [key: number]: GridBlockPipelineAsset[] } };
 	imageBlocksRenderPipelineGy: { [key: number]: number[] };
-	imageBlocksSecondaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
-	imageBlocksSecondaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
-	imageBlocksSecondaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
-	imageBlocksSecondarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	imageBlocksVanishingFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
 	imageBlocksVanishingLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
 	imageBlocksVanishingReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
 	imageBlocksVanishingSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
-	lightsForeground: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+	lightsForeground1: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+	lightsInteractive: GridBlockTable<GridLight>; // (gx,gy), Precision 3
+
+	audioPrimaryBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
+	audioPrimaryTags: GridBlockTable<GridAudioTag>; // (gx,gy), Precision 3
+	imageBlocksPrimaryFoliage: { [key: number]: GridImageBlockFoliage }; // (gx,gy), Precision 0
+	imageBlocksPrimaryLiquid: { [key: number]: GridImageBlockLiquid }; // (gx,gy), Precision 0
+	imageBlocksPrimaryReference: GridBlockTable<GridImageBlockReference>; // (gx,gy), Precision 0
+	imageBlocksPrimarySolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	lightsPrimary: GridBlockTable<GridLight>; // (gx,gy), Precision 3
 
 	constructor(data: any) {
-		this.audioPrimaryBlocks = data.audioPrimaryBlocks;
-		this.audioPrimaryTags = data.audioPrimaryTags;
+		this.audioInteractiveBlocks = data.audioInteractiveBlocks;
+		this.audioInteractiveTags = data.audioInteractiveTags;
 		this.id = data.id;
-		this.imageBlocksBackgroundFoliage = data.imageBlocksBackgroundFoliage;
-		this.imageBlocksBackgroundLiquid = data.imageBlocksBackgroundLiquid;
-		this.imageBlocksBackgroundSolid = data.imageBlocksBackgroundSolid;
-		this.imageBlocksForegroundFoliage = data.imageBlocksForegroundFoliage;
-		this.imageBlocksForegroundLiquid = data.imageBlocksForegroundLiquid;
-		this.imageBlocksForegroundSolid = data.imageBlocksForegroundSolid;
-		this.imageBlocksPrimaryFoliage = data.imageBlocksPrimaryFoliage;
-		this.imageBlocksPrimaryLiquid = data.imageBlocksPrimaryLiquid;
-		this.imageBlocksPrimarySolid = data.imageBlocksPrimarySolid;
-		this.imageBlocksSecondaryFoliage = data.imageBlocksSecondaryFoliage;
-		this.imageBlocksSecondaryLiquid = data.imageBlocksSecondaryLiquid;
-		this.imageBlocksSecondarySolid = data.imageBlocksSecondarySolid;
+		this.imageBlocksBackground1Foliage = data.imageBlocksBackground1Foliage;
+		this.imageBlocksBackground1Liquid = data.imageBlocksBackground1Liquid;
+		this.imageBlocksBackground1Solid = data.imageBlocksBackground1Solid;
+		this.imageBlocksBackground2Foliage = data.imageBlocksBackground2Foliage;
+		this.imageBlocksBackground2Liquid = data.imageBlocksBackground2Liquid;
+		this.imageBlocksBackground2Solid = data.imageBlocksBackground2Solid;
+		this.imageBlocksForeground1Foliage = data.imageBlocksForeground1Foliage;
+		this.imageBlocksForeground1Liquid = data.imageBlocksForeground1Liquid;
+		this.imageBlocksForeground1Solid = data.imageBlocksForeground1Solid;
+		this.imageBlocksForeground2Foliage = data.imageBlocksForeground2Foliage;
+		this.imageBlocksForeground2Liquid = data.imageBlocksForeground2Liquid;
+		this.imageBlocksForeground2Solid = data.imageBlocksForeground2Solid;
+		this.imageBlocksInteractiveFoliage = data.imageBlocksInteractiveFoliage;
+		this.imageBlocksInteractiveLiquid = data.imageBlocksInteractiveLiquid;
+		this.imageBlocksInteractiveSolid = data.imageBlocksInteractiveSolid;
 		this.imageBlocksVanishingFoliage = data.imageBlocksVanishingFoliage;
 		this.imageBlocksVanishingLiquid = data.imageBlocksVanishingLiquid;
 		this.imageBlocksVanishingSolid = data.imageBlocksVanishingSolid;
-		this.lightsForeground = data.lightsForeground;
+		this.lightsForeground1 = data.lightsForeground1;
+		this.lightsInteractive = data.lightsInteractive;
+
+		this.audioPrimaryBlocks = data.audioPrimaryBlocks;
+		this.audioPrimaryTags = data.audioPrimaryTags;
+		this.imageBlocksPrimaryFoliage = data.imageBlocksPrimaryFoliage;
+		this.imageBlocksPrimaryLiquid = data.imageBlocksPrimaryLiquid;
+		this.imageBlocksPrimarySolid = data.imageBlocksPrimarySolid;
 		this.lightsPrimary = data.lightsPrimary;
 	}
 
 	toJSON(): string {
 		return JSON.stringify({
-			audioPrimaryBlocks: this.audioPrimaryBlocks,
-			audioPrimaryTags: this.audioPrimaryTags,
+			audioInteractiveBlocks: this.audioInteractiveBlocks,
+			audioInteractiveTags: this.audioInteractiveTags,
 			id: this.id,
-			imageBlocksBackgroundFoliage: this.imageBlocksBackgroundFoliage,
-			imageBlocksBackgroundLiquid: this.imageBlocksBackgroundLiquid,
-			imageBlocksBackgroundSolid: this.imageBlocksBackgroundSolid,
-			imageBlocksForegroundFoliage: this.imageBlocksForegroundFoliage,
-			imageBlocksForegroundLiquid: this.imageBlocksForegroundLiquid,
-			imageBlocksForegroundSolid: this.imageBlocksForegroundSolid,
-			imageBlocksPrimaryFoliage: this.imageBlocksPrimaryFoliage,
-			imageBlocksPrimaryLiquid: this.imageBlocksPrimaryLiquid,
-			imageBlocksPrimarySolid: this.imageBlocksPrimarySolid,
-			imageBlocksSecondaryFoliage: this.imageBlocksSecondaryFoliage,
-			imageBlocksSecondaryLiquid: this.imageBlocksSecondaryLiquid,
-			imageBlocksSecondarySolid: this.imageBlocksSecondarySolid,
+			imageBlocksBackground1Foliage: this.imageBlocksBackground1Foliage,
+			imageBlocksBackground1Liquid: this.imageBlocksBackground1Liquid,
+			imageBlocksBackground1Solid: this.imageBlocksBackground1Solid,
+			imageBlocksBackground2Foliage: this.imageBlocksBackground2Foliage,
+			imageBlocksBackground2Liquid: this.imageBlocksBackground2Liquid,
+			imageBlocksBackground2Solid: this.imageBlocksBackground2Solid,
+			imageBlocksForeground1Foliage: this.imageBlocksForeground1Foliage,
+			imageBlocksForeground1Liquid: this.imageBlocksForeground1Liquid,
+			imageBlocksForeground1Solid: this.imageBlocksForeground1Solid,
+			imageBlocksForeground2Foliage: this.imageBlocksForeground2Foliage,
+			imageBlocksForeground2Liquid: this.imageBlocksForeground2Liquid,
+			imageBlocksForeground2Solid: this.imageBlocksForeground2Solid,
+			imageBlocksInteractiveFoliage: this.imageBlocksInteractiveFoliage,
+			imageBlocksInteractiveLiquid: this.imageBlocksInteractiveLiquid,
+			imageBlocksInteractiveSolid: this.imageBlocksInteractiveSolid,
 			imageBlocksVanishingFoliage: this.imageBlocksVanishingFoliage,
 			imageBlocksVanishingLiquid: this.imageBlocksVanishingLiquid,
 			imageBlocksVanishingSolid: this.imageBlocksVanishingSolid,
-			lightsForeground: this.lightsForeground,
+			lightsForeground1: this.lightsForeground1,
+			lightsInteractive: this.lightsInteractive,
+
+			audioPrimaryBlocks: this.audioPrimaryBlocks,
+			audioPrimaryTags: this.audioPrimaryTags,
+			imageBlocksPrimaryFoliage: this.imageBlocksPrimaryFoliage,
+			imageBlocksPrimaryLiquid: this.imageBlocksPrimaryLiquid,
+			imageBlocksPrimarySolid: this.imageBlocksPrimarySolid,
 			lightsPrimary: this.lightsPrimary,
 		});
 	}
@@ -197,8 +229,6 @@ export interface GridCoordinate {
 export interface GridImageBlock extends GridImageTransform, GridObject {
 	assetAnimation?: GridAnimation;
 	assetId: string;
-	halved?: GridImageBlockHalved;
-	nullBlocking?: boolean;
 	passthroughLight?: boolean;
 	transparency?: number;
 }
@@ -214,6 +244,7 @@ export interface GridImageBlockFoliage extends GridImageBlock {
 	damageable?: boolean;
 	destructible?: boolean;
 	extends?: number;
+	passthroughCharacter?: boolean;
 	strengthToDamangeInN?: number; // newtons of force required to destroy
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 }
@@ -240,6 +271,7 @@ export interface GridImageBlockSolid extends GridImageBlock {
 	damageable?: boolean;
 	destructible?: boolean;
 	extends?: number;
+	passthroughCharacter?: boolean;
 	strengthToDamangeInN?: number; // newtons of force required to destroy
 	strengthToDestroyInN?: number; // newtons of force required to destroy
 }
@@ -247,6 +279,7 @@ export interface GridImageBlockSolid extends GridImageBlock {
 export interface GridImageTransform {
 	flipH?: boolean;
 	flipV?: boolean;
+	halved?: GridImageBlockHalved;
 }
 
 export interface GridLight extends GridImageTransform, GridObject {

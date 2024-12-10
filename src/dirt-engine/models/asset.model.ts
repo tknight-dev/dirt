@@ -37,8 +37,25 @@ export interface AssetDeclarations {
 export interface AssetImage extends Asset {
 	gHeight: number;
 	gWidth: number;
-	srcs: AssetImageSrc[]; // requires atleast one, missing qualitys will load from a smaller quality, smallest first
+	hitboxes?: AssetImageHitbox[]; // required for characters
+	seriesId?: number; // must be unique to AssetImageType (organizes images in animation loops amongst other images)
+	seriesIndex?: number; // must be unique to seriesId
+	srcs: AssetImageSrc[]; // requires atleast one, missing qualities will load from a lesser quality
 	type: AssetImageType;
+}
+
+export interface AssetImageHitbox {
+	damage: AssetImageHitboxImportance;
+	gh: number; // Precision3
+	gw: number; // Precision3
+	gx: number; // Precision3
+	gy: number; // Precision3
+}
+
+export enum AssetImageHitboxImportance {
+	HIGH,
+	LOW,
+	MEDIUM,
 }
 
 export interface AssetImageSrc {
@@ -54,6 +71,7 @@ export enum AssetImageSrcQuality {
 }
 
 export enum AssetImageType {
+	CHARACTER,
 	GRID_BLOCK_ACTION,
 	GRID_BLOCK_FOLIAGE,
 	GRID_BLOCK_LIQUID,

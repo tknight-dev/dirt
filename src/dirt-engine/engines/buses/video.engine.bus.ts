@@ -4,7 +4,6 @@
 
 import { AssetDeclarations } from '../../models/asset.model';
 import { AudioEngine } from '../audio.engine';
-import { AudioModulation } from '../../models/audio-modulation.model';
 import { KeyAction } from '../keyboard.engine';
 import { MapActive, MapConfig } from '../../models/map.model';
 import { MapEngine } from '../map.engine';
@@ -51,13 +50,8 @@ export class VideoEngineBus {
 	private static callbackMapSave: (data: string, name: string) => void;
 	private static callbackRumble: (durationInMs: number, enable: boolean, intensity: number) => void;
 	private static callbackStatusInitialized: (durationInMs: number) => void;
-	private static canvasBackground: HTMLCanvasElement;
-	private static canvasForeground: HTMLCanvasElement;
-	private static canvasOverlay: HTMLCanvasElement;
-	private static canvasPrimary: HTMLCanvasElement;
-	private static canvasSecondary: HTMLCanvasElement;
-	private static canvasUnderlay: HTMLCanvasElement;
-	private static canvasVanishing: HTMLCanvasElement;
+	private static canvases: HTMLCanvasElement[];
+	private static canvasesOffscreen: OffscreenCanvas[];
 	private static complete: boolean;
 	private static initialized: boolean;
 	private static mapInteration: HTMLElement;
@@ -71,11 +65,12 @@ export class VideoEngineBus {
 	public static async initialize(
 		assetDeclarations: AssetDeclarations,
 		streams: HTMLElement,
-		canvasBackground: HTMLCanvasElement,
-		canvasForeground: HTMLCanvasElement,
+		canvasBackground1: HTMLCanvasElement,
+		canvasBackground2: HTMLCanvasElement,
+		canvasForeground1: HTMLCanvasElement,
+		canvasForeground2: HTMLCanvasElement,
+		canvasInteractive: HTMLCanvasElement,
 		canvasOverlay: HTMLCanvasElement,
-		canvasPrimary: HTMLCanvasElement,
-		canvasSecondary: HTMLCanvasElement,
 		canvasUnderlay: HTMLCanvasElement,
 		canvasVanishing: HTMLCanvasElement,
 		mapInteration: HTMLElement,
@@ -87,25 +82,30 @@ export class VideoEngineBus {
 		}
 		VideoEngineBus.initialized = true;
 
-		let canvasOffscreenUnderlay: OffscreenCanvas = canvasUnderlay.transferControlToOffscreen(),
-			canvasOffscreenBackground: OffscreenCanvas = canvasBackground.transferControlToOffscreen(),
-			canvasOffscreenPrimary: OffscreenCanvas = canvasPrimary.transferControlToOffscreen(),
-			canvasOffscreenSecondary: OffscreenCanvas = canvasSecondary.transferControlToOffscreen(),
-			canvasOffscreenForeground: OffscreenCanvas = canvasForeground.transferControlToOffscreen(),
-			canvasOffscreenOverlay: OffscreenCanvas = canvasOverlay.transferControlToOffscreen(),
-			canvasOffscreenVanishing: OffscreenCanvas = canvasVanishing.transferControlToOffscreen(),
-			videoBusInputCmdInit: VideoBusInputCmdInit,
-			videoBusInputCmdResize: VideoBusInputCmdResize,
-			videoBusPayload: VideoBusPayload;
+		let videoBusInputCmdInit: VideoBusInputCmdInit, videoBusInputCmdResize: VideoBusInputCmdResize, videoBusPayload: VideoBusPayload;
 
 		// Cache
-		VideoEngineBus.canvasBackground = canvasBackground;
-		VideoEngineBus.canvasForeground = canvasForeground;
-		VideoEngineBus.canvasOverlay = canvasOverlay;
-		VideoEngineBus.canvasPrimary = canvasPrimary;
-		VideoEngineBus.canvasSecondary = canvasSecondary;
-		VideoEngineBus.canvasUnderlay = canvasUnderlay;
-		VideoEngineBus.canvasVanishing = canvasVanishing;
+		VideoEngineBus.canvases = [
+			canvasBackground1,
+			canvasBackground2,
+			canvasForeground1,
+			canvasForeground2,
+			canvasInteractive,
+			canvasOverlay,
+			canvasUnderlay,
+			canvasVanishing,
+		];
+		VideoEngineBus.canvasesOffscreen = [
+			canvasBackground1.transferControlToOffscreen(),
+			canvasBackground2.transferControlToOffscreen(),
+			canvasForeground1.transferControlToOffscreen(),
+			canvasForeground2.transferControlToOffscreen(),
+			canvasInteractive.transferControlToOffscreen(),
+			canvasOverlay.transferControlToOffscreen(),
+			canvasUnderlay.transferControlToOffscreen(),
+			canvasVanishing.transferControlToOffscreen(),
+		];
+
 		VideoEngineBus.mapInteration = mapInteration;
 		VideoEngineBus.streams = streams;
 
@@ -129,13 +129,14 @@ export class VideoEngineBus {
 			videoBusInputCmdInit = Object.assign(
 				{
 					assetDeclarations: assetDeclarations,
-					canvasOffscreenBackground: canvasOffscreenBackground,
-					canvasOffscreenForeground: canvasOffscreenForeground,
-					canvasOffscreenOverlay: canvasOffscreenOverlay,
-					canvasOffscreenPrimary: canvasOffscreenPrimary,
-					canvasOffscreenSecondary: canvasOffscreenSecondary,
-					canvasOffscreenUnderlay: canvasOffscreenUnderlay,
-					canvasOffscreenVanishing: canvasOffscreenVanishing,
+					canvasOffscreenBackground1: VideoEngineBus.canvasesOffscreen[0],
+					canvasOffscreenBackground2: VideoEngineBus.canvasesOffscreen[1],
+					canvasOffscreenForeground1: VideoEngineBus.canvasesOffscreen[2],
+					canvasOffscreenForeground2: VideoEngineBus.canvasesOffscreen[3],
+					canvasOffscreenInteractive: VideoEngineBus.canvasesOffscreen[4],
+					canvasOffscreenOverlay: VideoEngineBus.canvasesOffscreen[5],
+					canvasOffscreenUnderlay: VideoEngineBus.canvasesOffscreen[6],
+					canvasOffscreenVanishing: VideoEngineBus.canvasesOffscreen[7],
 				},
 				videoBusInputCmdResize,
 				settings,
@@ -144,15 +145,7 @@ export class VideoEngineBus {
 				cmd: VideoBusInputCmd.INIT,
 				data: videoBusInputCmdInit,
 			};
-			VideoEngineBus.worker.postMessage(videoBusPayload, [
-				canvasOffscreenBackground,
-				canvasOffscreenForeground,
-				canvasOffscreenOverlay,
-				canvasOffscreenPrimary,
-				canvasOffscreenSecondary,
-				canvasOffscreenUnderlay,
-				canvasOffscreenVanishing,
-			]);
+			VideoEngineBus.worker.postMessage(videoBusPayload, VideoEngineBus.canvasesOffscreen);
 			VideoEngineBus.complete = true;
 		} else {
 			alert('Web Workers are not supported by your browser');
@@ -163,8 +156,7 @@ export class VideoEngineBus {
 	 * Commands from worker (typically audio effect triggers)
 	 */
 	private static input(): void {
-		let audioModulation: AudioModulation | null,
-			bufferId: number | undefined,
+		let bufferId: number | undefined,
 			bufferIds: { [key: number]: number | undefined },
 			videoBusOutputCmdAudioFade: VideoBusOutputCmdAudioFade,
 			videoBusOutputCmdAudioPause: VideoBusOutputCmdAudioPause,
@@ -503,13 +495,9 @@ export class VideoEngineBus {
 		}
 
 		// Transform the canvas to the intended size
-		VideoEngineBus.canvasBackground.style.transform = 'scale(' + scaler + ')';
-		VideoEngineBus.canvasForeground.style.transform = 'scale(' + scaler + ')';
-		VideoEngineBus.canvasOverlay.style.transform = 'scale(' + scaler + ')';
-		VideoEngineBus.canvasPrimary.style.transform = 'scale(' + scaler + ')';
-		VideoEngineBus.canvasSecondary.style.transform = 'scale(' + scaler + ')';
-		VideoEngineBus.canvasVanishing.style.transform = 'scale(' + scaler + ')';
-		VideoEngineBus.canvasUnderlay.style.transform = 'scale(' + scaler + ')';
+		for (let i in VideoEngineBus.canvases) {
+			VideoEngineBus.canvases[i].style.transform = 'scale(' + scaler + ')';
+		}
 
 		// Transform the map interaction to the correct starting place
 		VideoEngineBus.mapInteration.style.transform =

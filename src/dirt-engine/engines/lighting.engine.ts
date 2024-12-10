@@ -131,14 +131,15 @@ export class LightingEngine {
 		for (let i in grids) {
 			grid = grids[i];
 
-			processor(grid.imageBlocksBackgroundReference.hashes);
-			processor(grid.imageBlocksForegroundReference.hashes);
-			processor(grid.imageBlocksPrimaryReference.hashes);
-			processor(grid.imageBlocksSecondaryReference.hashes);
+			processor(grid.imageBlocksBackground1Reference.hashes);
+			processor(grid.imageBlocksBackground2Reference.hashes);
+			processor(grid.imageBlocksForeground1Reference.hashes);
+			processor(grid.imageBlocksForeground2Reference.hashes);
+			processor(grid.imageBlocksInteractiveReference.hashes);
 			processor(grid.imageBlocksVanishingReference.hashes);
 
-			processorLights(grid.lightsForeground.hashes);
-			processorLights(grid.lightsPrimary.hashes);
+			processorLights(grid.lightsForeground1.hashes);
+			processorLights(grid.lightsInteractive.hashes);
 		}
 
 		return Object.keys(assetIds);
@@ -334,7 +335,7 @@ export class LightingEngine {
 		} else {
 			let decompressed: LightingCalcBusOutputDecompressed = LightingEngine.lightingByHashByGrid[gridId][hash] || {};
 
-			if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+			if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1 || z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2) {
 				return decompressed.backgroundBrightness || 0;
 			} else {
 				return decompressed.groupBrightness || 0;
@@ -368,7 +369,7 @@ export class LightingEngine {
 			brightnessOutsidePrevious: number;
 
 		// Look up brightness
-		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+		if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1 || z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2) {
 			brightness = decompressed.backgroundBrightness || 0;
 			brightnessOutside = decompressed.backgroundBrightnessOutside || 0;
 		} else {
@@ -379,7 +380,7 @@ export class LightingEngine {
 		if (LightingEngine.lightingByHashByGridPrevious) {
 			decompressedPrevious = LightingEngine.lightingByHashByGridPrevious[gridId][hash] || {};
 
-			if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND) {
+			if (z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1 || z === VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2) {
 				brightnessOutsidePrevious = decompressedPrevious.backgroundBrightnessOutside || 0;
 			} else {
 				brightnessOutsidePrevious = decompressedPrevious.groupBrightnessOutside || 0;
@@ -396,7 +397,7 @@ export class LightingEngine {
 
 		// Look up image by brightness
 		let hourPreciseOfDayEff: number = LightingEngine.hourPreciseOfDayEff;
-		if (hourPreciseOfDayEff < 5 || hourPreciseOfDayEff > 22) {
+		if (hourPreciseOfDayEff < 6 || hourPreciseOfDayEff > 22) {
 			// Night
 			if (brightness !== 0) {
 				// Lit
@@ -404,8 +405,8 @@ export class LightingEngine {
 				images.push(images[0]);
 			} else {
 				// Unlit
-				images.push(LightingEngine.cacheOutsideNight[assetImageId][brightnessOutside]);
-				images.push(LightingEngine.cacheOutsideNight[assetImageId][brightnessOutsidePrevious]);
+				images.push(LightingEngine.cacheOutsideNight[assetImageId][Math.min(3, brightnessOutside)]);
+				images.push(LightingEngine.cacheOutsideNight[assetImageId][Math.min(3, brightnessOutsidePrevious)]);
 			}
 		} else {
 			// Day
@@ -417,7 +418,6 @@ export class LightingEngine {
 				images.push(images[0]);
 			}
 		}
-
 		return images;
 	}
 
@@ -444,9 +444,11 @@ export class LightingEngine {
 		for (let id in mapActive.grids) {
 			grid = mapActive.grids[id];
 
-			LightingEngine.setMapActiveInflate(id, grid.imageBlocksBackgroundReference);
-			LightingEngine.setMapActiveInflate(id, grid.imageBlocksForegroundReference);
-			LightingEngine.setMapActiveInflate(id, grid.imageBlocksPrimaryReference);
+			LightingEngine.setMapActiveInflate(id, grid.imageBlocksBackground1Reference);
+			LightingEngine.setMapActiveInflate(id, grid.imageBlocksBackground2Reference);
+			LightingEngine.setMapActiveInflate(id, grid.imageBlocksForeground1Reference);
+			LightingEngine.setMapActiveInflate(id, grid.imageBlocksForeground2Reference);
+			LightingEngine.setMapActiveInflate(id, grid.imageBlocksInteractiveReference);
 			LightingEngine.setMapActiveInflate(id, grid.imageBlocksVanishingReference);
 		}
 

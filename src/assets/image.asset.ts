@@ -1,4 +1,4 @@
-import { AssetCollection, AssetImage, AssetImageSrcQuality, AssetImageType } from '../dirt-engine/dirt.engine';
+import { AssetCollection, AssetImage, AssetImageHitboxImportance, AssetImageSrcQuality, AssetImageType } from '../dirt-engine/dirt.engine';
 
 /**
  * @author tknight-dev
@@ -656,6 +656,45 @@ let imageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 	{
+		gHeight: 2,
+		gWidth: 1,
+		hitboxes: [
+			{
+				damage: AssetImageHitboxImportance.HIGH,
+				gh: 0.5,
+				gw: 0.5,
+				gx: 0.5,
+				gy: 0.5,
+			},
+		],
+		id: 'SOLDIER_BETA_STAND',
+		meta: {
+			author: 'tknight-dev',
+			authorWebsite: 'https://tknight.dev',
+			license: undefined,
+			publicDomain: false,
+			title: undefined,
+		},
+		srcs: [
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.LOW,
+				src: 'images/characters/soldier_beta/stand_32_64.webp',
+			},
+			{
+				collection: AssetCollection.VIDEO,
+				quality: AssetImageSrcQuality.MEDIUM,
+				src: 'images/characters/soldier_beta/stand_64_128.webp',
+			},
+			{
+				collection: AssetCollection.SHARED,
+				quality: AssetImageSrcQuality.HIGH,
+				src: 'images/characters/soldier_beta/stand_128_256.webp',
+			},
+		],
+		type: AssetImageType.CHARACTER,
+	},
+	{
 		gHeight: 1,
 		gWidth: 1,
 		id: 'STARS',
@@ -826,6 +865,8 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
+		seriesId: 0,
+		seriesIndex: 0,
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
@@ -856,6 +897,8 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
+		seriesId: 0,
+		seriesIndex: 1,
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
@@ -886,6 +929,8 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
+		seriesId: 0,
+		seriesIndex: 2,
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
@@ -916,6 +961,8 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
+		seriesId: 0,
+		seriesIndex: 3,
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,

@@ -34,11 +34,12 @@ export class ImageBlockDrawEngine {
 	private static cacheHashPw: number;
 	private static cacheHourPrecise: number;
 	private static cacheZoom: number;
-	private static ctxBackground: OffscreenCanvasRenderingContext2D;
-	private static ctxForeground: OffscreenCanvasRenderingContext2D;
-	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
+	private static ctxBackground1: OffscreenCanvasRenderingContext2D;
+	private static ctxBackground2: OffscreenCanvasRenderingContext2D;
+	private static ctxForeground1: OffscreenCanvasRenderingContext2D;
+	private static ctxForeground2: OffscreenCanvasRenderingContext2D;
+	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
 	private static ctxs: OffscreenCanvasRenderingContext2D[] = [];
-	private static ctxSecondary: OffscreenCanvasRenderingContext2D;
 	private static ctxsOptimized: OffscreenCanvasRenderingContext2D[] = [];
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static editing: boolean;
@@ -51,10 +52,11 @@ export class ImageBlockDrawEngine {
 	private static zGroup: VideoBusInputCmdGameModeEditApplyZ[];
 
 	public static async initialize(
-		ctxBackground: OffscreenCanvasRenderingContext2D,
-		ctxForeground: OffscreenCanvasRenderingContext2D,
-		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxSecondary: OffscreenCanvasRenderingContext2D,
+		ctxBackground1: OffscreenCanvasRenderingContext2D,
+		ctxBackground2: OffscreenCanvasRenderingContext2D,
+		ctxForeground1: OffscreenCanvasRenderingContext2D,
+		ctxForeground2: OffscreenCanvasRenderingContext2D,
+		ctxInteractive: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
 		if (ImageBlockDrawEngine.initialized) {
@@ -62,17 +64,19 @@ export class ImageBlockDrawEngine {
 			return;
 		}
 		ImageBlockDrawEngine.initialized = true;
-		ImageBlockDrawEngine.ctxBackground = ctxBackground;
-		ImageBlockDrawEngine.ctxSecondary = ctxSecondary;
-		ImageBlockDrawEngine.ctxPrimary = ctxPrimary;
-		ImageBlockDrawEngine.ctxForeground = ctxForeground;
+		ImageBlockDrawEngine.ctxBackground1 = ctxBackground1;
+		ImageBlockDrawEngine.ctxBackground2 = ctxBackground2;
+		ImageBlockDrawEngine.ctxForeground1 = ctxForeground1;
+		ImageBlockDrawEngine.ctxForeground2 = ctxForeground2;
+		ImageBlockDrawEngine.ctxInteractive = ctxInteractive;
 		ImageBlockDrawEngine.ctxVanishing = ctxVanishing;
 
 		ImageBlockDrawEngine.zGroup = [
-			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND,
-			VideoBusInputCmdGameModeEditApplyZ.SECONDARY,
-			VideoBusInputCmdGameModeEditApplyZ.PRIMARY,
-			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND,
+			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND1,
+			VideoBusInputCmdGameModeEditApplyZ.BACKGROUND2,
+			VideoBusInputCmdGameModeEditApplyZ.INTERACTIVE,
+			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND1,
+			VideoBusInputCmdGameModeEditApplyZ.FOREGROUND2,
 			VideoBusInputCmdGameModeEditApplyZ.VANISHING,
 		];
 
@@ -92,7 +96,8 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
 			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
 			ImageBlockDrawEngine.ctxs[3], // Write to just one foreground canvas
-			ImageBlockDrawEngine.ctxs[4], // Write to just one foreground canvas
+			ImageBlockDrawEngine.ctxs[3], // Write to just one foreground canvas
+			ImageBlockDrawEngine.ctxs[5], // Write to just one vanishing canvas
 		];
 
 		// Last
@@ -156,7 +161,6 @@ export class ImageBlockDrawEngine {
 			imageBitmap: ImageBitmap,
 			imageBitmaps: ImageBitmap[],
 			imageBitmapsBlend: number,
-			imageBitmapsBlendEff: number,
 			isLightNight = UtilEngine.isLightNight,
 			j: string,
 			night: boolean,
@@ -228,7 +232,6 @@ export class ImageBlockDrawEngine {
 				}
 
 				imageBitmapsBlend = Math.round((1 - (hourPreciseOfDayEff - (hourPreciseOfDayEff | 0))) * 1000) / 1000;
-				imageBitmapsBlendEff = imageBitmapsBlend;
 				radius = (((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom) | 0;
 				radius2 = radius * 2;
 
@@ -295,7 +298,7 @@ export class ImageBlockDrawEngine {
 									}
 									extendedHash = extendedHashes[j];
 
-									if (gridBlockPipelineAsset.assetLarge || gridBlockPipelineAsset.extends) {
+									if (gridBlockPipelineAsset.extends) {
 										if (extendedHash[gridBlockPipelineAsset.asset.hash] !== undefined) {
 											// Asset already drawn
 											skip = true;
@@ -330,11 +333,11 @@ export class ImageBlockDrawEngine {
 										// Config
 										if (gSizeHPrevious !== gridImageBlock.gSizeH) {
 											gSizeHPrevious = gridImageBlock.gSizeH;
-											gInPhEff = (gInPh * gSizeHPrevious + 1) | 0;
+											gInPhEff = (gInPh * gSizeHPrevious) | 0;
 										}
 										if (gSizeWPrevious !== gridImageBlock.gSizeW) {
 											gSizeWPrevious = gridImageBlock.gSizeW;
-											gInPwEff = (gInPw * gSizeWPrevious + 1) | 0;
+											gInPwEff = (gInPw * gSizeWPrevious) | 0;
 										}
 
 										// Transforms
@@ -353,7 +356,6 @@ export class ImageBlockDrawEngine {
 										// Transparency
 										if (gridImageBlock.transparency) {
 											ctx.globalAlpha = 1 - gridImageBlock.transparency;
-											imageBitmapsBlendEff -= gridImageBlock.transparency;
 										}
 
 										if (outside) {
@@ -362,8 +364,8 @@ export class ImageBlockDrawEngine {
 
 											// Draw current image
 											imageBitmap = imageBitmaps[0];
-											if (gridImageBlock.halved !== undefined) {
-												if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
+											if (gridImageTransform.halved !== undefined) {
+												if (gridImageTransform.halved === GridImageBlockHalved.DOWN) {
 													if (transform) {
 														ctx.drawImage(
 															imageBitmap,
@@ -410,7 +412,7 @@ export class ImageBlockDrawEngine {
 															imageBitmap.width,
 															(imageBitmap.height / 2) | 0,
 															drawGx,
-															(drawGy + gInPhEff / 2) | 0,
+															drawGy,
 															gInPwEff,
 															(gInPhEff / 2) | 0,
 														);
@@ -426,17 +428,17 @@ export class ImageBlockDrawEngine {
 
 											// If not the same image
 											if (
+												!gridImageBlock.transparency &&
 												shadingQuality === VideoBusInputCmdSettingsShadingQuality.HIGH &&
 												imageBitmaps[0] !== imageBitmaps[1]
 											) {
 												imageBitmap = imageBitmaps[1];
 												ctx.globalAlpha = imageBitmapsBlend;
-												ctx.globalCompositeOperation = 'source-atop';
 
 												// Draw previous image (blended) [6:00 - 100%, 6:30 - 50%, 6:55 - 8%]
 												// Provides smooth shading transitions
-												if (gridImageBlock.halved !== undefined) {
-													if (gridImageBlock.halved === GridImageBlockHalved.DOWN) {
+												if (gridImageTransform.halved !== undefined) {
+													if (gridImageTransform.halved === GridImageBlockHalved.DOWN) {
 														if (transform) {
 															ctx.drawImage(
 																imageBitmap,
@@ -483,7 +485,7 @@ export class ImageBlockDrawEngine {
 																imageBitmap.width,
 																(imageBitmap.height / 2) | 0,
 																drawGx,
-																(drawGy + gInPhEff / 2) | 0,
+																drawGy,
 																gInPwEff,
 																(gInPhEff / 2) | 0,
 															);
@@ -499,7 +501,6 @@ export class ImageBlockDrawEngine {
 
 												// Done
 												ctx.globalAlpha = 1;
-												ctx.globalCompositeOperation = 'source-over'; // restore default setting
 											}
 										} else {
 											// Get pre-rendered asset variation based on hash
@@ -522,15 +523,14 @@ export class ImageBlockDrawEngine {
 										// Reset transparency
 										if (gridImageBlock.transparency) {
 											ctx.globalAlpha = 1;
-											imageBitmapsBlendEff = imageBitmapsBlend;
 										}
 
 										// Reset extension displacement
 										if (gridBlockPipelineAsset.extends) {
-											if (gridBlockPipelineAsset.asset.gx !== gx) {
+											if (gridImageBlock.gx !== gx) {
 												drawGx = ((gx - startGx) * gInPw) | 0;
 											}
-											if (gridBlockPipelineAsset.asset.gy !== gy) {
+											if (gridImageBlock.gy !== gy) {
 												drawGy = ((gy - startGy) * gInPh) | 0;
 											}
 										}
@@ -585,11 +585,11 @@ export class ImageBlockDrawEngine {
 									// Config
 									if (gSizeHPrevious !== gridLight.gSizeH) {
 										gSizeHPrevious = gridLight.gSizeH;
-										gInPhEff = (gInPh * gSizeHPrevious + 1) | 0;
+										gInPhEff = (gInPh * gSizeHPrevious) | 0;
 									}
 									if (gSizeWPrevious !== gridLight.gSizeW) {
 										gSizeWPrevious = gridLight.gSizeW;
-										gInPwEff = (gInPw * gSizeWPrevious + 1) | 0;
+										gInPwEff = (gInPw * gSizeWPrevious) | 0;
 									}
 
 									// Transforms
@@ -653,8 +653,8 @@ export class ImageBlockDrawEngine {
 
 									//Config
 									if (gSizeHPrevious !== -1) {
-										gInPhEff = (gInPh + 1) | 0;
-										gInPwEff = (gInPw + 1) | 0;
+										gInPhEff = gInPh;
+										gInPwEff = gInPw;
 										gSizeHPrevious = -1;
 										gSizeWPrevious = -1;
 									}
@@ -673,8 +673,8 @@ export class ImageBlockDrawEngine {
 
 									//Config
 									if (gSizeHPrevious !== -1) {
-										gInPhEff = (gInPh + 1) | 0;
-										gInPwEff = (gInPw + 1) | 0;
+										gInPhEff = gInPh;
+										gInPwEff = gInPw;
 										gSizeHPrevious = -1;
 										gSizeWPrevious = -1;
 									}
@@ -697,7 +697,7 @@ export class ImageBlockDrawEngine {
 				 * Vanishing circle
 				 */
 				if (ImageBlockDrawEngine.vanishingEnable) {
-					ctx = ctxs[4];
+					ctx = ctxs[5];
 					gx = ((camera.gx - startGx) * gInPw) | 0;
 					gy = ((camera.gy - startGy) * gInPh) | 0;
 
@@ -716,18 +716,19 @@ export class ImageBlockDrawEngine {
 				 * Canvas to cache
 				 */
 				if (editing) {
-					caches[0] = cacheCanvases[0].transferToImageBitmap();
-					caches[1] = cacheCanvases[1].transferToImageBitmap();
-					caches[2] = cacheCanvases[2].transferToImageBitmap();
-					caches[3] = cacheCanvases[3].transferToImageBitmap();
-					caches[4] = cacheCanvases[4].transferToImageBitmap();
+					caches[0] = cacheCanvases[0].transferToImageBitmap(); // Background
+					caches[1] = cacheCanvases[1].transferToImageBitmap(); // Secondary
+					caches[2] = cacheCanvases[2].transferToImageBitmap(); // Primary
+					caches[3] = cacheCanvases[3].transferToImageBitmap(); // Foreground
+					caches[4] = cacheCanvases[4].transferToImageBitmap(); // Top
+					caches[5] = cacheCanvases[5].transferToImageBitmap(); // Vanishing
 				} else {
 					// 0-2 written to 0 when not editing
 					caches[0] = cacheCanvases[0].transferToImageBitmap();
 
-					// 3-4 written to 3 when not editing
-					ctxs[3].drawImage(cacheCanvases[4], 0, 0);
-					ctxs[4].clearRect(0, 0, camera.windowPw, camera.windowPh);
+					// 3 & 5 written to 3 when not editing
+					ctxs[3].drawImage(cacheCanvases[5], 0, 0);
+					ctxs[5].clearRect(0, 0, camera.windowPw, camera.windowPh);
 
 					caches[3] = cacheCanvases[3].transferToImageBitmap();
 				}
@@ -744,17 +745,18 @@ export class ImageBlockDrawEngine {
 			}
 
 			if (editing) {
-				ImageBlockDrawEngine.ctxBackground.drawImage(caches[0], 0, 0);
-				ImageBlockDrawEngine.ctxSecondary.drawImage(caches[1], 0, 0);
-				ImageBlockDrawEngine.ctxPrimary.drawImage(caches[2], 0, 0);
-				ImageBlockDrawEngine.ctxForeground.drawImage(caches[3], 0, 0);
-				ImageBlockDrawEngine.ctxVanishing.drawImage(caches[4], 0, 0);
+				ImageBlockDrawEngine.ctxBackground1.drawImage(caches[0], 0, 0);
+				ImageBlockDrawEngine.ctxBackground2.drawImage(caches[1], 0, 0);
+				ImageBlockDrawEngine.ctxInteractive.drawImage(caches[2], 0, 0);
+				ImageBlockDrawEngine.ctxForeground1.drawImage(caches[3], 0, 0);
+				ImageBlockDrawEngine.ctxForeground2.drawImage(caches[4], 0, 0);
+				ImageBlockDrawEngine.ctxVanishing.drawImage(caches[5], 0, 0);
 			} else {
 				// 0-2 written to 0 when not editing
-				ImageBlockDrawEngine.ctxBackground.drawImage(caches[0], 0, 0);
+				ImageBlockDrawEngine.ctxBackground1.drawImage(caches[0], 0, 0);
 
-				// 3-4 written to 3 when not editing
-				ImageBlockDrawEngine.ctxForeground.drawImage(caches[3], 0, 0);
+				// 3-5 written to 3 when not editing
+				ImageBlockDrawEngine.ctxForeground1.drawImage(caches[3], 0, 0);
 			}
 		};
 	}

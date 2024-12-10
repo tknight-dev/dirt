@@ -118,20 +118,8 @@ class VideoWorkerEngine {
 	private static assetManifestMaster: AssetManifestMaster;
 	private static audioTransactionCache: { [key: number]: (status: boolean) => void } = {};
 	private static audioTransactionCacheKey: number = 0;
-	private static canvasOffscreenBackground: OffscreenCanvas; // Z-2
-	private static canvasOffscreenBackgroundContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenForeground: OffscreenCanvas; // Z-4
-	private static canvasOffscreenForegroundContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenOverlay: OffscreenCanvas; // Z-5
-	private static canvasOffscreenOverlayContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenPrimary: OffscreenCanvas; // Z-3
-	private static canvasOffscreenPrimaryContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenSecondary: OffscreenCanvas; // Z-3
-	private static canvasOffscreenSecondaryContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenUnderlay: OffscreenCanvas; // Z-1
-	private static canvasOffscreenUnderlayContext: OffscreenCanvasRenderingContext2D;
-	private static canvasOffscreenVanishing: OffscreenCanvas; // Z-1
-	private static canvasOffscreenVanishingContext: OffscreenCanvasRenderingContext2D;
+	private static canvasesOffscreen: OffscreenCanvas[];
+	private static canvasesContext: OffscreenCanvasRenderingContext2D[];
 	private static gameModeEdit: boolean;
 	private static gameStarted: boolean;
 	private static initialized: boolean;
@@ -147,38 +135,44 @@ class VideoWorkerEngine {
 
 		// Assign
 		VideoWorkerEngine.assetManifestMaster = AssetEngine.compileMasterManifest(data.assetDeclarations.manifest || <any>{});
-		VideoWorkerEngine.canvasOffscreenBackground = data.canvasOffscreenBackground;
-		VideoWorkerEngine.canvasOffscreenForeground = data.canvasOffscreenForeground;
-		VideoWorkerEngine.canvasOffscreenPrimary = data.canvasOffscreenPrimary;
-		VideoWorkerEngine.canvasOffscreenSecondary = data.canvasOffscreenSecondary;
-		VideoWorkerEngine.canvasOffscreenOverlay = data.canvasOffscreenOverlay;
-		VideoWorkerEngine.canvasOffscreenUnderlay = data.canvasOffscreenUnderlay;
-		VideoWorkerEngine.canvasOffscreenVanishing = data.canvasOffscreenVanishing;
+		VideoWorkerEngine.canvasesOffscreen = [
+			data.canvasOffscreenBackground1,
+			data.canvasOffscreenBackground2,
+			data.canvasOffscreenForeground1,
+			data.canvasOffscreenForeground2,
+			data.canvasOffscreenInteractive,
+			data.canvasOffscreenOverlay,
+			data.canvasOffscreenUnderlay,
+			data.canvasOffscreenVanishing,
+		];
+
 		VideoWorkerEngine.self = self;
 
 		// Get contexts
-		VideoWorkerEngine.canvasOffscreenBackgroundContext = <any>VideoWorkerEngine.canvasOffscreenBackground.getContext('2d');
-		VideoWorkerEngine.canvasOffscreenForegroundContext = <any>VideoWorkerEngine.canvasOffscreenForeground.getContext('2d');
-		VideoWorkerEngine.canvasOffscreenOverlayContext = <any>VideoWorkerEngine.canvasOffscreenOverlay.getContext('2d');
-		VideoWorkerEngine.canvasOffscreenPrimaryContext = <any>VideoWorkerEngine.canvasOffscreenPrimary.getContext('2d');
-		VideoWorkerEngine.canvasOffscreenSecondaryContext = <any>VideoWorkerEngine.canvasOffscreenSecondary.getContext('2d');
-		VideoWorkerEngine.canvasOffscreenUnderlayContext = <any>(
-			VideoWorkerEngine.canvasOffscreenUnderlay.getContext('2d', { alpha: false })
-		);
-		VideoWorkerEngine.canvasOffscreenVanishingContext = <any>VideoWorkerEngine.canvasOffscreenVanishing.getContext('2d');
+		VideoWorkerEngine.canvasesContext = [
+			<any>data.canvasOffscreenBackground1.getContext('2d'),
+			<any>data.canvasOffscreenBackground2.getContext('2d'),
+			<any>data.canvasOffscreenForeground1.getContext('2d'),
+			<any>data.canvasOffscreenForeground2.getContext('2d'),
+			<any>data.canvasOffscreenInteractive.getContext('2d'),
+			<any>data.canvasOffscreenOverlay.getContext('2d'),
+			<any>data.canvasOffscreenUnderlay.getContext('2d', { alpha: false }),
+			<any>data.canvasOffscreenVanishing.getContext('2d'),
+		];
 
 		// Engines
 		await AssetEngine.initialize(data.assetDeclarations, AssetCollection.VIDEO);
 		await AssetEngine.load();
 		await CameraEngine.initialize();
 		await KernelEngine.initialize(
-			VideoWorkerEngine.canvasOffscreenBackgroundContext,
-			VideoWorkerEngine.canvasOffscreenForegroundContext,
-			VideoWorkerEngine.canvasOffscreenOverlayContext,
-			VideoWorkerEngine.canvasOffscreenPrimaryContext,
-			VideoWorkerEngine.canvasOffscreenSecondaryContext,
-			VideoWorkerEngine.canvasOffscreenUnderlayContext,
-			VideoWorkerEngine.canvasOffscreenVanishingContext,
+			VideoWorkerEngine.canvasesContext[0],
+			VideoWorkerEngine.canvasesContext[1],
+			VideoWorkerEngine.canvasesContext[2],
+			VideoWorkerEngine.canvasesContext[3],
+			VideoWorkerEngine.canvasesContext[4],
+			VideoWorkerEngine.canvasesContext[5],
+			VideoWorkerEngine.canvasesContext[6],
+			VideoWorkerEngine.canvasesContext[7],
 		);
 		await LightingEngine.initialize();
 		await MapEngine.initialize();
@@ -418,20 +412,10 @@ class VideoWorkerEngine {
 		MapDrawEngine.devicePixelRatio = devicePixelRatio;
 		MapDrawEngine.devicePixelRatioEff = Math.round((1 / devicePixelRatio) * 1000) / 1000;
 
-		VideoWorkerEngine.canvasOffscreenBackground.height = height;
-		VideoWorkerEngine.canvasOffscreenBackground.width = width;
-		VideoWorkerEngine.canvasOffscreenForeground.height = height;
-		VideoWorkerEngine.canvasOffscreenForeground.width = width;
-		VideoWorkerEngine.canvasOffscreenOverlay.height = height;
-		VideoWorkerEngine.canvasOffscreenOverlay.width = width;
-		VideoWorkerEngine.canvasOffscreenPrimary.height = height;
-		VideoWorkerEngine.canvasOffscreenPrimary.width = width;
-		VideoWorkerEngine.canvasOffscreenSecondary.height = height;
-		VideoWorkerEngine.canvasOffscreenSecondary.width = width;
-		VideoWorkerEngine.canvasOffscreenUnderlay.height = height;
-		VideoWorkerEngine.canvasOffscreenUnderlay.width = width;
-		VideoWorkerEngine.canvasOffscreenVanishing.height = height;
-		VideoWorkerEngine.canvasOffscreenVanishing.width = width;
+		for (let i in VideoWorkerEngine.canvasesOffscreen) {
+			VideoWorkerEngine.canvasesOffscreen[i].height = height;
+			VideoWorkerEngine.canvasesOffscreen[i].width = width;
+		}
 	}
 
 	public static inputSettings(settings: VideoBusInputCmdSettings): void {

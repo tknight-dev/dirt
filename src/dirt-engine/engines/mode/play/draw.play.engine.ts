@@ -8,11 +8,12 @@ import { UnderlayDrawEngine } from '../../../draw/underlay.draw.engine';
  */
 
 export class DrawPlayEngine {
-	private static ctxBackground: OffscreenCanvasRenderingContext2D;
-	private static ctxForeground: OffscreenCanvasRenderingContext2D;
+	private static ctxBackground1: OffscreenCanvasRenderingContext2D;
+	private static ctxBackground2: OffscreenCanvasRenderingContext2D;
+	private static ctxForeground1: OffscreenCanvasRenderingContext2D;
+	private static ctxForeground2: OffscreenCanvasRenderingContext2D;
+	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
 	private static ctxOverlay: OffscreenCanvasRenderingContext2D;
-	private static ctxPrimary: OffscreenCanvasRenderingContext2D;
-	private static ctxSecondary: OffscreenCanvasRenderingContext2D;
 	private static ctxUnderlay: OffscreenCanvasRenderingContext2D;
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static initialized: boolean;
@@ -22,11 +23,12 @@ export class DrawPlayEngine {
 	public static mapVisible: boolean;
 
 	public static async initialize(
-		ctxBackground: OffscreenCanvasRenderingContext2D,
-		ctxForeground: OffscreenCanvasRenderingContext2D,
+		ctxBackground1: OffscreenCanvasRenderingContext2D,
+		ctxBackground2: OffscreenCanvasRenderingContext2D,
+		ctxForeground1: OffscreenCanvasRenderingContext2D,
+		ctxForeground2: OffscreenCanvasRenderingContext2D,
+		ctxInteractive: OffscreenCanvasRenderingContext2D,
 		ctxOverlay: OffscreenCanvasRenderingContext2D,
-		ctxPrimary: OffscreenCanvasRenderingContext2D,
-		ctxSecondary: OffscreenCanvasRenderingContext2D,
 		ctxUnderlay: OffscreenCanvasRenderingContext2D,
 		ctxVanishing: OffscreenCanvasRenderingContext2D,
 	): Promise<void> {
@@ -37,11 +39,12 @@ export class DrawPlayEngine {
 		DrawPlayEngine.initialized = true;
 
 		// Primary
-		DrawPlayEngine.ctxBackground = ctxBackground;
-		DrawPlayEngine.ctxForeground = ctxForeground;
+		DrawPlayEngine.ctxBackground1 = ctxBackground1;
+		DrawPlayEngine.ctxBackground2 = ctxBackground2;
+		DrawPlayEngine.ctxForeground1 = ctxForeground1;
+		DrawPlayEngine.ctxForeground2 = ctxForeground2;
+		DrawPlayEngine.ctxInteractive = ctxInteractive;
 		DrawPlayEngine.ctxOverlay = ctxOverlay;
-		DrawPlayEngine.ctxPrimary = ctxPrimary;
-		DrawPlayEngine.ctxSecondary = ctxSecondary;
 		DrawPlayEngine.ctxUnderlay = ctxUnderlay;
 		DrawPlayEngine.ctxVanishing = ctxVanishing;
 	}
@@ -57,10 +60,11 @@ export class DrawPlayEngine {
 		 * Clear canvas
 		 */
 		DrawPlayEngine.ctxUnderlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
-		DrawPlayEngine.ctxBackground.clearRect(0, 0, camera.windowPw, camera.windowPh);
-		DrawPlayEngine.ctxForeground.clearRect(0, 0, camera.windowPw, camera.windowPh);
-		DrawPlayEngine.ctxPrimary.clearRect(0, 0, camera.windowPw, camera.windowPh);
-		DrawPlayEngine.ctxSecondary.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxBackground1.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxBackground2.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxForeground1.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxForeground2.clearRect(0, 0, camera.windowPw, camera.windowPh);
+		DrawPlayEngine.ctxInteractive.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxOverlay.clearRect(0, 0, camera.windowPw, camera.windowPh);
 		DrawPlayEngine.ctxVanishing.clearRect(0, 0, camera.windowPw, camera.windowPh);
 

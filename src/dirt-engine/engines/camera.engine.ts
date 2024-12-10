@@ -89,8 +89,8 @@ export class CameraEngine {
 			camera.viewportGwEff = viewportGwEff;
 
 			// gInP
-			camera.gInPh = Math.round((camera.windowPh / viewportGhEff) * 1000) / 1000;
-			camera.gInPw = Math.round((camera.windowPw / viewportGwEff) * 1000) / 1000;
+			camera.gInPh = (camera.windowPh / viewportGhEff) | 0;
+			camera.gInPw = (camera.windowPw / viewportGwEff) | 0;
 
 			// Done
 			zoomUpdated = true;

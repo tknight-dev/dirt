@@ -541,7 +541,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.redo {
 		border-radius: 5px;
 		height: 40px;
-		right: calc(50% - 180px);
+		right: calc(50% - 200px);
 		top: 20px;
 		width: 40px;
 
@@ -651,7 +651,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 		border: none;
 		border-radius: 5px;
 		height: 40px;
-		left: calc(50% - 260px);
+		left: calc(50% - 280px);
 		pointer-events: none;
 		top: 20px;
 		width: 60px;
@@ -660,7 +660,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	&.undo {
 		border-radius: 5px;
 		height: 40px;
-		right: calc(50% + 140px);
+		right: calc(50% + 160px);
 		top: 20px;
 		width: 40px;
 
@@ -724,10 +724,19 @@ $dirt-engine-ui-edit-button-width: 40px;
 		.button {
 			pointer-events: all;
 
-			&.background {
+			&.background1 {
 				&.active {
 					&::after {
-						content: 'Background';
+						content: 'Background1';
+						top: $dirt-engine-ui-edit-button-height + 5px;
+					}
+				}
+			}
+
+			&.background2 {
+				&.active {
+					&::after {
+						content: 'Background2';
 						top: $dirt-engine-ui-edit-button-height + 5px;
 					}
 				}
@@ -742,28 +751,28 @@ $dirt-engine-ui-edit-button-width: 40px;
 				}
 			}
 
-			&.foreground {
+			&.foreground1 {
 				&.active {
 					&::after {
-						content: 'Foreground';
+						content: 'Foreground1';
 						top: $dirt-engine-ui-edit-button-height + 5px;
 					}
 				}
 			}
 
-			&.primary {
+			&.foreground2 {
 				&.active {
 					&::after {
-						content: 'Primary';
+						content: 'Foreground2';
 						top: $dirt-engine-ui-edit-button-height + 5px;
 					}
 				}
 			}
 
-			&.secondary {
+			&.interactive {
 				&.active {
 					&::after {
-						content: 'Secondary';
+						content: 'Interactive';
 						top: $dirt-engine-ui-edit-button-height + 5px;
 					}
 				}
