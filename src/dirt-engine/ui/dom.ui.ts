@@ -3930,27 +3930,31 @@ export class DomUI {
 
 		option = document.createElement('option');
 		option.innerText = '30';
+		option.selected = DomUI.settings.fps === VideoBusInputCmdSettingsFPS._30;
 		option.value = String(VideoBusInputCmdSettingsFPS._30);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = '40';
+		option.selected = DomUI.settings.fps === VideoBusInputCmdSettingsFPS._40;
 		option.value = String(VideoBusInputCmdSettingsFPS._40);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = '60';
-		option.selected = true;
+		option.selected = DomUI.settings.fps === VideoBusInputCmdSettingsFPS._60;
 		option.value = String(VideoBusInputCmdSettingsFPS._60);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = '120';
+		option.selected = DomUI.settings.fps === VideoBusInputCmdSettingsFPS._120;
 		option.value = String(VideoBusInputCmdSettingsFPS._120);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = 'Unlimited';
+		option.selected = DomUI.settings.fps === VideoBusInputCmdSettingsFPS._UNLIMITED;
 		option.value = String(VideoBusInputCmdSettingsFPS._UNLIMITED);
 		select.appendChild(option);
 
@@ -3968,7 +3972,7 @@ export class DomUI {
 		input = document.createElement('input');
 		input.autocomplete = 'off';
 		input.type = 'checkbox';
-		input.checked = true;
+		input.checked = DomUI.settings.fpsVisible;
 		input.oninput = (event: any) => {
 			DomUI.settings.fpsVisible = Boolean(event.target.checked);
 
@@ -4026,17 +4030,19 @@ export class DomUI {
 
 		option = document.createElement('option');
 		option.innerText = 'Low';
+		option.selected = DomUI.settings.imageQuality === AssetImageSrcQuality.LOW;
 		option.value = String(AssetImageSrcQuality.LOW);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = 'Medium';
+		option.selected = DomUI.settings.imageQuality === AssetImageSrcQuality.MEDIUM;
 		option.value = String(AssetImageSrcQuality.MEDIUM);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = 'High';
-		option.selected = true;
+		option.selected = DomUI.settings.imageQuality === AssetImageSrcQuality.HIGH;
 		option.value = String(AssetImageSrcQuality.HIGH);
 		select.appendChild(option);
 
@@ -4054,7 +4060,7 @@ export class DomUI {
 		input = document.createElement('input');
 		input.autocomplete = 'off';
 		input.type = 'checkbox';
-		input.checked = true;
+		input.checked = DomUI.settings.mapVisible;
 		input.oninput = (event: any) => {
 			DomUI.settings.mapVisible = Boolean(event.target.checked);
 			VideoEngineBus.outputSettings(DomUI.settings);
@@ -4090,12 +4096,14 @@ export class DomUI {
 
 		option = document.createElement('option');
 		option.innerText = 'Native';
+		option.selected = DomUI.settings.resolution === null;
 		option.value = '';
 		select.appendChild(option);
 
 		for (let i in resolutions) {
 			option = document.createElement('option');
 			option.innerText = resolutions[i];
+			option.selected = DomUI.settings.resolution === Number(resolutions[i]);
 			option.value = resolutions[i];
 			select.appendChild(option);
 		}
@@ -4114,7 +4122,7 @@ export class DomUI {
 		input = document.createElement('input');
 		input.autocomplete = 'off';
 		input.type = 'checkbox';
-		input.checked = true;
+		input.checked = DomUI.settings.screenShakeEnable;
 		input.oninput = (event: any) => {
 			DomUI.settings.screenShakeEnable = Boolean(event.target.checked);
 			VideoEngineBus.outputSettings(DomUI.settings);
@@ -4143,12 +4151,13 @@ export class DomUI {
 
 		option = document.createElement('option');
 		option.innerText = 'Low';
+		option.selected = DomUI.settings.shadingQuality === VideoBusInputCmdSettingsShadingQuality.LOW;
 		option.value = String(VideoBusInputCmdSettingsShadingQuality.LOW);
 		select.appendChild(option);
 
 		option = document.createElement('option');
 		option.innerText = 'High';
-		option.selected = true;
+		option.selected = DomUI.settings.shadingQuality === VideoBusInputCmdSettingsShadingQuality.HIGH;
 		option.value = String(VideoBusInputCmdSettingsShadingQuality.HIGH);
 		select.appendChild(option);
 
