@@ -361,6 +361,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 		left: 10px;
 		pointer-events: none;
 		top: 10px;
+		z-index: 4 !important;
 
 		&.bad {
 			color: $dirt-engine-color-red;
