@@ -114,15 +114,16 @@ class MapDrawWorkerEngine {
 	}
 
 	public static inputSetGrids(data: MapDrawBusInputPlayloadGrids): void {
-		// console.log('MapDrawWorkerEngine > inputSetGrids', data);
-		let grids: { [key: string]: Grid } = {};
+		let gridConfigs: { [key: string]: GridConfig } = {},
+			grids: { [key: string]: Grid } = {};
 
 		for (let i in data.grids) {
+			gridConfigs[i] = JSON.parse(data.gridConfigs[i]);
 			grids[i] = JSON.parse(data.grids[i]);
 		}
 
 		let mapActive: MapActive = MapEditEngine.gridBlockTableInflate(<MapActive>{
-			gridConfigs: data.gridConfigs,
+			gridConfigs: gridConfigs,
 			grids: grids,
 		});
 		MapDrawWorkerEngine.grids = mapActive.grids;

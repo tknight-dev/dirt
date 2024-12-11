@@ -46,7 +46,7 @@ export interface LightingCalcBusInputPlayloadGridActive {
  */
 export interface LightingCalcBusInputPlayloadGrids {
 	grids: { [key: string]: string };
-	gridConfigs: { [key: string]: GridConfig };
+	gridConfigs: { [key: string]: string };
 }
 
 export interface LightingCalcBusInputPlayloadHourOfDayEff {

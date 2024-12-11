@@ -99,15 +99,17 @@ class LightingCalcWorkerEngine {
 	}
 
 	public static inputGridSet(data: LightingCalcBusInputPlayloadGrids): void {
-		let grids: { [key: string]: Grid } = {};
+		let gridConfigs: { [key: string]: GridConfig } = {},
+			grids: { [key: string]: Grid } = {};
 
 		for (let i in data.grids) {
+			gridConfigs[i] = JSON.parse(data.gridConfigs[i]);
 			grids[i] = JSON.parse(data.grids[i]);
 			LightingCalcWorkerEngine.firstByGridId[grids[i].id] = true;
 		}
 
 		let mapActive: MapActive = MapEditEngine.gridBlockTableInflate(<MapActive>{
-			gridConfigs: data.gridConfigs,
+			gridConfigs: gridConfigs,
 			grids: grids,
 		});
 		LightingCalcWorkerEngine.grids = mapActive.grids;

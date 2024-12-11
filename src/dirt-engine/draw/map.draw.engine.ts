@@ -308,7 +308,5 @@ export class MapDrawEngine {
 	public static setMapActive(mapActive: MapActive) {
 		MapDrawEngine.mapActive = mapActive;
 		MapDrawEngine.mapActiveCamera = mapActive.camera;
-
-		MapDrawEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
 	}
 }

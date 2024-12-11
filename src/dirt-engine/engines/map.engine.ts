@@ -17,29 +17,9 @@ export class MapEngine {
 			console.error('MapEngine > default: not initialized');
 		}
 		let gridWidth: number = 50,
-			grid: Grid = new Grid({
-				audioPrimaryBlocks: <any>{},
-				audioPrimaryTagTriggers: <any>{},
+			grid: Grid = <any>{
 				id: 'initial', // protectedId
-				imageBlocksBackgroundFoliage: <any>{},
-				imageBlocksBackgroundLiquid: <any>{},
-				imageBlocksBackgroundReference: <any>{},
-				imageBlocksBackgroundSolid: <any>{},
-				imageBlocksForegroundFoliage: <any>{},
-				imageBlocksForegroundLiquid: <any>{},
-				imageBlocksForegroundReference: <any>{},
-				imageBlocksForegroundSolid: <any>{},
-				imageBlocksPrimaryFoliage: <any>{},
-				imageBlocksPrimaryLiquid: <any>{},
-				imageBlocksPrimaryReference: <any>{},
-				imageBlocksPrimarySolid: <any>{},
-				imageBlocksVanishingFoliage: <any>{},
-				imageBlocksVanishingLiquid: <any>{},
-				imageBlocksVanishingReference: <any>{},
-				imageBlocksVanishingSolid: <any>{},
-				lightsForeground: <any>{},
-				lightsPrimary: <any>{},
-			}),
+			},
 			gridConfig: GridConfig = {
 				gHeight: 0, // calculated
 				gHorizon: 0, // calculated
@@ -106,13 +86,6 @@ export class MapEngine {
 		// Clock
 		mapActive.clockSpeedRelativeToEarth = Math.max(1, Math.min(86400, Math.round(mapActive.clockSpeedRelativeToEarth * 1000) / 1000));
 		mapActive.hourOfDay = Math.round(mapActive.hourOfDay);
-
-		// Grids
-		if (typeof grids['initial'] === 'string') {
-			for (let i in grids) {
-				grids[i] = new Grid(JSON.parse(<any>grids[i]));
-			}
-		}
 
 		// Grids Configs
 		for (let i in gridConfigs) {

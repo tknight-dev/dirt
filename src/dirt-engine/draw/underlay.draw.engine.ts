@@ -128,10 +128,15 @@ export class UnderlayDrawEngine {
 						cacheCheckCameraGy = camera.gy;
 						cacheCheckCameraZoom = camera.zoom;
 						UnderlayDrawEngine.cacheNew = false;
+					} else {
+						if (cacheCanvas.height !== camera.windowPh || cacheCanvas.width !== camera.windowPw) {
+							cacheCanvas.height = camera.windowPh;
+							cacheCanvas.width = camera.windowPw;
+						}
 					}
 				}
 
-				if (cleared) {
+				if (cacheCanvas) {
 					cleared = false;
 				}
 				ctxUnderlay.drawImage(cacheCanvas, 0, 0);

@@ -2,6 +2,7 @@ import { AssetEngine } from '../../engines/asset.engine';
 import { Camera } from '../../models/camera.model';
 import { Grid, GridConfig } from '../../models/grid.model';
 import { MapDrawBusInputCmd, MapDrawBusInputPlayloadAsset } from './map.draw.model.bus';
+import { UtilEngine } from '../../engines/util.engine';
 
 /**
  * @author tknight-dev
@@ -75,18 +76,12 @@ export class MapDrawEngineBus {
 		});
 	}
 
-	public static outputGrids(grids: { [key: string]: Grid }, gridConfigs: { [key: string]: GridConfig }): void {
-		let gridsOptimized: { [key: string]: string } = {};
-
-		for (let i in grids) {
-			gridsOptimized[i] = grids[i].toJSON();
-		}
-
+	public static outputGrids(gridsOptimized: { [key: string]: string }, gridConfigsOptimized: { [key: string]: string }): void {
 		MapDrawEngineBus.worker.postMessage({
 			cmd: MapDrawBusInputCmd.SET_GRIDS,
 			data: {
 				grids: gridsOptimized,
-				gridConfigs: gridConfigs,
+				gridConfigs: gridConfigsOptimized,
 			},
 		});
 	}

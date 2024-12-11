@@ -452,7 +452,6 @@ export class LightingEngine {
 			LightingEngine.setMapActiveInflate(id, grid.imageBlocksVanishingReference);
 		}
 
-		LightingCalcEngineBus.outputGrids(mapActive.grids, mapActive.gridConfigs);
 		LightingCalcEngineBus.outputHourPreciseOfDayEff(mapActive.hourOfDayEff + mapActive.minuteOfHourEff);
 		UnderlayDrawEngineBus.outputHourPreciseOfDayEffReset(mapActive.hourOfDayEff + mapActive.minuteOfHourEff);
 	}

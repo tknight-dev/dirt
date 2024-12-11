@@ -1,6 +1,7 @@
 import { Grid, GridConfig } from '../../models/grid.model';
 import { LightingCalcBusInputCmd, LightingCalcBusOutputDecompressed } from './lighting.calc.engine.model';
 import { VideoBusInputCmdGameModeEditApplyZ } from '../../engines/buses/video.model.bus';
+import { UtilEngine } from '../../engines/util.engine';
 
 /**
  * @author tknight-dev
@@ -90,18 +91,12 @@ export class LightingCalcEngineBus {
 		});
 	}
 
-	public static outputGrids(grids: { [key: string]: Grid }, gridConfigs: { [key: string]: GridConfig }): void {
-		let gridsOptimized: { [key: string]: string } = {};
-
-		for (let i in grids) {
-			gridsOptimized[i] = grids[i].toJSON();
-		}
-
+	public static outputGrids(gridsOptimized: { [key: string]: string }, gridConfigsOptimized: { [key: string]: string }): void {
 		LightingCalcEngineBus.worker.postMessage({
 			cmd: LightingCalcBusInputCmd.SET_GRIDS,
 			data: {
 				grids: gridsOptimized,
-				gridConfigs: gridConfigs,
+				gridConfigs: gridConfigsOptimized,
 			},
 		});
 	}

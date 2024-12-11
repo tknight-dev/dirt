@@ -308,7 +308,7 @@ class VideoWorkerEngine {
 
 	public static inputGameSave(save: VideoBusInputCmdGameSave): void {
 		if (KernelEngine.isModeEdit()) {
-			VideoWorkerEngine.outputMapSave(MapEditEngine.getMapActiveCloneNormalized());
+			VideoWorkerEngine.outputMapSave();
 		} else {
 			console.log('save current game state', save);
 		}
@@ -347,10 +347,6 @@ class VideoWorkerEngine {
 			map = UtilEngine.mapDecode(await AssetEngine.unzip(videoBusInputCmdMapLoad.data));
 
 			if (map) {
-				for (let i in map.grids) {
-					map.grids[i] = new Grid(JSON.parse(<any>map.grids[i]));
-				}
-
 				mapActive = MapEngine.loadFromFile(map);
 				await MapEditEngine.load(mapActive); // Also starts Kernel
 			} else {
@@ -591,15 +587,15 @@ class VideoWorkerEngine {
 		]);
 	}
 
-	public static outputMapSave(map: Map): void {
+	public static outputMapSave(): void {
+		let mapActive: MapActive = MapEditEngine.getMapActiveCloneNormalized();
+
 		VideoWorkerEngine.post([
 			{
 				cmd: VideoBusOutputCmd.MAP_SAVE,
 				data: {
-					data: UtilEngine.mapEncode(
-						MapEditEngine.gridBlockTableDeflate(MapEditEngine.getMapActiveCloneNormalized(<MapActive>map)),
-					),
-					name: map.name,
+					data: UtilEngine.mapEncode(MapEditEngine.gridBlockTableDeflate(mapActive)),
+					name: mapActive.name,
 				},
 			},
 		]);

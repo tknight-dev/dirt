@@ -346,10 +346,6 @@ export class DirtEngine extends DomUI {
 
 				// Load map file into ui thread
 				let map: Map = UtilEngine.mapDecode(await AssetEngine.unzip(event.target.result));
-				for (let i in map.grids) {
-					map.grids[i] = new Grid(JSON.parse(<any>map.grids[i]));
-				}
-
 				await MapEditEngine.load(MapEngine.loadFromFile(map));
 				MapAudioAmbientEngine.stop();
 				MapAudioAmbientEngine.setMapActive(MapEditEngine.getMapActive());

@@ -16,6 +16,7 @@ import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MapDrawEngineBus } from '../draw/buses/map.draw.engine.bus';
 import { UnderlayDrawEngine } from '../draw/underlay.draw.engine';
 import { VideoBusInputCmdGameModeEditDraw, VideoBusInputCmdSettings } from '../engines/buses/video.model.bus';
+import { UtilEngine } from './util.engine';
 
 /**
  * @author tknight-dev
@@ -159,7 +160,15 @@ export class KernelEngine {
 	}
 
 	public static async historyUpdate(mapActive: MapActive): Promise<void> {
+		let gridConfigsOptimized: { [key: string]: string } = {},
+			gridsOptimized: { [key: string]: string } = {},
+			mapActiveClone: MapActive = UtilEngine.mapClone(mapActive);
+
 		KernelEngine.mapActive = mapActive;
+		for (let i in mapActiveClone.grids) {
+			gridConfigsOptimized[i] = JSON.stringify(mapActiveClone.gridConfigs[i]);
+			gridsOptimized[i] = JSON.stringify(mapActiveClone.grids[i]);
+		}
 
 		// Load into engines
 		CalcEditEngine.setMapActive(mapActive);
@@ -183,8 +192,12 @@ export class KernelEngine {
 		UnderlayDrawEngine.setMapActive(mapActive);
 
 		// Extended
-		KernelEngine.cacheResets(false);
+		MapDrawEngineBus.outputGrids(gridsOptimized, gridConfigsOptimized);
+		LightingCalcEngineBus.outputGrids(gridsOptimized, gridConfigsOptimized);
+
+		// Last
 		KernelEngine.updateGridActive(mapActive.gridActiveId);
+		KernelEngine.cacheResets(false);
 	}
 
 	public static pause(): void {
@@ -315,9 +328,19 @@ export class KernelEngine {
 	 * Used by MapEditEngine on block placement
 	 */
 	public static updateMap(): void {
+		let gridConfigsOptimized: { [key: string]: string } = {},
+			gridsOptimized: { [key: string]: string } = {},
+			mapActiveClone: MapActive = UtilEngine.mapClone(KernelEngine.getMapActive());
+
+		for (let i in mapActiveClone.grids) {
+			gridConfigsOptimized[i] = JSON.stringify(mapActiveClone.gridConfigs[i]);
+			gridsOptimized[i] = JSON.stringify(mapActiveClone.grids[i]);
+		}
+
 		ImageBlockDrawEngine.cacheReset();
-		MapDrawEngineBus.outputGrids(KernelEngine.getMapActive().grids, KernelEngine.getMapActive().gridConfigs);
-		LightingCalcEngineBus.outputGrids(KernelEngine.getMapActive().grids, KernelEngine.getMapActive().gridConfigs);
+
+		MapDrawEngineBus.outputGrids(gridsOptimized, gridConfigsOptimized);
+		LightingCalcEngineBus.outputGrids(gridsOptimized, gridConfigsOptimized);
 	}
 
 	public static updateSettings(settings: VideoBusInputCmdSettings): void {

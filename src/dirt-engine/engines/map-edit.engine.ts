@@ -653,6 +653,10 @@ export class MapEditEngine {
 			MapEditEngine.gridBlockTableDeflateInstance(grid.audioInteractiveBlocks || {});
 			MapEditEngine.gridBlockTableDeflateInstance(grid.audioInteractiveTags || {});
 
+			delete (<any>grid).imageBlocksCalcPipelineAnimations;
+			delete (<any>grid).imageBlocksRenderPipelineAssetsByGyByGx;
+			delete (<any>grid).imageBlocksRenderPipelineGy;
+
 			delete (<any>grid).imageBlocksBackground1Reference;
 			delete (<any>grid).imageBlocksBackground2Reference;
 			delete (<any>grid).imageBlocksForeground1Reference;
@@ -674,11 +678,6 @@ export class MapEditEngine {
 
 	public static gridBlockTableInflate(map: MapActive): MapActive {
 		let reference: { [key: number]: GridImageBlockReference };
-
-		// Clean
-		for (let i in map.grids) {
-			map.grids[i] = new Grid(map.grids[i]);
-		}
 
 		// Prepare
 		map.gridActive = map.grids[map.gridActiveId];
@@ -1111,11 +1110,11 @@ export class MapEditEngine {
 	private static historyAdd(): void {
 		let mapActiveClone: MapActive = MapEditEngine.getMapActiveCloneNormalized();
 
-		// Rebuild references
-		for (let i in mapActiveClone.grids) {
-			mapActiveClone.grids[i] = JSON.parse(<any>mapActiveClone.grids[i]);
-		}
-		mapActiveClone = MapEditEngine.gridBlockTableInflate(mapActiveClone);
+		// Rebuild references (async)
+		// This may not be the best option on larger maps... perhaps deep cloning?
+		setTimeout(() => {
+			mapActiveClone = MapEditEngine.gridBlockTableInflate(mapActiveClone);
+		});
 
 		MapEditEngine.mapHistoryUndo.pushEnd(mapActiveClone);
 
@@ -1746,9 +1745,7 @@ export class MapEditEngine {
 		}
 	}
 
-	public static getMapActiveCloneNormalized(mapActive?: MapActive): MapActive {
-		let mapActiveClone: MapActive;
-
+	public static getMapActiveCloneNormalized(mapActive?: MapActive, deep?: boolean): MapActive {
 		if (!mapActive) {
 			if (MapEditEngine.modeUI) {
 				mapActive = MapEditEngine.mapActiveUI;
@@ -1757,18 +1754,7 @@ export class MapEditEngine {
 			}
 		}
 
-		// Prepare
-		delete (<any>mapActive).gridActive;
-		delete (<any>mapActive).gridConfigActive;
-
-		// Clone
-		mapActiveClone = JSON.parse(JSON.stringify(mapActive));
-
-		// Repair
-		mapActive.gridActive = mapActive.grids[mapActive.gridActiveId];
-		mapActive.gridConfigActive = mapActive.gridConfigs[mapActive.gridActiveId];
-
-		return mapActiveClone;
+		return UtilEngine.mapClone(mapActive, deep);
 	}
 
 	public static getGridActive(): Grid {

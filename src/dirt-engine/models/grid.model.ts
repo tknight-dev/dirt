@@ -6,7 +6,7 @@ import { DoubleLinkedList } from '../models/double-linked-list.model';
  * @author tknight-dev
  */
 
-export class Grid {
+export interface Grid {
 	audioInteractiveBlocks: GridBlockTable<GridAudioBlock>; // (gx,gy), Precision 0
 	audioInteractiveTags: GridBlockTable<GridAudioTag>; // (gx,gy), Precision 3
 	id: string;
@@ -43,66 +43,6 @@ export class Grid {
 	imageBlocksVanishingSolid: { [key: number]: GridImageBlockSolid }; // (gx,gy), Precision 0
 	lightsForeground1: GridBlockTable<GridLight>; // (gx,gy), Precision 3
 	lightsInteractive: GridBlockTable<GridLight>; // (gx,gy), Precision 3
-
-	constructor(data: any) {
-		this.audioInteractiveBlocks = data.audioInteractiveBlocks;
-		this.audioInteractiveTags = data.audioInteractiveTags;
-		this.id = data.id;
-		this.imageBlocksBackground1Foliage = data.imageBlocksBackground1Foliage;
-		this.imageBlocksBackground1Liquid = data.imageBlocksBackground1Liquid;
-		this.imageBlocksBackground1Solid = data.imageBlocksBackground1Solid;
-		this.imageBlocksBackground2Foliage = data.imageBlocksBackground2Foliage;
-		this.imageBlocksBackground2Liquid = data.imageBlocksBackground2Liquid;
-		this.imageBlocksBackground2Solid = data.imageBlocksBackground2Solid;
-		this.imageBlocksForeground1Foliage = data.imageBlocksForeground1Foliage;
-		this.imageBlocksForeground1Liquid = data.imageBlocksForeground1Liquid;
-		this.imageBlocksForeground1Solid = data.imageBlocksForeground1Solid;
-		this.imageBlocksForeground2Foliage = data.imageBlocksForeground2Foliage;
-		this.imageBlocksForeground2Liquid = data.imageBlocksForeground2Liquid;
-		this.imageBlocksForeground2Solid = data.imageBlocksForeground2Solid;
-		this.imageBlocksInteractiveFoliage = data.imageBlocksInteractiveFoliage;
-		this.imageBlocksInteractiveLiquid = data.imageBlocksInteractiveLiquid;
-		this.imageBlocksInteractiveSolid = data.imageBlocksInteractiveSolid;
-		this.imageBlocksMiddlegroundFoliage = data.imageBlocksMiddlegroundFoliage;
-		this.imageBlocksMiddlegroundLiquid = data.imageBlocksMiddlegroundLiquid;
-		this.imageBlocksMiddlegroundSolid = data.imageBlocksMiddlegroundSolid;
-		this.imageBlocksVanishingFoliage = data.imageBlocksVanishingFoliage;
-		this.imageBlocksVanishingLiquid = data.imageBlocksVanishingLiquid;
-		this.imageBlocksVanishingSolid = data.imageBlocksVanishingSolid;
-		this.lightsForeground1 = data.lightsForeground1;
-		this.lightsInteractive = data.lightsInteractive;
-	}
-
-	toJSON(): string {
-		return JSON.stringify({
-			audioInteractiveBlocks: this.audioInteractiveBlocks,
-			audioInteractiveTags: this.audioInteractiveTags,
-			id: this.id,
-			imageBlocksBackground1Foliage: this.imageBlocksBackground1Foliage,
-			imageBlocksBackground1Liquid: this.imageBlocksBackground1Liquid,
-			imageBlocksBackground1Solid: this.imageBlocksBackground1Solid,
-			imageBlocksBackground2Foliage: this.imageBlocksBackground2Foliage,
-			imageBlocksBackground2Liquid: this.imageBlocksBackground2Liquid,
-			imageBlocksBackground2Solid: this.imageBlocksBackground2Solid,
-			imageBlocksForeground1Foliage: this.imageBlocksForeground1Foliage,
-			imageBlocksForeground1Liquid: this.imageBlocksForeground1Liquid,
-			imageBlocksForeground1Solid: this.imageBlocksForeground1Solid,
-			imageBlocksForeground2Foliage: this.imageBlocksForeground2Foliage,
-			imageBlocksForeground2Liquid: this.imageBlocksForeground2Liquid,
-			imageBlocksForeground2Solid: this.imageBlocksForeground2Solid,
-			imageBlocksInteractiveFoliage: this.imageBlocksInteractiveFoliage,
-			imageBlocksInteractiveLiquid: this.imageBlocksInteractiveLiquid,
-			imageBlocksInteractiveSolid: this.imageBlocksInteractiveSolid,
-			imageBlocksMiddlegroundFoliage: this.imageBlocksMiddlegroundFoliage,
-			imageBlocksMiddlegroundLiquid: this.imageBlocksMiddlegroundLiquid,
-			imageBlocksMiddlegroundSolid: this.imageBlocksMiddlegroundSolid,
-			imageBlocksVanishingFoliage: this.imageBlocksVanishingFoliage,
-			imageBlocksVanishingLiquid: this.imageBlocksVanishingLiquid,
-			imageBlocksVanishingSolid: this.imageBlocksVanishingSolid,
-			lightsForeground1: this.lightsForeground1,
-			lightsInteractive: this.lightsInteractive,
-		});
-	}
 }
 
 export interface GridAnimation {
