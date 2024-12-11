@@ -206,7 +206,7 @@ export class DomUI {
 			imageBitmap: ImageBitmap,
 			imageSrc: AssetImageSrc | undefined,
 			input: HTMLInputElement,
-			inputIndexInitial: HTMLInputElement,
+			inputIndexInitial: HTMLInputElement[],
 			interval: ReturnType<typeof setInterval>,
 			modal = DomUI.domElementsUIEdit['application-palette-animation-modal'],
 			modalApply = DomUI.domElementsUIEdit['application-palette-animation-modal-content-buttons-apply'],
@@ -449,7 +449,8 @@ export class DomUI {
 			animationUpdated.assetIds.push(valuesImage[0].id);
 			animationUpdated.assetOptions.push({});
 
-			inputIndexInitial.max = String(animationUpdated.assetIds.length - 1);
+			inputIndexInitial[0].max = String(animationUpdated.assetIds.length - 1);
+			inputIndexInitial[1].max = inputIndexInitial[0].max;
 
 			(<any>animationUpdated.calc).count = 0;
 			(<any>animationUpdated.calc).ended = false;
@@ -467,8 +468,10 @@ export class DomUI {
 				animationUpdated.assetOptions.pop();
 
 				animationUpdated.indexInitial = Math.min(animationUpdated.indexInitial || 0, animationUpdated.assetIds.length - 1);
-				inputIndexInitial.max = String(animationUpdated.assetIds.length - 1);
-				inputIndexInitial.value = String(animationUpdated.indexInitial || 0);
+				inputIndexInitial[0].max = String(animationUpdated.assetIds.length - 1);
+				inputIndexInitial[1].max = inputIndexInitial[0].max;
+				inputIndexInitial[0].value = String(animationUpdated.indexInitial || 0);
+				inputIndexInitial[1].value = inputIndexInitial[0].value;
 
 				(<any>animationUpdated.calc).count = 0;
 				(<any>animationUpdated.calc).ended = false;
@@ -487,23 +490,23 @@ export class DomUI {
 		td.innerText = 'Index Initial';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		inputIndexInitial = document.createElement('input');
-		inputIndexInitial.max = String(animationUpdated.assetIds.length - 1);
-		inputIndexInitial.min = '0';
-		inputIndexInitial.step = '1';
-		inputIndexInitial.value = String(animationUpdated.indexInitial || 0);
-		inputIndexInitial.oninput = (event: any) => {
-			animationUpdated.indexInitial = Number(event.target.value);
+		inputIndexInitial = UtilEngine.htmlRangeAndNumber(
+			animationUpdated.assetIds.length - 1,
+			0,
+			1,
+			animationUpdated.indexInitial || 0,
+			(value: number) => {
+				animationUpdated.indexInitial = value;
 
-			clearInterval(interval);
-			(<any>animationUpdated.calc).count = 0;
-			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
-			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
-			intervalLogic();
-		};
-		inputIndexInitial.type = 'range';
-		td.appendChild(inputIndexInitial);
+				clearInterval(interval);
+				(<any>animationUpdated.calc).count = 0;
+				(<any>animationUpdated.calc).ended = false;
+				(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+				interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+				intervalLogic();
+			},
+			td,
+		);
 		tr.appendChild(td);
 		modalContent.appendChild(tr);
 
@@ -536,23 +539,23 @@ export class DomUI {
 		td.innerText = 'Loop Count';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '10';
-		input.min = '0';
-		input.step = '1';
-		input.value = String(animationUpdated.loopCount || 0);
-		input.oninput = (event: any) => {
-			animationUpdated.loopCount = Number(event.target.value);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			0,
+			1,
+			animationUpdated.loopCount || 0,
+			(value: number) => {
+				animationUpdated.loopCount = value;
 
-			clearInterval(interval);
-			(<any>animationUpdated.calc).count = 0;
-			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
-			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
-			intervalLogic();
-		};
-		input.type = 'range';
-		td.appendChild(input);
+				clearInterval(interval);
+				(<any>animationUpdated.calc).count = 0;
+				(<any>animationUpdated.calc).ended = false;
+				(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+				interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+				intervalLogic();
+			},
+			td,
+		);
 		tr.appendChild(td);
 
 		modalContent.appendChild(tr);
@@ -563,23 +566,23 @@ export class DomUI {
 		td.innerText = 'Duration In MS';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '10000';
-		input.min = '50';
-		input.step = '10';
-		input.value = String(animationUpdated.frameDurationInMs);
-		input.oninput = (event: any) => {
-			animationUpdated.frameDurationInMs = Number(event.target.value);
+		UtilEngine.htmlRangeAndNumber(
+			10000,
+			50,
+			10,
+			animationUpdated.loopCount || 0,
+			(value: number) => {
+				animationUpdated.frameDurationInMs = value;
 
-			clearInterval(interval);
-			(<any>animationUpdated.calc).count = 0;
-			(<any>animationUpdated.calc).ended = false;
-			(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
-			interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
-			intervalLogic();
-		};
-		input.type = 'range';
-		td.appendChild(input);
+				clearInterval(interval);
+				(<any>animationUpdated.calc).count = 0;
+				(<any>animationUpdated.calc).ended = false;
+				(<any>animationUpdated.calc).index = animationUpdated.indexInitial || 0;
+				interval = setInterval(intervalLogic, animationUpdated.frameDurationInMs);
+				intervalLogic();
+			},
+			td,
+		);
 		tr.appendChild(td);
 		modalContent.appendChild(tr);
 
@@ -800,16 +803,16 @@ export class DomUI {
 		td.innerText = 'G Radius';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '25';
-		input.min = '0'; // 0 is inf
-		input.oninput = (event: any) => {
-			applicationProperties.gRadius = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gRadius || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			25,
+			0,
+			1,
+			applicationProperties.gRadius || 0,
+			(value: number) => {
+				applicationProperties.gRadius = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -954,16 +957,16 @@ export class DomUI {
 		td.innerText = 'G Radius';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '25';
-		input.min = '0'; // 0 is inf
-		input.oninput = (event: any) => {
-			applicationProperties.gRadius = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gRadius || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			25,
+			0,
+			1,
+			applicationProperties.gRadius || 0,
+			(value: number) => {
+				applicationProperties.gRadius = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1007,22 +1010,21 @@ export class DomUI {
 		td.innerText = 'Volume Percentage';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '1';
-		input.min = '.1';
-		input.oninput = (event: any) => {
-			// Update volume
-			applicationProperties.volumePercentage = Number(event.target.value);
+		UtilEngine.htmlRangeAndNumber(
+			1,
+			0.1,
+			0.1,
+			applicationProperties.gRadius || 0,
+			(value: number) => {
+				applicationProperties.volumePercentage = value;
 
-			// Play sample at volume
-			AudioEngine.controlPlay(applicationProperties.assetId, {
-				volumePercentage: applicationProperties.volumePercentage,
-			});
-		};
-		input.step = '.1';
-		input.type = 'range';
-		input.value = String(applicationProperties.volumePercentage || 0);
-		td.appendChild(input);
+				// Play sample at volume
+				AudioEngine.controlPlay(applicationProperties.assetId, {
+					volumePercentage: applicationProperties.volumePercentage,
+				});
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1286,17 +1288,16 @@ export class DomUI {
 		td.innerText = 'G Size H';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeH = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeH || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeH || 0,
+			(value: number) => {
+				applicationProperties.gSizeH = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1306,17 +1307,17 @@ export class DomUI {
 		td.innerText = 'G Size W';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeW = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeW || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeW || 0,
+			(value: number) => {
+				console.log('gSizeH', value);
+				applicationProperties.gSizeW = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1423,16 +1424,16 @@ export class DomUI {
 			td.innerText = 'Strength to Damange In N';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '10000';
-			input.min = '1';
-			input.oninput = (event: any) => {
-				applicationProperties.strengthToDamangeInN = Number(event.target.value);
-			};
-			input.step = '1';
-			input.type = 'range';
-			input.value = String(applicationProperties.strengthToDamangeInN || 0);
-			td.appendChild(input);
+			UtilEngine.htmlRangeAndNumber(
+				10000,
+				1,
+				1,
+				applicationProperties.strengthToDamangeInN || 0,
+				(value: number) => {
+					applicationProperties.strengthToDamangeInN = value;
+				},
+				td,
+			);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
@@ -1444,16 +1445,16 @@ export class DomUI {
 			td.innerText = 'Strength to Destroy In N';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '10000';
-			input.min = '1';
-			input.oninput = (event: any) => {
-				applicationProperties.strengthToDestroyInN = Number(event.target.value);
-			};
-			input.step = '1';
-			input.type = 'range';
-			input.value = String(applicationProperties.strengthToDestroyInN || 0);
-			td.appendChild(input);
+			UtilEngine.htmlRangeAndNumber(
+				10000,
+				1,
+				1,
+				applicationProperties.strengthToDestroyInN || 0,
+				(value: number) => {
+					applicationProperties.strengthToDestroyInN = value;
+				},
+				td,
+			);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
@@ -1464,17 +1465,16 @@ export class DomUI {
 		td.innerText = 'Transparency';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '1';
-		input.min = '0';
-		input.oninput = (event: any) => {
-			applicationProperties.transparency = Number(event.target.value);
-		};
-		input.step = '.01';
-		input.type = 'range';
-		input.value = String(applicationProperties.transparency || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.01,
+			applicationProperties.transparency || 0,
+			(value: number) => {
+				applicationProperties.transparency = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1730,17 +1730,16 @@ export class DomUI {
 		td.innerText = 'G Size H';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeH = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeH || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeH || 0,
+			(value: number) => {
+				applicationProperties.gSizeH = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1750,17 +1749,17 @@ export class DomUI {
 		td.innerText = 'G Size W';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeW = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeW || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeW || 0,
+			(value: number) => {
+				console.log('gSizeH', value);
+				applicationProperties.gSizeW = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1816,17 +1815,16 @@ export class DomUI {
 		td.innerText = 'Transparency';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '1';
-		input.min = '0';
-		input.oninput = (event: any) => {
-			applicationProperties.transparency = Number(event.target.value);
-		};
-		input.step = '.01';
-		input.type = 'range';
-		input.value = String(applicationProperties.transparency || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.01,
+			applicationProperties.transparency || 0,
+			(value: number) => {
+				applicationProperties.transparency = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -1837,16 +1835,16 @@ export class DomUI {
 			td.innerText = 'Viscocity';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '1';
-			input.min = '.1';
-			input.oninput = (event: any) => {
-				applicationProperties.viscocity = Number(event.target.value);
-			};
-			input.step = '.1';
-			input.type = 'range';
-			input.value = applicationProperties.viscocity;
-			td.appendChild(input);
+			UtilEngine.htmlRangeAndNumber(
+				1,
+				0.1,
+				0.1,
+				applicationProperties.viscocity || 0,
+				(value: number) => {
+					applicationProperties.viscocity = value;
+				},
+				td,
+			);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
@@ -2113,17 +2111,16 @@ export class DomUI {
 		td.innerText = 'G Size H';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeH = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeH || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeH || 0,
+			(value: number) => {
+				applicationProperties.gSizeH = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2133,17 +2130,17 @@ export class DomUI {
 		td.innerText = 'G Size W';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeW = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeW || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeW || 0,
+			(value: number) => {
+				console.log('gSizeH', value);
+				applicationProperties.gSizeW = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2250,16 +2247,16 @@ export class DomUI {
 			td.innerText = 'Strength to Damange In N';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '10000';
-			input.min = '1';
-			input.oninput = (event: any) => {
-				applicationProperties.strengthToDamangeInN = Number(event.target.value);
-			};
-			input.step = '1';
-			input.type = 'range';
-			input.value = String(applicationProperties.strengthToDamangeInN || 0);
-			td.appendChild(input);
+			UtilEngine.htmlRangeAndNumber(
+				10000,
+				1,
+				1,
+				applicationProperties.strengthToDamangeInN || 0,
+				(value: number) => {
+					applicationProperties.strengthToDamangeInN = value;
+				},
+				td,
+			);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
@@ -2271,16 +2268,16 @@ export class DomUI {
 			td.innerText = 'Strength to Destroy In N';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '10000';
-			input.min = '1';
-			input.oninput = (event: any) => {
-				applicationProperties.strengthToDestroyInN = Number(event.target.value);
-			};
-			input.step = '1';
-			input.type = 'range';
-			input.value = String(applicationProperties.strengthToDestroyInN || 0);
-			td.appendChild(input);
+			UtilEngine.htmlRangeAndNumber(
+				10000,
+				1,
+				1,
+				applicationProperties.strengthToDestroyInN || 0,
+				(value: number) => {
+					applicationProperties.strengthToDestroyInN = value;
+				},
+				td,
+			);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
@@ -2291,17 +2288,16 @@ export class DomUI {
 		td.innerText = 'Transparency';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '1';
-		input.min = '0';
-		input.oninput = (event: any) => {
-			applicationProperties.transparency = Number(event.target.value);
-		};
-		input.step = '.01';
-		input.type = 'range';
-		input.value = String(applicationProperties.transparency || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.01,
+			applicationProperties.strengtransparencythToDestroyInN || 0,
+			(value: number) => {
+				applicationProperties.transparency = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2385,17 +2381,16 @@ export class DomUI {
 					td.innerText = 'Brightness [' + index + ']';
 					tr.appendChild(td);
 					td = document.createElement('td');
-					input = document.createElement('input');
-					input.autocomplete = 'off';
-					input.max = '6';
-					input.min = '1';
-					input.oninput = (event: any) => {
-						applicationProperties.directions[index].brightness = Number(event.target.value);
-					};
-					input.step = '1';
-					input.type = 'range';
-					input.value = String(applicationProperties.directions[index].brightness || 0);
-					td.appendChild(input);
+					UtilEngine.htmlRangeAndNumber(
+						6,
+						1,
+						1,
+						applicationProperties.directions[index].brightness || 0,
+						(value: number) => {
+							applicationProperties.directions[index].brightness = value;
+						},
+						td,
+					);
 					tr.appendChild(td);
 					tDirections.appendChild(tr);
 
@@ -2405,17 +2400,16 @@ export class DomUI {
 					td.innerText = 'G Radius [' + index + ']';
 					tr.appendChild(td);
 					td = document.createElement('td');
-					input = document.createElement('input');
-					input.autocomplete = 'off';
-					input.max = '10';
-					input.min = '1';
-					input.oninput = (event: any) => {
-						applicationProperties.directions[index].gRadius = Number(event.target.value);
-					};
-					input.step = '1';
-					input.type = 'range';
-					input.value = String(applicationProperties.directions[index].gRadius || 0);
-					td.appendChild(input);
+					UtilEngine.htmlRangeAndNumber(
+						10,
+						1,
+						1,
+						applicationProperties.directions[index].gRadius || 0,
+						(value: number) => {
+							applicationProperties.directions[index].gRadius = value;
+						},
+						td,
+					);
 					tr.appendChild(td);
 					tDirections.appendChild(tr);
 
@@ -2702,17 +2696,16 @@ export class DomUI {
 		td.innerText = 'Direction Omni Brightness';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '6';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.directionOmniBrightness = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.directionOmniBrightness || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			6,
+			1,
+			1,
+			applicationProperties.directionOmniBrightness || 0,
+			(value: number) => {
+				applicationProperties.directionOmniBrightness = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 		omniOn.push(tr);
@@ -2723,17 +2716,16 @@ export class DomUI {
 		td.innerText = 'Direction Omni G Radius';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.directionOmniGRadius = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.directionOmniGRadius || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.directionOmniGRadius || 0,
+			(value: number) => {
+				applicationProperties.directionOmniGRadius = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 		omniOn.push(tr);
@@ -2820,16 +2812,16 @@ export class DomUI {
 		td.innerText = 'G Radius Audio Effect';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.max = '25';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gRadiusAudioEffect = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gRadius || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			25,
+			1,
+			1,
+			applicationProperties.gRadiusAudioEffect || 0,
+			(value: number) => {
+				applicationProperties.gRadiusAudioEffect = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2839,17 +2831,16 @@ export class DomUI {
 		td.innerText = 'G Size H';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeH = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeH || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeH || 0,
+			(value: number) => {
+				applicationProperties.gSizeH = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2859,17 +2850,17 @@ export class DomUI {
 		td.innerText = 'G Size W';
 		tr.appendChild(td);
 		td = document.createElement('td');
-		input = document.createElement('input');
-		input.autocomplete = 'off';
-		input.max = '10';
-		input.min = '1';
-		input.oninput = (event: any) => {
-			applicationProperties.gSizeW = Number(event.target.value);
-		};
-		input.step = '1';
-		input.type = 'range';
-		input.value = String(applicationProperties.gSizeW || 0);
-		td.appendChild(input);
+		UtilEngine.htmlRangeAndNumber(
+			10,
+			1,
+			1,
+			applicationProperties.gSizeW || 0,
+			(value: number) => {
+				console.log('gSizeH', value);
+				applicationProperties.gSizeW = value;
+			},
+			td,
+		);
 		tr.appendChild(td);
 		t.appendChild(tr);
 
@@ -2912,16 +2903,16 @@ export class DomUI {
 			td.innerText = 'Strength to Destroy In N';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			input = document.createElement('input');
-			input.max = '10000';
-			input.min = '1';
-			input.oninput = (event: any) => {
-				applicationProperties.strengthToDestroyInN = Number(event.target.value);
-			};
-			input.step = '1';
-			input.type = 'range';
-			input.value = String(applicationProperties.strengthToDestroyInN || 0);
-			td.appendChild(input);
+			UtilEngine.htmlRangeAndNumber(
+				10000,
+				1,
+				1,
+				applicationProperties.strengthToDestroyInN || 0,
+				(value: number) => {
+					applicationProperties.strengthToDestroyInN = value;
+				},
+				td,
+			);
 			tr.appendChild(td);
 			t.appendChild(tr);
 		}
@@ -3716,6 +3707,7 @@ export class DomUI {
 			domFeedFitted: HTMLElement,
 			domFeedFittedOutline: HTMLElement,
 			domFeedFittedPause: HTMLElement,
+			domFeedFittedPauseBackground: HTMLElement,
 			domFeedFittedPauseContent: HTMLElement,
 			domFeedFittedTitle: HTMLElement,
 			domFeedFittedTitleContent: HTMLElement,
@@ -3873,6 +3865,11 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-pause'] = domFeedFittedPause;
 		domFeedFitted.appendChild(domFeedFittedPause);
 
+		domFeedFittedPauseBackground = document.createElement('div');
+		domFeedFittedPauseBackground.className = 'background';
+		DomUI.domElements['feed-fitted-pause-background'] = domFeedFittedPauseBackground;
+		domFeedFittedPause.appendChild(domFeedFittedPauseBackground);
+
 		domFeedFittedPauseContent = document.createElement('div');
 		domFeedFittedPauseContent.className = 'content';
 		DomUI.domElements['feed-fitted-pause-content'] = domFeedFittedPauseContent;
@@ -3907,7 +3904,7 @@ export class DomUI {
 		input.min = '0';
 		input.step = '0.1';
 		input.type = 'range';
-		input.value = '0.8';
+		input.value = String(DomUI.settings.darknessMax);
 		input.oninput = (event: any) => {
 			DomUI.settings.darknessMax = Number(event.target.value);
 			VideoEngineBus.outputSettings(DomUI.settings);
@@ -3998,7 +3995,7 @@ export class DomUI {
 		input.min = '-0.2';
 		input.step = '0.1';
 		input.type = 'range';
-		input.value = '0';
+		input.value = String(DomUI.settings.gamma);
 		input.oninput = (event: any) => {
 			DomUI.settings.gamma = Number(event.target.value);
 			VideoEngineBus.outputSettings(DomUI.settings);

@@ -36,6 +36,10 @@ $dirt-engine-ui-edit-button-width: 40px;
 		height: 40px;
 	}
 
+	input[type='number'] {
+		width: 75px;
+	}
+
 	input[type='checkbox'],
 	input[type='radio'] {
 		height: 30px;
@@ -82,9 +86,17 @@ $dirt-engine-ui-edit-button-width: 40px;
 							}
 
 							&:not(:first-child) {
+								align-items: center;
+								display: flex;
+								justify-content: left;
 								padding-left: 10px;
-								text-align: left;
 								width: 66%;
+
+								input {
+									&:not(:first-child) {
+										margin-left: 20px;
+									}
+								}
 							}
 						}
 					}

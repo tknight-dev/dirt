@@ -59,6 +59,55 @@ export class UtilEngine {
 		return count;
 	}
 
+	public static htmlRangeAndNumber(
+		max: number,
+		min: number,
+		step: number,
+		value: number,
+		callback: (value: number) => void,
+		appendTo?: HTMLElement,
+	): HTMLInputElement[] {
+		let inputRange: HTMLInputElement = document.createElement('input'),
+			inputNumber: HTMLInputElement = document.createElement('input');
+
+		inputNumber.autocomplete = 'off';
+		inputNumber.max = String(max);
+		inputNumber.min = String(min);
+		inputNumber.onblur = (event: any) => {
+			let value = Math.round(Number(event.target.value) / step);
+			inputNumber.value = String(value);
+			inputRange.value = String(value);
+			callback(value);
+		};
+		inputNumber.oninput = (event: any) => {
+			let value = Math.round(Number(event.target.value) / step);
+			inputRange.value = String(value);
+			callback(value);
+		};
+		inputNumber.step = String(step);
+		inputNumber.type = 'number';
+		inputNumber.value = String(value);
+
+		inputRange.autocomplete = 'off';
+		inputRange.max = String(max);
+		inputRange.min = String(min);
+		inputRange.oninput = (event: any) => {
+			let value = Math.round(Number(event.target.value) / step);
+			inputNumber.value = String(value);
+			callback(value);
+		};
+		inputRange.step = String(step);
+		inputRange.type = 'range';
+		inputRange.value = String(value);
+
+		if (appendTo) {
+			appendTo.appendChild(inputRange);
+			appendTo.appendChild(inputNumber);
+		}
+
+		return [inputRange, inputNumber];
+	}
+
 	public static async initialize(): Promise<void> {
 		if (UtilEngine.initialized) {
 			return;
