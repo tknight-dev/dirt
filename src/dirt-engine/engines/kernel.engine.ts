@@ -55,16 +55,6 @@ export class KernelEngine {
 		}
 		KernelEngine.initialized = true;
 
-		ctxBackground1.imageSmoothingEnabled = false;
-		ctxBackground2.imageSmoothingEnabled = false;
-		ctxForeground1.imageSmoothingEnabled = false;
-		ctxForeground2.imageSmoothingEnabled = false;
-		ctxInteractive.imageSmoothingEnabled = false;
-		ctxMiddleground.imageSmoothingEnabled = false;
-		ctxOverlay.imageSmoothingEnabled = false;
-		ctxUnderlay.imageSmoothingEnabled = false;
-		ctxVanishing.imageSmoothingEnabled = false;
-
 		await DrawEditEngine.initialize(
 			ctxBackground1,
 			ctxBackground2,

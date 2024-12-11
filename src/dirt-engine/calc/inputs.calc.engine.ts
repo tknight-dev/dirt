@@ -2,8 +2,7 @@ import { CameraEngine } from '../engines/camera.engine';
 import { KeyAction, KeyCommon } from '../engines/keyboard.engine';
 import { MapDrawEngine } from '../draw/map.draw.engine';
 import { MouseAction, MouseCmd } from '../engines/mouse.engine';
-import { TouchAction, TouchCmd } from '../engines/touch.engine';
-import { VideoBusInputCmdSettingsFPS } from '../engines/buses/video.model.bus';
+import { TouchAction, TouchCmd, TouchPosition } from '../engines/touch.engine';
 
 /**
  * @author tknight-dev
@@ -17,10 +16,6 @@ export class InputsCalcEngine {
 	private static stateModifier: { [key: number]: boolean } = {};
 	private static stateMove: { [key: number]: boolean } = {};
 	private static status: boolean;
-	private static touchDistanceActive: boolean;
-	private static touchDistanceOrig: number;
-	private static touchDistanceOrigX: number;
-	private static touchDistanceOrigY: number;
 
 	public static async initialize(): Promise<void> {
 		if (InputsCalcEngine.initialized) {
@@ -31,6 +26,7 @@ export class InputsCalcEngine {
 
 		// Last
 		InputsCalcEngine.startBind();
+		InputsCalcEngine.touchInputBind();
 	}
 
 	// Function set by binder, this is just a placeholder
@@ -109,63 +105,92 @@ export class InputsCalcEngine {
 		}
 	}
 
-	public static inputTouch(action: TouchAction): void {
-		if (InputsCalcEngine.paused || !InputsCalcEngine.status) {
-			return;
-		}
+	public static inputTouch(action: TouchAction): void {}
 
-		switch (action.cmd) {
-			case TouchCmd.ZOOM:
-				if (action.down) {
-					InputsCalcEngine.touchDistanceActive = true;
-					InputsCalcEngine.touchDistanceOrig = <number>action.positions[0].distance;
-					InputsCalcEngine.touchDistanceOrigX = <number>action.positions[0].x;
-					InputsCalcEngine.touchDistanceOrigY = <number>action.positions[0].y;
-				} else {
-					InputsCalcEngine.touchDistanceActive = false;
-				}
-				break;
-			case TouchCmd.ZOOM_MOVE:
-				if (InputsCalcEngine.touchDistanceActive) {
-					let distance: number = <number>action.positions[0].distance,
-						x: number = <number>action.positions[0].x,
-						y: number = <number>action.positions[0].y,
-						absX: number = Math.abs(InputsCalcEngine.touchDistanceOrigX - x),
-						absY: number = Math.abs(InputsCalcEngine.touchDistanceOrigY - y),
-						absZoom: number = Math.abs(InputsCalcEngine.touchDistanceOrig - distance);
+	public static touchInputBind(): void {
+		let absX: number,
+			absY: number,
+			absZoom: number,
+			distance: number,
+			touchDistanceActive: boolean,
+			touchDistanceOrig: number,
+			touchDistanceOrigX: number,
+			touchDistanceOrigY: number,
+			touchPosition: TouchPosition,
+			x: number,
+			y: number;
 
-					// Move X
-					if (absX > 40) {
-						if (InputsCalcEngine.touchDistanceOrigX - x > 0) {
-							InputsCalcEngine.stateMove[KeyCommon.RIGHT] = action.down;
-						} else {
-							InputsCalcEngine.stateMove[KeyCommon.LEFT] = action.down;
-						}
-						InputsCalcEngine.touchDistanceOrigX = x;
+		InputsCalcEngine.inputTouch = (action: TouchAction) => {
+			if (InputsCalcEngine.paused || !InputsCalcEngine.status) {
+				return;
+			}
+
+			switch (action.cmd) {
+				case TouchCmd.ZOOM:
+					if (action.down) {
+						touchDistanceActive = true;
+						touchPosition = action.positions[0];
+
+						touchDistanceOrig = <number>touchPosition.distance;
+						touchDistanceOrigX = touchPosition.x;
+						touchDistanceOrigY = touchPosition.y;
+					} else {
+						touchDistanceActive = false;
+
+						InputsCalcEngine.stateMove[KeyCommon.DOWN] = false;
+						InputsCalcEngine.stateMove[KeyCommon.LEFT] = false;
+						InputsCalcEngine.stateMove[KeyCommon.RIGHT] = false;
+						InputsCalcEngine.stateMove[KeyCommon.UP] = false;
 					}
+					break;
+				case TouchCmd.ZOOM_MOVE:
+					if (touchDistanceActive) {
+						touchPosition = action.positions[0];
 
-					// Move Y
-					if (absY > 40) {
-						if (InputsCalcEngine.touchDistanceOrigY - y > 0) {
-							InputsCalcEngine.stateMove[KeyCommon.DOWN] = action.down;
-						} else {
-							InputsCalcEngine.stateMove[KeyCommon.UP] = action.down;
-						}
-						InputsCalcEngine.touchDistanceOrigY = y;
-					}
+						(distance = <number>touchPosition.distance),
+							(x = touchPosition.x),
+							(y = touchPosition.y),
+							(absX = Math.abs(touchDistanceOrigX - x)),
+							(absY = Math.abs(touchDistanceOrigY - y)),
+							(absZoom = Math.abs(touchDistanceOrig - distance));
 
-					// Zoom
-					if (absZoom > 40) {
-						if (InputsCalcEngine.touchDistanceOrig - distance > 0) {
-							CameraEngine.zoom(false);
-						} else {
-							CameraEngine.zoom(true);
+						// Move X
+						if (absX > 40) {
+							if (touchDistanceOrigX - x > 0) {
+								InputsCalcEngine.stateMove[KeyCommon.LEFT] = !action.down;
+								InputsCalcEngine.stateMove[KeyCommon.RIGHT] = action.down;
+							} else {
+								InputsCalcEngine.stateMove[KeyCommon.LEFT] = action.down;
+								InputsCalcEngine.stateMove[KeyCommon.RIGHT] = !action.down;
+							}
+							touchDistanceOrigX = x;
 						}
-						InputsCalcEngine.touchDistanceOrig = distance;
+
+						// Move Y
+						if (absY > 40) {
+							if (touchDistanceOrigY - y > 0) {
+								InputsCalcEngine.stateMove[KeyCommon.DOWN] = action.down;
+								InputsCalcEngine.stateMove[KeyCommon.UP] = !action.down;
+							} else {
+								InputsCalcEngine.stateMove[KeyCommon.DOWN] = !action.down;
+								InputsCalcEngine.stateMove[KeyCommon.UP] = action.down;
+							}
+							touchDistanceOrigY = y;
+						}
+
+						// Zoom
+						if (absZoom > 40) {
+							if (touchDistanceOrig - distance > 0) {
+								CameraEngine.zoom(false);
+							} else {
+								CameraEngine.zoom(true);
+							}
+							touchDistanceOrig = distance;
+						}
 					}
-				}
-				break;
-		}
+					break;
+			}
+		};
 	}
 
 	public static setMapVisible(mapVisible: boolean): void {

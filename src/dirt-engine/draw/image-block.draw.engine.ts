@@ -24,7 +24,6 @@ import { UtilEngine } from '../engines/util.engine';
 
 export class ImageBlockDrawEngine {
 	private static animationUpdate: boolean;
-	private static caches: ImageBitmap[];
 	private static cacheCanvases: OffscreenCanvas[] = [];
 	private static cacheEditing: boolean;
 	private static cacheHashGx: number;
@@ -40,7 +39,6 @@ export class ImageBlockDrawEngine {
 	private static ctxInteractive: OffscreenCanvasRenderingContext2D;
 	private static ctxMiddleground: OffscreenCanvasRenderingContext2D;
 	private static ctxs: OffscreenCanvasRenderingContext2D[] = [];
-	private static ctxsOptimized: OffscreenCanvasRenderingContext2D[] = [];
 	private static ctxVanishing: OffscreenCanvasRenderingContext2D;
 	private static editing: boolean;
 	private static initialized: boolean;
@@ -85,8 +83,6 @@ export class ImageBlockDrawEngine {
 
 		// Caching System
 		let cacheCanvas: OffscreenCanvas;
-
-		ImageBlockDrawEngine.caches = new Array(ImageBlockDrawEngine.zGroup.length);
 		for (let i in ImageBlockDrawEngine.zGroup) {
 			cacheCanvas = new OffscreenCanvas(0, 0);
 
@@ -94,15 +90,6 @@ export class ImageBlockDrawEngine {
 			ImageBlockDrawEngine.ctxs.push(<OffscreenCanvasRenderingContext2D>cacheCanvas.getContext('2d'));
 			ImageBlockDrawEngine.ctxs[ImageBlockDrawEngine.ctxs.length - 1].imageSmoothingEnabled = false;
 		}
-		ImageBlockDrawEngine.ctxsOptimized = [
-			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
-			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
-			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
-			ImageBlockDrawEngine.ctxs[0], // Write to just one background canvas
-			ImageBlockDrawEngine.ctxs[4], // Write to just one foreground canvas
-			ImageBlockDrawEngine.ctxs[4], // Write to just one foreground canvas
-			ImageBlockDrawEngine.ctxs[6], // Write to just one vanishing canvas
-		];
 
 		// Last
 		ImageBlockDrawEngine.startBind();
@@ -126,7 +113,7 @@ export class ImageBlockDrawEngine {
 			cacheCanvases: OffscreenCanvas[] = ImageBlockDrawEngine.cacheCanvases,
 			camera: Camera,
 			ctx: OffscreenCanvasRenderingContext2D,
-			ctxs: OffscreenCanvasRenderingContext2D[],
+			ctxs: OffscreenCanvasRenderingContext2D[] = ImageBlockDrawEngine.ctxs,
 			drawGx: number,
 			drawGy: number,
 			editing: boolean,
@@ -221,13 +208,7 @@ export class ImageBlockDrawEngine {
 				stopGxEff = Math.ceil(startGx + camera.viewportGwEff);
 				stopGyEff = Math.ceil(startGy + camera.viewportGhEff);
 
-				// Config
-				if (editing) {
-					ctxs = ImageBlockDrawEngine.ctxs;
-				} else {
-					ctxs = ImageBlockDrawEngine.ctxsOptimized;
-				}
-
+				// Calc
 				imageBitmapsBlend = Math.round((1 - (hourPreciseOfDayEff - (hourPreciseOfDayEff | 0))) * 1000) / 1000;
 				radius = (((camera.viewportPh / 2) * ImageBlockDrawEngine.vanishingPercentageOfViewport) / camera.zoom) | 0;
 				radius2 = radius * 2;
@@ -717,6 +698,10 @@ export class ImageBlockDrawEngine {
 				 * Canvas to cache
 				 */
 				if (!editing) {
+					ctxs[0].drawImage(cacheCanvases[1], 0, 0);
+					ctxs[0].drawImage(cacheCanvases[2], 0, 0);
+					ctxs[0].drawImage(cacheCanvases[3], 0, 0);
+					ctxs[4].drawImage(cacheCanvases[5], 0, 0);
 					ctxs[4].drawImage(cacheCanvases[6], 0, 0);
 				}
 
@@ -740,10 +725,10 @@ export class ImageBlockDrawEngine {
 				ImageBlockDrawEngine.ctxForeground2.drawImage(cacheCanvases[5], 0, 0);
 				ImageBlockDrawEngine.ctxVanishing.drawImage(cacheCanvases[6], 0, 0);
 			} else {
-				// 0-3 written to 0 when not editing
+				// 2-3 written to 0 when not editing
 				ImageBlockDrawEngine.ctxBackground1.drawImage(cacheCanvases[0], 0, 0);
 
-				// 4-6 written to 4 when not editing
+				// 5-6 written to 4 when not editing
 				ImageBlockDrawEngine.ctxForeground1.drawImage(cacheCanvases[4], 0, 0);
 			}
 		};

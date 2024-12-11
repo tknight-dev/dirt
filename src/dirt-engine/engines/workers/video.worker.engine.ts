@@ -131,7 +131,23 @@ class VideoWorkerEngine {
 			return;
 		}
 		VideoWorkerEngine.initialized = true;
-		let timestamp: number = performance.now();
+		let contextOptions = {
+				alpha: true,
+				antialias: false,
+				depth: true,
+				desynchronized: true,
+				powerPreference: 'high-performance',
+				preserveDrawingBuffer: true,
+			},
+			contextOptionsNoAlpha = {
+				alpha: false,
+				antialias: false,
+				depth: true,
+				desynchronized: true,
+				powerPreference: 'high-performance',
+				preserveDrawingBuffer: true,
+			},
+			timestamp: number = performance.now();
 
 		// Assign
 		VideoWorkerEngine.assetManifestMaster = AssetEngine.compileMasterManifest(data.assetDeclarations.manifest || <any>{});
@@ -151,16 +167,20 @@ class VideoWorkerEngine {
 
 		// Get contexts
 		VideoWorkerEngine.canvasesContext = [
-			<any>data.canvasOffscreenBackground1.getContext('2d'),
-			<any>data.canvasOffscreenBackground2.getContext('2d'),
-			<any>data.canvasOffscreenForeground1.getContext('2d'),
-			<any>data.canvasOffscreenForeground2.getContext('2d'),
-			<any>data.canvasOffscreenInteractive.getContext('2d'),
-			<any>data.canvasOffscreenMiddleground.getContext('2d'),
-			<any>data.canvasOffscreenOverlay.getContext('2d'),
-			<any>data.canvasOffscreenUnderlay.getContext('2d', { alpha: false }),
-			<any>data.canvasOffscreenVanishing.getContext('2d'),
+			<any>data.canvasOffscreenBackground1.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenBackground2.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenForeground1.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenForeground2.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenInteractive.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenMiddleground.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenOverlay.getContext('2d', contextOptions),
+			<any>data.canvasOffscreenUnderlay.getContext('2d', contextOptionsNoAlpha),
+			<any>data.canvasOffscreenVanishing.getContext('2d', contextOptions),
 		];
+		VideoWorkerEngine.canvasesContext.forEach((context: OffscreenCanvasRenderingContext2D) => {
+			context.imageSmoothingEnabled = false;
+			context.shadowBlur = 0;
+		});
 
 		// Engines
 		await AssetEngine.initialize(data.assetDeclarations, AssetCollection.VIDEO);

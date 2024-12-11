@@ -3918,6 +3918,11 @@ export class DomUI {
 
 		td = document.createElement('td');
 		select = document.createElement('select');
+		select.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
 		select.onchange = (event: any) => {
 			DomUI.settings.fps = <any>Number(event.target.value);
 			VideoEngineBus.outputSettings(DomUI.settings);
@@ -4009,6 +4014,11 @@ export class DomUI {
 
 		td = document.createElement('td');
 		select = document.createElement('select');
+		select.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
 		select.onchange = (event: any) => {
 			DomUI.settings.imageQuality = <any>Number(event.target.value);
 			VideoEngineBus.outputSettings(DomUI.settings);
@@ -4061,6 +4071,11 @@ export class DomUI {
 
 		td = document.createElement('td');
 		select = document.createElement('select');
+		select.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
 		select.onchange = (event: any) => {
 			let value: string = event.target.value;
 
@@ -4116,6 +4131,11 @@ export class DomUI {
 
 		td = document.createElement('td');
 		select = document.createElement('select');
+		select.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
 		select.onchange = (event: any) => {
 			DomUI.settings.shadingQuality = <any>Number(event.target.value);
 			VideoEngineBus.outputSettings(DomUI.settings);
@@ -4282,26 +4302,18 @@ export class DomUI {
 	private static async initDomEdit(domFeedFitted: HTMLElement, maps: AssetMap[]): Promise<void> {
 		let application: HTMLElement,
 			applicationCursor: HTMLElement,
-			applicationHistory: HTMLElement,
 			applicationType: HTMLElement,
 			applicationTypeMenu: HTMLElement,
 			applicationTypeMenuBrush: HTMLElement,
 			applicationTypeMenuEraser: HTMLElement,
-			applicationTypeMenuFill: HTMLElement,
 			applicationTypeMenuPencil: HTMLElement,
-			applicationTypeMenuStamp: HTMLElement,
 			applicationTypePixelSize: HTMLElement,
 			applicationTypePixelSizeInputRange: HTMLInputElement,
 			applicationTypePixelSizeInputText: HTMLInputElement,
-			applicationWrap: HTMLElement,
-			assetMap: AssetMap,
-			blockMenu: HTMLElement,
 			copy: HTMLElement,
 			copyButton: HTMLElement,
 			detailsContextMenu: HTMLElement,
 			feedFitted: HTMLElement = DomUI.domElements['feed-fitted'],
-			vanishing: HTMLElement,
-			vanishingButton: HTMLElement,
 			fps: HTMLElement,
 			grid: HTMLElement,
 			gridButton: HTMLElement,
@@ -4321,7 +4333,6 @@ export class DomUI {
 			mouseDownSelectModal: HTMLElement,
 			mouseDownSelectModalContent: HTMLElement,
 			mouseDownSelectModalContentBody: HTMLElement,
-			mouseDownSelectModalContentBodyButton: HTMLElement,
 			mouseDownSelectModalContentBodyButtons: HTMLElement,
 			mouseDownSelectModalContentBodyButtonsCancel: HTMLElement,
 			mouseDownSelectModalContentHeader: HTMLElement,
@@ -4338,7 +4349,6 @@ export class DomUI {
 			paletteModalAnimation: HTMLElement,
 			paletteModalAnimationContent: HTMLElement,
 			paletteModalAnimationContentBody: HTMLElement,
-			paletteModalAnimationContentBodyButton: HTMLElement,
 			paletteModalAnimationContentBodyButtons: HTMLElement,
 			paletteModalAnimationContentBodyButtonsApply: HTMLElement,
 			paletteModalAnimationContentBodyButtonsCancel: HTMLElement,
