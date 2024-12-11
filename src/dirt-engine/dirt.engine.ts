@@ -362,7 +362,7 @@ export class DirtEngine extends DomUI {
 				DomUI.domElementsUIEdit['application-map-modal'].style.display = 'none';
 				DomUI.domElementsUIEdit['map'].classList.remove('active');
 				DomUI.domElementsUIEdit['time'].innerText = map.hourOfDay + ':00';
-				MouseEngine.setSuspendWheel(false);
+				DomUI.suspendInputs(false);
 			};
 			reader.readAsArrayBuffer(event.dataTransfer.files[0]);
 		};

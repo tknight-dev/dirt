@@ -27,7 +27,7 @@ export class MouseEngine {
 	private static callback: (action: MouseAction) => void;
 	private static feedFitted: HTMLElement;
 	private static initialized: boolean;
-	private static suspendWheel: boolean;
+	private static suspend: boolean;
 	private static timeout: ReturnType<typeof setTimeout>;
 	private static timestamp: number = performance.now();
 
@@ -114,7 +114,7 @@ export class MouseEngine {
 			}
 		});
 		document.addEventListener('wheel', (event: any) => {
-			if (!MouseEngine.suspendWheel && MouseEngine.callback) {
+			if (!MouseEngine.suspend && MouseEngine.callback) {
 				if (event.deltaY > 0) {
 					MouseEngine.callback({
 						cmd: MouseCmd.WHEEL,
@@ -138,7 +138,7 @@ export class MouseEngine {
 		MouseEngine.callback = callback;
 	}
 
-	public static setSuspendWheel(suspendWheel: boolean) {
-		MouseEngine.suspendWheel = suspendWheel;
+	public static setSuspend(suspend: boolean) {
+		MouseEngine.suspend = suspend;
 	}
 }

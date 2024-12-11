@@ -31,6 +31,7 @@ export class TouchEngine {
 	private static callback: (action: TouchAction) => void;
 	private static feedFitted: HTMLElement;
 	private static initialized: boolean;
+	private static suspend: boolean;
 	private static timeout: ReturnType<typeof setTimeout>;
 	private static timestamp: number = performance.now();
 
@@ -80,7 +81,7 @@ export class TouchEngine {
 		TouchEngine.feedFitted = feedFitted;
 
 		document.addEventListener('touchcancel', (event: TouchEvent) => {
-			if (TouchEngine.callback && TouchEngine.cmdActiveStatus) {
+			if (!TouchEngine.suspend && TouchEngine.callback && TouchEngine.cmdActiveStatus) {
 				TouchEngine.cmdActiveStatus = false;
 				TouchEngine.callback({
 					cmd: TouchEngine.cmdActive,
@@ -92,7 +93,7 @@ export class TouchEngine {
 		});
 
 		document.addEventListener('touchend', (event: TouchEvent) => {
-			if (TouchEngine.callback && TouchEngine.cmdActiveStatus) {
+			if (!TouchEngine.suspend && TouchEngine.callback && TouchEngine.cmdActiveStatus) {
 				TouchEngine.cmdActiveStatus = false;
 				TouchEngine.callback({
 					cmd: TouchEngine.cmdActive,
@@ -104,7 +105,7 @@ export class TouchEngine {
 		});
 
 		document.addEventListener('touchmove', (event: TouchEvent) => {
-			if (TouchEngine.callback && TouchEngine.cmdActiveStatus) {
+			if (!TouchEngine.suspend && TouchEngine.callback && TouchEngine.cmdActiveStatus) {
 				let timestamp = performance.now();
 
 				if (timestamp - TouchEngine.timestamp > 20) {
@@ -130,7 +131,7 @@ export class TouchEngine {
 		});
 
 		document.addEventListener('touchstart', (event: TouchEvent) => {
-			if (TouchEngine.callback && !TouchEngine.cmdActiveStatus) {
+			if (!TouchEngine.suspend && TouchEngine.callback && !TouchEngine.cmdActiveStatus) {
 				clearTimeout(TouchEngine.timeout);
 				TouchEngine.timeout = setTimeout(() => {
 					TouchEngine.cmdActive = event.touches.length === 1 ? TouchCmd.LEFT : TouchCmd.ZOOM;
@@ -149,5 +150,9 @@ export class TouchEngine {
 
 	public static setCallback(callback: (action: TouchAction) => void) {
 		TouchEngine.callback = callback;
+	}
+
+	public static setSuspend(suspend: boolean) {
+		TouchEngine.suspend = suspend;
 	}
 }

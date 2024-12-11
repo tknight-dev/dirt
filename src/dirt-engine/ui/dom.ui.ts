@@ -29,8 +29,9 @@ import {
 import { MapActive, MapConfig } from '../models/map.model';
 import { MapAudioAmbientEngine } from '../engines/map-audio-ambient.engine';
 import { MapEditEngine } from '../engines/map-edit.engine';
+import { KeyboardEngine } from '../engines/keyboard.engine';
 import { MouseAction, MouseEngine } from '../engines/mouse.engine';
-import { TouchAction } from '../engines/touch.engine';
+import { TouchAction, TouchEngine } from '../engines/touch.engine';
 import { UtilEngine } from '../engines/util.engine';
 import {
 	VideoBusInputCmdGameModeEditApply,
@@ -103,7 +104,7 @@ export class DomUI {
 			modalContent = DomUI.domElements['feed-fitted-ui-select-modal-content'];
 
 		modal.style.display = 'flex';
-		MouseEngine.setSuspendWheel(true);
+		DomUI.suspendInputs(true);
 
 		if (assetRemovable) {
 			div = document.createElement('div');
@@ -2941,7 +2942,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal'].style.display = 'none';
 		DomUI.domElementsUIEdit[menuId].click();
 		DomUI.domElementsUIEdit['palette'].classList.remove('active');
-		MouseEngine.setSuspendWheel(false);
+		DomUI.suspendInputs(false);
 
 		// Show cursor config buttons
 		DomUI.domElementsUIEdit['application'].style.display = 'flex';
@@ -3192,7 +3193,7 @@ export class DomUI {
 		if (gridObjects.length === 1 && gridObjects[0] === undefined) {
 			return;
 		}
-		MouseEngine.setSuspendWheel(true);
+		DomUI.suspendInputs(true);
 
 		if (copy) {
 			DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-header'].innerText = 'Copy';
@@ -3266,7 +3267,7 @@ export class DomUI {
 					DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
 					DomUI.domElementsUIEdit['copy'].classList.remove('active');
 
-					MouseEngine.setSuspendWheel(false);
+					DomUI.suspendInputs(false);
 				}
 			};
 			tr.appendChild(td);
@@ -4726,7 +4727,7 @@ export class DomUI {
 		grid.onclick = () => {
 			grid.classList.add('active');
 			gridModal.style.display = 'flex';
-			MouseEngine.setSuspendWheel(true);
+			DomUI.suspendInputs(true);
 		};
 		DomUI.domElements['feed-fitted-ui-grid'] = grid;
 		DomUI.domElementsUIEdit['grid'] = grid;
@@ -4787,7 +4788,7 @@ export class DomUI {
 				}
 				mapModalContent.style.display = 'block';
 				mapModal.style.display = 'flex';
-				MouseEngine.setSuspendWheel(true);
+				DomUI.suspendInputs(true);
 			});
 		};
 		DomUI.domElements['feed-fitted-ui-map'] = map;
@@ -4913,7 +4914,7 @@ export class DomUI {
 			paletteModalContentBody.classList.remove('buttoned');
 			paletteModalContentBodyButtons.style.display = 'none';
 			paletteModal.style.display = 'flex';
-			MouseEngine.setSuspendWheel(true);
+			DomUI.suspendInputs(true);
 		};
 		DomUI.domElements['feed-fitted-ui-palette'] = palette;
 		DomUI.domElementsUIEdit['palette'] = palette;
@@ -4989,7 +4990,7 @@ export class DomUI {
 			settingsModalContentBodyMapName.value = mapActive.name;
 
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'flex';
-			MouseEngine.setSuspendWheel(true);
+			DomUI.suspendInputs(true);
 		};
 		DomUI.domElements['feed-fitted-ui-settings'] = settings;
 		DomUI.domElementsUIEdit['settings'] = settings;
@@ -5714,7 +5715,7 @@ export class DomUI {
 		gridModalContentBody.onclick = () => {
 			grid.classList.remove('active');
 			gridModal.style.display = 'none';
-			MouseEngine.setSuspendWheel(false);
+			DomUI.suspendInputs(false);
 		};
 		DomUI.domElements['feed-fitted-ui-grid-modal-content-body'] = gridModalContentBody;
 		DomUI.domElementsUIEdit['application-grid-modal-content-body'] = gridModalContentBody;
@@ -5755,7 +5756,7 @@ export class DomUI {
 			mapModalContentBodySelection.onclick = (event: any) => {
 				DomUI.editMapSelect(event.target.innerText);
 				mapModalContent.style.display = 'none';
-				MouseEngine.setSuspendWheel(false);
+				DomUI.suspendInputs(false);
 			};
 			DomUI.domElements['feed-fitted-ui-map-modal-content-body-selection-' + i] = mapModalContentBodySelection;
 			DomUI.domElementsUIEdit['application-map-modal-content-body-selection-' + i] = mapModalContentBodySelection;
@@ -5768,7 +5769,7 @@ export class DomUI {
 		mapModalContentBodySelection.onclick = (event: any) => {
 			DomUI.editMapSelect(undefined);
 			mapModalContent.style.display = 'none';
-			MouseEngine.setSuspendWheel(false);
+			DomUI.suspendInputs(false);
 		};
 		DomUI.domElements['feed-fitted-ui-map-modal-content-body-selection-new'] = mapModalContentBodySelection;
 		DomUI.domElementsUIEdit['application-map-modal-content-body-selection-new'] = mapModalContentBodySelection;
@@ -5820,7 +5821,7 @@ export class DomUI {
 		mouseDownSelectModalContentBodyButtonsCancel.innerText = 'Close';
 		mouseDownSelectModalContentBodyButtonsCancel.onclick = () => {
 			DomUI.domElementsUIEdit['application-mouse-down-select-modal'].style.display = 'none';
-			MouseEngine.setSuspendWheel(false);
+			DomUI.suspendInputs(false);
 		};
 		DomUI.domElements['feed-fitted-ui-mouse-down-select-modal-content-buttons-cancel'] = mouseDownSelectModalContentBodyButtonsCancel;
 		DomUI.domElementsUIEdit['application-mouse-down-select-modal-content-buttons-cancel'] =
@@ -5877,7 +5878,7 @@ export class DomUI {
 			}
 			palette.classList.remove('active');
 			DomUI.domElementsUIEdit['application-palette-modal'].style.display = 'none';
-			MouseEngine.setSuspendWheel(false);
+			DomUI.suspendInputs(false);
 		};
 		DomUI.domElements['feed-fitted-ui-palette-modal-content-buttons-cancel'] = paletteModalContentBodyButtonsCancel;
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-cancel'] = paletteModalContentBodyButtonsCancel;
@@ -6058,7 +6059,7 @@ export class DomUI {
 			}
 			settings.classList.remove('active');
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'none';
-			MouseEngine.setSuspendWheel(false);
+			DomUI.suspendInputs(false);
 		};
 		DomUI.domElements['feed-fitted-ui-settings-modal-content-buttons-cancel'] = settingsModalContentBodyButtonsCancel;
 		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-cancel'] = settingsModalContentBodyButtonsCancel;
@@ -6080,7 +6081,7 @@ export class DomUI {
 
 			settings.classList.remove('active');
 			DomUI.domElementsUIEdit['application-settings-modal'].style.display = 'none';
-			MouseEngine.setSuspendWheel(false);
+			DomUI.suspendInputs(false);
 		};
 		DomUI.domElements['feed-fitted-ui-settings-modal-content-buttons-apply'] = settingsModalContentBodyButtonsApply;
 		DomUI.domElementsUIEdit['application-settings-modal-content-buttons-apply'] = settingsModalContentBodyButtonsApply;
@@ -6100,5 +6101,11 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-spinner-modal-content'] = spinnerModalContent;
 		DomUI.domElementsUIEdit['application-spinner-modal-content'] = spinnerModalContent;
 		spinnerModal.appendChild(spinnerModalContent);
+	}
+
+	protected static suspendInputs(suspend: boolean) {
+		KeyboardEngine.setSuspend(suspend);
+		MouseEngine.setSuspend(suspend);
+		TouchEngine.setSuspend(suspend);
 	}
 }
