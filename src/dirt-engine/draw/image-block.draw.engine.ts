@@ -121,9 +121,9 @@ export class ImageBlockDrawEngine {
 	private static startBind(): void {
 		let assetId: string,
 			audioModulation: AudioModulation,
-			audioModulations: { [key: string]: AudioModulation },
+			audioModulations: { [key: string]: AudioModulation } = AudioModulation.valuesWithoutNoneMap,
 			brightness: number,
-			cacheCanvases: OffscreenCanvas[],
+			cacheCanvases: OffscreenCanvas[] = ImageBlockDrawEngine.cacheCanvases,
 			camera: Camera,
 			ctx: OffscreenCanvasRenderingContext2D,
 			ctxs: OffscreenCanvasRenderingContext2D[],
@@ -181,9 +181,9 @@ export class ImageBlockDrawEngine {
 			startGyEff: number,
 			stopGxEff: number,
 			stopGyEff: number,
-			transform: boolean,
+			transform: boolean = false,
 			z: VideoBusInputCmdGameModeEditApplyZ,
-			zGroup: VideoBusInputCmdGameModeEditApplyZ[];
+			zGroup: VideoBusInputCmdGameModeEditApplyZ[] = ImageBlockDrawEngine.zGroup;
 
 		ImageBlockDrawEngine.start = () => {
 			camera = ImageBlockDrawEngine.mapActiveCamera;
@@ -201,15 +201,11 @@ export class ImageBlockDrawEngine {
 				ImageBlockDrawEngine.cacheEditing !== editing
 			) {
 				// Draw cache
-				audioModulations = AudioModulation.valuesWithoutNoneMap;
-				cacheCanvases = ImageBlockDrawEngine.cacheCanvases;
-				extendedHash = {};
-				extendedHashes = [];
-				extendedHashesLights = [];
+				extendedHash = <any>new Object();
+				extendedHashes = new Array();
+				extendedHashesLights = new Array();
 				gInPh = camera.gInPh;
-				gInPhEff = 0;
 				gInPw = camera.gInPw;
-				gInPwEff = 0;
 				grid = ImageBlockDrawEngine.mapActive.gridActive;
 				gSizeHPrevious = -1;
 				gSizeWPrevious = -1;
@@ -224,8 +220,6 @@ export class ImageBlockDrawEngine {
 				startGyEff = startGy | 0;
 				stopGxEff = Math.ceil(startGx + camera.viewportGwEff);
 				stopGyEff = Math.ceil(startGy + camera.viewportGhEff);
-				transform = false;
-				zGroup = ImageBlockDrawEngine.zGroup;
 
 				// Config
 				if (editing) {
@@ -305,12 +299,12 @@ export class ImageBlockDrawEngine {
 									}
 									extendedHash = extendedHashes[j];
 
-									if (gridBlockPipelineAsset.extends) {
-										if (extendedHash[gridBlockPipelineAsset.asset.hash] !== undefined) {
+									if (gridBlockPipelineAsset.assetLarge || gridBlockPipelineAsset.extends) {
+										if (extendedHash[gridImageBlock.hash] !== undefined) {
 											// Asset already drawn
 											skip = true;
 										} else {
-											extendedHash[gridBlockPipelineAsset.asset.hash] = null;
+											extendedHash[gridImageBlock.hash] = null;
 										}
 									}
 
@@ -327,7 +321,7 @@ export class ImageBlockDrawEngine {
 											gridImageTransform = gridImageBlock;
 										}
 
-										// Extension?
+										// Extended?
 										if (gridBlockPipelineAsset.extends) {
 											if (gridImageBlock.gx !== gx) {
 												drawGx = ((gridImageBlock.gx - startGx) * gInPw) | 0;
@@ -579,7 +573,7 @@ export class ImageBlockDrawEngine {
 										gridImageTransform = gridLight;
 									}
 
-									// Extension?
+									// Extends?
 									if (gridBlockPipelineAsset.lightExtends) {
 										if (gridLight.gx !== gx) {
 											drawGx = ((gridLight.gx - startGx) * gInPw) | 0;
@@ -640,7 +634,7 @@ export class ImageBlockDrawEngine {
 									}
 
 									// Reset extension displacement
-									if (gridBlockPipelineAsset.lightExtends) {
+									if (gridBlockPipelineAsset.assetLarge || gridBlockPipelineAsset.lightExtends) {
 										if (gridLight.gx !== gx) {
 											drawGx = ((gx - startGx) * gInPw) | 0;
 										}

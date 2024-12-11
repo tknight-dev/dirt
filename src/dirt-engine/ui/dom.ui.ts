@@ -1314,7 +1314,6 @@ export class DomUI {
 			1,
 			applicationProperties.gSizeW || 0,
 			(value: number) => {
-				console.log('gSizeH', value);
 				applicationProperties.gSizeW = value;
 			},
 			td,
@@ -1756,7 +1755,6 @@ export class DomUI {
 			1,
 			applicationProperties.gSizeW || 0,
 			(value: number) => {
-				console.log('gSizeH', value);
 				applicationProperties.gSizeW = value;
 			},
 			td,
@@ -2137,7 +2135,6 @@ export class DomUI {
 			1,
 			applicationProperties.gSizeW || 0,
 			(value: number) => {
-				console.log('gSizeH', value);
 				applicationProperties.gSizeW = value;
 			},
 			td,
@@ -2857,7 +2854,6 @@ export class DomUI {
 			1,
 			applicationProperties.gSizeW || 0,
 			(value: number) => {
-				console.log('gSizeH', value);
 				applicationProperties.gSizeW = value;
 			},
 			td,
