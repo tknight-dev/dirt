@@ -80,7 +80,7 @@ export class DirtEngine extends DomUI {
 			timestamp: number = performance.now();
 
 		// Initialize DOM
-		await DirtEngine.initializeDomUI(oldTVIntro);
+		await DomUI.initializeDomUI(oldTVIntro);
 
 		// Spinner for slow asset loading (bad internet connection)
 		setTimeout(() => {
@@ -143,6 +143,8 @@ export class DirtEngine extends DomUI {
 		await promise;
 		DirtEngine.dragable = true;
 		DirtEngine.ready = true;
+		DomUI.domElements['feed-fitted-title-content-text'].style.display = 'block';
+		DomUI.domElements['feed-fitted-title-content-text'].style.opacity = '1';
 
 		// TODO: delete me as I just skip the into
 		DirtEngine.domElements['feed'].click();

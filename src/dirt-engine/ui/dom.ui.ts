@@ -4169,8 +4169,9 @@ export class DomUI {
 		domFeedFittedTitleContentText = document.createElement('div');
 		domFeedFittedTitleContentText.className = 'text';
 		domFeedFittedTitleContentText.innerText = 'Click Here or Press Any Key to Continue';
+		domFeedFittedTitleContentText.style.display = 'none';
 		DomUI.domElements['feed-fitted-title-content-text'] = domFeedFittedTitleContentText;
-		domFeedFittedTitleContent.appendChild(domFeedFittedTitleContentText);
+		domFeedFittedTitleContentLogoEngine.appendChild(domFeedFittedTitleContentText);
 
 		/*
 		 * Feed: Fitted - UI
