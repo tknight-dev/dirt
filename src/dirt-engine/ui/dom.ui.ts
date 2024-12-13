@@ -88,6 +88,26 @@ export class DomUI {
 	private static uiEditView: VideoBusInputCmdGameModeEditApplyView;
 	private static uiEditZ: VideoBusInputCmdGameModeEditApplyZ | undefined;
 
+	private static detailsModalCharacters(): void {
+		let content: HTMLElement = DomUI.domElementsUIEdit['application-characters-edit-modal-content-body-table'];
+
+		// Config
+		content.textContent = '';
+		DomUI.domElementsUIEdit['application-characters-modal'].style.display = 'none';
+		DomUI.domElementsUIEdit['application-characters-edit-modal'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-header'].innerText = 'Characters: Hitboxes';
+
+		// Buttons
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-cancel'].onclick = () => {
+			DomUI.domElementsUIEdit['characters'].classList.remove('active');
+			DomUI.domElementsUIEdit['application-characters-edit-modal'].style.display = 'none';
+		};
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-apply'].onclick = () => {
+			console.log('APPLY');
+		};
+	}
+
 	private static detailsModalSelector(
 		assetAudio: boolean,
 		assetImage: boolean,
@@ -4319,9 +4339,28 @@ export class DomUI {
 			applicationTypePixelSize: HTMLElement,
 			applicationTypePixelSizeInputRange: HTMLInputElement,
 			applicationTypePixelSizeInputText: HTMLInputElement,
+			characters: HTMLElement,
+			charactersButton: HTMLElement,
+			charactersModal: HTMLElement,
+			charactersModalContent: HTMLElement,
+			charactersModalContentBody: HTMLElement,
+			charactersModalContentBodyButton: HTMLElement,
+			charactersModalContentBodyButtons: HTMLElement,
+			charactersModalContentBodyButtonsApply: HTMLElement,
+			charactersModalContentBodyButtonsCancel: HTMLElement,
+			charactersModalContentHeader: HTMLElement,
+			charactersEditModal: HTMLElement,
+			charactersEditModalContent: HTMLElement,
+			charactersEditModalContentBody: HTMLElement,
+			charactersEditModalContentBodyButton: HTMLElement,
+			charactersEditModalContentBodyButtons: HTMLElement,
+			charactersEditModalContentBodyButtonsApply: HTMLElement,
+			charactersEditModalContentBodyButtonsCancel: HTMLElement,
+			charactersEditModalContentHeader: HTMLElement,
 			copy: HTMLElement,
 			copyButton: HTMLElement,
 			detailsContextMenu: HTMLElement,
+			div: HTMLElement,
 			feedFitted: HTMLElement = DomUI.domElements['feed-fitted'],
 			fps: HTMLElement,
 			grid: HTMLElement,
@@ -4690,6 +4729,25 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-application-pixel-size-number'] = applicationTypePixelSizeInputText;
 		DomUI.domElementsUIEdit['application-pixel-size-number'] = applicationTypePixelSizeInputText;
 		applicationTypePixelSize.appendChild(applicationTypePixelSizeInputText);
+
+		/*
+		 * Characters
+		 */
+		characters = document.createElement('div');
+		characters.className = 'dirt-engine-ui-edit characters';
+		DomUI.domElements['feed-fitted-ui-characters'] = characters;
+		DomUI.domElementsUIEdit['characters'] = characters;
+		domFeedFitted.appendChild(characters);
+
+		charactersButton = document.createElement('div');
+		charactersButton.className = 'dirt-engine-icon people';
+		charactersButton.onclick = () => {
+			characters.classList.add('active');
+			charactersModal.style.display = 'flex';
+		};
+		DomUI.domElements['feed-fitted-ui-characters-button'] = charactersButton;
+		DomUI.domElementsUIEdit['characters-button'] = charactersButton;
+		characters.appendChild(charactersButton);
 
 		/*
 		 * Copy
@@ -5694,6 +5752,122 @@ export class DomUI {
 		DomUI.domElements['feed-fitted-ui-z-global'] = zGlobal;
 		DomUI.domElementsUIEdit['z-global'] = zGlobal;
 		z.appendChild(zGlobal);
+
+		/*
+		 * Character: Modal
+		 */
+		charactersModal = document.createElement('div');
+		charactersModal.className = 'dirt-engine-ui-edit characters-modal modal';
+		DomUI.domElements['feed-fitted-ui-characters-modal'] = charactersModal;
+		DomUI.domElementsUIEdit['application-characters-modal'] = charactersModal;
+		domFeedFitted.appendChild(charactersModal);
+
+		charactersModalContent = document.createElement('div');
+		charactersModalContent.className = 'content';
+		DomUI.domElements['feed-fitted-ui-characters-modal-content'] = charactersModalContent;
+		DomUI.domElementsUIEdit['application-characters-modal-content'] = charactersModalContent;
+		charactersModal.appendChild(charactersModalContent);
+
+		charactersModalContentHeader = document.createElement('div');
+		charactersModalContentHeader.className = 'header';
+		charactersModalContentHeader.innerText = 'Characters';
+		DomUI.domElements['feed-fitted-ui-characters-modal-content-header'] = charactersModalContentHeader;
+		DomUI.domElementsUIEdit['application-characters-modal-content-header'] = charactersModalContentHeader;
+		charactersModalContent.appendChild(charactersModalContentHeader);
+
+		charactersModalContentBody = document.createElement('div');
+		charactersModalContentBody.className = 'body buttoned';
+		DomUI.domElements['feed-fitted-ui-characters-modal-content-body'] = charactersModalContentBody;
+		DomUI.domElementsUIEdit['application-characters-modal-content-body'] = charactersModalContentBody;
+		charactersModalContent.appendChild(charactersModalContentBody);
+
+		// Table
+		t = document.createElement('table');
+		DomUI.domElements['feed-fitted-ui-characters-modal-content-body-table'] = t;
+		DomUI.domElementsUIEdit['application-characters-modal-content-body-table'] = t;
+		charactersModalContentBody.appendChild(t);
+
+		// Table: Hit Boxes
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		div = document.createElement('div');
+		div.className = 'button';
+		div.innerText = 'Hitboxes';
+		div.onclick = () => {
+			DomUI.detailsModalCharacters();
+		};
+		td.appendChild(div);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		/*
+		 * Character: Modal: Edit
+		 */
+		charactersEditModal = document.createElement('div');
+		charactersEditModal.className = 'dirt-engine-ui-edit characters-edit-modal modal';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal'] = charactersEditModal;
+		DomUI.domElementsUIEdit['application-characters-edit-modal'] = charactersEditModal;
+		domFeedFitted.appendChild(charactersEditModal);
+
+		charactersEditModalContent = document.createElement('div');
+		charactersEditModalContent.className = 'content';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content'] = charactersEditModalContent;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content'] = charactersEditModalContent;
+		charactersEditModal.appendChild(charactersEditModalContent);
+
+		charactersEditModalContentHeader = document.createElement('div');
+		charactersEditModalContentHeader.className = 'header';
+		charactersEditModalContentHeader.innerText = 'Characters';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content-header'] = charactersEditModalContentHeader;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-header'] = charactersEditModalContentHeader;
+		charactersEditModalContent.appendChild(charactersEditModalContentHeader);
+
+		charactersEditModalContentBody = document.createElement('div');
+		charactersEditModalContentBody.className = 'body buttoned';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content-body'] = charactersEditModalContentBody;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-body'] = charactersEditModalContentBody;
+		charactersEditModalContent.appendChild(charactersEditModalContentBody);
+
+		// Table
+		t = document.createElement('table');
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content-body-table'] = t;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-body-table'] = t;
+		charactersEditModalContentBody.appendChild(t);
+
+		// Table: Hit Boxes
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		div = document.createElement('div');
+		div.className = 'button';
+		div.innerText = 'Hitboxes';
+		div.onclick = () => {
+			DomUI.detailsModalCharacters();
+		};
+		td.appendChild(div);
+		tr.appendChild(td);
+		t.appendChild(tr);
+
+		// Cancel/Save
+		charactersEditModalContentBodyButtons = document.createElement('div');
+		charactersEditModalContentBodyButtons.className = 'buttons';
+		charactersEditModalContentBodyButtons.style.display = 'none';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content-buttons'] = charactersEditModalContentBodyButtons;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons'] = charactersEditModalContentBodyButtons;
+		charactersEditModalContent.appendChild(charactersEditModalContentBodyButtons);
+
+		charactersEditModalContentBodyButtonsCancel = document.createElement('div');
+		charactersEditModalContentBodyButtonsCancel.className = 'button red';
+		charactersEditModalContentBodyButtonsCancel.innerText = 'Cancel';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content-buttons-cancel'] = charactersEditModalContentBodyButtonsCancel;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-cancel'] = charactersEditModalContentBodyButtonsCancel;
+		charactersEditModalContentBodyButtons.appendChild(charactersEditModalContentBodyButtonsCancel);
+
+		charactersEditModalContentBodyButtonsApply = document.createElement('div');
+		charactersEditModalContentBodyButtonsApply.className = 'button green';
+		charactersEditModalContentBodyButtonsApply.innerText = 'Apply';
+		DomUI.domElements['feed-fitted-ui-characters-edit-modal-content-buttons-apply'] = charactersEditModalContentBodyButtonsApply;
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-apply'] = charactersEditModalContentBodyButtonsApply;
+		charactersEditModalContentBodyButtons.appendChild(charactersEditModalContentBodyButtonsApply);
 
 		/*
 		 * Details: Context Menu

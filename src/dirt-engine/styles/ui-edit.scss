@@ -134,6 +134,7 @@ $dirt-engine-ui-edit-button-width: 40px;
 	.button,
 	.button-style,
 	&.application,
+	&.characters,
 	&.copy,
 	&.grid,
 	&.fps,
@@ -308,6 +309,47 @@ $dirt-engine-ui-edit-button-width: 40px;
 				&.top {
 					border-top: 1px dotted white;
 				}
+			}
+		}
+	}
+
+	&.characters {
+		border-radius: 5px;
+		bottom: $dirt-engine-controls-height + 80px;
+		height: 40px;
+		left: 20px;
+		width: 40px;
+
+		.dirt-engine-icon {
+			min-height: 30px;
+			height: 30px;
+			min-width: 30px;
+			width: 30px;
+		}
+	}
+
+	&.characters-modal {
+		.content {
+			.body {
+				height: 100%;
+				overflow-y: auto;
+
+				.button {
+					color: white;
+					height: 40px;
+					width: 100% !important;
+
+					&.small {
+						display: inline-block;
+						width: 50% !important;
+					}
+				}
+			}
+			.buttons {
+				.button {
+				}
+			}
+			.header {
 			}
 		}
 	}

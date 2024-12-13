@@ -35,6 +35,7 @@ export interface AssetDeclarations {
 }
 
 export interface AssetImage extends Asset {
+	collectionId?: string;
 	gHeight: number;
 	gWidth: number;
 	hitboxes?: AssetImageHitbox[]; // required for characters

@@ -7,19 +7,19 @@ import { MapActive } from '../models/map.model';
  * @author tknight-dev
  */
 
-export class AnimationsCalcEngine {
+export class AnimationImageBlocksCalcEngine {
 	private static initialized: boolean;
 	private static mapActive: MapActive;
 
 	public static async initialize(): Promise<void> {
-		if (AnimationsCalcEngine.initialized) {
-			console.error('AnimationsCalcEngine > initialize: already initialized');
+		if (AnimationImageBlocksCalcEngine.initialized) {
+			console.error('AnimationImageBlocksCalcEngine > initialize: already initialized');
 			return;
 		}
-		AnimationsCalcEngine.initialized = true;
+		AnimationImageBlocksCalcEngine.initialized = true;
 
 		// Last
-		AnimationsCalcEngine.startBind();
+		AnimationImageBlocksCalcEngine.startBind();
 	}
 
 	// Function set by binder, this is just a placeholder
@@ -35,8 +35,8 @@ export class AnimationsCalcEngine {
 			imageBlocksCalcPipelineAnimations: DoubleLinkedList<GridAnimation>,
 			node: DoubleLinkedListNode<GridAnimation> | undefined;
 
-		AnimationsCalcEngine.start = (timestampDelta: number) => {
-			imageBlocksCalcPipelineAnimations = AnimationsCalcEngine.mapActive.gridActive.imageBlocksCalcPipelineAnimations;
+		AnimationImageBlocksCalcEngine.start = (timestampDelta: number) => {
+			imageBlocksCalcPipelineAnimations = AnimationImageBlocksCalcEngine.mapActive.gridActive.imageBlocksCalcPipelineAnimations;
 
 			if (!imageBlocksCalcPipelineAnimations.length) {
 				return;
@@ -98,6 +98,6 @@ export class AnimationsCalcEngine {
 	}
 
 	public static setMapActive(mapActive: MapActive) {
-		AnimationsCalcEngine.mapActive = mapActive;
+		AnimationImageBlocksCalcEngine.mapActive = mapActive;
 	}
 }

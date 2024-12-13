@@ -656,6 +656,7 @@ let imageManifest: AssetImage[] = [
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
 	{
+		collectionId: 'beta',
 		gHeight: 2,
 		gWidth: 1,
 		hitboxes: [

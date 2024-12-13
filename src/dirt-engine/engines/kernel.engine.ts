@@ -1,4 +1,4 @@
-import { AnimationsCalcEngine } from '../calc/animations.calc.engine';
+import { AnimationImageBlocksCalcEngine } from '../calc/animation-image-blocks.calc.engine';
 import { CalcEditEngine } from './mode/edit/calc.edit.engine';
 import { CalcPlayEngine } from './mode/play/calc.play.engine';
 import { ClockCalcEngine } from '../calc/clock.calc.engine';
@@ -79,7 +79,7 @@ export class KernelEngine {
 		);
 
 		// Calcs
-		await AnimationsCalcEngine.initialize();
+		await AnimationImageBlocksCalcEngine.initialize();
 		await ClockCalcEngine.initialize();
 		await InputsCalcEngine.initialize();
 
@@ -171,7 +171,7 @@ export class KernelEngine {
 
 		// Load into calc engines
 		ClockCalcEngine.setMapActive(mapActive);
-		AnimationsCalcEngine.setMapActive(mapActive);
+		AnimationImageBlocksCalcEngine.setMapActive(mapActive);
 
 		// Load into draw engines
 		CameraDrawEngine.setMapActive(mapActive);

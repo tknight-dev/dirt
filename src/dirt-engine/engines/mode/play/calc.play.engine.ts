@@ -1,4 +1,4 @@
-import { AnimationsCalcEngine } from '../../../calc/animations.calc.engine';
+import { AnimationImageBlocksCalcEngine } from '../../../calc/animation-image-blocks.calc.engine';
 import { ClockCalcEngine } from '../../../calc/clock.calc.engine';
 import { InputsCalcEngine } from '../../../calc/inputs.calc.engine';
 import { MapActive } from '../../../models/map.model';
@@ -15,7 +15,7 @@ export class CalcPlayEngine {
 		InputsCalcEngine.start(timestampDelta);
 
 		// Normal
-		AnimationsCalcEngine.start(timestampDelta);
+		AnimationImageBlocksCalcEngine.start(timestampDelta);
 		ClockCalcEngine.start(timestampDelta);
 	}
 
