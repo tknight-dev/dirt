@@ -113,13 +113,13 @@ export class UtilEngine {
 		inputNumber.max = String(max);
 		inputNumber.min = String(min);
 		inputNumber.onblur = (event: any) => {
-			let value = Math.round(Number(event.target.value) / step);
+			let value = Number(event.target.value);
 			inputNumber.value = String(value);
 			inputRange.value = String(value);
 			callback(value);
 		};
 		inputNumber.oninput = (event: any) => {
-			let value = Math.round(Number(event.target.value) / step);
+			let value = Number(event.target.value);
 			inputRange.value = String(value);
 			callback(value);
 		};
@@ -131,7 +131,7 @@ export class UtilEngine {
 		inputRange.max = String(max);
 		inputRange.min = String(min);
 		inputRange.oninput = (event: any) => {
-			let value = Math.round(Number(event.target.value) / step);
+			let value = Number(event.target.value);
 			inputNumber.value = String(value);
 			callback(value);
 		};

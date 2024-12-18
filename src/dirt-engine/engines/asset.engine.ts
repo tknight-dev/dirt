@@ -4,12 +4,12 @@ import { dirtEngineDefaultImageManifest } from '../assets/image.default.asset';
 import { dirtEngineDefaultMapManifest } from '../assets/map.default.asset';
 import {
 	Asset,
-	AssetAudio,
 	AssetCollection,
 	AssetDeclarations,
 	AssetImage,
+	AssetImageCharacter,
 	AssetImageSrc,
-	AssetMap,
+	AssetImageType,
 	AssetManifest,
 	AssetManifestMaster,
 } from '../models/asset.model';
@@ -51,7 +51,10 @@ export class AssetEngine {
 
 		let asset: Asset,
 			assetImage: AssetImage,
+			assetImageCharacter: AssetImageCharacter,
 			audio: { [key: string]: Asset } = {},
+			charactersBySeriesId: { [key: string]: AssetImageCharacter[] },
+			charactersBySeriesIdByCollectionId: { [key: string]: { [key: string]: AssetImageCharacter[] } } = {},
 			images: { [key: string]: Asset } = {},
 			maps: { [key: string]: Asset } = {};
 
@@ -121,8 +124,43 @@ export class AssetEngine {
 			}
 		}
 
+		// Process characters: build
+		for (let i in images) {
+			assetImageCharacter = <AssetImageCharacter>images[i];
+
+			if (assetImageCharacter.type !== AssetImageType.CHARACTER) {
+				continue;
+			}
+			assetImageCharacter.collectionId = assetImageCharacter.collectionId.toLowerCase();
+			assetImageCharacter.seriesId = assetImageCharacter.seriesId.toLowerCase();
+
+			charactersBySeriesId = charactersBySeriesIdByCollectionId[assetImageCharacter.collectionId];
+			if (charactersBySeriesId === undefined) {
+				charactersBySeriesIdByCollectionId[assetImageCharacter.collectionId] = {};
+				charactersBySeriesIdByCollectionId[assetImageCharacter.collectionId][assetImageCharacter.seriesId] = [assetImageCharacter];
+			} else {
+				if (charactersBySeriesId[assetImageCharacter.seriesId] === undefined) {
+					charactersBySeriesId[assetImageCharacter.seriesId] = [assetImageCharacter];
+				} else {
+					charactersBySeriesId[assetImageCharacter.seriesId].push(assetImageCharacter);
+				}
+			}
+		}
+
+		// Process characters: sort
+		for (let collectionId in charactersBySeriesIdByCollectionId) {
+			charactersBySeriesId = charactersBySeriesIdByCollectionId[collectionId];
+
+			for (let seriesId in charactersBySeriesId) {
+				charactersBySeriesId[seriesId] = charactersBySeriesId[seriesId].sort((a: AssetImageCharacter, b: AssetImageCharacter) => {
+					return a.seriesIndex - b.seriesIndex;
+				});
+			}
+		}
+
 		AssetEngine.assetManifestMaster = {
 			audio: <any>audio,
+			charactersBySeriesIdByCollectionId: charactersBySeriesIdByCollectionId,
 			images: <any>images,
 			maps: <any>maps,
 		};
