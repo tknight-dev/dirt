@@ -35,25 +35,33 @@ export interface AssetDeclarations {
 }
 
 export interface AssetImage extends Asset {
-	collectionId?: string;
 	gHeight: number;
 	gWidth: number;
-	hitboxes?: AssetImageHitbox[]; // required for characters
-	seriesId?: number; // must be unique to AssetImageType (organizes images in animation loops amongst other images)
-	seriesIndex?: number; // must be unique to seriesId
 	srcs: AssetImageSrc[]; // requires atleast one, missing qualities will load from a lesser quality
 	type: AssetImageType;
 }
 
+export interface AssetImageAnimation extends AssetImage {
+	seriesId: string; // must be unique to AssetImageType (organizes images in animation loops amongst other images)
+	seriesIndex: number; // must be unique to seriesId
+}
+
+export interface AssetImageCharacter extends AssetImage {
+	collectionId: string;
+	hitboxes: AssetImageHitbox[]; // required for characters
+	seriesId: string; // must be unique to AssetImageType (organizes images in animation loops amongst other images)
+	seriesIndex: number; // must be unique to seriesId
+}
+
 export interface AssetImageHitbox {
-	damage: AssetImageHitboxImportance;
+	damage: AssetImageHitboxDamage;
 	gh: number; // Precision3
 	gw: number; // Precision3
 	gx: number; // Precision3
 	gy: number; // Precision3
 }
 
-export enum AssetImageHitboxImportance {
+export enum AssetImageHitboxDamage {
 	HIGH,
 	LOW,
 	MEDIUM,
@@ -93,6 +101,7 @@ export interface AssetManifest {
 
 export interface AssetManifestMaster {
 	audio: { [key: string]: AssetAudio };
+	charactersBySeriesIdByCollectionId: { [key: string]: { [key: string]: AssetImageCharacter[] } }; // generated from images
 	images: { [key: string]: AssetImage };
 	maps: { [key: string]: AssetMap };
 }

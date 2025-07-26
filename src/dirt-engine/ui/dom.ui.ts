@@ -3,6 +3,8 @@ import {
 	AssetAudioType,
 	AssetCollection,
 	AssetImage,
+	AssetImageCharacter,
+	AssetImageHitboxDamage,
 	AssetImageSrcQuality,
 	AssetImageSrc,
 	AssetImageType,
@@ -12,6 +14,7 @@ import {
 import { AssetEngine } from '../engines/asset.engine';
 import { AudioEngine } from '../engines/audio.engine';
 import { AudioModulation } from '../models/audio-modulation.model';
+import copy from 'copy-to-clipboard';
 import { DoubleLinkedList } from '../models/double-linked-list.model';
 import {
 	GridAnimation,
@@ -89,22 +92,337 @@ export class DomUI {
 	private static uiEditZ: VideoBusInputCmdGameModeEditApplyZ | undefined;
 
 	private static detailsModalCharacters(): void {
-		let content: HTMLElement = DomUI.domElementsUIEdit['application-characters-edit-modal-content-body-table'];
+		let arrow: HTMLElement,
+			assetImageCharacter: AssetImageCharacter,
+			assetImageCharacters: AssetImageCharacter[],
+			canvas: HTMLCanvasElement,
+			count: HTMLElement,
+			collectionId: string,
+			collectionIds: string[],
+			charactersBySeriesIdByCollectionId: { [key: string]: { [key: string]: AssetImageCharacter[] } } =
+				AssetEngine.getAssetManifestMaster().charactersBySeriesIdByCollectionId,
+			content: HTMLElement = DomUI.domElementsUIEdit['application-characters-edit-modal-content-body-table'],
+			ctx: CanvasRenderingContext2D,
+			div: HTMLElement,
+			hitboxDamage: AssetImageHitboxDamage,
+			hitboxDamages: AssetImageHitboxDamage[] = <any>Object.values(AssetImageHitboxDamage).filter((v) => typeof v !== 'string'),
+			imageBitmap: ImageBitmap,
+			input: HTMLInputElement,
+			inputGh: HTMLInputElement[],
+			inputGw: HTMLInputElement[],
+			inputGx: HTMLInputElement[],
+			inputGy: HTMLInputElement[],
+			inputsHorizontal: HTMLInputElement[],
+			inputsVertical: HTMLInputElement[],
+			interval: ReturnType<typeof setInterval>,
+			option: HTMLOptionElement,
+			select: HTMLSelectElement,
+			selectSeries: HTMLSelectElement,
+			series: string[],
+			seriesId: string,
+			seriesIndex: number,
+			td: HTMLTableCellElement,
+			tr: HTMLTableRowElement,
+			animate = () => {
+				let imageSrc: AssetImageSrc | undefined = undefined;
+
+				assetImageCharacter.srcs.forEach((assetImageSrc: AssetImageSrc) => {
+					// Grab the highest available quality
+					if (assetImageSrc.collection === AssetCollection.SHARED) {
+						if (!imageSrc || imageSrc.quality < assetImageSrc.quality) {
+							imageSrc = assetImageSrc;
+						}
+					}
+				});
+
+				if (imageSrc) {
+					canvas.width = (128 * (assetImageCharacter.gWidth / assetImageCharacter.gHeight)) | 0;
+					imageBitmap = <ImageBitmap>(<any>AssetEngine.getAsset((<any>imageSrc).src)).imageBitmap;
+					ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+
+					switch (Number(hitboxDamage)) {
+						case AssetImageHitboxDamage.HIGH:
+							ctx.strokeStyle = 'red';
+							break;
+						case AssetImageHitboxDamage.MEDIUM:
+							ctx.strokeStyle = 'yellow';
+							break;
+						case AssetImageHitboxDamage.LOW:
+							ctx.strokeStyle = 'green';
+							break;
+					}
+
+					ctx.strokeRect(
+						(canvas.width * Number(inputGx[0].value)) | 0,
+						(canvas.height * Number(inputGy[0].value)) | 0,
+						(canvas.width * Number(inputGw[0].value)) | 0,
+						(canvas.height * Number(inputGh[0].value)) | 0,
+					);
+				}
+			},
+			inputPositionLogic = () => {
+				assetImageCharacters = charactersBySeriesIdByCollectionId[collectionId][seriesId];
+				assetImageCharacter = assetImageCharacters[seriesIndex];
+
+				for (let i in inputsHorizontal) {
+					input = inputsHorizontal[i];
+					input.max = String(assetImageCharacter.gWidth);
+				}
+
+				for (let i in inputsVertical) {
+					input = inputsVertical[i];
+					input.max = String(assetImageCharacter.gHeight);
+				}
+			},
+			selectSeriesLogic = () => {
+				selectSeries.textContent = '';
+				series = Object.keys(charactersBySeriesIdByCollectionId[collectionId]).sort();
+
+				for (let i in series) {
+					option = document.createElement('option');
+					option.innerText = series[i];
+					option.value = series[i];
+					selectSeries.appendChild(option);
+				}
+			};
 
 		// Config
+		collectionIds = Object.keys(charactersBySeriesIdByCollectionId).sort();
 		content.textContent = '';
 		DomUI.domElementsUIEdit['application-characters-modal'].style.display = 'none';
 		DomUI.domElementsUIEdit['application-characters-edit-modal'].style.display = 'flex';
-		DomUI.domElementsUIEdit['application-characters-edit-modal-content-header'].innerText = 'Characters: Hitboxes';
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-header'].innerText = 'Characters: Hitbox Calculator';
+
+		// Content: Character Select
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Character';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		select = document.createElement('select');
+		select.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
+		select.onchange = (event: any) => {
+			collectionId = event.target.value;
+			selectSeriesLogic();
+		};
+
+		for (let i in collectionIds) {
+			option = document.createElement('option');
+			option.innerText = collectionIds[i];
+			option.value = collectionIds[i];
+			select.appendChild(option);
+		}
+
+		td.appendChild(select);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Series Select
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Series';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		selectSeries = document.createElement('select');
+		selectSeries.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
+		selectSeries.onchange = (event: any) => {
+			seriesId = event.target.value;
+			seriesIndex = 0;
+			inputPositionLogic();
+		};
+		td.appendChild(selectSeries);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Animation Window
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.className = 'animation-window';
+		td.colSpan = 3;
+		div = document.createElement('div');
+		div.className = 'filler';
+		arrow = document.createElement('div');
+		arrow.className = 'arrow left';
+		arrow.innerText = '<';
+		arrow.onclick = () => {
+			if (seriesIndex === 0) {
+				seriesIndex = assetImageCharacters.length - 1;
+			} else {
+				seriesIndex--;
+			}
+			count.innerText = String(seriesIndex);
+			inputPositionLogic();
+		};
+		count = document.createElement('div');
+		count.className = 'count';
+		count.innerText = '0';
+		arrow.appendChild(count);
+		div.appendChild(arrow);
+		canvas = document.createElement('canvas');
+		canvas.height = 128;
+		canvas.width = 128;
+		div.appendChild(canvas);
+		arrow = document.createElement('div');
+		arrow.className = 'arrow right';
+		arrow.innerText = '>';
+		arrow.onclick = () => {
+			if (seriesIndex === assetImageCharacters.length - 1) {
+				seriesIndex = 0;
+			} else {
+				seriesIndex++;
+			}
+			count.innerText = String(seriesIndex);
+			inputPositionLogic();
+		};
+		div.appendChild(arrow);
+		td.appendChild(div);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Damage
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Damage';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		select = document.createElement('select');
+		select.onclick = (event: any) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		};
+		select.onchange = (event: any) => {
+			hitboxDamage = event.target.value;
+		};
+
+		for (let i in hitboxDamages) {
+			option = document.createElement('option');
+			option.innerText = AssetImageHitboxDamage[hitboxDamages[i]];
+			option.value = String(hitboxDamages[i]);
+			select.appendChild(option);
+		}
+
+		td.appendChild(select);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Gh
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Gh';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		inputGh = UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.001,
+			0.5,
+			(value: number) => {
+				//console.log('inputGh', value);
+			},
+			td,
+		);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Gw
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Gw';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		inputGw = UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.001,
+			0.5,
+			(value: number) => {
+				//console.log('inputGw', value);
+			},
+			td,
+		);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Gx
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Gx';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		inputGx = UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.001,
+			0,
+			(value: number) => {
+				//console.log('inputGx', value);
+			},
+			td,
+		);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Gy
+		tr = document.createElement('tr');
+		td = document.createElement('td');
+		td.innerText = 'Gy';
+		tr.appendChild(td);
+		td = document.createElement('td');
+		inputGy = UtilEngine.htmlRangeAndNumber(
+			1,
+			0,
+			0.001,
+			0,
+			(value: number) => {
+				//console.log('inputGy', value);
+			},
+			td,
+		);
+		tr.appendChild(td);
+		content.append(tr);
+
+		// Content: Logic
+		ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
+		collectionId = collectionIds[0];
+		(hitboxDamage = hitboxDamages[0]), selectSeriesLogic();
+		seriesId = Object.keys(charactersBySeriesIdByCollectionId[collectionId]).sort()[0];
+		seriesIndex = 0;
+		inputsHorizontal = [...inputGw, ...inputGx];
+		inputsVertical = [...inputGh, ...inputGy];
+		inputPositionLogic();
+
+		// Animate
+		animate();
+		interval = setInterval(animate, 33); // ~30fps
 
 		// Buttons
 		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons'].style.display = 'flex';
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-cancel'].innerText = 'Close';
 		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-cancel'].onclick = () => {
+			clearInterval(interval);
 			DomUI.domElementsUIEdit['characters'].classList.remove('active');
 			DomUI.domElementsUIEdit['application-characters-edit-modal'].style.display = 'none';
+			DomUI.suspendInputs(false);
 		};
+
+		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-apply'].innerText = 'Copy';
 		DomUI.domElementsUIEdit['application-characters-edit-modal-content-buttons-apply'].onclick = () => {
-			console.log('APPLY');
+			copy(`{
+	damage: AssetImageHitboxDamage.${AssetImageHitboxDamage[hitboxDamage]},
+	gh: ${inputGh[0].value},
+	gw: ${inputGw[0].value},
+	gx: ${inputGx[0].value},
+	gy: ${inputGy[0].value},
+}`);
 		};
 	}
 
@@ -1503,7 +1821,7 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons'].style.display = 'flex';
 		DomUI.domElementsUIEdit['application-palette-modal-content-header'].innerText = 'Palette: Image Block Foliage';
 
-		// Apply
+		// Copy
 		DomUI.domElementsUIEdit['application-palette-modal-content-buttons-apply'].onclick = () => {
 			// Values
 			DomUI.uiEditApplicationProperties = applicationProperties;
@@ -4744,6 +5062,7 @@ export class DomUI {
 		charactersButton.onclick = () => {
 			characters.classList.add('active');
 			charactersModal.style.display = 'flex';
+			DomUI.suspendInputs(true);
 		};
 		DomUI.domElements['feed-fitted-ui-characters-button'] = charactersButton;
 		DomUI.domElementsUIEdit['characters-button'] = charactersButton;
@@ -5787,12 +6106,12 @@ export class DomUI {
 		DomUI.domElementsUIEdit['application-characters-modal-content-body-table'] = t;
 		charactersModalContentBody.appendChild(t);
 
-		// Table: Hit Boxes
+		// Table: Hitbox Calculator
 		tr = document.createElement('tr');
 		td = document.createElement('td');
 		div = document.createElement('div');
 		div.className = 'button';
-		div.innerText = 'Hitboxes';
+		div.innerText = 'Hitbox Calculator';
 		div.onclick = () => {
 			DomUI.detailsModalCharacters();
 		};

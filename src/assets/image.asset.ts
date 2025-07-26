@@ -1,4 +1,12 @@
-import { AssetCollection, AssetImage, AssetImageHitboxImportance, AssetImageSrcQuality, AssetImageType } from '../dirt-engine/dirt.engine';
+import {
+	AssetCollection,
+	AssetImage,
+	AssetImageAnimation,
+	AssetImageCharacter,
+	AssetImageHitboxDamage,
+	AssetImageSrcQuality,
+	AssetImageType,
+} from '../dirt-engine/dirt.engine';
 
 /**
  * @author tknight-dev
@@ -655,17 +663,17 @@ let imageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.GRID_BLOCK_SOLID,
 	},
-	{
+	<AssetImageCharacter>{
 		collectionId: 'beta',
 		gHeight: 2,
 		gWidth: 1,
 		hitboxes: [
 			{
-				damage: AssetImageHitboxImportance.HIGH,
-				gh: 0.5,
-				gw: 0.5,
-				gx: 0.5,
-				gy: 0.5,
+				damage: AssetImageHitboxDamage.HIGH,
+				gh: 0.249,
+				gw: 0.555,
+				gx: 0.402,
+				gy: 0,
 			},
 		],
 		id: 'SOLDIER_BETA_STAND',
@@ -676,6 +684,8 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
+		seriesId: 'stand',
+		seriesIndex: 0,
 		srcs: [
 			{
 				collection: AssetCollection.VIDEO,
@@ -855,7 +865,7 @@ let imageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.GRID_BLOCK_LIQUID,
 	},
-	{
+	<AssetImageAnimation>{
 		id: 'WATERFALL_1',
 		gHeight: 1,
 		gWidth: 1,
@@ -866,7 +876,7 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
-		seriesId: 0,
+		seriesId: 'waterfall',
 		seriesIndex: 0,
 		srcs: [
 			{
@@ -887,7 +897,7 @@ let imageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.GRID_BLOCK_LIQUID,
 	},
-	{
+	<AssetImageAnimation>{
 		id: 'WATERFALL_2',
 		gHeight: 1,
 		gWidth: 1,
@@ -898,7 +908,7 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
-		seriesId: 0,
+		seriesId: 'waterfall',
 		seriesIndex: 1,
 		srcs: [
 			{
@@ -919,7 +929,7 @@ let imageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.GRID_BLOCK_LIQUID,
 	},
-	{
+	<AssetImageAnimation>{
 		id: 'WATERFALL_3',
 		gHeight: 1,
 		gWidth: 1,
@@ -930,7 +940,7 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
-		seriesId: 0,
+		seriesId: 'waterfall',
 		seriesIndex: 2,
 		srcs: [
 			{
@@ -951,7 +961,7 @@ let imageManifest: AssetImage[] = [
 		],
 		type: AssetImageType.GRID_BLOCK_LIQUID,
 	},
-	{
+	<AssetImageAnimation>{
 		id: 'WATERFALL_4',
 		gHeight: 1,
 		gWidth: 1,
@@ -962,7 +972,7 @@ let imageManifest: AssetImage[] = [
 			publicDomain: false,
 			title: undefined,
 		},
-		seriesId: 0,
+		seriesId: 'waterfall',
 		seriesIndex: 3,
 		srcs: [
 			{
