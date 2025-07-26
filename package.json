@@ -3,7 +3,7 @@
   "description": "A multithreaded rendering engine with physics",
   "license": "",
   "name": "dirt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "archiver-dev-shared": "nodemon --quiet --watch src/assets/shared/**/* -e map,mp3,svg,webp -x \"node archiver.js shared\"",
     "archiver-dev-ui": "nodemon --quiet --watch src/assets/ui/**/* -e map,mp3,svg,webp -x \"node archiver.js ui\"",
